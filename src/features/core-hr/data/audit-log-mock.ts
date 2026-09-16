@@ -1,0 +1,90 @@
+// import type { AuditDay } from "../types/audit"
+
+// export const MOCK_AUDIT_LOG: AuditDay[] = [
+//   {
+//     label: "Thursday, April 16, 2026",
+//     entries: [
+//       {
+//         id: "au-1",
+//         date: "Apr 16, 2026",
+//         time: "13:08",
+//         action: "UPDATE",
+//         entity: "SALARY",
+//         title: "grossSalary changed",
+//         change: { fieldName: "grossSalary", from: "87500", to: "95000" },
+//         employeeName: "John Smith",
+//         employeeNumber: "EMP-001",
+//         author: "Admin",
+//       },
+//       {
+//         id: "au-2",
+//         date: "Apr 16, 2026",
+//         time: "13:08",
+//         action: "CREATE",
+//         entity: "EMPLOYEE",
+//         title: "CREATE action on EMPLOYEE",
+//         employeeName: "John Smith",
+//         employeeNumber: "EMP-001",
+//         author: "Admin",
+//       },
+//     ],
+//   },
+//   {
+//     label: "Tuesday, October 1, 2024",
+//     entries: [
+//       {
+//         id: "au-3",
+//         date: "Oct 1, 2024",
+//         time: "03:00",
+//         action: "STATUS_CHANGE",
+//         entity: "EMPLOYEE",
+//         title: "employmentStatus changed",
+//         change: {
+//           fieldName: "employmentStatus",
+//           from: "ACTIVE",
+//           to: "ON LEAVE",
+//         },
+//         employeeName: "Sarah Wilson",
+//         employeeNumber: "EMP-002",
+//         author: "Admin",
+//       },
+//       {
+//         id: "au-4",
+//         date: "Oct 1, 2024",
+//         time: "10:42",
+//         action: "UPDATE",
+//         entity: "DEPARTMENT",
+//         title: "Department renamed",
+//         change: { fieldName: "name", from: "People Ops", to: "Human Resources" },
+//         author: "Admin",
+//       },
+//     ],
+//   },
+//   {
+//     label: "Monday, June 17, 2024",
+//     entries: [
+//       {
+//         id: "au-5",
+//         date: "Jun 17, 2024",
+//         time: "09:14",
+//         action: "DELETE",
+//         entity: "DOCUMENT",
+//         title: "Removed expired passport scan",
+//         employeeName: "Michael Brown",
+//         employeeNumber: "EMP-003",
+//         author: "Sarah Wilson",
+//       },
+//       {
+//         id: "au-6",
+//         date: "Jun 17, 2024",
+//         time: "09:00",
+//         action: "LOGIN",
+//         entity: "EMPLOYEE",
+//         title: "Signed in",
+//         employeeName: "Sarah Wilson",
+//         employeeNumber: "EMP-002",
+//         author: "Sarah Wilson",
+//       },
+//     ],
+//   },
+// ]

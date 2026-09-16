@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          "src/features/marketing-tracking/components/marketing-tracking-dashboard.tsx"
+        ],
+        "createdAt": "2026-09-16T14:20:26.345Z",
+        "reason": "Pre-existing Nucleus brand mark, not an invented palette: identical indigo-to-violet gradient is already the sidebar brand tile (layout-side-bar.tsx:65) and the onboarding logo, and --brand-primary #6366f1 is the design-system token documented in CLAUDE.md section 2."
+      }
+    ]
+  }
+}

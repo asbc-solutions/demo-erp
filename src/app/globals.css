@@ -1,0 +1,256 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+    --content-primary: #111827;
+    --content-secondary: #374151;
+    --content-tertiary: #6b7280;
+    --content-quaternary: #9ca3af;
+    --content-lightest: #d1d5db;
+    --surface-page: #f9fafb;
+    --surface-white: #ffffff;
+    --surface-hover: #f3f4f6;
+    --surface-active: #f1f5f9;
+    --surface-muted: #f8fafc;
+    --stroke-default: #e5e7eb;
+    --stroke-light: #f3f4f6;
+    --stroke-input: #d1d5db;
+    --brand-primary: #6366f1;
+    --brand-primary-hover: #4f46e5;
+    --brand-success: #10b981;
+    --brand-success-hover: #059669;
+    --brand-warning: #f59e0b;
+    --brand-warning-hover: #d97706;
+    --brand-danger: #ef4444;
+    --brand-danger-hover: #dc2626;
+    --brand-info: #3b82f6;
+    --brand-info-hover: #2563eb;
+}
+
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+    --content-primary: #f9fafb;
+    --content-secondary: #e5e7eb;
+    --content-tertiary: #9ca3af;
+    --content-quaternary: #6b7280;
+    --content-lightest: #4b5563;
+    --surface-page: #0f1117;
+    --surface-white: #111827;
+    --surface-hover: #1f2937;
+    --surface-active: #273244;
+    --surface-muted: #0b1220;
+    --stroke-default: #374151;
+    --stroke-light: #1f2937;
+    --stroke-input: #4b5563;
+    --brand-primary: #818cf8;
+    --brand-primary-hover: #6366f1;
+    --brand-success: #34d399;
+    --brand-success-hover: #10b981;
+    --brand-warning: #fbbf24;
+    --brand-warning-hover: #f59e0b;
+    --brand-danger: #f87171;
+    --brand-danger-hover: #ef4444;
+    --brand-info: #60a5fa;
+    --brand-info-hover: #3b82f6;
+}
+
+@theme inline {
+    --font-sans: var(--font-sans);
+    --font-heading: var(--font-heading);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@theme inline {
+    --color-content-primary: var(--content-primary);
+    --color-content-secondary: var(--content-secondary);
+    --color-content-tertiary: var(--content-tertiary);
+    --color-content-quaternary: var(--content-quaternary);
+    --color-content-lightest: var(--content-lightest);
+    --color-surface-page: var(--surface-page);
+    --color-surface-white: var(--surface-white);
+    --color-surface-hover: var(--surface-hover);
+    --color-surface-active: var(--surface-active);
+    --color-surface-muted: var(--surface-muted);
+    --color-stroke-default: var(--stroke-default);
+    --color-stroke-light: var(--stroke-light);
+    --color-stroke-input: var(--stroke-input);
+    --color-brand-primary: var(--brand-primary);
+    --color-brand-primary-hover: var(--brand-primary-hover);
+    --color-brand-success: var(--brand-success);
+    --color-brand-success-hover: var(--brand-success-hover);
+    --color-brand-warning: var(--brand-warning);
+    --color-brand-warning-hover: var(--brand-warning-hover);
+    --color-brand-danger: var(--brand-danger);
+    --color-brand-danger-hover: var(--brand-danger-hover);
+    --color-brand-info: var(--brand-info);
+    --color-brand-info-hover: var(--brand-info-hover);
+}
+
+@theme {
+    --animate-progress-stripes: progress-stripes 1s linear infinite;
+    @keyframes progress-stripes {
+        from {
+            background-position: 1rem 0;
+        }
+        to {
+            background-position: 0 0;
+        }
+    }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+
+/* Thin, light scrollbar with no stepper arrows. */
+@utility thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 163 184 / 0.3) transparent;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: rgb(148 163 184 / 0.3);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(148 163 184 / 0.5);
+  }
+  /* Remove the up/down arrow buttons. */
+  &::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* Decorative brand glow behind the login screen. Kept out of an inline style so
+   the element carries no color properties for extensions to rewrite pre-hydration. */
+@utility auth-glow {
+  background: radial-gradient(
+    54.29% 128.36% at 50% 50%,
+    rgb(99 102 241 / 0.15) 0%,
+    rgb(99 102 241 / 0) 70%
+  );
+}

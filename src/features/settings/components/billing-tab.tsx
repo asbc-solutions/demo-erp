@@ -1,0 +1,248 @@
+"use client"
+
+import { useState } from "react"
+import { CreditCard, Download } from "lucide-react"
+import { toast } from "sonner"
+
+import { Badge } from "@/src/shared/components/ui/badge"
+import { Button } from "@/src/shared/components/ui/button"
+import { Card } from "@/src/shared/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/shared/components/ui/table"
+import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
+
+import { ChangePlanDialog } from "./billing/change-plan-dialog"
+import { SETTINGS_RESOURCES } from "../lib/constants/permissions"
+import { useDownloadInvoice } from "../lib/mutations/billing"
+import { useBillingInvoices, useBillingOverview } from "../lib/queries/billing"
+import type { BillingInvoiceStatus } from "../lib/types/billing"
+import { SettingsAccessGate } from "./shared/settings-access-gate"
+import { SettingsErrorState, toastMutationError } from "./shared/settings-error-state"
+import { SettingsPageSpinner, SettingsSectionSpinner } from "./shared/settings-loading"
+
+function StatTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-xl bg-[#f4f4f5] px-3 py-3">
+      <span className="text-content-tertiary text-[11px] leading-[15.4px]">{label}</span>
+      <span className="text-content-primary text-[12px] leading-[18px] font-medium">
+        {value}
+      </span>
+    </div>
+  )
+}
+
+const INVOICE_STATUS_VARIANT: Record<BillingInvoiceStatus, "success" | "warning" | "neutral"> = {
+  paid: "success",
+  open: "warning",
+  void: "neutral",
+}
+
+function InvoiceHistory() {
+  const { data: invoices, isLoading, isError, refetch } = useBillingInvoices()
+  const downloadInvoice = useDownloadInvoice()
+
+  const handleDownload = (invoiceId: string) => {
+    downloadInvoice.mutate(invoiceId, {
+      onSuccess: (url) => window.open(url, "_blank"),
+      onError: (err) => toastMutationError(err, "Failed to download invoice"),
+    })
+  }
+
+  if (isLoading) return <SettingsSectionSpinner />
+  if (isError) {
+    return (
+      <SettingsErrorState message="Failed to load invoice history." onRetry={() => void refetch()} />
+    )
+  }
+  if (!invoices || invoices.length === 0) {
+    return <p className="text-content-tertiary py-6 text-center text-sm">No invoices yet.</p>
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Invoice</TableHead>
+          <TableHead>Period</TableHead>
+          <TableHead>Amount</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead className="w-12" />
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {invoices.map((invoice) => (
+          <TableRow key={invoice.id}>
+            <TableCell className="text-content-primary font-medium">
+              {invoice.invoice_number}
+            </TableCell>
+            <TableCell>
+              {invoice.period_start} – {invoice.period_end}
+            </TableCell>
+            <TableCell>
+              {invoice.amount} {invoice.currency_code}
+            </TableCell>
+            <TableCell>
+              <Badge variant={INVOICE_STATUS_VARIANT[invoice.status]}>{invoice.status}</Badge>
+            </TableCell>
+            <TableCell>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                disabled={!invoice.has_document || downloadInvoice.isPending}
+                title={invoice.has_document ? "Download invoice" : "No document available"}
+                aria-label={`Download invoice ${invoice.invoice_number}`}
+                onClick={() => handleDownload(invoice.id)}
+              >
+                <Download className="size-4" aria-hidden />
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+
+function BillingTabContent() {
+  const { data: overview, isLoading, isError, refetch } = useBillingOverview()
+  const { can } = usePermissions()
+  const canWrite = can.write(SETTINGS_RESOURCES.billing)
+  const [changePlanOpen, setChangePlanOpen] = useState(false)
+
+  if (isLoading) {
+    return <SettingsPageSpinner />
+  }
+
+  if (isError || !overview) {
+    return (
+      <SettingsErrorState message="Failed to load billing information." onRetry={() => void refetch()} />
+    )
+  }
+
+  const { subscription, payment_method: paymentMethod, available_plans: availablePlans } = overview
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card variant="elevated" className="gap-6 p-6">
+        {subscription ? (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col">
+                <h3 className="text-content-primary text-[16px] leading-6 font-medium">
+                  {subscription.plan.name}
+                </h3>
+                <p className="text-content-tertiary text-[12px] leading-[18px]">
+                  {subscription.plan.price_amount} {subscription.plan.currency_code} /{" "}
+                  {subscription.plan.billing_interval}
+                </p>
+              </div>
+              <span className="bg-brand-success/12 text-brand-success inline-flex items-center rounded-lg px-2.5 py-0.5 text-[11px] leading-[15.4px] font-medium capitalize">
+                {subscription.status}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <StatTile label="Next billing date" value={subscription.next_billing_date} />
+              <StatTile
+                label="Seats used"
+                value={`${subscription.usage.seats_used} / ${subscription.usage.seat_limit}`}
+              />
+              <StatTile
+                label="Storage"
+                value={`${subscription.usage.storage_used_gb} GB / ${subscription.usage.storage_limit_gb} GB`}
+              />
+            </div>
+          </>
+        ) : (
+          <p className="text-content-tertiary text-sm">
+            No active subscription. Choose a plan to get started.
+          </p>
+        )}
+
+        {canWrite ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-9 px-4 text-[12px]"
+              onClick={() => setChangePlanOpen(true)}
+            >
+              {subscription ? "Change Plan" : "Choose a Plan"}
+            </Button>
+          </div>
+        ) : null}
+      </Card>
+
+      <Card variant="elevated" className="gap-6 p-6">
+        <h3 className="text-content-primary text-[14px] leading-[22.4px] font-semibold">
+          Payment Method
+        </h3>
+
+        {paymentMethod ? (
+          <div className="bg-surface-page border-stroke-default flex items-center justify-between gap-3 rounded-xl border p-3">
+            <div className="flex items-center gap-3">
+              <div className="bg-surface-white border-stroke-default flex size-9 items-center justify-center rounded-lg border">
+                <CreditCard className="text-content-secondary size-5" aria-hidden />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-content-primary text-[12px] leading-[18px] capitalize">
+                  {paymentMethod.brand} ending in {paymentMethod.last4}
+                </span>
+                <span className="text-content-tertiary text-[11px] leading-[15.4px]">
+                  Expires {String(paymentMethod.exp_month).padStart(2, "0")}/{paymentMethod.exp_year}
+                </span>
+              </div>
+            </div>
+            {canWrite ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-8 px-3 text-[12px]"
+                title="Requires client-side card tokenization via a payment provider SDK — not wired up yet"
+                onClick={() =>
+                  toast.info("Payment method updates aren't wired up yet", {
+                    description:
+                      "This endpoint only accepts a provider token (Stripe/Paymob/Fawry) — it never accepts a raw card number. Client-side tokenization is out of scope for this change.",
+                  })
+                }
+              >
+                Update
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-content-tertiary text-sm">No payment method on file.</p>
+        )}
+      </Card>
+
+      <Card variant="elevated" className="gap-4 p-6">
+        <h3 className="text-content-primary text-[14px] leading-[22.4px] font-semibold">
+          Invoice History
+        </h3>
+        <InvoiceHistory />
+      </Card>
+
+      <ChangePlanDialog
+        open={changePlanOpen}
+        onOpenChange={setChangePlanOpen}
+        currentPlanCode={subscription?.plan.code}
+        availablePlans={availablePlans}
+      />
+    </div>
+  )
+}
+
+export function BillingTab() {
+  return (
+    <SettingsAccessGate resource={SETTINGS_RESOURCES.billing}>
+      <BillingTabContent />
+    </SettingsAccessGate>
+  )
+}

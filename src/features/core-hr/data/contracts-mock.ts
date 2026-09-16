@@ -1,0 +1,48 @@
+import type { Contract } from "../types/contract"
+
+export const MOCK_CONTRACTS: Contract[] = [
+  {
+    id: "ct-1",
+    employeeId: "emp-003",
+    employeeName: "Michael Brown",
+    employeeNumber: "EMP-003",
+    type: "FIXED_TERM",
+    startDate: "Sep 1, 2023",
+    endDate: "Apr 30, 2025",
+    status: "ACTIVE",
+    daysRemaining: -10,
+  },
+  {
+    id: "ct-2",
+    employeeId: "emp-002",
+    employeeName: "Sarah Wilson",
+    employeeNumber: "EMP-002",
+    type: "FIXED_TERM",
+    startDate: "Jan 1, 2024",
+    endDate: "Jun 30, 2025",
+    status: "ACTIVE",
+    daysRemaining: -50,
+  },
+  {
+    id: "ct-3",
+    employeeId: "emp-001",
+    employeeName: "John Smith",
+    employeeNumber: "EMP-001",
+    type: "PERMANENT",
+    startDate: "Jun 15, 2023",
+    endDate: null,
+    status: "ACTIVE",
+    daysRemaining: null,
+  },
+  {
+    id: "ct-4",
+    employeeId: "emp-004",
+    employeeName: "Emily Davis",
+    employeeNumber: "EMP-004",
+    type: "PROBATION",
+    startDate: "Jan 10, 2024",
+    endDate: "Jul 10, 2024",
+    status: "ACTIVE",
+    daysRemaining: 45,
+  },
+]

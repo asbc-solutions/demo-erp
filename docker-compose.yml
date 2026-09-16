@@ -1,0 +1,25 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_ERP_API_URL: ${NEXT_PUBLIC_ERP_API_URL}
+    container_name: erp-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXT_PUBLIC_ERP_API_URL=${NEXT_PUBLIC_ERP_API_URL}
+      - TRACKING_DATA_DIR=/app/data
+    volumes:
+      # Marketing-tracking store. Without this, tracking.json is lost on redeploy.
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
