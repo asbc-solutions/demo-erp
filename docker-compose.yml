@@ -5,10 +5,10 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_ERP_API_URL: ${NEXT_PUBLIC_ERP_API_URL}
-    container_name: erp-app
+    container_name: erp-demo-app
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3001:3000"
+      - "127.0.0.1:3003:3000"
     environment:
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
