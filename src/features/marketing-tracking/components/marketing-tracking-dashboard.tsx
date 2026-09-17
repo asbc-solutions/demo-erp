@@ -83,9 +83,12 @@ export function MarketingTrackingDashboard() {
         if (!stat || stat.views === 0) return false
       }
       if (!term) return true
-      return [visitor.name, visitor.email, visitor.company].some((value) =>
-        value?.toLowerCase().includes(term),
-      )
+      return [
+        visitor.name,
+        visitor.email,
+        visitor.phone,
+        visitor.company,
+      ].some((value) => value?.toLowerCase().includes(term))
     })
   }, [data, range, moduleFilter, search])
 
@@ -259,7 +262,7 @@ export function MarketingTrackingDashboard() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search name, e-mail or company"
+                  placeholder="Search name, e-mail, phone or company"
                   className="pl-9"
                   aria-label="Search visitors"
                 />

@@ -73,6 +73,7 @@ export function toCsv(visitors: VisitorRecord[], moduleIds: readonly ModuleId[])
   const header = [
     "name",
     "email",
+    "phone",
     "company",
     "industry",
     "stage",
@@ -86,8 +87,16 @@ export function toCsv(visitors: VisitorRecord[], moduleIds: readonly ModuleId[])
     ...moduleIds.map((id) => `${id}_views`),
   ]
 
+  /**
+   * Excel reads a cell opening with =, +, - or @ as a formula. That silently
+   * mangles E.164 numbers — "+201011274604" renders as 2.01011E+11 — and, since
+   * name and company are typed by the visitor, it is also how a spreadsheet
+   * export becomes a script that runs when the sales team opens it. A leading
+   * apostrophe pins the cell to text; Excel consumes it and shows the value.
+   */
   const escape = (value: unknown) => {
-    const text = value === null || value === undefined ? "" : String(value)
+    const raw = value === null || value === undefined ? "" : String(value)
+    const text = /^[=+@-]/.test(raw) ? `'${raw}` : raw
     return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
   }
 
@@ -95,6 +104,7 @@ export function toCsv(visitors: VisitorRecord[], moduleIds: readonly ModuleId[])
     [
       visitor.name,
       visitor.email,
+      visitor.phone,
       visitor.company,
       visitor.onboarding?.industry,
       visitor.onboarding?.stage,

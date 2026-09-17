@@ -108,6 +108,7 @@ export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
               <TableHeader>
                 <TableRow className="border-stroke-default hover:bg-transparent">
                   <TableHead>Visitor</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Profile</TableHead>
                   <TableHead>Top module</TableHead>
@@ -146,10 +147,17 @@ export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
                               {displayName(visitor)}
                             </span>
                             <span className="text-content-quaternary truncate text-[11px] leading-[15.4px]">
-                              {visitor.email ?? visitor.phone ?? "anonymous"}
+                              {visitor.email ?? "anonymous"}
                             </span>
                           </div>
                         </div>
+                      </TableCell>
+
+                      <TableCell
+                        dir="ltr"
+                        className="text-content-tertiary font-mono text-xs leading-4 whitespace-nowrap"
+                      >
+                        {visitor.phone ?? "—"}
                       </TableCell>
 
                       <TableCell className="text-content-tertiary text-xs leading-4">
