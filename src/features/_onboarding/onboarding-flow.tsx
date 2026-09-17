@@ -13,13 +13,22 @@ import { IndustryStep } from "./steps/industry-step";
 import { TeamSizeStep } from "./steps/team-size-step";
 import { ConnectToolsStep } from "./steps/connect-tools-step";
 import { LoginStep } from "./steps/login-step";
+import { SignupStep } from "./steps/signup-step";
 
 const ONBOARDED_FLAG = "erp_onboarded";
 
-type Phase = "company" | "industry" | "team-size" | "connect-tools" | "login";
+type Phase =
+  | "company"
+  | "industry"
+  | "team-size"
+  | "connect-tools"
+  | "signup"
+  | "login";
 
 type OnboardingState = {
   companyName: string;
+  /** E.164. Required on the first step, and the earliest identity we get. */
+  phone: string;
   industry?: IndustryId;
   stage?: StageId;
   teamSize?: TeamSizeId;
@@ -33,6 +42,7 @@ const STEP_INDEX: Record<Phase, number> = {
   industry: 2,
   "team-size": 3,
   "connect-tools": 4,
+  signup: 0,
   login: 0,
 };
 
@@ -41,6 +51,7 @@ const BLOB_ROTATION: Record<Phase, number> = {
   industry: 108.2,
   "team-size": 125.7,
   "connect-tools": -58.6,
+  signup: -58.6,
   login: -58.6,
 };
 
@@ -82,6 +93,7 @@ export function OnboardingFlow() {
   const phase = selectedPhase ?? (hasOnboardedFlag ? "login" : "company");
   const [state, setState] = React.useState<OnboardingState>({
     companyName: "",
+    phone: "",
     tools: [],
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -94,6 +106,7 @@ export function OnboardingFlow() {
       at: now(),
       answers: {
         companyName: s.companyName || null,
+        phone: s.phone || null,
         industry: s.industry ?? null,
         stage: s.stage ?? null,
         teamSize: s.teamSize ?? null,
@@ -116,20 +129,24 @@ export function OnboardingFlow() {
 
   return (
     <OnboardingShell blobRotation={BLOB_ROTATION[phase]}>
-      {phase !== "login" && (
+      {phase !== "login" && phase !== "signup" && (
         <OnboardingProgress current={STEP_INDEX[phase]} total={TOTAL_STEPS} />
       )}
 
       {phase === "company" && (
         <CompanyStep
           defaultValue={state.companyName}
-          onSubmit={(companyName) => {
-            setState((prev) => ({ ...prev, companyName }));
+          defaultPhone={state.phone}
+          onSubmit={({ companyName, phone }) => {
+            setState((prev) => ({ ...prev, companyName, phone }));
+            // The phone reaches the server before this visitor has any account,
+            // which is what lets a returning browser be matched to the record it
+            // already has instead of starting a second one.
             track({
               type: "onboarding-step",
               at: now(),
               step: "company",
-              answers: { companyName },
+              answers: { companyName, phone },
             });
             setPhase("industry");
           }}
@@ -183,8 +200,16 @@ export function OnboardingFlow() {
               step: "connect-tools",
               answers: { tools },
             });
-            setPhase("login");
+            setPhase("signup");
           }}
+        />
+      )}
+
+      {phase === "signup" && (
+        <SignupStep
+          isSubmitting={isSubmitting}
+          onSignIn={() => setPhase("login")}
+          onSuccess={() => finishOnboarding(state)}
         />
       )}
 

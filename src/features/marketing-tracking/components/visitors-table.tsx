@@ -146,7 +146,7 @@ export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
                               {displayName(visitor)}
                             </span>
                             <span className="text-content-quaternary truncate text-[11px] leading-[15.4px]">
-                              {visitor.email ?? "anonymous"}
+                              {visitor.email ?? visitor.phone ?? "anonymous"}
                             </span>
                           </div>
                         </div>

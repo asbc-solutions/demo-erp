@@ -29,6 +29,8 @@ export const ONBOARDING_STEP_LABELS: Record<OnboardingStepId, string> = {
 
 export type OnboardingAnswers = {
   companyName?: string | null
+  /** E.164, collected on the company step. */
+  phone?: string | null
   industry?: string | null
   stage?: string | null
   teamSize?: string | null
@@ -84,6 +86,7 @@ export type VisitorRecord = {
   visitorId: string
   name: string | null
   email: string | null
+  phone: string | null
   company: string | null
   onboarding: VisitorOnboarding | null
   firstSeenAt: string
@@ -94,9 +97,21 @@ export type VisitorRecord = {
   modules: Partial<Record<ModuleId, ModuleStat>>
 }
 
+/**
+ * Bumped to 2 when visitors started being matched on phone/email instead of on
+ * the localStorage id alone. `readStore` migrates anything older on first read.
+ */
+export const TRACKING_STORE_VERSION = 2
+
 export type TrackingStoreShape = {
-  version: 1
+  version: number
   visitors: Record<string, VisitorRecord>
+  /**
+   * Superseded visitor ids pointing at the record they were merged into. A
+   * browser that already has a dead id in localStorage keeps sending it, so
+   * every lookup resolves through here before touching `visitors`.
+   */
+  aliases: Record<string, string>
 }
 
 /* -------------------------------------------------------------------------- */

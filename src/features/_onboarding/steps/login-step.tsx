@@ -3,8 +3,11 @@
 import * as React from "react";
 import { signIn } from "next-auth/react";
 
+import { PasswordInput } from "@/src/shared/components/ui/password-input";
+
 import { OnboardingButton } from "../onboarding-button";
 import { OnboardingLogo } from "../onboarding-logo";
+import { OnboardingField, onboardingInputClass } from "../onboarding-field";
 
 type LoginStepProps = Readonly<{
   onSuccess: () => Promise<void> | void;
@@ -61,28 +64,32 @@ export function LoginStep({ onSuccess, isSubmitting = false }: LoginStepProps) {
         </p>
       </div>
 
-      <div className="border-stroke-default bg-surface-white w-full rounded-2xl border shadow-sm">
-        <FieldRow
-          id="onboarding-email"
-          label="E-mail"
-          type="email"
-          autoComplete="email"
-          placeholder="you@company.com"
-          value={email}
-          onChange={setEmail}
-        />
-        <FieldRow
-          id="onboarding-password"
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="••••••••"
-          value={password}
-          onChange={setPassword}
-        />
+      <div className="border-stroke-default bg-surface-white flex w-full flex-col gap-5 rounded-2xl border p-6 shadow-sm">
+        <OnboardingField id="onboarding-email" label="E-mail">
+          <input
+            id="onboarding-email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className={onboardingInputClass}
+          />
+        </OnboardingField>
+
+        <OnboardingField id="onboarding-password" label="Password">
+          <PasswordInput
+            id="onboarding-password"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className={`${onboardingInputClass} pr-10`}
+          />
+        </OnboardingField>
       </div>
 
-      {error && <p className="w-full text-center text-sm text-red-500">{error}</p>}
+      {error && <p role="alert" className="text-brand-danger w-full text-center text-sm">{error}</p>}
 
       <OnboardingButton
         type="submit"
@@ -97,42 +104,5 @@ export function LoginStep({ onSuccess, isSubmitting = false }: LoginStepProps) {
             : "Continue"}
       </OnboardingButton>
     </form>
-  );
-}
-
-type FieldRowProps = Readonly<{
-  id: string;
-  label: string;
-  type: React.HTMLInputTypeAttribute;
-  autoComplete: string;
-  placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-}>;
-
-function FieldRow({
-  id,
-  label,
-  type,
-  autoComplete,
-  placeholder,
-  value,
-  onChange,
-}: FieldRowProps) {
-  return (
-    <div className="flex flex-col gap-2 p-6">
-      <label htmlFor={id} className="text-content-tertiary text-xs leading-4.5 font-medium">
-        {label}
-      </label>
-      <input
-        id={id}
-        type={type}
-        autoComplete={autoComplete}
-        placeholder={placeholder}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="border-stroke-default bg-muted text-content-primary placeholder:text-content-quaternary h-12 w-full rounded-lg border px-3 text-base leading-6 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline-none transition-[border-color,box-shadow] focus-visible:border-brand-primary focus-visible:ring-3 focus-visible:ring-brand-primary/15 dark:shadow-none"
-      />
-    </div>
   );
 }

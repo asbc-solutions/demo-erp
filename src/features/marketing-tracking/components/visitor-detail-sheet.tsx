@@ -70,7 +70,7 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
                 {displayName(visitor)}
               </SheetTitle>
               <SheetDescription className="truncate text-xs leading-4">
-                {visitor.email ?? "Not signed in"}
+                {visitor.email ?? visitor.phone ?? "Not signed in"}
               </SheetDescription>
             </div>
           </div>
@@ -79,6 +79,7 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
         <div className="flex flex-col gap-7 px-4 pb-8">
           <section className="grid grid-cols-2 gap-4">
             <Field label="Company" value={visitor.company ?? "—"} />
+            <Field label="Phone" value={visitor.phone ?? "—"} />
             <Field
               label="Industry"
               value={

@@ -11,6 +11,11 @@ const MAX_EVENTS_PER_BATCH = 100
  * Ingest a batch of visitor events. Reached both by `fetch` and, on page hide,
  * by `navigator.sendBeacon` — which posts `text/plain`, so the body is parsed
  * manually rather than via `request.json()`.
+ *
+ * The response carries the id the events were filed under. It differs from the
+ * one that was posted when the store recognised this browser as someone already
+ * on file, and the client stores it so the next visit lands directly on that
+ * record.
  */
 export async function POST(request: Request) {
   let payload: TrackingPayload
@@ -26,6 +31,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "invalid payload" }, { status: 400 })
   }
 
-  await recordEvents(visitorId, events.slice(0, MAX_EVENTS_PER_BATCH))
-  return NextResponse.json({ ok: true })
+  const canonicalId = await recordEvents(
+    visitorId,
+    events.slice(0, MAX_EVENTS_PER_BATCH),
+  )
+  return NextResponse.json({ ok: true, visitorId: canonicalId })
 }

@@ -2,26 +2,46 @@
 
 import * as React from "react";
 
+import { PhoneInput } from "@/src/shared/components/ui/phone-input";
+import { isValidE164 } from "@/src/shared/components/ui/countries";
+
 import { OnboardingButton } from "../onboarding-button";
 import { OnboardingLogo } from "../onboarding-logo";
+import { OnboardingField, onboardingInputClass } from "../onboarding-field";
+
+export type CompanyStepValues = { companyName: string; phone: string };
 
 type CompanyStepProps = Readonly<{
   defaultValue?: string;
-  onSubmit: (companyName: string) => void;
+  defaultPhone?: string;
+  onSubmit: (values: CompanyStepValues) => void;
 }>;
 
-export function CompanyStep({ defaultValue = "", onSubmit }: CompanyStepProps) {
+export function CompanyStep({
+  defaultValue = "",
+  defaultPhone = "",
+  onSubmit,
+}: CompanyStepProps) {
   const [name, setName] = React.useState(defaultValue);
-  const isValid = name.trim().length > 0;
+  const [phone, setPhone] = React.useState(defaultPhone);
+  const [phoneTouched, setPhoneTouched] = React.useState(false);
+
+  const isPhoneValid = isValidE164(phone);
+  const isValid = name.trim().length > 0 && isPhoneValid;
+  // Only nag once they have moved on from the field or tried to submit.
+  const phoneError =
+    phoneTouched && !isPhoneValid ? "Enter a valid phone number." : undefined;
 
   return (
     <form
       className="flex flex-col items-center gap-3"
       onSubmit={(e) => {
         e.preventDefault();
+        setPhoneTouched(true);
         if (!isValid) return;
-        onSubmit(name.trim());
+        onSubmit({ companyName: name.trim(), phone });
       }}
+      noValidate
     >
       <OnboardingLogo />
 
@@ -36,22 +56,36 @@ export function CompanyStep({ defaultValue = "", onSubmit }: CompanyStepProps) {
         </p>
       </div>
 
-      <div className="border-stroke-default bg-surface-white w-full rounded-2xl border p-6 shadow-sm">
-        <label
-          htmlFor="onboarding-company"
-          className="text-content-tertiary text-xs leading-[18px] font-medium"
+      <div className="border-stroke-default bg-surface-white flex w-full flex-col gap-5 rounded-2xl border p-6 shadow-sm">
+        <OnboardingField id="onboarding-company" label="What's your company name?">
+          <input
+            id="onboarding-company"
+            autoComplete="organization"
+            placeholder="Enter your company name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            className={onboardingInputClass}
+          />
+        </OnboardingField>
+
+        <OnboardingField
+          id="onboarding-phone"
+          label="What's your phone number?"
+          error={phoneError}
         >
-          What&apos;s your company name?
-        </label>
-        <input
-          id="onboarding-company"
-          autoComplete="organization"
-          placeholder="Enter your company name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          autoFocus
-          className="border-stroke-default bg-muted text-content-primary placeholder:text-content-quaternary mt-2 h-12 w-full rounded-lg border px-3 text-base leading-6 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] outline-none transition-[border-color,box-shadow] focus-visible:border-brand-primary focus-visible:ring-3 focus-visible:ring-brand-primary/15 dark:shadow-none"
-        />
+          <PhoneInput
+            id="onboarding-phone"
+            name="phone"
+            value={phone}
+            required
+            invalid={Boolean(phoneError)}
+            aria-describedby={phoneError ? "onboarding-phone-error" : undefined}
+            onValueChange={(next) => setPhone(next)}
+            onBlur={() => setPhoneTouched(true)}
+            className="bg-muted h-12 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] dark:shadow-none"
+          />
+        </OnboardingField>
       </div>
 
       <OnboardingButton

@@ -43,6 +43,18 @@ export function getVisitorId(): string {
   return id
 }
 
+/**
+ * The server matches visitors on phone and email, so a browser whose id was
+ * minted after a storage wipe gets told which record it actually belongs to.
+ * Adopting that id keeps the next visit pointed at the same person instead of
+ * leaning on the server's alias table forever.
+ */
+function adoptVisitorId(canonicalId: unknown): void {
+  if (typeof canonicalId !== "string" || !canonicalId) return
+  if (canonicalId === safeGet(window.localStorage, VISITOR_KEY)) return
+  safeSet(window.localStorage, VISITOR_KEY, canonicalId)
+}
+
 function buildPayload(events: TrackingEvent[]): string {
   const payload: TrackingPayload = { visitorId: getVisitorId(), events }
   return JSON.stringify(payload)
@@ -51,6 +63,9 @@ function buildPayload(events: TrackingEvent[]): string {
 /**
  * `useBeacon` is set on page hide, where `fetch` is routinely cancelled by the
  * browser. `sendBeacon` posts as text/plain, which the route handler accounts for.
+ *
+ * A beacon cannot read a response, so the canonical id is only picked up on the
+ * fetch path — the next ordinary flush corrects the id either way.
  */
 function send(events: TrackingEvent[], useBeacon: boolean): void {
   if (events.length === 0) return
@@ -66,9 +81,12 @@ function send(events: TrackingEvent[], useBeacon: boolean): void {
     headers: { "Content-Type": "application/json" },
     body,
     keepalive: true,
-  }).catch(() => {
-    // Tracking must never surface an error to the visitor.
   })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((result) => adoptVisitorId(result?.visitorId))
+    .catch(() => {
+      // Tracking must never surface an error to the visitor.
+    })
 }
 
 export function flush(useBeacon = false): void {
