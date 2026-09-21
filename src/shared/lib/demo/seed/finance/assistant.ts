@@ -52,16 +52,47 @@ export function topicForQuestion(question: string): AssistantTopic {
   return KEYWORDS.find(([, pattern]) => pattern.test(question))?.[0] ?? "unknown"
 }
 
-const CUSTOMER_NAMES: Record<string, string> = {
-  "110301": "Nile Contracting Co.",
-  "110302": "Delta Cement Company",
-  "110303": "Red Sea Resorts Group",
-  "110304": "Gulf Engineering Trading",
-  "110305": "Suez Canal Logistics",
-  "110306": "Alexandria Food Industries",
+export type AgingExposure = {
+  overdue_base: number
+  overdue_count: number
+  customers: { id: string; name: string; overdue_base: number; oldest_days_late: number }[]
 }
 
-export const ASSISTANT_ANSWERS: Record<AssistantTopic, Record<string, unknown>> = {
+/** Aging exposure is computed from the live receivables, so it moves with receipts and write-offs. */
+export function buildAgingAnswer(exposure: AgingExposure): Record<string, unknown> {
+  const top = [...exposure.customers]
+    .filter((customer) => customer.overdue_base > 0)
+    .sort((a, b) => b.overdue_base - a.overdue_base)
+    .slice(0, 5)
+  return {
+    headline: `EGP ${money(exposure.overdue_base)} of receivables is overdue across ${exposure.overdue_count} invoices.`,
+    matches: "Money in / Collections",
+    table: {
+      columns: [
+        { id: "customer", label: "Customer" },
+        { id: "amount", label: "Overdue (EGP)", align: "end" },
+        { id: "oldest", label: "Oldest (days late)", align: "end" },
+      ],
+      rows: top.map((customer) => ({
+        id: customer.id,
+        customer: customer.name,
+        amount: money(customer.overdue_base),
+        oldest: customer.oldest_days_late,
+      })),
+      footnote: `Top ${top.length} customers · EGP ${money(top.reduce((sum, customer) => sum + customer.overdue_base, 0))} of EGP ${money(exposure.overdue_base)} overdue`,
+    },
+    links: [
+      { label: "Money in / Collections", href: "/finance/ar/collections" },
+      { label: "Money in / AR overview", href: "/finance/ar" },
+    ],
+    proposal: null,
+    grounding: [{ label: "Money in / AR overview", detail: `${exposure.overdue_count} invoices` }],
+    not_read: NOT_READ,
+    sources: 1,
+  }
+}
+
+export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging">, Record<string, unknown>> = {
   watchlist: {
     headline: `${FIN_ANCHORS.banking.treasuriesUnreconciled} treasuries are blocking the March close — ${FIN_ANCHORS.banking.unmatchedLines} unmatched lines in total.`,
     matches: "Banking / Bank reconciliation",
@@ -148,7 +179,7 @@ export const ASSISTANT_ANSWERS: Record<AssistantTopic, Record<string, unknown>> 
         { id: "side", label: "Side" },
       ],
       rows: [
-        { id: "l1", line: "Invoice total", account: "1103 · Trade receivables", side: "Debit" },
+        { id: "l1", line: "Invoice total", account: "110301 · Trade receivables", side: "Debit" },
         { id: "l2", line: "Net amount", account: "4101 · Sales revenue", side: "Credit" },
         { id: "l3", line: "VAT 14%", account: "2102 · VAT output", side: "Credit" },
       ],
@@ -242,41 +273,6 @@ export const ASSISTANT_ANSWERS: Record<AssistantTopic, Record<string, unknown>> 
     ],
     not_read: NOT_READ,
     sources: 3,
-  },
-  aging: {
-    headline: `EGP ${money(FIN_ANCHORS.receivables.overdue)} of receivables is overdue; five customers hold most of it.`,
-    matches: "Money in / Collections",
-    table: {
-      columns: [
-        { id: "customer", label: "Customer" },
-        { id: "amount", label: "Overdue (EGP)", align: "end" },
-        { id: "oldest", label: "Oldest" },
-      ],
-      rows: FIN_ANCHORS.receivables.overdueByCustomer.slice(0, 5).map((entry) => ({
-        id: entry.contactId,
-        customer: CUSTOMER_NAMES[entry.contactId],
-        amount: money(entry.amount),
-        oldest: new Date(`${entry.oldest}T00:00:00Z`).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          timeZone: "UTC",
-        }),
-      })),
-      footnote: `Top 5 of ${FIN_ANCHORS.receivables.overdueInvoices} overdue invoices · EGP ${money(
-        FIN_ANCHORS.receivables.overdueByCustomer.slice(0, 5).reduce((sum, entry) => sum + entry.amount, 0),
-      )}`,
-    },
-    links: [
-      { label: "Money in / Collections", href: "/finance/ar/collections" },
-      { label: "Money in / AR overview", href: "/finance/ar" },
-    ],
-    proposal: null,
-    grounding: [
-      { label: "Money in / AR overview", detail: `${FIN_ANCHORS.receivables.overdueInvoices} invoices` },
-    ],
-    not_read: NOT_READ,
-    sources: 1,
   },
   group: {
     headline: "I can't give a group position — consolidation isn't in this prototype.",

@@ -16,15 +16,6 @@ export const FIN_ANCHORS = {
     outstanding: 6_318_400,
     overdue: 5_843_638.88,
     overdueInvoices: 33,
-    /** Top of the overdue book; the rest (100,000.00) is spread across small accounts. */
-    overdueByCustomer: [
-      { contactId: "110303", amount: 1_946_200, oldest: "2025-12-14" },
-      { contactId: "110302", amount: 1_412_880, oldest: "2026-01-09" },
-      { contactId: "110305", amount: 1_108_450, oldest: "2026-01-21" },
-      { contactId: "110306", amount: 694_320, oldest: "2026-02-02" },
-      { contactId: "110304", amount: 481_182.83, oldest: "2026-02-10" },
-      { contactId: "110301", amount: 100_606.05, oldest: "2026-01-20" },
-    ],
   },
   payables: {
     outstanding: 3_914_200,

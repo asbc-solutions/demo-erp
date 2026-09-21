@@ -7,16 +7,24 @@ import { formatAmount, formatPercent } from "../../lib/utils/money"
 
 export type AgingBucket = { id: string; label: string; amount: number }
 
-/** Current → 90+ in the series order, oldest last. */
-const BUCKET_ACCENTS: readonly KpiAccent[] = ["indigo", "teal", "amber", "blue", "emerald"]
+/**
+ * `series` colours buckets as a categorical sequence (style guide);
+ * `severity` colours them by how late they are (receivables, payables).
+ */
+const BUCKET_ACCENTS: Record<"series" | "severity", readonly KpiAccent[]> = {
+  series: ["indigo", "teal", "amber", "blue", "emerald"],
+  severity: ["success", "warning", "warning", "warning", "danger"],
+}
 
 type AgingTilesProps = React.ComponentProps<"div"> & {
   buckets: AgingBucket[]
+  accents?: "series" | "severity"
 }
 
 /** Aging buckets as tiles: amount per bucket and its share of the total. */
-function AgingTiles({ className, buckets, ...props }: AgingTilesProps) {
+function AgingTiles({ className, buckets, accents = "series", ...props }: AgingTilesProps) {
   const total = buckets.reduce((sum, bucket) => sum + bucket.amount, 0)
+  const palette = BUCKET_ACCENTS[accents]
   return (
     <div
       data-slot="aging-tiles"
@@ -27,7 +35,7 @@ function AgingTiles({ className, buckets, ...props }: AgingTilesProps) {
         <KpiCard
           key={bucket.id}
           layout="bar"
-          accent={BUCKET_ACCENTS[index % BUCKET_ACCENTS.length]}
+          accent={palette[index % palette.length]}
           label={bucket.label}
           value={formatAmount(bucket.amount)}
           caption={total > 0 ? formatPercent((bucket.amount / total) * 100) : "—"}

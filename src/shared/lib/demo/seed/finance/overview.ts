@@ -43,8 +43,11 @@ export const FIN_ACTIVITY_ROWS: Row[] = [
 ]
 
 /** "Needs your attention" on Finance home, worst first. */
-export function buildAttentionItems(): Row[] {
-  return [
+/** Live counts the attention list reads from the section collections. */
+export type AttentionCounts = { unallocatedReceipts: number }
+
+export function buildAttentionItems(live: AttentionCounts): Row[] {
+  const items: Row[] = [
     {
       id: "att-unmatched",
       label: `${FIN_ANCHORS.banking.cibUnmatchedLines} unmatched bank lines on CIB current account`,
@@ -75,8 +78,8 @@ export function buildAttentionItems(): Row[] {
     },
     {
       id: "att-receipts",
-      label: `${FIN_ANCHORS.receipts.unallocated} receipts unallocated`,
-      count: FIN_ANCHORS.receipts.unallocated,
+      label: `${live.unallocatedReceipts} receipts unallocated`,
+      count: live.unallocatedReceipts,
       tone: "warning",
       href: "/finance/ar/allocation",
     },
@@ -88,10 +91,11 @@ export function buildAttentionItems(): Row[] {
       href: "/finance/journals",
     },
   ]
+  return items.filter((item) => Number(item.count) > 0)
 }
 
 /** On the go · Exceptions — anything the module thinks is wrong, worst first. */
-export function buildExceptionRows(): Row[] {
+export function buildExceptionRows(live: { overdueInvoices: number }): Row[] {
   return [
     {
       id: "exc-seal",
@@ -100,7 +104,7 @@ export function buildExceptionRows(): Row[] {
     },
     {
       id: "exc-overdue",
-      label: `${FIN_ANCHORS.receivables.overdueInvoices} invoices are overdue`,
+      label: `${live.overdueInvoices} invoices are overdue`,
       href: "/finance/ar/collections",
     },
     {

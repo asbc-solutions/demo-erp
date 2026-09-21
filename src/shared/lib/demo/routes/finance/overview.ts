@@ -8,6 +8,7 @@ import {
   buildAttentionItems,
   buildExceptionRows,
 } from "../../seed/finance/overview"
+import { arTotals } from "./ar-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { listResponse } from "./helpers"
 
@@ -43,6 +44,10 @@ function closeProgress() {
 export const financeOverviewRoutes: DemoRoute[] = [
   route("get", "/finance/overview/home", () => {
     const treasuries = treasuriesInBase()
+    const receivables = arTotals()
+    const unallocatedReceipts = collection(FIN_COLLECTIONS.receipts).filter(
+      (receipt) => receipt.allocation === "unallocated",
+    ).length
     return {
       data: {
         cash: {
@@ -52,15 +57,15 @@ export const financeOverviewRoutes: DemoRoute[] = [
           updated_at: FIN_ANCHORS.cash.updatedAt,
         },
         receivables: {
-          outstanding: FIN_ANCHORS.receivables.outstanding,
-          overdue: FIN_ANCHORS.receivables.overdue,
+          outstanding: receivables.total_base,
+          overdue: receivables.overdue_base,
         },
         payables: {
           outstanding: FIN_ANCHORS.payables.outstanding,
           due_this_week: FIN_ANCHORS.payables.dueThisWeek,
         },
         net_result: { period_label: "March", amount: FIN_ANCHORS.netResult.amount },
-        attention: buildAttentionItems(),
+        attention: buildAttentionItems({ unallocatedReceipts }),
         cash_weeks: FIN_CASH_WEEK_ROWS,
         close: closeProgress(),
         activity: FIN_ACTIVITY_ROWS,
@@ -95,7 +100,9 @@ export const financeOverviewRoutes: DemoRoute[] = [
     data: { period_label: "March 2026", checks: FIN_CLOSE_CHECK_ROWS },
   })),
 
-  route("get", "/finance/overview/exceptions", () => ({ data: buildExceptionRows() })),
+  route("get", "/finance/overview/exceptions", () => ({
+    data: buildExceptionRows({ overdueInvoices: arTotals().overdue_count }),
+  })),
 
   route("get", "/finance/bills", (req) => listResponse(collection(FIN_COLLECTIONS.bills), req.params)),
 

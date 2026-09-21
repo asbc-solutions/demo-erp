@@ -49,6 +49,18 @@ export type FinanceContact = {
   tax_reg_no: string | null
   currency: CurrencyCode
   terms_days: number
+  credit_limit?: number
+}
+
+export type FinanceTreasury = {
+  id: string
+  code: string
+  kind: "bank" | "cash"
+  name: string
+  account_code: string
+  currency: CurrencyCode
+  balance: number
+  unmatched_lines: number
 }
 
 export type AccountType = "asset" | "liability" | "equity" | "income" | "expense"

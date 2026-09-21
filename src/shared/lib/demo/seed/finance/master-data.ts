@@ -2,7 +2,7 @@ import type { Row } from "../../demo-db"
 
 /**
  * Finance master data shared by every section. Names and figures follow the
- * Figma design (EG-01, Nile Contracting Co. 110301, the six cash accounts …).
+ * Figma design (EG-01, the five customers, the six cash accounts …).
  */
 
 export const FIN_ENTITY_ROWS: Row[] = [
@@ -24,21 +24,24 @@ export const FIN_CURRENCY_ROWS: Row[] = [
  * banks 8,187,520.00 (EGP eq.) + treasuries 513,870.00.
  */
 export const FIN_TREASURY_ROWS: Row[] = [
-  { id: "trs-main-cairo", kind: "cash", name: "Main treasury — Cairo", account_code: "110101", currency: "EGP", balance: 486_320, unmatched_lines: 0 },
-  { id: "trs-petty-cairo", kind: "cash", name: "Petty cash — Cairo", account_code: "110102", currency: "EGP", balance: 18_450, unmatched_lines: 0 },
-  { id: "trs-petty-alex", kind: "cash", name: "Petty cash — Alexandria", account_code: "110103", currency: "EGP", balance: 9_100, unmatched_lines: 0 },
-  { id: "bnk-cib-0021", kind: "bank", name: "CIB — current account 0021", account_code: "110201", currency: "EGP", balance: 3_914_880, unmatched_lines: 18 },
-  { id: "bnk-bm-usd-4417", kind: "bank", name: "Banque Misr — USD 4417", account_code: "110202", currency: "USD", balance: 62_400, unmatched_lines: 3 },
-  { id: "bnk-qnb-payroll", kind: "bank", name: "QNB Alahli — payroll account", account_code: "110203", currency: "EGP", balance: 1_240_000, unmatched_lines: 0 },
+  { id: "trs-main-cairo", code: "T-01", kind: "cash", name: "Main treasury — Cairo", account_code: "110101", currency: "EGP", balance: 486_320, unmatched_lines: 0 },
+  { id: "trs-petty-cairo", code: "T-02", kind: "cash", name: "Petty cash — Cairo", account_code: "110102", currency: "EGP", balance: 18_450, unmatched_lines: 0 },
+  { id: "trs-petty-alex", code: "T-03", kind: "cash", name: "Petty cash — Alexandria", account_code: "110103", currency: "EGP", balance: 9_100, unmatched_lines: 0 },
+  { id: "bnk-cib-0021", code: "T-04", kind: "bank", name: "CIB — current account 0021", account_code: "110201", currency: "EGP", balance: 3_914_880, unmatched_lines: 18 },
+  { id: "bnk-bm-usd-4417", code: "T-05", kind: "bank", name: "Banque Misr — USD 4417", account_code: "110202", currency: "USD", balance: 62_400, unmatched_lines: 3 },
+  { id: "bnk-qnb-payroll", code: "T-06", kind: "bank", name: "QNB Alahli — payroll account", account_code: "110203", currency: "EGP", balance: 1_240_000, unmatched_lines: 0 },
 ]
 
+/** Receivables and advances control accounts every customer posts to. */
+export const AR_CONTROL_ACCOUNT = "110301"
+export const CUSTOMER_ADVANCES_ACCOUNT = "210103"
+
 export const FIN_CONTACT_ROWS: Row[] = [
-  { id: "110301", code: "110301", name: "Nile Contracting Co.", kind: "customer", tax_reg_no: "201-330-880", currency: "EGP", terms_days: 45 },
-  { id: "110302", code: "110302", name: "Delta Cement Company", kind: "customer", tax_reg_no: "204-118-552", currency: "EGP", terms_days: 30 },
-  { id: "110303", code: "110303", name: "Red Sea Resorts Group", kind: "customer", tax_reg_no: "311-902-417", currency: "EGP", terms_days: 60 },
-  { id: "110304", code: "110304", name: "Gulf Engineering Trading", kind: "customer", tax_reg_no: null, currency: "USD", terms_days: 30 },
-  { id: "110305", code: "110305", name: "Suez Canal Logistics", kind: "customer", tax_reg_no: "287-440-019", currency: "EGP", terms_days: 45 },
-  { id: "110306", code: "110306", name: "Alexandria Food Industries", kind: "customer", tax_reg_no: "215-660-873", currency: "EGP", terms_days: 30 },
+  { id: "C-0101", code: "C-0101", name: "Nile Contracting Co.", kind: "customer", tax_reg_no: "201-330-880", currency: "EGP", terms_days: 45, credit_limit: 2_000_000 },
+  { id: "C-0102", code: "C-0102", name: "Delta Industrial Group", kind: "customer", tax_reg_no: "204-118-552", currency: "EGP", terms_days: 30, credit_limit: 1_500_000 },
+  { id: "C-0103", code: "C-0103", name: "Ahram Supplies", kind: "customer", tax_reg_no: "208-441-201", currency: "EGP", terms_days: 30, credit_limit: 800_000 },
+  { id: "C-0104", code: "C-0104", name: "Gulf Technical Est.", kind: "customer", tax_reg_no: "300-551-702-00003", currency: "SAR", terms_days: 60, credit_limit: 1_500_000 },
+  { id: "C-0105", code: "C-0105", name: "Mediterranean Trading LLC", kind: "customer", tax_reg_no: "US-4471", currency: "USD", terms_days: 45, credit_limit: 6_000_000 },
   { id: "210101", code: "210101", name: "El Sharq Steel Works", kind: "supplier", tax_reg_no: "100-245-331", currency: "EGP", terms_days: 30 },
   { id: "210102", code: "210102", name: "National Packaging", kind: "supplier", tax_reg_no: "100-872-640", currency: "EGP", terms_days: 45 },
   { id: "210103", code: "210103", name: "Siemens Egypt", kind: "supplier", tax_reg_no: "100-033-918", currency: "EGP", terms_days: 60 },
@@ -61,8 +64,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["110201", "CIB current account", "asset", "11", false],
   ["110202", "Banque Misr USD account", "asset", "11", false],
   ["110203", "QNB Alahli payroll account", "asset", "11", false],
-  ["1103", "Trade receivables", "asset", "11", false],
-  ["1104", "Customer advances receivable", "asset", "11", false],
+  ["110301", "Trade receivables — customers", "asset", "11", false],
   ["1105", "VAT input", "asset", "11", false],
   ["12", "Fixed assets", "asset", "1", true],
   ["1201", "Machinery and equipment", "asset", "12", false],
@@ -72,6 +74,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["2101", "Trade payables", "liability", "21", false],
   ["2102", "VAT output", "liability", "21", false],
   ["2103", "Withholding tax payable", "liability", "21", false],
+  ["210103", "Customer advances", "liability", "21", false],
   ["2199", "Suspense account", "liability", "21", false],
   ["3", "Equity", "equity", null, true],
   ["3101", "Share capital", "equity", "3", false],

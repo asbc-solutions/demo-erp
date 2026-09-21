@@ -4,13 +4,26 @@ import {
   ASSISTANT_ANSWERS,
   ASSISTANT_DATA_GROUPS,
   TOPIC_GROUP,
+  buildAgingAnswer,
   buildBriefing,
   limitedAnswerFor,
   topicForQuestion,
+  type AssistantTopic,
 } from "../../seed/finance/assistant"
 import { FIN_NOW } from "../../seed/finance/calendar"
+import { arSummaries, arTotals } from "./ar-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { listResponse } from "./helpers"
+
+function answerFor(topic: AssistantTopic): Record<string, unknown> {
+  if (topic !== "aging") return ASSISTANT_ANSWERS[topic]
+  const totals = arTotals()
+  return buildAgingAnswer({
+    overdue_base: totals.overdue_base,
+    overdue_count: totals.overdue_count,
+    customers: arSummaries(),
+  })
+}
 
 type SettingsRow = Record<string, unknown> & { data_groups: Record<string, boolean> }
 
@@ -66,7 +79,7 @@ export const financeAssistantRoutes: DemoRoute[] = [
     const groupId = TOPIC_GROUP[topic]
     const group = ASSISTANT_DATA_GROUPS.find((entry) => entry.id === groupId)
     const enabled = !group || !group.available || settings().data_groups[group.id]
-    const body = enabled ? ASSISTANT_ANSWERS[topic] : limitedAnswerFor(group.label)
+    const body = enabled ? answerFor(topic) : limitedAnswerFor(group.label)
 
     createRow(FIN_COLLECTIONS.assistantHistory, {
       question,

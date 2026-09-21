@@ -7,6 +7,7 @@ import {
 import { FIN_BILL_ROWS } from "../../seed/finance/bills"
 import { buildFinancePeriods } from "../../seed/finance/calendar"
 import { FIN_CLOSE_TASK_ROWS } from "../../seed/finance/close"
+import { buildArDocuments, buildReceipts } from "../../seed/finance/receivables"
 import {
   FIN_ACCOUNT_ROWS,
   FIN_CONTACT_ROWS,
@@ -28,6 +29,8 @@ export const FIN_COLLECTIONS = {
   assistantDrafts: "finance/assistant-drafts",
   assistantHistory: "finance/assistant-history",
   assistantSettings: "finance/assistant-settings",
+  arDocuments: "finance/ar-documents",
+  receipts: "finance/receipts",
 } as const
 
 /** Seeds are copied so edits in one session never mutate the module-level fixtures. */
@@ -44,3 +47,5 @@ defineCollection(FIN_COLLECTIONS.closeTasks, copy(FIN_CLOSE_TASK_ROWS))
 defineCollection(FIN_COLLECTIONS.assistantDrafts, copy(ASSISTANT_DRAFT_ROWS))
 defineCollection(FIN_COLLECTIONS.assistantHistory, copy(ASSISTANT_HISTORY_ROWS))
 defineCollection(FIN_COLLECTIONS.assistantSettings, buildAssistantSettings)
+defineCollection(FIN_COLLECTIONS.arDocuments, buildArDocuments)
+defineCollection(FIN_COLLECTIONS.receipts, buildReceipts)

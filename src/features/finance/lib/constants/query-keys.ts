@@ -11,4 +11,8 @@ export const financeKeys = {
     navCounts: () => [...financeKeys.all, "shell", "nav-counts"] as const,
     search: (q: string) => [...financeKeys.all, "shell", "search", q] as const,
   },
+  masterData: {
+    contacts: (kind?: string) => [...financeKeys.all, "master-data", "contacts", kind ?? "all"] as const,
+    treasuries: () => [...financeKeys.all, "master-data", "treasuries"] as const,
+  },
 } as const

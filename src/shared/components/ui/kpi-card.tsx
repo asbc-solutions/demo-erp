@@ -5,7 +5,18 @@ import { TrendingDown, TrendingUp, Minus } from "lucide-react"
 import { cn } from "@/src/shared/lib/utils/utils"
 import { Card } from "./card"
 
-type KpiAccent = "indigo" | "emerald" | "amber" | "blue" | "red" | "violet" | "teal"
+type KpiAccent =
+  | "indigo"
+  | "emerald"
+  | "amber"
+  | "blue"
+  | "red"
+  | "violet"
+  | "teal"
+  /** Severity accents (AA status colours) for figures that carry a verdict, e.g. aging. */
+  | "success"
+  | "warning"
+  | "danger"
 type KpiTrendDirection = "up" | "down" | "neutral"
 
 const accentTileStyles: Record<KpiAccent, string> = {
@@ -17,6 +28,9 @@ const accentTileStyles: Record<KpiAccent, string> = {
   red: "bg-brand-danger/10 text-brand-danger",
   violet: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
   teal: "bg-series-2/10 text-series-2",
+  success: "bg-status-success-bg text-status-success-fg",
+  warning: "bg-status-warning-bg text-status-warning-fg",
+  danger: "bg-status-danger-bg text-status-danger-fg",
 }
 
 /** Top accent bar for `layout="bar"`, drawn from the categorical series. */
@@ -28,6 +42,9 @@ const accentBarStyles: Record<KpiAccent, string> = {
   emerald: "bg-series-5",
   violet: "bg-series-6",
   red: "bg-status-danger-fg",
+  success: "bg-status-success-fg",
+  warning: "bg-status-warning-fg",
+  danger: "bg-status-danger-fg",
 }
 
 const trendStyles: Record<KpiTrendDirection, string> = {
