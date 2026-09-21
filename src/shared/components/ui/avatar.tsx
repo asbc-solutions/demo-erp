@@ -23,6 +23,8 @@ const avatarVariants = cva(
         danger: "bg-brand-danger text-white",
         info: "bg-brand-info text-white",
         neutral: "bg-surface-hover text-content-secondary",
+        teal: "bg-series-2 text-white",
+        violet: "bg-series-6 text-white",
       },
     },
     defaultVariants: {
@@ -84,4 +86,26 @@ function Avatar({
   )
 }
 
-export { Avatar, avatarVariants, getInitials }
+type AvatarColor = NonNullable<VariantProps<typeof avatarVariants>["color"]>
+
+/** The six-step categorical series, in the design system's avatar order. */
+const AVATAR_SERIES: readonly AvatarColor[] = [
+  "primary",
+  "teal",
+  "warning",
+  "info",
+  "success",
+  "violet",
+]
+
+/** Stable colour for a person or record, so the same name always gets the same tone. */
+function avatarToneFor(seed: string): AvatarColor {
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0
+  }
+  return AVATAR_SERIES[Math.abs(hash) % AVATAR_SERIES.length]
+}
+
+export type { AvatarColor }
+export { Avatar, avatarVariants, avatarToneFor, getInitials }

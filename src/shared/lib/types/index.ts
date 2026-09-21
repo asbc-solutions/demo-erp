@@ -14,6 +14,8 @@ export type NavGroup = {
   id: string
   label: string
   items: NavChild[]
+  /** Shown on the group header when groups are collapsible, and in the icon rail. */
+  icon?: LucideIcon
 }
 
 export type NavItem = {
@@ -24,4 +26,6 @@ export type NavItem = {
   children?: NavChild[]
   /** Grouped children rendered as labeled sections in the submenu. */
   groups?: NavGroup[]
+  /** Render `groups` as collapsible sections; the one holding the active route opens itself. */
+  collapsibleGroups?: boolean
 }
