@@ -6,7 +6,8 @@ import type { Row } from "../../demo-db"
  * global `DEMO_TODAY` (used by HR, Sales, …) is deliberately left alone.
  */
 export const FIN_TODAY = "2026-03-31"
-export const FIN_NOW = "2026-03-31T09:14:00.000Z"
+/** The assistant's clock in the design ("Last computed 14:49"); cash was refreshed at 09:14. */
+export const FIN_NOW = "2026-03-31T14:49:00.000Z"
 export const FIN_OPEN_PERIOD = "2026-04"
 export const FIN_CLOSING_PERIOD = "2026-03"
 

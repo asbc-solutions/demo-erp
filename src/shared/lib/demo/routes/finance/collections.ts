@@ -1,5 +1,12 @@
-import { defineCollection } from "../../demo-db"
+import { defineCollection, type Row } from "../../demo-db"
+import {
+  ASSISTANT_DRAFT_ROWS,
+  ASSISTANT_HISTORY_ROWS,
+  buildAssistantSettings,
+} from "../../seed/finance/assistant"
+import { FIN_BILL_ROWS } from "../../seed/finance/bills"
 import { buildFinancePeriods } from "../../seed/finance/calendar"
+import { FIN_CLOSE_TASK_ROWS } from "../../seed/finance/close"
 import {
   FIN_ACCOUNT_ROWS,
   FIN_CONTACT_ROWS,
@@ -8,7 +15,7 @@ import {
   FIN_TREASURY_ROWS,
 } from "../../seed/finance/master-data"
 
-/** Collection names for finance master data; section files add their own. */
+/** Collection names for finance data; each section adds its own here. */
 export const FIN_COLLECTIONS = {
   entities: "finance/entities",
   periods: "finance/periods",
@@ -16,11 +23,24 @@ export const FIN_COLLECTIONS = {
   treasuries: "finance/treasuries",
   contacts: "finance/contacts",
   accounts: "finance/accounts",
+  bills: "finance/bills",
+  closeTasks: "finance/close-tasks",
+  assistantDrafts: "finance/assistant-drafts",
+  assistantHistory: "finance/assistant-history",
+  assistantSettings: "finance/assistant-settings",
 } as const
 
-defineCollection(FIN_COLLECTIONS.entities, () => FIN_ENTITY_ROWS.map((row) => ({ ...row })))
+/** Seeds are copied so edits in one session never mutate the module-level fixtures. */
+const copy = (rows: Row[]) => () => rows.map((row) => structuredClone(row))
+
+defineCollection(FIN_COLLECTIONS.entities, copy(FIN_ENTITY_ROWS))
 defineCollection(FIN_COLLECTIONS.periods, buildFinancePeriods)
-defineCollection(FIN_COLLECTIONS.currencies, () => FIN_CURRENCY_ROWS.map((row) => ({ ...row })))
-defineCollection(FIN_COLLECTIONS.treasuries, () => FIN_TREASURY_ROWS.map((row) => ({ ...row })))
-defineCollection(FIN_COLLECTIONS.contacts, () => FIN_CONTACT_ROWS.map((row) => ({ ...row })))
-defineCollection(FIN_COLLECTIONS.accounts, () => FIN_ACCOUNT_ROWS.map((row) => ({ ...row })))
+defineCollection(FIN_COLLECTIONS.currencies, copy(FIN_CURRENCY_ROWS))
+defineCollection(FIN_COLLECTIONS.treasuries, copy(FIN_TREASURY_ROWS))
+defineCollection(FIN_COLLECTIONS.contacts, copy(FIN_CONTACT_ROWS))
+defineCollection(FIN_COLLECTIONS.accounts, copy(FIN_ACCOUNT_ROWS))
+defineCollection(FIN_COLLECTIONS.bills, copy(FIN_BILL_ROWS))
+defineCollection(FIN_COLLECTIONS.closeTasks, copy(FIN_CLOSE_TASK_ROWS))
+defineCollection(FIN_COLLECTIONS.assistantDrafts, copy(ASSISTANT_DRAFT_ROWS))
+defineCollection(FIN_COLLECTIONS.assistantHistory, copy(ASSISTANT_HISTORY_ROWS))
+defineCollection(FIN_COLLECTIONS.assistantSettings, buildAssistantSettings)

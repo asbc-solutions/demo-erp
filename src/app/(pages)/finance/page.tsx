@@ -1,6 +1,5 @@
-import { FinancePlaceholderPage } from "@/src/features/finance/components/shell/finance-placeholder-page"
+import { FinanceHomePage } from "@/src/features/finance/overview/components/home/finance-home-page"
 
-/** 01.01 · Finance home — replaced by the real page in phase 1. */
-const FinancePage = () => <FinancePlaceholderPage />
+const FinancePage = () => <FinanceHomePage />
 
 export default FinancePage

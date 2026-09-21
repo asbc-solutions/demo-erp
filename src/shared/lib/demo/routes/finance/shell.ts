@@ -12,7 +12,9 @@ const SEARCH_LIMIT = 5
 function navCounts(): Record<string, number> {
   return {
     "fin-bank-reconciliation": FIN_ANCHORS.banking.cibUnmatchedLines,
-    "fin-bill-approvals": FIN_ANCHORS.approvals.billsAwaitingApproval,
+    "fin-bill-approvals": collection(FIN_COLLECTIONS.bills).filter(
+      (bill) => bill.status === "pending_approval",
+    ).length,
     "fin-e-invoicing": FIN_ANCHORS.tax.rejectedEInvoices,
   }
 }

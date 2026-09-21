@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { cva, type VariantProps } from "class-variance-authority"
 import { usePathname } from "next/navigation"
 
 import {
@@ -121,17 +122,34 @@ function FinancePageBody({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+const headerFigureValueVariants = cva("text-content-primary tabular-nums", {
+  variants: {
+    size: {
+      default: "text-sm leading-5 font-semibold",
+      lg: "text-2xl leading-8 font-bold",
+    },
+  },
+  defaultVariants: { size: "default" },
+})
+
 /** Label-over-value figure placed beside a page title. */
 function HeaderFigure({
   className,
   label,
+  size,
   children,
   ...props
-}: React.ComponentProps<"div"> & { label: React.ReactNode }) {
+}: React.ComponentProps<"div"> &
+  VariantProps<typeof headerFigureValueVariants> & { label: React.ReactNode }) {
   return (
-    <div data-slot="header-figure" className={cn("flex flex-col", className)} {...props}>
+    <div
+      data-slot="header-figure"
+      data-size={size ?? "default"}
+      className={cn("flex flex-col", className)}
+      {...props}
+    >
       <span className="text-content-tertiary text-[13px] leading-5">{label}</span>
-      <span className="text-content-primary text-sm leading-5 font-semibold">{children}</span>
+      <span className={headerFigureValueVariants({ size })}>{children}</span>
     </div>
   )
 }
