@@ -46,6 +46,15 @@ export const FINANCE_EXPENSE_ROWS: Row[] = Array.from({ length: 66 }, (_, i) => 
 })
 
 const FINANCE_INVOICE_STATUSES = ["draft", "sent", "paid", "paid", "overdue", "cancelled"] as const
+const FINANCE_TAX_RATES = [0, 5, 10, 14] as const
+
+export const FINANCE_INVOICE_STATUS_LABEL: Record<string, string> = {
+  draft: "Draft",
+  sent: "Sent",
+  paid: "Paid",
+  overdue: "Overdue",
+  cancelled: "Cancelled",
+}
 
 export const FINANCE_INVOICE_ROWS: Row[] = Array.from({ length: 52 }, (_, i) => {
   const rand = makeRandom(130_000 + i)
@@ -53,26 +62,41 @@ export const FINANCE_INVOICE_ROWS: Row[] = Array.from({ length: 52 }, (_, i) => 
   const status = FINANCE_INVOICE_STATUSES[i % FINANCE_INVOICE_STATUSES.length]
   const paid = status === "paid" ? total : status === "sent" ? Math.round(total * 0.3) : 0
   const client = COMPANY_NAMES[i % COMPANY_NAMES.length]
+  const issueDate = isoDay(-intBetween(rand, 5, 200))
+  const dueDate = isoDay(intBetween(rand, -40, 50))
+  // Tax is backed out of the seeded total so subtotal + tax always reconciles to it.
+  const taxRate = FINANCE_TAX_RATES[i % FINANCE_TAX_RATES.length]
+  const subtotal = Math.round((total / (1 + taxRate / 100)) * 100) / 100
+  const today = isoDay(0)
   return {
     id: `finv-${i + 1}`,
     invoice_number: `INV-${3_000 + i}`,
     client_name: client,
     client_email: emailFor(client),
-    issue_date: isoDay(-intBetween(rand, 5, 200)),
-    due_date: isoDay(intBetween(rand, -40, 50)),
+    issue_date: issueDate,
+    due_date: dueDate,
+    tax_rate: taxRate,
+    subtotal_amount: subtotal,
+    tax_amount: Math.round((total - subtotal) * 100) / 100,
     total_amount: total,
     paid_amount: paid,
     outstanding_amount: total - paid,
     currency_code: "USD",
     status,
     persisted_status: status === "overdue" ? "sent" : status,
+    status_label: FINANCE_INVOICE_STATUS_LABEL[status],
+    notes: null,
+    sent_at: status === "draft" || status === "cancelled" ? null : `${issueDate}T09:00:00.000Z`,
+    paid_at: status === "paid" ? (dueDate < today ? dueDate : today) : null,
+    created_at: `${issueDate}T08:00:00.000Z`,
+    updated_at: `${issueDate}T09:00:00.000Z`,
     line_items: [
       {
         id: `fli-${i + 1}`,
         description: "Professional services",
         quantity: 1,
-        unit_price: total,
-        line_total: total,
+        unit_price: subtotal,
+        line_total: subtotal,
         sort_order: 1,
       },
     ],

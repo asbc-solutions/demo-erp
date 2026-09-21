@@ -35,7 +35,8 @@ const STATUS_META: Record<
 }
 
 export function InvoiceStatusBadge({ status }: Readonly<{ status: FinanceInvoiceStatus }>) {
-  const meta = STATUS_META[status]
+  // An unrecognised status renders neutrally rather than throwing and taking the whole table down.
+  const meta = STATUS_META[status] ?? { ...STATUS_META.cancelled, label: status }
   return (
     <div className="flex items-center gap-1.5">
       <span className={cn("size-1.5 rounded-full", meta.dot)} />
