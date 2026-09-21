@@ -34,6 +34,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/src/shared/components/ui/sidebar'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/src/shared/components/ui/accordion'
 import { useState } from 'react'
 import { NavChild, NavItem } from '../lib/types'
 import {
@@ -48,6 +54,7 @@ import { useCustomers } from '@/src/features/sales/lib/queries/customers'
 import { useQuotations } from '@/src/features/sales/lib/queries/quotations'
 import { useOrders } from '@/src/features/sales/lib/queries/orders'
 import { useInvoices } from '@/src/features/sales/lib/queries/invoices'
+import { useFinanceNavCounts } from '@/src/features/finance/lib/queries/shell'
 
 
 
@@ -151,6 +158,176 @@ function NavMenu({
   )
 }
 
+function NavCountBadge({ count, active }: Readonly<{ count: number; active: boolean }>) {
+  return (
+    <span
+      className={cn(
+        'ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold leading-none group-data-[collapsible=icon]:hidden',
+        active ? 'bg-brand-primary text-white' : 'bg-stroke-default text-content-tertiary',
+      )}
+    >
+      {count}
+    </span>
+  )
+}
+
+function ActiveItemBar() {
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute -left-1 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-brand-primary shadow-[0_0_8px_0_rgba(99,102,241,0.5)] group-data-[collapsible=icon]:hidden"
+    />
+  )
+}
+
+function SubMenuBackButton({
+  label,
+  collapsed,
+  onBack,
+}: Readonly<{ label: string; collapsed: boolean; onBack: () => void }>) {
+  return (
+    <button
+      type="button"
+      onClick={onBack}
+      className={cn(
+        'mb-2 flex h-10 w-full shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-content-primary',
+        'hover:bg-surface-hover/60',
+        collapsed && 'justify-center px-0',
+      )}
+    >
+      <ChevronLeft className="size-4 shrink-0 text-content-tertiary" strokeWidth={1.75} />
+      <span className="group-data-[collapsible=icon]:hidden">{label}</span>
+    </button>
+  )
+}
+
+/**
+ * Submenu whose groups collapse (Finance). The group holding the active route
+ * opens on navigation; other groups keep whatever the user toggled. Open state
+ * is keyed by pathname like the submenu selection below, so no effect is needed.
+ * In the icon rail each group becomes one icon that opens its first item.
+ */
+function CollapsibleNavSubMenu({
+  parent,
+  collapsed,
+  onBack,
+  badgeOverrides,
+}: Readonly<{
+  parent: NavItem
+  collapsed: boolean
+  onBack: () => void
+  badgeOverrides?: Record<string, number | undefined>
+}>) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const groups = parent.groups ?? []
+  const activeChildId = getActiveChildId(parent, pathname)
+  const activeGroupId =
+    groups.find((group) => group.items.some((item) => item.id === activeChildId))?.id ?? null
+
+  const [openGroups, setOpenGroups] = useState(() => ({
+    pathname,
+    ids: activeGroupId ? [activeGroupId] : [],
+  }))
+  const openIds =
+    openGroups.pathname === pathname || !activeGroupId || openGroups.ids.includes(activeGroupId)
+      ? openGroups.ids
+      : [...openGroups.ids, activeGroupId]
+
+  return (
+    <div className="flex h-full min-h-0 flex-col duration-200 animate-in fade-in slide-in-from-right-4">
+      <SubMenuBackButton label={parent.label} collapsed={collapsed} onBack={onBack} />
+
+      <div className="thin-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {collapsed ? (
+          <SidebarMenu className="items-center justify-center gap-1">
+            {groups.map((group) => {
+              const Icon = group.icon ?? parent.icon
+              const first = group.items.find((item) => item.href)
+              return (
+                <SidebarMenuItem key={group.id}>
+                  <SidebarMenuButton
+                    tooltip={group.label}
+                    isActive={group.id === activeGroupId}
+                    onClick={() => first?.href && router.push(first.href)}
+                    className={cn(
+                      'h-10 rounded-xl px-3 text-content-tertiary',
+                      'hover:bg-surface-hover/60 hover:text-content-primary',
+                      'data-active:bg-brand-primary/10 data-active:text-brand-primary',
+                    )}
+                  >
+                    <Icon strokeWidth={1.75} />
+                    <span>{group.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )
+            })}
+          </SidebarMenu>
+        ) : (
+          <Accordion
+            type="multiple"
+            value={openIds}
+            onValueChange={(ids) => setOpenGroups({ pathname, ids })}
+            className="flex flex-col gap-0.5"
+          >
+            {groups.map((group) => {
+              const Icon = group.icon
+              return (
+                <AccordionItem key={group.id} value={group.id} className="border-b-0">
+                  <AccordionTrigger
+                    hideChevron
+                    className={cn(
+                      'group/nav-group h-9 gap-2 rounded-lg px-2 py-0 text-[13px] font-medium text-content-secondary',
+                      'hover:bg-surface-hover/60 hover:text-content-primary',
+                      group.id === activeGroupId && 'text-content-primary',
+                    )}
+                  >
+                    <ChevronRight
+                      aria-hidden
+                      className="size-3.5 shrink-0 text-content-quaternary transition-transform duration-200 group-data-[state=open]/nav-group:rotate-90"
+                    />
+                    {Icon ? (
+                      <Icon aria-hidden className="size-4 shrink-0 text-content-tertiary" strokeWidth={1.75} />
+                    ) : null}
+                    <span className="flex-1 truncate">{group.label}</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-0.5 pb-1">
+                    <SidebarMenu className="gap-0.5">
+                      {group.items.map((child) => {
+                        const isActive = child.id === activeChildId
+                        const badge = badgeOverrides?.[child.id] ?? child.badge
+                        return (
+                          <SidebarMenuItem key={child.id}>
+                            <SidebarMenuButton
+                              isActive={isActive}
+                              onClick={() => child.href && router.push(child.href)}
+                              className={cn(
+                                'h-8 rounded-lg pr-2 pl-10 text-[13px] font-normal text-content-tertiary',
+                                'hover:bg-surface-hover/60 hover:text-content-primary',
+                                'data-active:bg-brand-primary/10 data-active:font-medium data-active:text-content-primary',
+                              )}
+                            >
+                              <span className="truncate">{child.label}</span>
+                              {badge !== undefined ? (
+                                <NavCountBadge count={badge} active={isActive} />
+                              ) : null}
+                            </SidebarMenuButton>
+                            {isActive ? <ActiveItemBar /> : null}
+                          </SidebarMenuItem>
+                        )
+                      })}
+                    </SidebarMenu>
+                  </AccordionContent>
+                </AccordionItem>
+              )
+            })}
+          </Accordion>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function NavSubMenu({
   parent,
   collapsed,
@@ -170,6 +347,17 @@ function NavSubMenu({
 
   const handleClick = (child: NavChild) => {
     if (child.href) router.push(child.href)
+  }
+
+  if (parent.collapsibleGroups) {
+    return (
+      <CollapsibleNavSubMenu
+        parent={parent}
+        collapsed={collapsed}
+        onBack={onBack}
+        badgeOverrides={badgeOverrides}
+      />
+    )
   }
 
   const renderChild = (child: NavChild) => {
@@ -195,43 +383,16 @@ function NavSubMenu({
             <span aria-hidden className="size-4 shrink-0" />
           )}
           <span>{child.label}</span>
-          {badge !== undefined ? (
-            <span
-              className={cn(
-                'ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold leading-none group-data-[collapsible=icon]:hidden',
-                isActive
-                  ? 'bg-brand-primary text-white'
-                  : 'bg-[#e5e7eb] text-content-tertiary',
-              )}
-            >
-              {badge}
-            </span>
-          ) : null}
+          {badge !== undefined ? <NavCountBadge count={badge} active={isActive} /> : null}
         </SidebarMenuButton>
-        {isActive ? (
-          <span
-            aria-hidden
-            className="pointer-events-none absolute -left-1 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-brand-primary shadow-[0_0_8px_0_rgba(99,102,241,0.5)] group-data-[collapsible=icon]:hidden"
-          />
-        ) : null}
+        {isActive ? <ActiveItemBar /> : null}
       </SidebarMenuItem>
     )
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col duration-200 animate-in fade-in slide-in-from-right-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className={cn(
-          'mb-2 flex h-10 w-full shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-content-primary',
-          'hover:bg-surface-hover/60',
-          collapsed && 'justify-center px-0',
-        )}
-      >
-        <ChevronLeft className="size-4 shrink-0 text-content-tertiary" strokeWidth={1.75} />
-        <span className="group-data-[collapsible=icon]:hidden">{parent.label}</span>
-      </button>
+      <SubMenuBackButton label={parent.label} collapsed={collapsed} onBack={onBack} />
 
       <div
         className={cn(
@@ -387,6 +548,20 @@ const LayoutSideBar = () => {
     'sales-invoices': invoicesData?.meta?.total,
   }
 
+  // One query feeds both the top-level Finance badge and the finance submenu badges.
+  const { data: financeNavCounts } = useFinanceNavCounts(
+    badgeQuery(!openParent || openParent.id === 'finance'),
+  )
+  const topLevelBadgeOverrides: Record<string, number | undefined> = {
+    finance: financeNavCounts?.total,
+  }
+  const submenuBadgeOverrides =
+    openParent?.id === 'sales'
+      ? salesBadgeOverrides
+      : openParent?.id === 'finance'
+        ? financeNavCounts?.counts
+        : undefined
+
   return (
     <Sidebar
       collapsible="icon"
@@ -406,7 +581,7 @@ const LayoutSideBar = () => {
                 parent={openParent}
                 collapsed={collapsed}
                 onBack={() => setSubmenuSelection({ pathname, id: null })}
-                badgeOverrides={openParent.id === 'sales' ? salesBadgeOverrides : undefined}
+                badgeOverrides={submenuBadgeOverrides}
               />
             ) : (
               <NavMenu
@@ -414,6 +589,7 @@ const LayoutSideBar = () => {
                   setSubmenuSelection({ pathname, id })
                 }
                 collapsed={collapsed}
+                badgeOverrides={topLevelBadgeOverrides}
               />
             )}
           </SidebarGroupContent>

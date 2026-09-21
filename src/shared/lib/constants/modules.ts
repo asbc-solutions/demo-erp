@@ -25,6 +25,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 
 import type { NavChild, NavItem } from '@/src/shared/lib/types'
+import { FINANCE_NAV_GROUPS } from './finance-nav'
 import { HR_NAV } from './hr-nav'
 
 /**
@@ -41,7 +42,13 @@ import { HR_NAV } from './hr-nav'
 
 export const NAV_ITEMS: NavItem[] = [
   { id: 'command-center', label: 'Command Center', icon: LayoutGrid },
-  { id: 'finance', label: 'Finance', icon: DollarSign },
+  {
+    id: 'finance',
+    label: 'Finance',
+    icon: DollarSign,
+    groups: FINANCE_NAV_GROUPS,
+    collapsibleGroups: true,
+  },
   {
     id: 'hr',
     label: 'HR & People',
