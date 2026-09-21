@@ -20,7 +20,6 @@ export const FIN_ANCHORS = {
   payables: {
     outstanding: 3_914_200,
     dueThisWeek: 454_959.32,
-    overdueBills: 13,
     secondApprovalThreshold: 150_000,
   },
   netResult: {

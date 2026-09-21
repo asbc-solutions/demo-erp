@@ -61,19 +61,6 @@ export type CashPosition = {
   treasuries: TreasuryPosition[]
 }
 
-export type BillStatus = "pending_approval" | "approved" | "revised"
-
-export type PendingBill = {
-  id: string
-  number: string
-  supplier_id: string
-  supplier_name: string
-  amount: number
-  currency: CurrencyCode
-  due_date: string
-  status: BillStatus
-}
-
 export type CloseReadinessCheck = {
   id: string
   title: string

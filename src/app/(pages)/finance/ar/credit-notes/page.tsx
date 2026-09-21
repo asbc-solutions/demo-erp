@@ -1,5 +1,5 @@
-import { CreditListPage } from "@/src/features/finance/money-in/components/credit-notes/credit-list-page"
+import { CreditListPage } from "@/src/features/finance/subledger/components/credits/credit-list-page"
 
-const FinanceCreditNotesRoute = () => <CreditListPage kind="credit_note" />
+const FinanceCreditNotesRoute = () => <CreditListPage side="receivable" kind="note" />
 
 export default FinanceCreditNotesRoute

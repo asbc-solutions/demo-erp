@@ -11,10 +11,12 @@ import { FIN_CONTACT_ROWS, FIN_CURRENCY_ROWS } from "./master-data"
  * against the finance calendar and keep the same ages. Delta Industrial
  * Group is the plug: its invoices absorb the difference so that
  *
- *   overdue invoices                         = receivables.overdue (5,843,638.88)
- *   all invoices − unapplied credits/advances = receivables.outstanding (6,318,400.00)
+ *   overdue invoices                    = receivables.overdue (5,843,638.88)
+ *   all invoices − unapplied credit notes = receivables.outstanding (6,318,400.00)
  *
- * exactly, which is what Finance home and the AR overview show.
+ * exactly, which is what Finance home and the AR overview show. Customer
+ * advances are listed with the customer but held on 210103, so they are not
+ * netted into the receivables balance.
  */
 
 const r2 = (value: number) => Math.round(value * 100) / 100
@@ -129,7 +131,7 @@ function invoiceRow(customerId: string, [suffix, outstanding, daysLate, allocate
     id: `INV-2026-${suffix}`,
     number: `INV-2026-${suffix}`,
     type: "invoice",
-    customer_id: customerId,
+    contact_id: customerId,
     currency,
     date: shiftDays(due, -Number(customer.terms_days)),
     due_date: due,
@@ -145,7 +147,7 @@ function creditRow(type: "credit_note" | "advance", [number, customerId, date, g
     id: number,
     number,
     type,
-    customer_id: customerId,
+    contact_id: customerId,
     currency,
     date,
     due_date: null,
@@ -163,10 +165,8 @@ export function buildArDocuments(): Row[] {
   const fixed = Object.entries(FIXED_INVOICES).flatMap(([customerId, specs]) =>
     specs.map((spec) => invoiceRow(customerId, spec)),
   )
-  const credits = [
-    ...CREDIT_NOTES.map((spec) => creditRow("credit_note", spec)),
-    ...ADVANCES.map((spec) => creditRow("advance", spec)),
-  ]
+  const creditNotes = CREDIT_NOTES.map((spec) => creditRow("credit_note", spec))
+  const advances = ADVANCES.map((spec) => creditRow("advance", spec))
 
   const overdueTarget = FIN_ANCHORS.receivables.overdue
   const netTarget = FIN_ANCHORS.receivables.outstanding
@@ -174,8 +174,9 @@ export function buildArDocuments(): Row[] {
   const fixedCurrent = baseOf(fixed.filter((row) => String(row.due_date) >= FIN_TODAY))
 
   // Delta Industrial Group (EGP) takes whatever the fixed documents leave over.
+  // Credit notes are netted into the balance; advances sit on 210103 and are not.
   const deltaOverdue = r2(overdueTarget - fixedOverdue)
-  const deltaCurrent = r2(netTarget - overdueTarget + baseOf(credits) - fixedCurrent)
+  const deltaCurrent = r2(netTarget - overdueTarget + baseOf(creditNotes) - fixedCurrent)
   const [overdueA, overdueB] = split(r2(deltaOverdue - 10_355.56), [0.6, 0.4])
   const current = split(deltaCurrent, [0.22, 0.18, 0.2, 0.14, 0.16, 0.1])
 
@@ -194,7 +195,7 @@ export function buildArDocuments(): Row[] {
   const invoices = [...fixed, ...delta.map((spec) => invoiceRow("C-0102", spec))].sort(
     (a, b) => String(a.number).localeCompare(String(b.number)),
   )
-  return [...invoices, ...credits]
+  return [...invoices, ...creditNotes, ...advances]
 }
 
 type ReceiptSeed = [suffix: number, date: string, treasuryId: string, amount: number | null]
@@ -246,7 +247,7 @@ export function buildReceipts(): Row[] {
       id: `REC-2026-${suffix}`,
       number: `REC-2026-${suffix}`,
       date,
-      customer_id: customerId,
+      contact_id: customerId,
       treasury_id: treasuryId,
       description: `Receipt — ${String(CUSTOMERS[customerId].name)}`,
       origin: "auto",

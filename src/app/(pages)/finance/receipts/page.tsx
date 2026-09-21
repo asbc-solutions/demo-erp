@@ -1,5 +1,5 @@
-import { ReceiptsPage } from "@/src/features/finance/money-in/components/receipts/receipts-page"
+import { VoucherListPage } from "@/src/features/finance/subledger/components/vouchers/voucher-list-page"
 
-const FinanceReceiptsRoute = () => <ReceiptsPage />
+const FinanceReceiptsRoute = () => <VoucherListPage side="receivable" />
 
 export default FinanceReceiptsRoute

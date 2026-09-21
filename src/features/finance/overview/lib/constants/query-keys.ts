@@ -6,7 +6,6 @@ export const overviewKeys = {
   cashPosition: () => [...overviewKeys.all, "cash-position"] as const,
   closeReadiness: () => [...overviewKeys.all, "close-readiness"] as const,
   exceptions: () => [...overviewKeys.all, "exceptions"] as const,
-  pendingBills: () => [...financeKeys.all, "bills", "pending-approval"] as const,
   assistant: {
     all: [...financeKeys.all, "assistant"] as const,
     settings: () => [...overviewKeys.assistant.all, "settings"] as const,

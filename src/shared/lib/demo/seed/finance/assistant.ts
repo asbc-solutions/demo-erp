@@ -92,7 +92,65 @@ export function buildAgingAnswer(exposure: AgingExposure): Record<string, unknow
   }
 }
 
-export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging">, Record<string, unknown>> = {
+export type PendingApproval = { id: string; number: string; supplier: string; amount_base: number }
+
+/** Bills in the approval queue at or above the second-approval threshold, read live. */
+export function buildApproversAnswer(pending: PendingApproval[]): Record<string, unknown> {
+  const threshold = FIN_ANCHORS.payables.secondApprovalThreshold
+  const above = pending
+    .filter((bill) => bill.amount_base >= threshold)
+    .sort((a, b) => b.amount_base - a.amount_base)
+  const combined = above.reduce((sum, bill) => sum + bill.amount_base, 0)
+  const one = above.length === 1
+  return {
+    headline:
+      above.length === 0
+        ? `No bill awaiting approval is at or above the second-approval threshold of EGP ${money(threshold)}.`
+        : `${above.length} ${one ? "bill is" : "bills are"} at or above the second-approval threshold of EGP ${money(threshold)}.`,
+    matches: "Money out / Bill approvals",
+    table: {
+      columns: [
+        { id: "bill", label: "Bill" },
+        { id: "supplier", label: "Supplier" },
+        { id: "amount", label: "Amount (EGP)", align: "end" },
+        { id: "approvals", label: "Approvals" },
+      ],
+      rows: above.map((bill) => ({
+        id: bill.id,
+        bill: bill.number,
+        supplier: bill.supplier,
+        amount: money(bill.amount_base),
+        approvals: "0 of 2",
+      })),
+      footnote: `Showing ${above.length} of ${pending.length} bills awaiting approval · threshold from Approval policies`,
+    },
+    links: [
+      { label: "Money out / Bill approvals", href: "/finance/ap/approvals" },
+      { label: "Configuration / Approval policies", href: "/finance/settings/approvals" },
+    ],
+    proposal:
+      above.length === 0
+        ? null
+        : {
+            summary: `Route ${one ? "the bill" : "these bills"} to a second approver before the next payment run picks ${one ? "it" : "them"} up.`,
+            badge: PROPOSAL_BADGE,
+            facts: [
+              { term: one ? "Bill" : "Bills", value: above.map((bill) => bill.number).join(" · ") },
+              { term: "Combined", value: `EGP ${money(combined)}` },
+              { term: "Policy", value: `Two approvers at EGP ${money(threshold)} and above` },
+            ],
+            action: { label: "Open Money out / Bill approvals", href: "/finance/ap/approvals" },
+          },
+    grounding: [
+      { label: "Money out / Bill approvals", detail: `${pending.length} bills` },
+      { label: "Configuration / Approval policies", detail: "1 policy" },
+    ],
+    not_read: NOT_READ,
+    sources: 2,
+  }
+}
+
+export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approvers">, Record<string, unknown>> = {
   watchlist: {
     headline: `${FIN_ANCHORS.banking.treasuriesUnreconciled} treasuries are blocking the March close — ${FIN_ANCHORS.banking.unmatchedLines} unmatched lines in total.`,
     matches: "Banking / Bank reconciliation",
@@ -193,43 +251,6 @@ export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging">, Record<
     grounding: [
       { label: "Configuration / Posting map", detail: "1 rule" },
       { label: "Tax & compliance / Tax codes", detail: "VAT 14%" },
-    ],
-    not_read: NOT_READ,
-    sources: 2,
-  },
-  approvers: {
-    headline: `2 bills are at or above the second-approval threshold of EGP ${money(FIN_ANCHORS.payables.secondApprovalThreshold)}.`,
-    matches: "Money out / Bill approvals",
-    table: {
-      columns: [
-        { id: "bill", label: "Bill" },
-        { id: "supplier", label: "Supplier" },
-        { id: "amount", label: "Amount (EGP)", align: "end" },
-        { id: "approvals", label: "Approvals" },
-      ],
-      rows: [
-        { id: "b1", bill: "BILL-2026-2003", supplier: "Cairo Logistics Services", amount: money(229_859.44), approvals: "0 of 2" },
-        { id: "b2", bill: "BILL-2026-2004", supplier: "El Nasr Accounting Office", amount: money(187_156.44), approvals: "0 of 2" },
-      ],
-      footnote: "Showing 2 of 6 bills awaiting approval · threshold from Approval policies",
-    },
-    links: [
-      { label: "Money out / Bill approvals", href: "/finance/ap/approvals" },
-      { label: "Configuration / Approval policies", href: "/finance/settings/approvals" },
-    ],
-    proposal: {
-      summary: "Route both bills to a second approver before the next payment run picks them up.",
-      badge: PROPOSAL_BADGE,
-      facts: [
-        { term: "Bills", value: "BILL-2026-2003 · BILL-2026-2004" },
-        { term: "Combined", value: `EGP ${money(229_859.44 + 187_156.44)}` },
-        { term: "Policy", value: "Two approvers at EGP 150,000.00 and above" },
-      ],
-      action: { label: "Open Money out / Bill approvals", href: "/finance/ap/approvals" },
-    },
-    grounding: [
-      { label: "Money out / Bill approvals", detail: "6 bills" },
-      { label: "Configuration / Approval policies", detail: "1 policy" },
     ],
     not_read: NOT_READ,
     sources: 2,
@@ -427,7 +448,9 @@ export const ASSISTANT_HISTORY_ROWS: Row[] = [
   { id: "conv-1", question: "Which e-invoices were rejected this period?", scope_label: "EG-01 · 1 Mar — 31 Mar", asked_at: "2026-03-30T16:02:00.000Z" },
 ]
 
-export function buildBriefing(): Record<string, unknown> {
+export type BriefingPayables = { overdueBills: number; oldestOverdueBill: string | null }
+
+export function buildBriefing(payables: BriefingPayables): Record<string, unknown> {
   return {
     computed_at: "2026-03-31T14:49:00.000Z",
     tiles: [
@@ -454,7 +477,7 @@ export function buildBriefing(): Record<string, unknown> {
       { id: "b5", item: "Depreciation runs not posted", count: 1, oldest: "2026-03-31", owner: "Finance · assets", destination: "Depreciation run", href: "/finance/assets/depreciation" },
       { id: "b6", item: "Draft entries in the period", count: FIN_ANCHORS.ledger.draftEntries, oldest: "2026-03-22", owner: "Finance · ledger", destination: "Journal entries", href: "/finance/journals" },
       { id: "b7", item: "E-invoices never submitted", count: FIN_ANCHORS.tax.notSubmittedEInvoices, oldest: "2026-03-18", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
-      { id: "b8", item: "Overdue supplier bills", count: FIN_ANCHORS.payables.overdueBills, oldest: "2026-02-09", owner: "Finance · payables", destination: "Payment runs", href: "/finance/ap/payment-runs" },
+      { id: "b8", item: "Overdue supplier bills", count: payables.overdueBills, oldest: payables.oldestOverdueBill, owner: "Finance · payables", destination: "Payment runs", href: "/finance/ap/payment-runs" },
       { id: "b9", item: "Suspense account not at zero", count: 1, oldest: "2026-02-28", owner: "Finance · ledger", destination: `Account ${FIN_ANCHORS.ledger.suspenseAccount}`, href: "/finance/ledger" },
     ],
     follow_ups: [

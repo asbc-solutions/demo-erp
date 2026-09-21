@@ -2,6 +2,7 @@ import { collection } from "../../demo-db"
 import { route, type DemoRoute } from "../../demo-router"
 import { FIN_ANCHORS } from "../../seed/finance/anchors"
 import { FIN_COLLECTIONS } from "./collections"
+import { pendingBills } from "./payables"
 
 const SEARCH_LIMIT = 5
 
@@ -12,9 +13,7 @@ const SEARCH_LIMIT = 5
 function navCounts(): Record<string, number> {
   return {
     "fin-bank-reconciliation": FIN_ANCHORS.banking.cibUnmatchedLines,
-    "fin-bill-approvals": collection(FIN_COLLECTIONS.bills).filter(
-      (bill) => bill.status === "pending_approval",
-    ).length,
+    "fin-bill-approvals": pendingBills().length,
     "fin-e-invoicing": FIN_ANCHORS.tax.rejectedEInvoices,
   }
 }

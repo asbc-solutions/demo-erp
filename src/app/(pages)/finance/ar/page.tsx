@@ -1,5 +1,5 @@
-import { ArOverviewPage } from "@/src/features/finance/money-in/components/ar-overview/ar-overview-page"
+import { SubledgerOverviewPage } from "@/src/features/finance/subledger/components/overview/subledger-overview-page"
 
-const FinanceArOverviewRoute = () => <ArOverviewPage />
+const FinanceArOverviewRoute = () => <SubledgerOverviewPage side="receivable" />
 
 export default FinanceArOverviewRoute

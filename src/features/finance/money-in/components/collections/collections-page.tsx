@@ -19,15 +19,15 @@ import {
 import { formatDate } from "../../../lib/utils/date"
 import { formatAmount } from "../../../lib/utils/money"
 import { useCollections } from "../../lib/queries/receivables"
-import type { ArDocument } from "../../lib/types/receivables"
-import { AgingBucketPill } from "../shared/aging-bucket-pill"
+import { AgingBucketPill } from "../../../subledger/components/shared/aging-bucket-pill"
+import type { SubledgerDocument } from "../../../subledger/lib/types/subledger"
 
-const COLUMNS: FinanceColumn<ArDocument>[] = [
+const COLUMNS: FinanceColumn<SubledgerDocument>[] = [
   { id: "invoice", header: "Invoice", cell: (row) => <DocNumber>{row.number}</DocNumber> },
   {
     id: "customer",
     header: "Customer",
-    cell: (row) => <span className="text-content-primary font-medium">{row.customer_name}</span>,
+    cell: (row) => <span className="text-content-primary font-medium">{row.contact_name}</span>,
   },
   { id: "due", header: "Due", cell: (row) => (row.due_date ? formatDate(row.due_date) : "—") },
   {
@@ -49,7 +49,7 @@ const COLUMNS: FinanceColumn<ArDocument>[] = [
     align: "end",
     cell: (row) => (
       <Button variant="secondary" size="sm" asChild>
-        <Link href={`/finance/ar/${row.customer_id}`} aria-label={`Follow up ${row.number} with ${row.customer_name}`}>
+        <Link href={`/finance/ar/${row.contact_id}`} aria-label={`Follow up ${row.number} with ${row.contact_name}`}>
           Follow up
         </Link>
       </Button>

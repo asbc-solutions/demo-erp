@@ -5,24 +5,46 @@ import {
   ASSISTANT_DATA_GROUPS,
   TOPIC_GROUP,
   buildAgingAnswer,
+  buildApproversAnswer,
   buildBriefing,
   limitedAnswerFor,
   topicForQuestion,
   type AssistantTopic,
 } from "../../seed/finance/assistant"
 import { FIN_NOW } from "../../seed/finance/calendar"
-import { arSummaries, arTotals } from "./ar-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { listResponse } from "./helpers"
+import { pendingBills } from "./payables"
+import { documents, summaries, totals, daysLate } from "./subledger-model"
 
 function answerFor(topic: AssistantTopic): Record<string, unknown> {
+  if (topic === "approvers") {
+    return buildApproversAnswer(
+      pendingBills().map((bill) => ({
+        id: String(bill.id),
+        number: String(bill.number),
+        supplier: String(bill.contact_name),
+        amount_base: Number(bill.outstanding_base),
+      })),
+    )
+  }
   if (topic !== "aging") return ASSISTANT_ANSWERS[topic]
-  const totals = arTotals()
+  const receivables = totals("receivable")
   return buildAgingAnswer({
-    overdue_base: totals.overdue_base,
-    overdue_count: totals.overdue_count,
-    customers: arSummaries(),
+    overdue_base: receivables.overdue_base,
+    overdue_count: receivables.overdue_count,
+    customers: summaries("receivable"),
   })
+}
+
+/** Unpaid bills past their due date, for the briefing's blockers list. */
+function overdueBills() {
+  const overdue = documents("payable")
+    .filter((doc) => doc.type === "bill" && doc.approval !== "returned" && Number(doc.outstanding) > 0)
+    .filter((doc) => daysLate(doc.due_date as string | null) > 0)
+    .map((doc) => String(doc.due_date))
+    .sort()
+  return { overdueBills: overdue.length, oldestOverdueBill: overdue[0] ?? null }
 }
 
 type SettingsRow = Record<string, unknown> & { data_groups: Record<string, boolean> }
@@ -61,7 +83,7 @@ export const financeAssistantRoutes: DemoRoute[] = [
     return { data: { ...current, groups: ASSISTANT_DATA_GROUPS } }
   }),
 
-  route("get", "/finance/assistant/briefing", () => ({ data: buildBriefing() })),
+  route("get", "/finance/assistant/briefing", () => ({ data: buildBriefing(overdueBills()) })),
 
   route("get", "/finance/assistant/drafts", (req) =>
     listResponse(collection(FIN_COLLECTIONS.assistantDrafts), { per_page: 100, ...req.params }),

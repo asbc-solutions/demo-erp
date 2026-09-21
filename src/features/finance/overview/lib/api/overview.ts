@@ -15,7 +15,6 @@ import type {
   CloseReadiness,
   FinanceException,
   FinanceHome,
-  PendingBill,
 } from "../types/overview"
 
 export const overviewApi = {
@@ -28,16 +27,6 @@ export const overviewApi = {
 
   exceptions: () => httpClient.get<ApiResponse<FinanceException[]>>("/finance/overview/exceptions"),
 
-  pendingBills: () =>
-    httpClient.get<ApiResponse<PendingBill[]>>("/finance/bills", {
-      params: { status: "pending_approval", per_page: 50 },
-    }),
-
-  approveBill: (id: string) =>
-    httpClient.post<ApiResponse<PendingBill>>(`/finance/bills/${id}/approve`),
-
-  sendBackBill: (id: string, reason?: string) =>
-    httpClient.post<ApiResponse<PendingBill>>(`/finance/bills/${id}/send-back`, { reason }),
 }
 
 export const assistantApi = {

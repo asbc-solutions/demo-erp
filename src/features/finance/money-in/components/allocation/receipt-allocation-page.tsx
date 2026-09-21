@@ -37,8 +37,9 @@ import { formatDate } from "../../../lib/utils/date"
 import { formatAmount, round2 } from "../../../lib/utils/money"
 import { usePostReceipt, useUnallocateReceipt } from "../../lib/mutations/receivables"
 import { useOpenInvoices } from "../../lib/queries/receivables"
-import type { ArDocument, PostedReceipt } from "../../lib/types/receivables"
-import { DueCell } from "../shared/aging-bucket-pill"
+import { DueCell } from "../../../subledger/components/shared/aging-bucket-pill"
+import type { SubledgerDocument } from "../../../subledger/lib/types/subledger"
+import type { PostedReceipt } from "../../lib/types/receivables"
 
 const DEFAULT_TREASURY = "bnk-cib-0021"
 
@@ -109,7 +110,7 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
     if (error) return
     postReceipt.mutate(
       {
-        customer_id: customerId,
+        contact_id: customerId,
         treasury_id: treasuryId,
         amount: receipt,
         allocations: invoices
@@ -133,7 +134,7 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
     )
   }
 
-  const columns: FinanceColumn<ArDocument>[] = [
+  const columns: FinanceColumn<SubledgerDocument>[] = [
     { id: "invoice", header: "Invoice", cell: (row) => <DocNumber>{row.number}</DocNumber> },
     {
       id: "due",
@@ -228,7 +229,7 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
             tone="success"
             action={
               <Button variant="secondary" size="sm" asChild>
-                <Link href={`/finance/ar/${lastPosted.customer_id}`}>Open customer</Link>
+                <Link href={`/finance/ar/${lastPosted.contact_id}`}>Open customer</Link>
               </Button>
             }
           >

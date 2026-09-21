@@ -8,9 +8,8 @@ import {
   buildAttentionItems,
   buildExceptionRows,
 } from "../../seed/finance/overview"
-import { arTotals } from "./ar-model"
 import { FIN_COLLECTIONS } from "./collections"
-import { listResponse } from "./helpers"
+import { dueWithin, totals } from "./subledger-model"
 
 function rateToBase(currency: string): number {
   return Number(findRow(FIN_COLLECTIONS.currencies, currency)?.rate_to_base ?? 1)
@@ -40,11 +39,12 @@ function closeProgress() {
   }
 }
 
-/** 01 · Overview — Finance home, Cash position, On the go, and the bills it approves. */
+/** 01 · Overview — Finance home, Cash position and On the go. */
 export const financeOverviewRoutes: DemoRoute[] = [
   route("get", "/finance/overview/home", () => {
     const treasuries = treasuriesInBase()
-    const receivables = arTotals()
+    const receivables = totals("receivable")
+    const payables = totals("payable")
     const unallocatedReceipts = collection(FIN_COLLECTIONS.receipts).filter(
       (receipt) => receipt.allocation === "unallocated",
     ).length
@@ -61,8 +61,8 @@ export const financeOverviewRoutes: DemoRoute[] = [
           overdue: receivables.overdue_base,
         },
         payables: {
-          outstanding: FIN_ANCHORS.payables.outstanding,
-          due_this_week: FIN_ANCHORS.payables.dueThisWeek,
+          outstanding: payables.total_base,
+          due_this_week: dueWithin("payable", 7),
         },
         net_result: { period_label: "March", amount: FIN_ANCHORS.netResult.amount },
         attention: buildAttentionItems({ unallocatedReceipts }),
@@ -101,22 +101,6 @@ export const financeOverviewRoutes: DemoRoute[] = [
   })),
 
   route("get", "/finance/overview/exceptions", () => ({
-    data: buildExceptionRows({ overdueInvoices: arTotals().overdue_count }),
+    data: buildExceptionRows({ overdueInvoices: totals("receivable").overdue_count }),
   })),
-
-  route("get", "/finance/bills", (req) => listResponse(collection(FIN_COLLECTIONS.bills), req.params)),
-
-  route("post", "/finance/bills/:id/approve", (req) => {
-    const bill = findRow(FIN_COLLECTIONS.bills, req.vars.id)
-    if (!bill) return { status: 404, data: { message: "Bill not found." } }
-    Object.assign(bill, { status: "approved", approvals: Number(bill.approvals ?? 0) + 1 })
-    return { data: bill }
-  }),
-
-  route("post", "/finance/bills/:id/send-back", (req) => {
-    const bill = findRow(FIN_COLLECTIONS.bills, req.vars.id)
-    if (!bill) return { status: 404, data: { message: "Bill not found." } }
-    Object.assign(bill, { status: "revised", sent_back_reason: req.body.reason ?? null })
-    return { data: bill }
-  }),
 ]

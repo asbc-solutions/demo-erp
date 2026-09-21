@@ -11,26 +11,26 @@ import { Skeleton } from "@/src/shared/components/ui/skeleton"
 import { Amount } from "../../../components/shared/amount"
 import { FinanceErrorState } from "../../../components/shared/finance-states"
 import { formatDate } from "../../../lib/utils/date"
-import { useApproveBill, useSendBackBill } from "../../lib/mutations/overview"
-import { usePendingBills } from "../../lib/queries/overview"
-import type { PendingBill } from "../../lib/types/overview"
+import { useApproveBill, useSendBackBill } from "../../../money-out/lib/mutations/payables"
+import { useBillApprovals } from "../../../money-out/lib/queries/payables"
+import type { SubledgerDocument } from "../../../subledger/lib/types/subledger"
 
-function BillCard({ bill }: { bill: PendingBill }) {
+function BillCard({ bill }: { bill: SubledgerDocument }) {
   const approve = useApproveBill()
   const sendBack = useSendBackBill()
   const busy = approve.isPending || sendBack.isPending
 
   return (
     <article
-      aria-label={`${bill.supplier_name}, ${bill.number}`}
+      aria-label={`${bill.contact_name}, ${bill.number}`}
       className="border-stroke-default bg-surface-white flex flex-col gap-2 rounded-xl border px-5 py-4 shadow-xs"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <span className="text-content-primary text-sm leading-5 font-medium">{bill.supplier_name}</span>
-        <Amount value={bill.amount} className="text-sm leading-5" />
+        <span className="text-content-primary text-sm leading-5 font-medium">{bill.contact_name}</span>
+        <Amount value={bill.outstanding} className="text-sm leading-5" />
       </div>
       <p className="text-content-secondary text-[13px] leading-5">
-        {bill.number} · Due: {formatDate(bill.due_date)}
+        {bill.number} · Due: {bill.due_date ? formatDate(bill.due_date) : "—"}
       </p>
       <div className="flex flex-wrap gap-2 pt-1">
         <Button
@@ -52,7 +52,7 @@ function BillCard({ bill }: { bill: PendingBill }) {
           disabled={busy}
           onClick={() =>
             sendBack.mutate(
-              { id: bill.id },
+              { id: bill.id, reason: "Sent back from On the go." },
               {
                 onSuccess: () => toast.success(`${bill.number} was sent back to the preparer.`),
                 onError: () => toast.error(`${bill.number} could not be sent back. Try again.`),
@@ -69,7 +69,8 @@ function BillCard({ bill }: { bill: PendingBill }) {
 
 /** Approve a bill — the queue a manager can clear from a phone. */
 function ApproveBillsTab() {
-  const { data: bills, isError, refetch } = usePendingBills()
+  const { data, isError, refetch } = useBillApprovals()
+  const bills = data?.items
 
   return (
     <div className="flex flex-col gap-4">

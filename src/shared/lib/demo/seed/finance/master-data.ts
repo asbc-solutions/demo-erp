@@ -32,9 +32,12 @@ export const FIN_TREASURY_ROWS: Row[] = [
   { id: "bnk-qnb-payroll", code: "T-06", kind: "bank", name: "QNB Alahli — payroll account", account_code: "110203", currency: "EGP", balance: 1_240_000, unmatched_lines: 0 },
 ]
 
-/** Receivables and advances control accounts every customer posts to. */
+/** Control accounts the subledgers post to; advances sit outside the AR/AP balance. */
 export const AR_CONTROL_ACCOUNT = "110301"
 export const CUSTOMER_ADVANCES_ACCOUNT = "210103"
+export const AP_CONTROL_ACCOUNT = "210101"
+export const SUPPLIER_ADVANCES_ACCOUNT = "120302"
+export const INPUT_VAT_ACCOUNT = "110601"
 
 export const FIN_CONTACT_ROWS: Row[] = [
   { id: "C-0101", code: "C-0101", name: "Nile Contracting Co.", kind: "customer", tax_reg_no: "201-330-880", currency: "EGP", terms_days: 45, credit_limit: 2_000_000 },
@@ -42,11 +45,11 @@ export const FIN_CONTACT_ROWS: Row[] = [
   { id: "C-0103", code: "C-0103", name: "Ahram Supplies", kind: "customer", tax_reg_no: "208-441-201", currency: "EGP", terms_days: 30, credit_limit: 800_000 },
   { id: "C-0104", code: "C-0104", name: "Gulf Technical Est.", kind: "customer", tax_reg_no: "300-551-702-00003", currency: "SAR", terms_days: 60, credit_limit: 1_500_000 },
   { id: "C-0105", code: "C-0105", name: "Mediterranean Trading LLC", kind: "customer", tax_reg_no: "US-4471", currency: "USD", terms_days: 45, credit_limit: 6_000_000 },
-  { id: "210101", code: "210101", name: "El Sharq Steel Works", kind: "supplier", tax_reg_no: "100-245-331", currency: "EGP", terms_days: 30 },
-  { id: "210102", code: "210102", name: "National Packaging", kind: "supplier", tax_reg_no: "100-872-640", currency: "EGP", terms_days: 45 },
-  { id: "210103", code: "210103", name: "Siemens Egypt", kind: "supplier", tax_reg_no: "100-033-918", currency: "EGP", terms_days: 60 },
-  { id: "210104", code: "210104", name: "Cairo Logistics Services", kind: "supplier", tax_reg_no: "100-519-207", currency: "EGP", terms_days: 30 },
-  { id: "210105", code: "210105", name: "El Nasr Accounting Office", kind: "supplier", tax_reg_no: "100-664-085", currency: "EGP", terms_days: 15 },
+  { id: "S-0201", code: "S-0201", name: "El Sharq Steel Works", kind: "supplier", tax_reg_no: "305-220-114", currency: "EGP", terms_days: 30 },
+  { id: "S-0202", code: "S-0202", name: "National Packaging", kind: "supplier", tax_reg_no: "100-872-640", currency: "EGP", terms_days: 45 },
+  { id: "S-0203", code: "S-0203", name: "Siemens Egypt", kind: "supplier", tax_reg_no: "100-033-918", currency: "EGP", terms_days: 60 },
+  { id: "S-0204", code: "S-0204", name: "Cairo Logistics Services", kind: "supplier", tax_reg_no: "100-519-207", currency: "EGP", terms_days: 30 },
+  { id: "S-0205", code: "S-0205", name: "El Nasr Accounting Office", kind: "supplier", tax_reg_no: "100-664-085", currency: "EGP", terms_days: 15 },
 ]
 
 type AccountSeed = [code: string, name: string, type: string, parent: string | null, isGroup: boolean]
@@ -65,13 +68,14 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["110202", "Banque Misr USD account", "asset", "11", false],
   ["110203", "QNB Alahli payroll account", "asset", "11", false],
   ["110301", "Trade receivables — customers", "asset", "11", false],
-  ["1105", "VAT input", "asset", "11", false],
+  ["110601", "Input VAT", "asset", "11", false],
+  ["120302", "Supplier advances", "asset", "11", false],
   ["12", "Fixed assets", "asset", "1", true],
   ["1201", "Machinery and equipment", "asset", "12", false],
   ["1209", "Accumulated depreciation", "asset", "12", false],
   ["2", "Liabilities", "liability", null, true],
   ["21", "Current liabilities", "liability", "2", true],
-  ["2101", "Trade payables", "liability", "21", false],
+  ["210101", "Trade payables — suppliers", "liability", "21", false],
   ["2102", "VAT output", "liability", "21", false],
   ["2103", "Withholding tax payable", "liability", "21", false],
   ["210103", "Customer advances", "liability", "21", false],
@@ -88,6 +92,11 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["5201", "Salaries and wages", "expense", "5", false],
   ["5301", "Rent and utilities", "expense", "5", false],
   ["5401", "Depreciation expense", "expense", "5", false],
+  ["640104", "Office supplies", "expense", "5", false],
+  ["640201", "Travel and transport", "expense", "5", false],
+  ["640301", "Meals and entertainment", "expense", "5", false],
+  ["640401", "Telephone and internet", "expense", "5", false],
+  ["640501", "Repairs and maintenance", "expense", "5", false],
   ["5901", "FX losses", "expense", "5", false],
 ]
 

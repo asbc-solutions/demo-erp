@@ -35,13 +35,6 @@ export function useFinanceExceptions(enabled = true) {
   })
 }
 
-export function usePendingBills() {
-  return useQuery({
-    queryKey: overviewKeys.pendingBills(),
-    queryFn: () => overviewApi.pendingBills().then((r) => r.data.data),
-  })
-}
-
 export function useAssistantSettings() {
   return useQuery({
     queryKey: overviewKeys.assistant.settings(),

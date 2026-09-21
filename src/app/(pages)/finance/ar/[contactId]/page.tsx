@@ -1,4 +1,4 @@
-import { CustomerCardPage } from "@/src/features/finance/money-in/components/customer-card/customer-card-page"
+import { ContactCardPage } from "@/src/features/finance/subledger/components/contact-card/contact-card-page"
 
 const FinanceCustomerCardRoute = async ({
   params,
@@ -6,7 +6,7 @@ const FinanceCustomerCardRoute = async ({
   params: Promise<{ contactId: string }>
 }) => {
   const { contactId } = await params
-  return <CustomerCardPage customerId={decodeURIComponent(contactId)} />
+  return <ContactCardPage side="receivable" contactId={decodeURIComponent(contactId)} />
 }
 
 export default FinanceCustomerCardRoute
