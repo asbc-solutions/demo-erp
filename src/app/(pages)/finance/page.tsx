@@ -1,7 +1,3 @@
-import { FinanceModule } from "@/src/features/finance/components/finance-module"
-
-const FinancePage = () => {
-  return <FinanceModule />
-}
+const FinancePage = () => null
 
 export default FinancePage

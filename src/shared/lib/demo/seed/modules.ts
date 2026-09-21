@@ -1,7 +1,6 @@
 import type { Row } from "../demo-db"
 import {
   COMPANY_NAMES,
-  DEMO_TODAY,
   emailFor,
   intBetween,
   isoDateTime,
@@ -11,193 +10,6 @@ import {
   personName,
   pick,
 } from "./faker"
-
-/* -------------------------------------------------------------------------- */
-/*                                  Finance                                   */
-/* -------------------------------------------------------------------------- */
-
-export const EXPENSE_CATEGORIES: Row[] = [
-  { id: "ec-1", code: "payroll", label: "Payroll", color: "#6366f1", expense_count: 12, is_active: true },
-  { id: "ec-2", code: "software", label: "Software", color: "#10b981", expense_count: 18, is_active: true },
-  { id: "ec-3", code: "office", label: "Office & Rent", color: "#f59e0b", expense_count: 9, is_active: true },
-  { id: "ec-4", code: "marketing", label: "Marketing", color: "#3b82f6", expense_count: 14, is_active: true },
-  { id: "ec-5", code: "travel", label: "Travel", color: "#ef4444", expense_count: 7, is_active: true },
-  { id: "ec-6", code: "services", label: "Professional Services", color: "#8b5cf6", expense_count: 6, is_active: true },
-]
-
-export const FINANCE_EXPENSE_ROWS: Row[] = Array.from({ length: 66 }, (_, i) => {
-  const rand = makeRandom(120_000 + i)
-  const category = EXPENSE_CATEGORIES[i % EXPENSE_CATEGORIES.length]
-  const recurring = i % 5 === 0
-  return {
-    id: `exp-${i + 1}`,
-    description: `${category.label} — ${pick(rand, ["monthly", "quarterly", "one-off", "annual"] as const)} charge`,
-    vendor: pick(rand, COMPANY_NAMES),
-    category_id: category.id,
-    category_label: category.label,
-    category_color: category.color,
-    amount: moneyBetween(rand, 400, 42_000, 50),
-    currency_code: "USD",
-    date: isoDay(-intBetween(rand, 1, 330)),
-    recurring,
-    created_at: isoDateTime(-intBetween(rand, 24, 6_000)),
-    updated_at: isoDateTime(-intBetween(rand, 1, 400)),
-  }
-})
-
-const FINANCE_INVOICE_STATUSES = ["draft", "sent", "paid", "paid", "overdue", "cancelled"] as const
-const FINANCE_TAX_RATES = [0, 5, 10, 14] as const
-
-export const FINANCE_INVOICE_STATUS_LABEL: Record<string, string> = {
-  draft: "Draft",
-  sent: "Sent",
-  paid: "Paid",
-  overdue: "Overdue",
-  cancelled: "Cancelled",
-}
-
-export const FINANCE_INVOICE_ROWS: Row[] = Array.from({ length: 52 }, (_, i) => {
-  const rand = makeRandom(130_000 + i)
-  const total = moneyBetween(rand, 3_000, 90_000, 100)
-  const status = FINANCE_INVOICE_STATUSES[i % FINANCE_INVOICE_STATUSES.length]
-  const paid = status === "paid" ? total : status === "sent" ? Math.round(total * 0.3) : 0
-  const client = COMPANY_NAMES[i % COMPANY_NAMES.length]
-  const issueDate = isoDay(-intBetween(rand, 5, 200))
-  const dueDate = isoDay(intBetween(rand, -40, 50))
-  // Tax is backed out of the seeded total so subtotal + tax always reconciles to it.
-  const taxRate = FINANCE_TAX_RATES[i % FINANCE_TAX_RATES.length]
-  const subtotal = Math.round((total / (1 + taxRate / 100)) * 100) / 100
-  const today = isoDay(0)
-  return {
-    id: `finv-${i + 1}`,
-    invoice_number: `INV-${3_000 + i}`,
-    client_name: client,
-    client_email: emailFor(client),
-    issue_date: issueDate,
-    due_date: dueDate,
-    tax_rate: taxRate,
-    subtotal_amount: subtotal,
-    tax_amount: Math.round((total - subtotal) * 100) / 100,
-    total_amount: total,
-    paid_amount: paid,
-    outstanding_amount: total - paid,
-    currency_code: "USD",
-    status,
-    persisted_status: status === "overdue" ? "sent" : status,
-    status_label: FINANCE_INVOICE_STATUS_LABEL[status],
-    notes: null,
-    sent_at: status === "draft" || status === "cancelled" ? null : `${issueDate}T09:00:00.000Z`,
-    paid_at: status === "paid" ? (dueDate < today ? dueDate : today) : null,
-    created_at: `${issueDate}T08:00:00.000Z`,
-    updated_at: `${issueDate}T09:00:00.000Z`,
-    line_items: [
-      {
-        id: `fli-${i + 1}`,
-        description: "Professional services",
-        quantity: 1,
-        unit_price: subtotal,
-        line_total: subtotal,
-        sort_order: 1,
-      },
-    ],
-  }
-})
-
-export function buildCashflowTimeline(months: number): Row[] {
-  const rand = makeRandom(141_000)
-  const points: Row[] = []
-  for (let i = months - 1; i >= 0; i -= 1) {
-    const d = new Date(DEMO_TODAY)
-    d.setUTCMonth(d.getUTCMonth() - i)
-    const cashIn = moneyBetween(rand, 140_000, 265_000, 1_000)
-    const cashOut = moneyBetween(rand, 95_000, 175_000, 1_000)
-    points.push({
-      id: d.toISOString().slice(0, 7),
-      month: d.toISOString().slice(0, 7),
-      cash_in: cashIn,
-      cash_out: cashOut,
-      net: cashIn - cashOut,
-      projected: false,
-    })
-  }
-  return points
-}
-
-export const FINANCE_RUNWAY = {
-  runway_days: 412,
-  burn_rate: 94_200,
-  cash_balance: 1_284_500,
-  currency_code: "USD",
-  status: "monitor" as const,
-  progress_pct: 68,
-  markers: [
-    { label: "90d", position: 22 },
-    { label: "180d", position: 44 },
-    { label: "365d", position: 88 },
-  ],
-}
-
-const REPORT_META: Record<string, { title: string; subtitle: string }> = {
-  "revenue-summary": { title: "Revenue Summary", subtitle: "Billed vs collected across the period" },
-  receivables: { title: "Receivables", subtitle: "Outstanding balances by age" },
-  "tax-summary": { title: "Tax Summary", subtitle: "VAT collected and payable" },
-  "expense-breakdown": { title: "Expense Breakdown", subtitle: "Spend by category" },
-  "cashflow-projection": { title: "Cashflow Projection", subtitle: "Projected inflow and outflow" },
-  "invoice-aging": { title: "Invoice Aging", subtitle: "Overdue exposure by bucket" },
-}
-
-export function buildFinanceReportCards(): Row[] {
-  const billed = FINANCE_INVOICE_ROWS.reduce((s, r) => s + Number(r.total_amount), 0)
-  const collected = FINANCE_INVOICE_ROWS.reduce((s, r) => s + Number(r.paid_amount), 0)
-  const spent = FINANCE_EXPENSE_ROWS.reduce((s, r) => s + Number(r.amount), 0)
-
-  return Object.entries(REPORT_META).map(([type, meta]) => ({
-    id: type,
-    type,
-    title: meta.title,
-    subtitle: meta.subtitle,
-    currency_code: "USD",
-    metrics:
-      type === "expense-breakdown"
-        ? [
-            { label: "Total spend", value: spent },
-            { label: "Categories", value: EXPENSE_CATEGORIES.length },
-          ]
-        : type === "receivables" || type === "invoice-aging"
-          ? [
-              { label: "Outstanding", value: billed - collected },
-              { label: "Overdue", value: Math.round((billed - collected) * 0.42) },
-            ]
-          : [
-              { label: "Billed", value: billed },
-              { label: "Collected", value: collected },
-            ],
-  }))
-}
-
-export function buildFinanceReportRows(type: string): Row[] {
-  if (type === "expense-breakdown") {
-    return EXPENSE_CATEGORIES.map((category) => {
-      const rows = FINANCE_EXPENSE_ROWS.filter((e) => e.category_id === category.id)
-      return {
-        id: String(category.id),
-        category: String(category.label),
-        expenses: rows.length,
-        amount: rows.reduce((s, r) => s + Number(r.amount), 0),
-      }
-    })
-  }
-  return FINANCE_INVOICE_ROWS.slice(0, 25).map((invoice) => ({
-    id: String(invoice.id),
-    invoice_number: String(invoice.invoice_number),
-    client: String(invoice.client_name),
-    issued: String(invoice.issue_date),
-    due: String(invoice.due_date),
-    total: Number(invoice.total_amount),
-    outstanding: Number(invoice.outstanding_amount),
-    status: String(invoice.status),
-  }))
-}
 
 /* -------------------------------------------------------------------------- */
 /*                                 Operations                                 */
@@ -473,9 +285,17 @@ export const TEAM_MEMBER_ROWS: Row[] = Array.from({ length: 24 }, (_, i) => {
 
 const MATRIX_RESOURCES = [
   { resource: "command_center", description: "Command Center dashboard" },
-  { resource: "finance.invoices", description: "Finance invoices" },
-  { resource: "finance.expenses", description: "Finance expenses" },
+  { resource: "finance.overview", description: "Finance overview" },
+  { resource: "finance.receivables", description: "Finance receivables" },
+  { resource: "finance.payables", description: "Finance payables" },
+  { resource: "finance.banking", description: "Finance banking" },
+  { resource: "finance.ledger", description: "Finance ledger" },
+  { resource: "finance.close", description: "Finance period close" },
+  { resource: "finance.tax", description: "Finance tax & compliance" },
+  { resource: "finance.assets", description: "Finance fixed assets" },
+  { resource: "finance.planning", description: "Finance planning" },
   { resource: "finance.reports", description: "Finance reporting" },
+  { resource: "finance.configuration", description: "Finance configuration" },
   { resource: "sales.customer", description: "Sales customers" },
   { resource: "sales.quotation", description: "Sales quotations" },
   { resource: "sales.order", description: "Sales orders" },

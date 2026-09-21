@@ -48,7 +48,6 @@ import { useCustomers } from '@/src/features/sales/lib/queries/customers'
 import { useQuotations } from '@/src/features/sales/lib/queries/quotations'
 import { useOrders } from '@/src/features/sales/lib/queries/orders'
 import { useInvoices } from '@/src/features/sales/lib/queries/invoices'
-import { useFinanceInvoices } from '@/src/features/finance/lib/queries/invoices'
 
 
 
@@ -376,7 +375,6 @@ const LayoutSideBar = () => {
   // matching nav happened to be visible. Fetch each set only while the nav that
   // shows it is on screen, and treat the counts as decorative (long staleTime).
   const salesBadges = badgeQuery(openParent?.id === 'sales')
-  const topLevelBadges = badgeQuery(!openParent)
 
   const { data: customersData } = useCustomers({ per_page: 1 }, salesBadges)
   const { data: quotationsData } = useQuotations({ per_page: 1 }, salesBadges)
@@ -387,11 +385,6 @@ const LayoutSideBar = () => {
     'sales-quotations': quotationsData?.meta?.total,
     'sales-orders': ordersData?.meta?.total,
     'sales-invoices': invoicesData?.meta?.total,
-  }
-
-  const { data: financeInvoicesData } = useFinanceInvoices({ per_page: 1 }, topLevelBadges)
-  const topLevelBadgeOverrides: Record<string, number | undefined> = {
-    finance: financeInvoicesData?.meta?.total,
   }
 
   return (
@@ -421,7 +414,6 @@ const LayoutSideBar = () => {
                   setSubmenuSelection({ pathname, id })
                 }
                 collapsed={collapsed}
-                badgeOverrides={topLevelBadgeOverrides}
               />
             )}
           </SidebarGroupContent>
