@@ -4,6 +4,16 @@ import {
   ASSISTANT_HISTORY_ROWS,
   buildAssistantSettings,
 } from "../../seed/finance/assistant"
+import {
+  FIN_CHEQUE_BOOK_ROWS,
+  FIN_EMPLOYEE_ROWS,
+  buildBookEntries,
+  buildCheques,
+  buildCustody,
+  buildStatementLines,
+  buildTransfers,
+  buildTreasuryMovements,
+} from "../../seed/finance/banking"
 import { buildFinancePeriods } from "../../seed/finance/calendar"
 import { FIN_CLOSE_TASK_ROWS } from "../../seed/finance/close"
 import {
@@ -33,6 +43,15 @@ export const FIN_COLLECTIONS = {
   apDocuments: "finance/ap-documents",
   payments: "finance/payments",
   expenses: "finance/expenses",
+  treasuryMovements: "finance/treasury-movements",
+  transfers: "finance/transfers",
+  statementLines: "finance/statement-lines",
+  bookEntries: "finance/book-entries",
+  statementImports: "finance/statement-imports",
+  cheques: "finance/cheques",
+  chequeBooks: "finance/cheque-books",
+  custody: "finance/custody",
+  employees: "finance/employees",
 } as const
 
 /** Seeds are copied so edits in one session never mutate the module-level fixtures. */
@@ -54,3 +73,12 @@ defineCollection(FIN_COLLECTIONS.apDocuments, buildApDocuments)
 defineCollection(FIN_COLLECTIONS.payments, buildPayments)
 // Expense claims start empty: the design opens on "Nothing is waiting for approval".
 defineCollection(FIN_COLLECTIONS.expenses, () => [])
+defineCollection(FIN_COLLECTIONS.treasuryMovements, () => buildTreasuryMovements().reverse())
+defineCollection(FIN_COLLECTIONS.transfers, buildTransfers)
+defineCollection(FIN_COLLECTIONS.statementLines, buildStatementLines)
+defineCollection(FIN_COLLECTIONS.bookEntries, buildBookEntries)
+defineCollection(FIN_COLLECTIONS.statementImports, () => [])
+defineCollection(FIN_COLLECTIONS.cheques, buildCheques)
+defineCollection(FIN_COLLECTIONS.chequeBooks, copy(FIN_CHEQUE_BOOK_ROWS))
+defineCollection(FIN_COLLECTIONS.custody, buildCustody)
+defineCollection(FIN_COLLECTIONS.employees, copy(FIN_EMPLOYEE_ROWS))

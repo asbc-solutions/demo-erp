@@ -3,7 +3,7 @@ import { route, type DemoRoute } from "../../demo-router"
 import { FIN_ANCHORS } from "../../seed/finance/anchors"
 import { FIN_NOW, FIN_TODAY } from "../../seed/finance/calendar"
 import { AP_CONTROL_ACCOUNT, INPUT_VAT_ACCOUNT } from "../../seed/finance/master-data"
-import { rateFor } from "../../seed/finance/receivables"
+import { fromBase, nextEntry, postMovement } from "./banking-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { nextNumber, subledgerRoutes } from "./subledger"
 import { documents, presentDocument, r2 } from "./subledger-model"
@@ -32,11 +32,6 @@ function payableBills(): Row[] {
     .filter((bill) => bill.approval === "approved" && Number(bill.outstanding) > 0)
     .sort((a, b) => String(a.number).localeCompare(String(b.number)))
     .map((bill) => presentDocument("payable", bill))
-}
-
-/** Treasury balance restated in EGP, and an EGP amount restated in the treasury's currency. */
-function inTreasuryCurrency(treasury: Row, amountBase: number): number {
-  return r2(amountBase / rateFor(String(treasury.currency)))
 }
 
 function insufficientFunds(treasury: Row, needed: number) {
@@ -130,7 +125,7 @@ export const financePayablesRoutes: DemoRoute[] = [
     }
 
     const totalBase = r2(selected.reduce((sum, bill) => sum + Number(bill.outstanding), 0))
-    const needed = inTreasuryCurrency(treasury, totalBase)
+    const needed = fromBase(treasury, totalBase)
     if (needed > Number(treasury.balance)) return insufficientFunds(treasury, needed)
 
     const payments = collection(FIN_COLLECTIONS.payments)
@@ -149,6 +144,8 @@ export const financePayablesRoutes: DemoRoute[] = [
       })
     }
 
+    // The whole run is one journal entry with a leg per supplier voucher.
+    const entry = nextEntry()
     const vouchers = Array.from(bySupplier, ([supplierId, amount]) => {
       const supplier = findRow(FIN_COLLECTIONS.contacts, supplierId)
       const number = nextNumber("PAY-2026-", collection(FIN_COLLECTIONS.payments), 1023, 10)
@@ -166,10 +163,17 @@ export const financePayablesRoutes: DemoRoute[] = [
         run: runNumber,
       })
       voucher.id = number
+      postMovement({
+        treasury_id: String(treasury.id),
+        description: String(voucher.description),
+        source: number,
+        source_type: "payment",
+        source_id: number,
+        amount: -fromBase(treasury, amount),
+        entry,
+      })
       return number
     })
-
-    treasury.balance = r2(Number(treasury.balance) - needed)
 
     return {
       data: {
@@ -238,9 +242,16 @@ export const financePayablesRoutes: DemoRoute[] = [
     }
     const treasury = findRow(FIN_COLLECTIONS.treasuries, String(expense.treasury_id))
     if (!treasury) return { status: 422, data: { message: "The treasury no longer exists." } }
-    const needed = inTreasuryCurrency(treasury, Number(expense.amount))
+    const needed = fromBase(treasury, Number(expense.amount))
     if (needed > Number(treasury.balance)) return insufficientFunds(treasury, needed)
-    treasury.balance = r2(Number(treasury.balance) - needed)
+    postMovement({
+      treasury_id: String(treasury.id),
+      description: `${String(expense.merchant)} — ${String(expense.description)}`,
+      source: String(expense.number),
+      source_type: "expense",
+      source_id: String(expense.id),
+      amount: -needed,
+    })
     Object.assign(expense, { status: "posted", posted_at: FIN_NOW })
     return { data: presentExpense(expense) }
   }),

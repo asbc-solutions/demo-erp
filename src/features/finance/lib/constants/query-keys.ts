@@ -14,5 +14,6 @@ export const financeKeys = {
   masterData: {
     contacts: (kind?: string) => [...financeKeys.all, "master-data", "contacts", kind ?? "all"] as const,
     treasuries: () => [...financeKeys.all, "master-data", "treasuries"] as const,
+    accounts: () => [...financeKeys.all, "master-data", "accounts"] as const,
   },
 } as const

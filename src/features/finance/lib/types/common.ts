@@ -57,9 +57,18 @@ export type FinanceTreasury = {
   code: string
   kind: "bank" | "cash"
   name: string
+  /** The bank's short name ("CIB"); null for cash treasuries. */
+  bank: string | null
   account_code: string
+  /** Last four digits of the bank account number. */
+  account_last4: string | null
   currency: CurrencyCode
   balance: number
+  /** EGP equivalent at the current rate. */
+  base_balance: number
+  rate: number
+  last_reconciled: string | null
+  /** Statement lines not yet matched to a book entry, counted live. */
   unmatched_lines: number
 }
 

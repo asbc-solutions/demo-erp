@@ -1,7 +1,8 @@
 import { collection, createRow, findRow } from "../../demo-db"
 import { route, type DemoRoute } from "../../demo-router"
 import { FIN_TODAY } from "../../seed/finance/calendar"
-import { rateFor } from "../../seed/finance/receivables"
+import { convert } from "../../seed/finance/banking"
+import { postMovement } from "./banking-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { nextNumber, presentVoucher, subledgerRoutes } from "./subledger"
 import { openDocuments, r2 } from "./subledger-model"
@@ -30,8 +31,6 @@ export const financeReceivablesRoutes: DemoRoute[] = [
       data: collection(FIN_COLLECTIONS.contacts).filter((row) => !kind || row.kind === kind),
     }
   }),
-
-  route("get", "/finance/treasuries", () => ({ data: collection(FIN_COLLECTIONS.treasuries) })),
 
   ...subledgerRoutes("receivable", {
     base: "/finance/ar",
@@ -79,11 +78,15 @@ export const financeReceivablesRoutes: DemoRoute[] = [
     )
     const applied = applyAllocations(allocations)
     const currency = String(customer.currency)
-    treasury.balance = r2(
-      Number(treasury.balance) + (amount * rateFor(currency)) / rateFor(String(treasury.currency)),
-    )
-
     const number = nextNumber("REC-2026-", collection(FIN_COLLECTIONS.receipts), 1022, 10)
+    postMovement({
+      treasury_id: String(treasury.id),
+      description: `Receipt — ${String(customer.name)}`,
+      source: number,
+      source_type: "receipt",
+      source_id: number,
+      amount: convert(amount, currency, String(treasury.currency)),
+    })
     const receipt = createRow(FIN_COLLECTIONS.receipts, {
       number,
       date: FIN_TODAY,

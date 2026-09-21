@@ -1,4 +1,4 @@
-import { collection, findRow, type Row } from "../../demo-db"
+import { collection, type Row } from "../../demo-db"
 import { route, type DemoRoute } from "../../demo-router"
 import { FIN_ANCHORS } from "../../seed/finance/anchors"
 import { FIN_CLOSE_CHECK_ROWS } from "../../seed/finance/close"
@@ -8,23 +8,34 @@ import {
   buildAttentionItems,
   buildExceptionRows,
 } from "../../seed/finance/overview"
+import { presentTreasuries, unmatchedTotal, unreconciledTreasuries } from "./banking-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { dueWithin, totals } from "./subledger-model"
 
-function rateToBase(currency: string): number {
-  return Number(findRow(FIN_COLLECTIONS.currencies, currency)?.rate_to_base ?? 1)
-}
-
 /** Treasuries with their EGP-equivalent balance, the basis of every cash figure. */
 function treasuriesInBase(): Row[] {
-  return collection(FIN_COLLECTIONS.treasuries).map((row) => ({
-    ...row,
-    base_amount: Math.round(Number(row.balance) * rateToBase(String(row.currency)) * 100) / 100,
-  }))
+  return presentTreasuries().map((row) => ({ ...row, base_amount: row.base_balance }))
 }
 
 function sum(rows: Row[], key: string): number {
   return Math.round(rows.reduce((total, row) => total + Number(row[key] ?? 0), 0) * 100) / 100
+}
+
+function worstUnmatched() {
+  const worst = unreconciledTreasuries()[0]
+  return worst ? { treasuryId: worst.id, name: worst.name, count: worst.count } : null
+}
+
+/** Close readiness, with the reconciliation check read live (and dropped once it passes). */
+function closeChecks(): Row[] {
+  const unreconciled = unreconciledTreasuries().length
+  return FIN_CLOSE_CHECK_ROWS.flatMap((check) =>
+    check.id !== "check-reconciled"
+      ? [check]
+      : unreconciled > 0
+        ? [{ ...check, detail: `${unreconciled} ${unreconciled === 1 ? "account" : "accounts"} with unmatched lines` }]
+        : [],
+  )
 }
 
 function closeProgress() {
@@ -65,7 +76,7 @@ export const financeOverviewRoutes: DemoRoute[] = [
           due_this_week: dueWithin("payable", 7),
         },
         net_result: { period_label: "March", amount: FIN_ANCHORS.netResult.amount },
-        attention: buildAttentionItems({ unallocatedReceipts }),
+        attention: buildAttentionItems({ unallocatedReceipts, unmatched: worstUnmatched() }),
         cash_weeks: FIN_CASH_WEEK_ROWS,
         close: closeProgress(),
         activity: FIN_ACTIVITY_ROWS,
@@ -97,10 +108,10 @@ export const financeOverviewRoutes: DemoRoute[] = [
   }),
 
   route("get", "/finance/overview/close-readiness", () => ({
-    data: { period_label: "March 2026", checks: FIN_CLOSE_CHECK_ROWS },
+    data: { period_label: "March 2026", checks: closeChecks() },
   })),
 
   route("get", "/finance/overview/exceptions", () => ({
-    data: buildExceptionRows({ overdueInvoices: totals("receivable").overdue_count }),
+    data: buildExceptionRows({ overdueInvoices: totals("receivable").overdue_count, unmatchedLines: unmatchedTotal() }),
   })),
 ]

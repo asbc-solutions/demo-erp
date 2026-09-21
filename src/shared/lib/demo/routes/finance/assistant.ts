@@ -7,11 +7,13 @@ import {
   buildAgingAnswer,
   buildApproversAnswer,
   buildBriefing,
+  buildWatchlistAnswer,
   limitedAnswerFor,
   topicForQuestion,
   type AssistantTopic,
 } from "../../seed/finance/assistant"
 import { FIN_NOW } from "../../seed/finance/calendar"
+import { unreconciledTreasuries } from "./banking-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { listResponse } from "./helpers"
 import { pendingBills } from "./payables"
@@ -28,6 +30,9 @@ function answerFor(topic: AssistantTopic): Record<string, unknown> {
       })),
     )
   }
+  if (topic === "watchlist") {
+    return buildWatchlistAnswer(unreconciledTreasuries(), collection(FIN_COLLECTIONS.treasuries).length)
+  }
   if (topic !== "aging") return ASSISTANT_ANSWERS[topic]
   const receivables = totals("receivable")
   return buildAgingAnswer({
@@ -37,14 +42,21 @@ function answerFor(topic: AssistantTopic): Record<string, unknown> {
   })
 }
 
-/** Unpaid bills past their due date, for the briefing's blockers list. */
-function overdueBills() {
+/** Live figures for the briefing: overdue bills and unreconciled bank lines. */
+function briefingLive() {
   const overdue = documents("payable")
     .filter((doc) => doc.type === "bill" && doc.approval !== "returned" && Number(doc.outstanding) > 0)
     .filter((doc) => daysLate(doc.due_date as string | null) > 0)
     .map((doc) => String(doc.due_date))
     .sort()
-  return { overdueBills: overdue.length, oldestOverdueBill: overdue[0] ?? null }
+  const unreconciled = unreconciledTreasuries()
+  return {
+    overdueBills: overdue.length,
+    oldestOverdueBill: overdue[0] ?? null,
+    unmatchedLines: unreconciled.reduce((sum, row) => sum + row.count, 0),
+    oldestUnmatched: unreconciled.map((row) => row.oldest).sort()[0] ?? null,
+    treasuriesUnreconciled: unreconciled.length,
+  }
 }
 
 type SettingsRow = Record<string, unknown> & { data_groups: Record<string, boolean> }
@@ -83,7 +95,7 @@ export const financeAssistantRoutes: DemoRoute[] = [
     return { data: { ...current, groups: ASSISTANT_DATA_GROUPS } }
   }),
 
-  route("get", "/finance/assistant/briefing", () => ({ data: buildBriefing(overdueBills()) })),
+  route("get", "/finance/assistant/briefing", () => ({ data: buildBriefing(briefingLive()) })),
 
   route("get", "/finance/assistant/drafts", (req) =>
     listResponse(collection(FIN_COLLECTIONS.assistantDrafts), { per_page: 100, ...req.params }),

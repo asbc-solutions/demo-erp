@@ -13,6 +13,14 @@ export function useFinanceContacts(kind?: ContactKind) {
   })
 }
 
+/** Accounts an entry can post to (no group accounts). */
+export function useFinanceAccounts() {
+  return useQuery({
+    queryKey: financeKeys.masterData.accounts(),
+    queryFn: () => masterDataApi.accounts().then((r) => r.data.data),
+  })
+}
+
 export function useFinanceTreasuries() {
   return useQuery({
     queryKey: financeKeys.masterData.treasuries(),

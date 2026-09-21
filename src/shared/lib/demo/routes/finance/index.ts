@@ -2,8 +2,10 @@ import type { DemoRoute } from "../../demo-router"
 
 import "./collections"
 import { financeAssistantRoutes } from "./assistant"
+import { financeBankingRoutes } from "./banking"
 import { financeOverviewRoutes } from "./overview"
 import { financePayablesRoutes } from "./payables"
+import { financeReconciliationRoutes } from "./reconciliation"
 import { financeReceivablesRoutes } from "./receivables"
 import { financeShellRoutes } from "./shell"
 
@@ -14,4 +16,6 @@ export const financeRoutes: DemoRoute[] = [
   ...financeAssistantRoutes,
   ...financeReceivablesRoutes,
   ...financePayablesRoutes,
+  ...financeBankingRoutes,
+  ...financeReconciliationRoutes,
 ]

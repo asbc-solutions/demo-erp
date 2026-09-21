@@ -21,15 +21,16 @@ export const FIN_CURRENCY_ROWS: Row[] = [
 
 /**
  * The six cash accounts behind "EGP 8,701,390.00 across 6 accounts":
- * banks 8,187,520.00 (EGP eq.) + treasuries 513,870.00.
+ * banks 8,187,520.00 (EGP eq.) + treasuries 513,870.00. Unmatched statement
+ * lines are counted live from the reconciliation data, not stored here.
  */
 export const FIN_TREASURY_ROWS: Row[] = [
-  { id: "trs-main-cairo", code: "T-01", kind: "cash", name: "Main treasury — Cairo", account_code: "110101", currency: "EGP", balance: 486_320, unmatched_lines: 0 },
-  { id: "trs-petty-cairo", code: "T-02", kind: "cash", name: "Petty cash — Cairo", account_code: "110102", currency: "EGP", balance: 18_450, unmatched_lines: 0 },
-  { id: "trs-petty-alex", code: "T-03", kind: "cash", name: "Petty cash — Alexandria", account_code: "110103", currency: "EGP", balance: 9_100, unmatched_lines: 0 },
-  { id: "bnk-cib-0021", code: "T-04", kind: "bank", name: "CIB — current account 0021", account_code: "110201", currency: "EGP", balance: 3_914_880, unmatched_lines: 18 },
-  { id: "bnk-bm-usd-4417", code: "T-05", kind: "bank", name: "Banque Misr — USD 4417", account_code: "110202", currency: "USD", balance: 62_400, unmatched_lines: 3 },
-  { id: "bnk-qnb-payroll", code: "T-06", kind: "bank", name: "QNB Alahli — payroll account", account_code: "110203", currency: "EGP", balance: 1_240_000, unmatched_lines: 0 },
+  { id: "trs-main-cairo", code: "T-01", kind: "cash", name: "Main treasury — Cairo", short_name: "Main treasury", bank: null, account_code: "110101", account_last4: null, currency: "EGP", balance: 486_320, last_reconciled: "2026-03-30" },
+  { id: "trs-petty-cairo", code: "T-02", kind: "cash", name: "Petty cash — Cairo", short_name: "Petty cash", bank: null, account_code: "110102", account_last4: null, currency: "EGP", balance: 18_450, last_reconciled: "2026-03-28" },
+  { id: "trs-petty-alex", code: "T-03", kind: "cash", name: "Petty cash — Alexandria", short_name: "Petty cash", bank: null, account_code: "110103", account_last4: null, currency: "EGP", balance: 9_100, last_reconciled: "2026-03-25" },
+  { id: "bnk-cib-0021", code: "T-04", kind: "bank", name: "CIB — current account 0021", short_name: "CIB", bank: "CIB", account_code: "110201", account_last4: "0021", currency: "EGP", balance: 3_914_880, last_reconciled: "2026-03-01" },
+  { id: "bnk-bm-usd-4417", code: "T-05", kind: "bank", name: "Banque Misr — USD 4417", short_name: "Banque Misr", bank: "Banque Misr", account_code: "110202", account_last4: "4417", currency: "USD", balance: 62_400, last_reconciled: "2026-03-15" },
+  { id: "bnk-qnb-payroll", code: "T-06", kind: "bank", name: "QNB Alahli — payroll account", short_name: "QNB Alahli", bank: "QNB Alahli", account_code: "110203", account_last4: "7781", currency: "EGP", balance: 1_240_000, last_reconciled: "2026-03-20" },
 ]
 
 /** Control accounts the subledgers post to; advances sit outside the AR/AP balance. */
@@ -38,6 +39,7 @@ export const CUSTOMER_ADVANCES_ACCOUNT = "210103"
 export const AP_CONTROL_ACCOUNT = "210101"
 export const SUPPLIER_ADVANCES_ACCOUNT = "120302"
 export const INPUT_VAT_ACCOUNT = "110601"
+export const EMPLOYEE_CUSTODY_ACCOUNT = "120305"
 
 export const FIN_CONTACT_ROWS: Row[] = [
   { id: "C-0101", code: "C-0101", name: "Nile Contracting Co.", kind: "customer", tax_reg_no: "201-330-880", currency: "EGP", terms_days: 45, credit_limit: 2_000_000 },
@@ -70,6 +72,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["110301", "Trade receivables — customers", "asset", "11", false],
   ["110601", "Input VAT", "asset", "11", false],
   ["120302", "Supplier advances", "asset", "11", false],
+  ["120305", "Employee custody", "asset", "11", false],
   ["12", "Fixed assets", "asset", "1", true],
   ["1201", "Machinery and equipment", "asset", "12", false],
   ["1209", "Accumulated depreciation", "asset", "12", false],
@@ -86,6 +89,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["4", "Income", "income", null, true],
   ["4101", "Sales revenue", "income", "4", false],
   ["4102", "Service revenue", "income", "4", false],
+  ["4201", "Interest income", "income", "4", false],
   ["4901", "FX gains", "income", "4", false],
   ["5", "Expenses", "expense", null, true],
   ["5101", "Cost of goods sold", "expense", "5", false],
@@ -97,6 +101,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["640301", "Meals and entertainment", "expense", "5", false],
   ["640401", "Telephone and internet", "expense", "5", false],
   ["640501", "Repairs and maintenance", "expense", "5", false],
+  ["5801", "Bank charges", "expense", "5", false],
   ["5901", "FX losses", "expense", "5", false],
 ]
 

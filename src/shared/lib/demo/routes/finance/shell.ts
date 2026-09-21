@@ -1,6 +1,7 @@
 import { collection } from "../../demo-db"
 import { route, type DemoRoute } from "../../demo-router"
 import { FIN_ANCHORS } from "../../seed/finance/anchors"
+import { unmatchedTotal } from "./banking-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { pendingBills } from "./payables"
 
@@ -12,7 +13,7 @@ const SEARCH_LIMIT = 5
  */
 function navCounts(): Record<string, number> {
   return {
-    "fin-bank-reconciliation": FIN_ANCHORS.banking.cibUnmatchedLines,
+    "fin-bank-reconciliation": unmatchedTotal(),
     "fin-bill-approvals": pendingBills().length,
     "fin-e-invoicing": FIN_ANCHORS.tax.rejectedEInvoices,
   }
@@ -27,6 +28,10 @@ export const financeShellRoutes: DemoRoute[] = [
   route("get", "/finance/entities", () => ({ data: collection(FIN_COLLECTIONS.entities) })),
 
   route("get", "/finance/periods", () => ({ data: collection(FIN_COLLECTIONS.periods) })),
+
+  route("get", "/finance/accounts", (req) => ({
+    data: collection(FIN_COLLECTIONS.accounts).filter((row) => !req.params.postable || !row.is_group),
+  })),
 
   route("get", "/finance/nav-counts", () => {
     const counts = navCounts()

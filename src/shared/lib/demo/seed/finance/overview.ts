@@ -44,16 +44,20 @@ export const FIN_ACTIVITY_ROWS: Row[] = [
 
 /** "Needs your attention" on Finance home, worst first. */
 /** Live counts the attention list reads from the section collections. */
-export type AttentionCounts = { unallocatedReceipts: number }
+export type AttentionCounts = {
+  unallocatedReceipts: number
+  /** The treasury with the most unmatched statement lines, if any. */
+  unmatched: { treasuryId: string; name: string; count: number } | null
+}
 
 export function buildAttentionItems(live: AttentionCounts): Row[] {
   const items: Row[] = [
     {
       id: "att-unmatched",
-      label: `${FIN_ANCHORS.banking.cibUnmatchedLines} unmatched bank lines on CIB current account`,
-      count: FIN_ANCHORS.banking.cibUnmatchedLines,
+      label: `${live.unmatched?.count ?? 0} unmatched bank lines on ${live.unmatched?.name ?? "the bank accounts"}`,
+      count: live.unmatched?.count ?? 0,
       tone: "danger",
-      href: "/finance/reconciliation",
+      href: live.unmatched ? `/finance/reconciliation/${live.unmatched.treasuryId}` : "/finance/reconciliation",
     },
     {
       id: "att-einvoices",
@@ -95,7 +99,7 @@ export function buildAttentionItems(live: AttentionCounts): Row[] {
 }
 
 /** On the go · Exceptions — anything the module thinks is wrong, worst first. */
-export function buildExceptionRows(live: { overdueInvoices: number }): Row[] {
+export function buildExceptionRows(live: { overdueInvoices: number; unmatchedLines: number }): Row[] {
   return [
     {
       id: "exc-seal",
@@ -109,7 +113,7 @@ export function buildExceptionRows(live: { overdueInvoices: number }): Row[] {
     },
     {
       id: "exc-unmatched",
-      label: `${FIN_ANCHORS.banking.unmatchedLines} bank lines have not been matched`,
+      label: `${live.unmatchedLines} bank lines have not been matched`,
       href: "/finance/reconciliation",
     },
     {

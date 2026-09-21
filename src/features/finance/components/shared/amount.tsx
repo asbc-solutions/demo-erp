@@ -16,10 +16,16 @@ const amountVariants = cva("inline-flex flex-col tabular-nums", {
       strong: "text-content-primary font-semibold",
       muted: "text-content-tertiary",
     },
+    /** Colour negatives as a warning, e.g. an overdrawn balance. */
+    signed: {
+      true: "data-negative:text-status-danger-fg",
+      false: "",
+    },
   },
   defaultVariants: {
     align: "end",
     emphasis: "default",
+    signed: false,
   },
 })
 
@@ -41,6 +47,7 @@ function Amount({
   className,
   align,
   emphasis,
+  signed,
   value,
   currency,
   hideCurrency = false,
@@ -51,7 +58,7 @@ function Amount({
     <span
       data-slot="amount"
       data-negative={value < 0 ? "" : undefined}
-      className={cn(amountVariants({ align, emphasis }), className)}
+      className={cn(amountVariants({ align, emphasis, signed }), className)}
       {...props}
     >
       <span className="whitespace-nowrap">

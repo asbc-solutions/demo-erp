@@ -92,6 +92,63 @@ export function buildAgingAnswer(exposure: AgingExposure): Record<string, unknow
   }
 }
 
+export type UnreconciledAccount = { id: string; name: string; count: number; oldest: string }
+
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })
+
+/** Which treasuries hold up the close, read from the live reconciliation data. */
+export function buildWatchlistAnswer(accounts: UnreconciledAccount[], totalAccounts: number): Record<string, unknown> {
+  const lines = accounts.reduce((sum, account) => sum + account.count, 0)
+  const worst = accounts[0]
+  return {
+    headline:
+      accounts.length === 0
+        ? "Every cash account is reconciled — nothing is holding up the close."
+        : `${accounts.length} ${accounts.length === 1 ? "treasury is" : "treasuries are"} blocking the March close — ${lines} unmatched ${lines === 1 ? "line" : "lines"} in total.`,
+    matches: "Banking / Bank reconciliation",
+    table: {
+      columns: [
+        { id: "treasury", label: "Treasury" },
+        { id: "count", label: "Unmatched", align: "end" },
+        { id: "oldest", label: "Oldest" },
+        { id: "href", label: "Where it goes" },
+      ],
+      rows: accounts.map((account) => ({
+        id: account.id,
+        treasury: account.name,
+        count: account.count,
+        oldest: shortDate(account.oldest),
+        href: `/finance/reconciliation/${account.id}`,
+      })),
+      footnote: `Showing ${accounts.length} of ${totalAccounts} cash accounts · the other ${totalAccounts - accounts.length} are reconciled`,
+    },
+    links: [
+      { label: "Banking / Bank reconciliation", href: "/finance/reconciliation" },
+      { label: "Overview / Cash position", href: "/finance/cash-position" },
+    ],
+    proposal: worst
+      ? {
+          summary: `Match the ${worst.name} lines first — they are ${worst.count} of the ${lines} lines holding up the close.`,
+          badge: PROPOSAL_BADGE,
+          facts: [
+            { term: "Account", value: worst.name },
+            { term: "Unmatched lines", value: String(worst.count) },
+            { term: "Oldest line", value: shortDate(worst.oldest) },
+            { term: "Status", value: "Blocking the March close" },
+          ],
+          action: { label: "Open Banking / Bank reconciliation", href: `/finance/reconciliation/${worst.id}` },
+        }
+      : null,
+    grounding: [
+      { label: "Banking / Bank reconciliation", detail: `${lines} lines` },
+      { label: "Period close / Close workspace", detail: "22 tasks" },
+    ],
+    not_read: NOT_READ,
+    sources: 2,
+  }
+}
+
 export type PendingApproval = { id: string; number: string; supplier: string; amount_base: number }
 
 /** Bills in the approval queue at or above the second-approval threshold, read live. */
@@ -150,45 +207,7 @@ export function buildApproversAnswer(pending: PendingApproval[]): Record<string,
   }
 }
 
-export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approvers">, Record<string, unknown>> = {
-  watchlist: {
-    headline: `${FIN_ANCHORS.banking.treasuriesUnreconciled} treasuries are blocking the March close — ${FIN_ANCHORS.banking.unmatchedLines} unmatched lines in total.`,
-    matches: "Banking / Bank reconciliation",
-    table: {
-      columns: [
-        { id: "treasury", label: "Treasury" },
-        { id: "count", label: "Unmatched", align: "end" },
-        { id: "oldest", label: "Oldest" },
-        { id: "href", label: "Where it goes" },
-      ],
-      rows: [
-        { id: "cib", treasury: "CIB — current account 0021", count: FIN_ANCHORS.banking.cibUnmatchedLines, oldest: "3 Mar 2026", href: "/finance/reconciliation" },
-        { id: "bm", treasury: "Banque Misr — USD 4417", count: FIN_ANCHORS.banking.bankMisrUnmatchedLines, oldest: "12 Mar 2026", href: "/finance/reconciliation" },
-      ],
-      footnote: "Showing 2 of 6 cash accounts · the other 4 are reconciled to 31 Mar 2026",
-    },
-    links: [
-      { label: "Banking / Bank reconciliation", href: "/finance/reconciliation" },
-      { label: "Overview / Cash position", href: "/finance/cash-position" },
-    ],
-    proposal: {
-      summary: "Match the CIB lines first — they are 18 of the 21 lines holding up the close.",
-      badge: PROPOSAL_BADGE,
-      facts: [
-        { term: "Account", value: "CIB — current account 0021" },
-        { term: "Unmatched lines", value: String(FIN_ANCHORS.banking.cibUnmatchedLines) },
-        { term: "Statement to", value: "31 Mar 2026" },
-        { term: "Status", value: "Blocking the March close" },
-      ],
-      action: { label: "Open Banking / Bank reconciliation", href: "/finance/reconciliation" },
-    },
-    grounding: [
-      { label: "Banking / Bank reconciliation", detail: `${FIN_ANCHORS.banking.unmatchedLines} lines` },
-      { label: "Period close / Close workspace", detail: "22 tasks" },
-    ],
-    not_read: NOT_READ,
-    sources: 2,
-  },
+export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approvers" | "watchlist">, Record<string, unknown>> = {
   close: {
     headline: `${FIN_CLOSE_CHECK_ROWS.length} readiness checks still fail, so March cannot be closed yet.`,
     matches: "Period close / Close workspace",
@@ -448,17 +467,23 @@ export const ASSISTANT_HISTORY_ROWS: Row[] = [
   { id: "conv-1", question: "Which e-invoices were rejected this period?", scope_label: "EG-01 · 1 Mar — 31 Mar", asked_at: "2026-03-30T16:02:00.000Z" },
 ]
 
-export type BriefingPayables = { overdueBills: number; oldestOverdueBill: string | null }
+export type BriefingLive = {
+  overdueBills: number
+  oldestOverdueBill: string | null
+  unmatchedLines: number
+  oldestUnmatched: string | null
+  treasuriesUnreconciled: number
+}
 
-export function buildBriefing(payables: BriefingPayables): Record<string, unknown> {
+export function buildBriefing(live: BriefingLive): Record<string, unknown> {
   return {
     computed_at: "2026-03-31T14:49:00.000Z",
     tiles: [
       {
         id: "treasuries",
         label: "Treasuries unreconciled",
-        value: FIN_ANCHORS.banking.treasuriesUnreconciled,
-        caption: `${FIN_ANCHORS.banking.unmatchedLines} unmatched lines`,
+        value: live.treasuriesUnreconciled,
+        caption: `${live.unmatchedLines} unmatched lines`,
       },
       { id: "blockers", label: "Close blockers", value: FIN_ANCHORS.close.blockers, caption: "Readiness checks failing" },
       {
@@ -470,14 +495,14 @@ export function buildBriefing(payables: BriefingPayables): Record<string, unknow
       { id: "drafts", label: "Draft journal entries", value: FIN_ANCHORS.ledger.draftEntries, caption: "Not posted" },
     ],
     items: [
-      { id: "b1", item: "Unmatched bank statement lines", count: FIN_ANCHORS.banking.unmatchedLines, oldest: "2026-03-03", owner: "Finance · treasury", destination: "Bank reconciliation", href: "/finance/reconciliation" },
+      { id: "b1", item: "Unmatched bank statement lines", count: live.unmatchedLines, oldest: live.oldestUnmatched, owner: "Finance · treasury", destination: "Bank reconciliation", href: "/finance/reconciliation" },
       { id: "b2", item: "E-invoices rejected by the authority", count: FIN_ANCHORS.tax.rejectedEInvoices, oldest: "2026-03-12", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
       { id: "b3", item: "Items with no EGS or GS1 code", count: FIN_ANCHORS.tax.itemsUnmapped, oldest: "2026-02-01", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
       { id: "b4", item: "VAT pre-filing checks open", count: VAT.openChecks, oldest: "2026-03-16", owner: "Finance · tax", destination: "VAT return", href: "/finance/tax/vat-return" },
       { id: "b5", item: "Depreciation runs not posted", count: 1, oldest: "2026-03-31", owner: "Finance · assets", destination: "Depreciation run", href: "/finance/assets/depreciation" },
       { id: "b6", item: "Draft entries in the period", count: FIN_ANCHORS.ledger.draftEntries, oldest: "2026-03-22", owner: "Finance · ledger", destination: "Journal entries", href: "/finance/journals" },
       { id: "b7", item: "E-invoices never submitted", count: FIN_ANCHORS.tax.notSubmittedEInvoices, oldest: "2026-03-18", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
-      { id: "b8", item: "Overdue supplier bills", count: payables.overdueBills, oldest: payables.oldestOverdueBill, owner: "Finance · payables", destination: "Payment runs", href: "/finance/ap/payment-runs" },
+      { id: "b8", item: "Overdue supplier bills", count: live.overdueBills, oldest: live.oldestOverdueBill, owner: "Finance · payables", destination: "Payment runs", href: "/finance/ap/payment-runs" },
       { id: "b9", item: "Suspense account not at zero", count: 1, oldest: "2026-02-28", owner: "Finance · ledger", destination: `Account ${FIN_ANCHORS.ledger.suspenseAccount}`, href: "/finance/ledger" },
     ],
     follow_ups: [
