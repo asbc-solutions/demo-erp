@@ -49,6 +49,8 @@ export type AttentionCounts = {
   /** The treasury with the most unmatched statement lines, if any. */
   unmatched: { treasuryId: string; name: string; count: number } | null
   pendingJournals: number
+  rejectedEInvoices: number
+  sealDays: number
 }
 
 export function buildAttentionItems(live: AttentionCounts): Row[] {
@@ -62,15 +64,16 @@ export function buildAttentionItems(live: AttentionCounts): Row[] {
     },
     {
       id: "att-einvoices",
-      label: `${FIN_ANCHORS.tax.rejectedEInvoices} e-invoices rejected by ETA`,
-      count: FIN_ANCHORS.tax.rejectedEInvoices,
+      label: `${live.rejectedEInvoices} e-invoices rejected by ETA`,
+      count: live.rejectedEInvoices,
       tone: "danger",
       href: "/finance/tax/e-invoicing",
     },
     {
       id: "att-seal",
-      label: `Seal certificate expires in ${FIN_ANCHORS.tax.sealExpiresInDays} days`,
-      count: FIN_ANCHORS.tax.sealExpiresInDays,
+      label: `Seal certificate expires in ${live.sealDays} days`,
+      // Only worth attention inside the renewal window.
+      count: live.sealDays <= 30 ? live.sealDays : 0,
       tone: "warning",
       href: "/finance/tax/e-invoicing",
     },
@@ -100,27 +103,32 @@ export function buildAttentionItems(live: AttentionCounts): Row[] {
 }
 
 /** On the go · Exceptions — anything the module thinks is wrong, worst first. */
-export function buildExceptionRows(live: { overdueInvoices: number; unmatchedLines: number }): Row[] {
-  return [
+export function buildExceptionRows(live: { overdueInvoices: number; unmatchedLines: number; rejectedEInvoices: number; sealDays: number }): Row[] {
+  const rows = [
     {
       id: "exc-seal",
-      label: `The signing certificate expires in ${FIN_ANCHORS.tax.sealExpiresInDays} days`,
+      label: `The signing certificate expires in ${live.sealDays} days`,
+      count: live.sealDays <= 30 ? 1 : 0,
       href: "/finance/tax/e-invoicing",
     },
     {
       id: "exc-overdue",
       label: `${live.overdueInvoices} invoices are overdue`,
+      count: live.overdueInvoices,
       href: "/finance/ar/collections",
     },
     {
       id: "exc-unmatched",
       label: `${live.unmatchedLines} bank lines have not been matched`,
+      count: live.unmatchedLines,
       href: "/finance/reconciliation",
     },
     {
       id: "exc-rejected",
-      label: `${FIN_ANCHORS.tax.rejectedEInvoices} documents were rejected by the authority`,
+      label: `${live.rejectedEInvoices} documents were rejected by the authority`,
+      count: live.rejectedEInvoices,
       href: "/finance/tax/e-invoicing",
     },
   ]
+  return rows.filter((row) => row.count > 0).map((row) => ({ id: row.id, label: row.label, href: row.href }))
 }

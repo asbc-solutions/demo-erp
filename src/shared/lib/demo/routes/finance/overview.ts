@@ -10,6 +10,7 @@ import {
 import { presentTreasuries, unmatchedTotal, unreconciledTreasuries } from "./banking-model"
 import { closeSummary, closeTasks, readinessChecks } from "./close-model"
 import { FIN_COLLECTIONS } from "./collections"
+import { eInvoiceState } from "./tax-model"
 import { periodResult, storedJournals } from "./ledger-model"
 import { dueWithin, totals } from "./subledger-model"
 
@@ -74,6 +75,8 @@ export const financeOverviewRoutes: DemoRoute[] = [
           unallocatedReceipts,
           unmatched: worstUnmatched(),
           pendingJournals: storedJournals().filter((row) => row.status === "pending").length,
+          rejectedEInvoices: eInvoiceState().rejected,
+          sealDays: eInvoiceState().seal_days,
         }),
         cash_weeks: FIN_CASH_WEEK_ROWS,
         close: closeProgress(),
@@ -110,6 +113,11 @@ export const financeOverviewRoutes: DemoRoute[] = [
   })),
 
   route("get", "/finance/overview/exceptions", () => ({
-    data: buildExceptionRows({ overdueInvoices: totals("receivable").overdue_count, unmatchedLines: unmatchedTotal() }),
+    data: buildExceptionRows({
+      overdueInvoices: totals("receivable").overdue_count,
+      unmatchedLines: unmatchedTotal(),
+      rejectedEInvoices: eInvoiceState().rejected,
+      sealDays: eInvoiceState().seal_days,
+    }),
   })),
 ]

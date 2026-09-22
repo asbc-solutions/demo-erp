@@ -1,5 +1,6 @@
 import type { Row } from "../../demo-db"
 import { FIN_ANCHORS } from "./anchors"
+import { VAT_PAYABLE_ACCOUNT, VAT_PAYABLE_CLOSING, VAT_SETTLEMENT_JOURNAL } from "./tax"
 
 /**
  * Ledger — the stored journals, templates, recurring journals and the
@@ -42,6 +43,7 @@ const CLOSING: Record<string, number> = {
   "210201": -FIN_ANCHORS.tax.vatReturn.outputVat,
   "210202": -356_000,
   "210203": -801_000,
+  [VAT_PAYABLE_ACCOUNT]: VAT_PAYABLE_CLOSING,
   "210301": -520_000,
   "210302": -396_000,
   "210401": -412_000,
@@ -261,7 +263,18 @@ export function buildJournals(): Row[] {
       submitted_at: status === "pending" ? `${date}T10:00:00.000Z` : null,
     }),
   )
-  return [...monthlyJournals(), ...manual].reverse()
+  const vatSettlement = journal(
+    VAT_SETTLEMENT_JOURNAL.number,
+    VAT_SETTLEMENT_JOURNAL.date,
+    "VAT settlement — January 2026",
+    "VR-2026-01",
+    [
+      line(VAT_PAYABLE_ACCOUNT, VAT_SETTLEMENT_JOURNAL.amount, "VAT paid to ETA"),
+      line("110201", -VAT_SETTLEMENT_JOURNAL.amount, "VAT paid to ETA"),
+    ],
+    { source_type: "vat_settlement" },
+  )
+  return [...monthlyJournals(), vatSettlement, ...manual].reverse()
 }
 
 /** Posted base-currency lines of the seeded journals, per account, debit positive. */

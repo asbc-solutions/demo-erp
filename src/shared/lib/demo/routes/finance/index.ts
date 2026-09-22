@@ -10,6 +10,7 @@ import { financePayablesRoutes } from "./payables"
 import { financeReconciliationRoutes } from "./reconciliation"
 import { financeReceivablesRoutes } from "./receivables"
 import { financeShellRoutes } from "./shell"
+import { financeTaxRoutes } from "./tax"
 
 /** Finance v2 endpoints, one file per section as each phase lands. */
 export const financeRoutes: DemoRoute[] = [
@@ -22,4 +23,5 @@ export const financeRoutes: DemoRoute[] = [
   ...financeReconciliationRoutes,
   ...financeLedgerRoutes,
   ...financeCloseRoutes,
+  ...financeTaxRoutes,
 ]

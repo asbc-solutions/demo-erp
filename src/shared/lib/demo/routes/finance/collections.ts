@@ -32,6 +32,16 @@ import {
 } from "../../seed/finance/master-data"
 import { buildApDocuments, buildPayments } from "../../seed/finance/payables"
 import { buildArDocuments, buildReceipts } from "../../seed/finance/receivables"
+import {
+  FIN_AUDIT_FILE_ROWS,
+  FIN_DECLARATION_ROWS,
+  FIN_EINVOICE_SETTINGS,
+  FIN_TAX_CODE_ROWS,
+  FIN_VAT_CHECK_ROWS,
+  FIN_VAT_RETURN_ROWS,
+  FIN_WHT_CERTIFICATE_ROWS,
+  buildEDocuments,
+} from "../../seed/finance/tax"
 
 /** Collection names for finance data; each section adds its own here. */
 export const FIN_COLLECTIONS = {
@@ -68,6 +78,13 @@ export const FIN_COLLECTIONS = {
   costCenters: "finance/cost-centers",
   dimensions: "finance/dimensions",
   yearEndSteps: "finance/year-end-steps",
+  vatReturns: "finance/vat-returns",
+  vatChecks: "finance/vat-checks",
+  eDocuments: "finance/e-documents",
+  eInvoiceSettings: "finance/e-invoice-settings",
+  declarations: "finance/declarations",
+  whtCertificates: "finance/wht-certificates",
+  auditFiles: "finance/audit-files",
 } as const
 
 /** Seeds are copied so edits in one session never mutate the module-level fixtures. */
@@ -112,8 +129,15 @@ defineCollection(FIN_COLLECTIONS.ledgerSettings, () => [
 ])
 defineCollection(FIN_COLLECTIONS.journalTemplates, copy(FIN_JOURNAL_TEMPLATE_ROWS))
 defineCollection(FIN_COLLECTIONS.recurringJournals, copy(FIN_RECURRING_ROWS))
-// Tax codes, cost centers and dimensions are seeded by their own sections; import appends to them.
-defineCollection(FIN_COLLECTIONS.taxCodes, () => [])
+// Cost centers and dimensions are seeded by Planning; import appends to them.
+defineCollection(FIN_COLLECTIONS.taxCodes, copy(FIN_TAX_CODE_ROWS))
 defineCollection(FIN_COLLECTIONS.costCenters, () => [])
 defineCollection(FIN_COLLECTIONS.dimensions, () => [])
 defineCollection(FIN_COLLECTIONS.yearEndSteps, copy(FIN_YEAR_END_STEPS))
+defineCollection(FIN_COLLECTIONS.vatReturns, copy(FIN_VAT_RETURN_ROWS))
+defineCollection(FIN_COLLECTIONS.vatChecks, copy(FIN_VAT_CHECK_ROWS))
+defineCollection(FIN_COLLECTIONS.eDocuments, buildEDocuments)
+defineCollection(FIN_COLLECTIONS.eInvoiceSettings, copy([FIN_EINVOICE_SETTINGS]))
+defineCollection(FIN_COLLECTIONS.declarations, copy(FIN_DECLARATION_ROWS))
+defineCollection(FIN_COLLECTIONS.whtCertificates, copy(FIN_WHT_CERTIFICATE_ROWS))
+defineCollection(FIN_COLLECTIONS.auditFiles, copy(FIN_AUDIT_FILE_ROWS))

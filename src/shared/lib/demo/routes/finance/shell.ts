@@ -1,9 +1,9 @@
 import { collection } from "../../demo-db"
 import { route, type DemoRoute } from "../../demo-router"
-import { FIN_ANCHORS } from "../../seed/finance/anchors"
 import { unmatchedTotal } from "./banking-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { pendingBills } from "./payables"
+import { eInvoiceState } from "./tax-model"
 
 const SEARCH_LIMIT = 5
 
@@ -15,7 +15,7 @@ function navCounts(): Record<string, number> {
   return {
     "fin-bank-reconciliation": unmatchedTotal(),
     "fin-bill-approvals": pendingBills().length,
-    "fin-e-invoicing": FIN_ANCHORS.tax.rejectedEInvoices,
+    "fin-e-invoicing": eInvoiceState().rejected,
   }
 }
 

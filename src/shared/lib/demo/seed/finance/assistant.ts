@@ -10,7 +10,6 @@ import { FIN_ANCHORS } from "./anchors"
 const money = (value: number) =>
   value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-const VAT = FIN_ANCHORS.tax.vatReturn
 const NOT_READ = ["Payroll salary lines", "Private notes"]
 const PROPOSAL_BADGE = "Opens an existing screen · nothing is issued here"
 
@@ -253,7 +252,65 @@ export function buildCloseAnswer(failing: FailingCheck[], total: number): Record
   }
 }
 
-export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approvers" | "watchlist" | "close">, Record<string, unknown>> = {
+export type TaxLive = {
+  returnId: string
+  output: number
+  input: number
+  checks: { id: string; title: string; count: number; href: string }[]
+  openChecks: number
+  rejected: number
+  notSent: number
+  sealDays: number
+  itemsUnmapped: number
+  itemsTotal: number
+}
+
+/** Whether the March VAT return can be filed, from the live pre-filing checks. */
+export function buildFilingAnswer(tax: TaxLive): Record<string, unknown> {
+  return {
+    headline:
+      tax.openChecks === 0
+        ? "Every pre-filing check is clear — the March return can be filed."
+        : `${tax.openChecks} of ${tax.checks.length} pre-filing checks are still open — the return cannot be filed.`,
+    matches: "Tax & compliance / VAT return",
+    table: {
+      columns: [
+        { id: "check", label: "Check" },
+        { id: "count", label: "Count", align: "end" },
+        { id: "href", label: "Where it goes" },
+      ],
+      rows: tax.checks.map((check) => ({ id: check.id, check: check.title, count: check.count, href: check.href })),
+      footnote: `${tax.checks.length} checks · net payable EGP ${money(tax.output - tax.input)}`,
+    },
+    links: [
+      { label: "Tax & compliance / VAT return", href: "/finance/tax/vat-return" },
+      { label: "Tax & compliance / E-invoicing", href: "/finance/tax/e-invoicing" },
+    ],
+    proposal: {
+      summary:
+        tax.openChecks === 0
+          ? "File the March return — every check is clear."
+          : `Clear the ${tax.openChecks} open pre-filing checks before filing — the return is blocked until every check reads zero.`,
+      badge: PROPOSAL_BADGE,
+      facts: [
+        { term: "Return", value: tax.returnId },
+        { term: "Output VAT", value: `EGP ${money(tax.output)}` },
+        { term: "Input VAT", value: `EGP ${money(tax.input)}` },
+        { term: "Status", value: tax.openChecks === 0 ? "Ready to file" : "Blocked until checks clear" },
+      ],
+      action: { label: "Open Tax & compliance / VAT return", href: "/finance/tax/vat-return" },
+    },
+    grounding: [
+      { label: "Tax & compliance / VAT return", detail: "10 boxes" },
+      { label: "Tax & compliance / E-invoicing", detail: `seal expires in ${tax.sealDays} days` },
+      { label: "قانون الضريبة على القيمة المضافة", detail: "1 rule" },
+    ],
+    not_read: NOT_READ,
+    sources: 3,
+  }
+}
+
+export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approvers" | "watchlist" | "close" | "filing">, Record<string, unknown>> = {
   rule: {
     headline: "A credit sale debits trade receivables and credits sales revenue; the 14% VAT goes to VAT output (210201).",
     matches: "Configuration / Posting map",
@@ -281,46 +338,6 @@ export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approv
     ],
     not_read: NOT_READ,
     sources: 2,
-  },
-  filing: {
-    headline: `${VAT.openChecks} of ${VAT.totalChecks} pre-filing checks are still open — the return cannot be filed.`,
-    matches: "Tax & compliance / VAT return",
-    table: {
-      columns: [
-        { id: "check", label: "Check" },
-        { id: "count", label: "Count", align: "end" },
-        { id: "href", label: "Where it goes" },
-      ],
-      rows: [
-        { id: "c1", check: "Invoices with no tax code", count: 3, href: "/finance/journals" },
-        { id: "c2", check: "Tax codes with no account routing", count: 1, href: "/finance/settings/posting-map" },
-        { id: "c3", check: "Credit notes without an original", count: 0, href: "/finance/ar/credit-notes" },
-        { id: "c4", check: "Suppliers missing a tax registration number", count: 2, href: "/finance/ap" },
-      ],
-      footnote: `Showing 4 of ${VAT.totalChecks} checks · net payable EGP ${money(VAT.outputVat - VAT.inputVat)}`,
-    },
-    links: [
-      { label: "Tax & compliance / VAT return", href: "/finance/tax/vat-return" },
-      { label: "Tax & compliance / E-invoicing", href: "/finance/tax/e-invoicing" },
-    ],
-    proposal: {
-      summary: `Clear the ${VAT.openChecks} open pre-filing checks before filing — the return is blocked until every check reads zero.`,
-      badge: PROPOSAL_BADGE,
-      facts: [
-        { term: "Return", value: VAT.id },
-        { term: "Output VAT", value: `EGP ${money(VAT.outputVat)}` },
-        { term: "Input VAT", value: `EGP ${money(VAT.inputVat)}` },
-        { term: "Status", value: "Blocked until checks clear" },
-      ],
-      action: { label: "Open Tax & compliance / VAT return", href: "/finance/tax/vat-return" },
-    },
-    grounding: [
-      { label: "Tax & compliance / VAT return", detail: "10 boxes" },
-      { label: "Tax & compliance / E-invoicing", detail: `seal expires in ${FIN_ANCHORS.tax.sealExpiresInDays} days` },
-      { label: "قانون الضريبة على القيمة المضافة", detail: "1 rule" },
-    ],
-    not_read: NOT_READ,
-    sources: 3,
   },
   group: {
     headline: "I can't give a group position — consolidation isn't in this prototype.",
@@ -483,6 +500,7 @@ export type BriefingLive = {
   treasuriesUnreconciled: number
   draftEntries: number
   closeBlockers: number
+  tax: TaxLive
 }
 
 export function buildBriefing(live: BriefingLive): Record<string, unknown> {
@@ -499,19 +517,19 @@ export function buildBriefing(live: BriefingLive): Record<string, unknown> {
       {
         id: "seal",
         label: "Days to seal expiry",
-        value: FIN_ANCHORS.tax.sealExpiresInDays,
-        caption: `${FIN_ANCHORS.tax.itemsUnmapped} of ${FIN_ANCHORS.tax.itemsTotal} items unmapped`,
+        value: live.tax.sealDays,
+        caption: `${live.tax.itemsUnmapped} of ${live.tax.itemsTotal} items unmapped`,
       },
       { id: "drafts", label: "Draft journal entries", value: live.draftEntries, caption: "Not posted" },
     ],
     items: [
       { id: "b1", item: "Unmatched bank statement lines", count: live.unmatchedLines, oldest: live.oldestUnmatched, owner: "Finance · treasury", destination: "Bank reconciliation", href: "/finance/reconciliation" },
-      { id: "b2", item: "E-invoices rejected by the authority", count: FIN_ANCHORS.tax.rejectedEInvoices, oldest: "2026-03-12", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
-      { id: "b3", item: "Items with no EGS or GS1 code", count: FIN_ANCHORS.tax.itemsUnmapped, oldest: "2026-02-01", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
-      { id: "b4", item: "VAT pre-filing checks open", count: VAT.openChecks, oldest: "2026-03-16", owner: "Finance · tax", destination: "VAT return", href: "/finance/tax/vat-return" },
+      { id: "b2", item: "E-invoices rejected by the authority", count: live.tax.rejected, oldest: "2026-03-22", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
+      { id: "b3", item: "Items with no EGS or GS1 code", count: live.tax.itemsUnmapped, oldest: "2026-02-01", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
+      { id: "b4", item: "VAT pre-filing checks open", count: live.tax.openChecks, oldest: "2026-03-16", owner: "Finance · tax", destination: "VAT return", href: "/finance/tax/vat-return" },
       { id: "b5", item: "Depreciation runs not posted", count: 1, oldest: "2026-03-31", owner: "Finance · assets", destination: "Depreciation run", href: "/finance/assets/depreciation" },
       { id: "b6", item: "Draft entries in the period", count: live.draftEntries, oldest: "2026-03-22", owner: "Finance · ledger", destination: "Journal entries", href: "/finance/journals" },
-      { id: "b7", item: "E-invoices never submitted", count: FIN_ANCHORS.tax.notSubmittedEInvoices, oldest: "2026-03-18", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
+      { id: "b7", item: "E-invoices never submitted", count: live.tax.notSent, oldest: "2026-03-18", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
       { id: "b8", item: "Overdue supplier bills", count: live.overdueBills, oldest: live.oldestOverdueBill, owner: "Finance · payables", destination: "Payment runs", href: "/finance/ap/payment-runs" },
       { id: "b9", item: "Suspense account not at zero", count: 1, oldest: "2026-02-28", owner: "Finance · ledger", destination: `Account ${FIN_ANCHORS.ledger.suspenseAccount}`, href: "/finance/ledger" },
     ],

@@ -8,6 +8,7 @@ import {
   buildApproversAnswer,
   buildBriefing,
   buildCloseAnswer,
+  buildFilingAnswer,
   buildWatchlistAnswer,
   limitedAnswerFor,
   topicForQuestion,
@@ -16,6 +17,7 @@ import {
 import { FIN_NOW } from "../../seed/finance/calendar"
 import { unreconciledTreasuries } from "./banking-model"
 import { readinessChecks } from "./close-model"
+import { draftReturn, eInvoiceState, presentReturn, vatChecks } from "./tax-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { storedJournals } from "./ledger-model"
 import { listResponse } from "./helpers"
@@ -33,6 +35,7 @@ function answerFor(topic: AssistantTopic): Record<string, unknown> {
       })),
     )
   }
+  if (topic === "filing") return buildFilingAnswer(taxLive())
   if (topic === "close") {
     const checks = readinessChecks()
     return buildCloseAnswer(checks.filter((check) => !check.pass), checks.length)
@@ -47,6 +50,26 @@ function answerFor(topic: AssistantTopic): Record<string, unknown> {
     overdue_count: receivables.overdue_count,
     customers: summaries("receivable"),
   })
+}
+
+/** The March VAT return and e-invoicing state, as the assistant reads them. */
+function taxLive() {
+  const draft = draftReturn()
+  const figures = draft ? presentReturn(draft) : null
+  const checks = draft ? vatChecks() : []
+  const state = eInvoiceState()
+  return {
+    returnId: String(draft?.id ?? "—"),
+    output: Number(figures?.output_vat ?? 0),
+    input: Number(figures?.input_vat ?? 0),
+    checks: checks.map(({ id, title, count, href }) => ({ id, title, count, href })),
+    openChecks: checks.filter((check) => !check.clear).length,
+    rejected: state.rejected,
+    notSent: state.not_sent,
+    sealDays: state.seal_days,
+    itemsUnmapped: state.items_unmapped,
+    itemsTotal: state.items_total,
+  }
 }
 
 /** Live figures for the briefing: overdue bills and unreconciled bank lines. */
@@ -65,6 +88,7 @@ function briefingLive() {
     treasuriesUnreconciled: unreconciled.length,
     draftEntries: storedJournals().filter((row) => row.status === "draft").length,
     closeBlockers: readinessChecks().filter((check) => !check.pass).length,
+    tax: taxLive(),
   }
 }
 

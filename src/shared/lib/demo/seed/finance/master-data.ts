@@ -50,8 +50,8 @@ export const FIN_CONTACT_ROWS: Row[] = [
   { id: "S-0201", code: "S-0201", name: "El Sharq Steel Works", kind: "supplier", tax_reg_no: "305-220-114", currency: "EGP", terms_days: 30 },
   { id: "S-0202", code: "S-0202", name: "National Packaging", kind: "supplier", tax_reg_no: "100-872-640", currency: "EGP", terms_days: 45 },
   { id: "S-0203", code: "S-0203", name: "Siemens Egypt", kind: "supplier", tax_reg_no: "100-033-918", currency: "EGP", terms_days: 60 },
-  { id: "S-0204", code: "S-0204", name: "Cairo Logistics Services", kind: "supplier", tax_reg_no: "100-519-207", currency: "EGP", terms_days: 30 },
-  { id: "S-0205", code: "S-0205", name: "El Nasr Accounting Office", kind: "supplier", tax_reg_no: "100-664-085", currency: "EGP", terms_days: 15 },
+  { id: "S-0204", code: "S-0204", name: "Cairo Logistics Services", kind: "supplier", tax_reg_no: null, currency: "EGP", terms_days: 30 },
+  { id: "S-0205", code: "S-0205", name: "El Nasr Accounting Office", kind: "supplier", tax_reg_no: null, currency: "EGP", terms_days: 15 },
 ]
 
 type AccountSeed = [code: string, name: string, type: string, parent: string | null, isGroup: boolean]
@@ -106,6 +106,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["210201", "VAT output", "liability", "2102", false],
   ["210202", "Withholding tax payable", "liability", "2102", false],
   ["210203", "Income tax payable", "liability", "2102", false],
+  ["210204", "VAT payable to ETA", "liability", "2102", false],
   ["2103", "Accrued expenses", "liability", "21", true],
   ["210301", "Accrued salaries", "liability", "2103", false],
   ["210302", "Accrued services", "liability", "2103", false],
