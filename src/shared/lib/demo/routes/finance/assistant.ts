@@ -7,6 +7,7 @@ import {
   buildAgingAnswer,
   buildApproversAnswer,
   buildBriefing,
+  buildCloseAnswer,
   buildWatchlistAnswer,
   limitedAnswerFor,
   topicForQuestion,
@@ -14,6 +15,7 @@ import {
 } from "../../seed/finance/assistant"
 import { FIN_NOW } from "../../seed/finance/calendar"
 import { unreconciledTreasuries } from "./banking-model"
+import { readinessChecks } from "./close-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { storedJournals } from "./ledger-model"
 import { listResponse } from "./helpers"
@@ -30,6 +32,10 @@ function answerFor(topic: AssistantTopic): Record<string, unknown> {
         amount_base: Number(bill.outstanding_base),
       })),
     )
+  }
+  if (topic === "close") {
+    const checks = readinessChecks()
+    return buildCloseAnswer(checks.filter((check) => !check.pass), checks.length)
   }
   if (topic === "watchlist") {
     return buildWatchlistAnswer(unreconciledTreasuries(), collection(FIN_COLLECTIONS.treasuries).length)
@@ -58,6 +64,7 @@ function briefingLive() {
     oldestUnmatched: unreconciled.map((row) => row.oldest).sort()[0] ?? null,
     treasuriesUnreconciled: unreconciled.length,
     draftEntries: storedJournals().filter((row) => row.status === "draft").length,
+    closeBlockers: readinessChecks().filter((check) => !check.pass).length,
   }
 }
 

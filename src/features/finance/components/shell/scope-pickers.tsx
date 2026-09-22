@@ -18,6 +18,7 @@ import type { PeriodStatus } from "../../lib/types/common"
 const PERIOD_STATUS_LABEL: Record<PeriodStatus, string> = {
   open: "open",
   closing: "closing",
+  adjusting: "adjusting",
   closed: "closed",
   locked: "locked",
   future: "not open",
@@ -28,6 +29,7 @@ const periodDotVariants = cva("size-2 shrink-0 rounded-full", {
     status: {
       open: "bg-status-success-fg",
       closing: "bg-status-warning-fg",
+      adjusting: "bg-status-warning-fg",
       closed: "bg-status-neutral-fg",
       locked: "bg-status-neutral-fg",
       future: "bg-content-quaternary",

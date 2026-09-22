@@ -13,8 +13,11 @@ export const FIN_CLOSING_PERIOD = "2026-03"
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
+/** January and February are closed (reopenable); December 2025 is sealed by year-end. */
+const CLOSED: Record<number, string> = { 1: "2026-02-06", 2: "2026-03-07" }
+
 function periodStatus(month: number): string {
-  if (month <= 2) return "locked"
+  if (month <= 2) return "closed"
   if (month === 3) return "closing"
   if (month === 4) return "open"
   return "future"
@@ -25,15 +28,33 @@ function lastDay(year: number, month: number): string {
 }
 
 export function buildFinancePeriods(): Row[] {
-  return MONTHS.map((name, index) => {
-    const month = index + 1
-    const id = `2026-${String(month).padStart(2, "0")}`
-    return {
-      id,
-      label: `${name} 2026`,
-      status: periodStatus(month),
-      start_date: `${id}-01`,
-      end_date: lastDay(2026, month),
-    }
-  })
+  const december = {
+    id: "2025-12",
+    label: "Dec 2025",
+    fiscal_year: "FY2025",
+    status: "locked",
+    start_date: "2025-12-01",
+    end_date: "2025-12-31",
+    closed_by: "Karim Fouad",
+    closed_on: "2026-01-08",
+    log: [],
+  }
+  return [
+    december,
+    ...MONTHS.map((name, index) => {
+      const month = index + 1
+      const id = `2026-${String(month).padStart(2, "0")}`
+      return {
+        id,
+        label: `${name} 2026`,
+        fiscal_year: "FY2026",
+        status: periodStatus(month),
+        start_date: `${id}-01`,
+        end_date: lastDay(2026, month),
+        closed_by: CLOSED[month] ? "Karim Fouad" : null,
+        closed_on: CLOSED[month] ?? null,
+        log: [],
+      }
+    }),
+  ]
 }

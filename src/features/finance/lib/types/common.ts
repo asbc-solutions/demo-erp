@@ -8,7 +8,7 @@ export type CurrencyCode = "EGP" | "USD" | "EUR" | "SAR" | "AED" | "GBP"
 /** `YYYY-MM`, the key of an accounting period. */
 export type PeriodKey = string
 
-export type PeriodStatus = "open" | "closing" | "closed" | "locked" | "future"
+export type PeriodStatus = "open" | "closing" | "adjusting" | "closed" | "locked" | "future"
 
 export type FinanceEntity = {
   id: string
@@ -23,6 +23,10 @@ export type FinancePeriod = {
   status: PeriodStatus
   start_date: string
   end_date: string
+  fiscal_year?: string
+  closed_by?: string | null
+  closed_on?: string | null
+  log?: { action: string; by: string; at: string; reason?: string }[]
 }
 
 /** The entity and period every finance screen is scoped to. */

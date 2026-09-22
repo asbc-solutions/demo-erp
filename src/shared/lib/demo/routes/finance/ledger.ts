@@ -4,6 +4,7 @@ import { FIN_NOW, FIN_TODAY } from "../../seed/finance/calendar"
 import { FIN_CURRENCY_DETAILS, FIN_USD_FIXINGS } from "../../seed/finance/ledger"
 import { AP_CONTROL_ACCOUNT, AR_CONTROL_ACCOUNT } from "../../seed/finance/master-data"
 import { rateFor } from "../../seed/finance/receivables"
+import { periodProblem } from "./close-model"
 import { FIN_COLLECTIONS } from "./collections"
 import {
   accountBalances,
@@ -409,6 +410,8 @@ export const financeLedgerRoutes: DemoRoute[] = [
     const problem = validateLines(lines)
     if (problem && status !== "draft") return refuse(problem)
     if (lines.length === 0) return refuse("Add at least one line.")
+    const closed = status === "posted" ? periodProblem(String(req.body.date ?? FIN_TODAY)) : null
+    if (closed) return refuse(closed)
     const journal = createJournal({ date: String(req.body.date ?? FIN_TODAY), description, lines, status })
     return { data: detail(journal) }
   }),
@@ -430,7 +433,7 @@ export const financeLedgerRoutes: DemoRoute[] = [
   route("post", "/finance/journals/:id/post", (req) => {
     const journal = stored(req.vars.id)
     if (!journal || (journal.status !== "draft" && journal.status !== "pending")) return refuse("This entry cannot be posted.")
-    const problem = validateLines(journal.lines as JournalLine[])
+    const problem = validateLines(journal.lines as JournalLine[]) ?? periodProblem(String(journal.date))
     if (problem) return refuse(problem)
     postStored(journal)
     return { data: detail(journal) }
@@ -449,6 +452,8 @@ export const financeLedgerRoutes: DemoRoute[] = [
     const reason = String(req.body.reason ?? "").trim()
     if (!detail(journal).can_reverse) return refuse("This entry cannot be reversed here. Change its source document instead.")
     if (!reason) return refuse("Give a reason so the audit trail explains why.")
+    const closed = periodProblem(String(req.body.date ?? FIN_TODAY))
+    if (closed) return refuse(closed)
     const reversal = reverseJournal(journal, String(req.body.date ?? FIN_TODAY), reason)
     return { data: detail(reversal) }
   }),

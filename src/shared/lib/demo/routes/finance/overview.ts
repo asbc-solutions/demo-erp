@@ -1,7 +1,6 @@
 import { collection, type Row } from "../../demo-db"
 import { route, type DemoRoute } from "../../demo-router"
 import { FIN_ANCHORS } from "../../seed/finance/anchors"
-import { FIN_CLOSE_CHECK_ROWS } from "../../seed/finance/close"
 import {
   FIN_ACTIVITY_ROWS,
   FIN_CASH_WEEK_ROWS,
@@ -9,6 +8,7 @@ import {
   buildExceptionRows,
 } from "../../seed/finance/overview"
 import { presentTreasuries, unmatchedTotal, unreconciledTreasuries } from "./banking-model"
+import { closeSummary, closeTasks, readinessChecks } from "./close-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { periodResult, storedJournals } from "./ledger-model"
 import { dueWithin, totals } from "./subledger-model"
@@ -27,30 +27,20 @@ function worstUnmatched() {
   return worst ? { treasuryId: worst.id, name: worst.name, count: worst.count } : null
 }
 
-/** Close readiness, with the reconciliation check read live (and dropped once it passes). */
+/** On the go · close status: the readiness checks still failing. */
 function closeChecks(): Row[] {
-  const unreconciled = unreconciledTreasuries().length
-  const drafts = storedJournals().filter((row) => row.status === "draft").length
-  return FIN_CLOSE_CHECK_ROWS.flatMap((check) => {
-    if (check.id === "check-reconciled") {
-      return unreconciled > 0
-        ? [{ ...check, detail: `${unreconciled} ${unreconciled === 1 ? "account" : "accounts"} with unmatched lines` }]
-        : []
-    }
-    if (check.id === "check-drafts") return drafts > 0 ? [{ ...check, detail: `${drafts} drafts` }] : []
-    return [check]
-  })
+  return readinessChecks()
+    .filter((check) => !check.pass)
+    .map(({ id, title, detail, href }) => ({ id, title, detail, href }))
 }
 
 function closeProgress() {
-  const tasks = collection(FIN_COLLECTIONS.closeTasks)
-    .filter((task) => task.period === "2026-03")
-    .sort((a, b) => Number(a.position) - Number(b.position))
+  const summary = closeSummary()
   return {
     period_label: "March 2026",
-    done: tasks.filter((task) => task.status === "done").length,
-    total: tasks.length,
-    tasks,
+    done: summary.tasks_done,
+    total: summary.tasks_total,
+    tasks: closeTasks(),
   }
 }
 

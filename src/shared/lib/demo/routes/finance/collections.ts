@@ -15,7 +15,7 @@ import {
   buildTreasuryMovements,
 } from "../../seed/finance/banking"
 import { buildFinancePeriods } from "../../seed/finance/calendar"
-import { FIN_CLOSE_TASK_ROWS } from "../../seed/finance/close"
+import { FIN_CLOSE_TASK_ROWS, FIN_YEAR_END_STEPS } from "../../seed/finance/close"
 import {
   FIN_BOOK_RATES,
   FIN_JOURNAL_TEMPLATE_ROWS,
@@ -67,6 +67,7 @@ export const FIN_COLLECTIONS = {
   taxCodes: "finance/tax-codes",
   costCenters: "finance/cost-centers",
   dimensions: "finance/dimensions",
+  yearEndSteps: "finance/year-end-steps",
 } as const
 
 /** Seeds are copied so edits in one session never mutate the module-level fixtures. */
@@ -115,3 +116,4 @@ defineCollection(FIN_COLLECTIONS.recurringJournals, copy(FIN_RECURRING_ROWS))
 defineCollection(FIN_COLLECTIONS.taxCodes, () => [])
 defineCollection(FIN_COLLECTIONS.costCenters, () => [])
 defineCollection(FIN_COLLECTIONS.dimensions, () => [])
+defineCollection(FIN_COLLECTIONS.yearEndSteps, copy(FIN_YEAR_END_STEPS))

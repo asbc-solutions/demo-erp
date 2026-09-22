@@ -1,6 +1,5 @@
 import type { Row } from "../../demo-db"
 import { FIN_ANCHORS } from "./anchors"
-import { FIN_CLOSE_CHECK_ROWS } from "./close"
 
 /**
  * The finance assistant is scripted: every answer below is grounded in the
@@ -207,9 +206,15 @@ export function buildApproversAnswer(pending: PendingApproval[]): Record<string,
   }
 }
 
-export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approvers" | "watchlist">, Record<string, unknown>> = {
-  close: {
-    headline: `${FIN_CLOSE_CHECK_ROWS.length} readiness checks still fail, so March cannot be closed yet.`,
+export type FailingCheck = { id: string; title: string; detail: string; href: string }
+
+/** Why March cannot close, from the readiness checks that still fail. */
+export function buildCloseAnswer(failing: FailingCheck[], total: number): Record<string, unknown> {
+  return {
+    headline:
+      failing.length === 0
+        ? "Every readiness check passes. March can close once the checklist is signed off."
+        : `${failing.length} readiness ${failing.length === 1 ? "check still fails" : "checks still fail"}, so March cannot be closed yet.`,
     matches: "Period close / Close workspace",
     table: {
       columns: [
@@ -217,13 +222,13 @@ export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approv
         { id: "detail", label: "What is in the way" },
         { id: "href", label: "Where it goes" },
       ],
-      rows: FIN_CLOSE_CHECK_ROWS.map((check) => ({
+      rows: failing.map((check) => ({
         id: check.id,
         check: check.title,
         detail: check.detail,
         href: check.href,
       })),
-      footnote: "Depreciation is one of the five: until the March run posts, the period stays open.",
+      footnote: `${failing.length} of ${total} checks failing · read live from the close workspace`,
     },
     links: [
       { label: "Period close / Close workspace", href: "/finance/close" },
@@ -245,7 +250,10 @@ export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approv
     ],
     not_read: NOT_READ,
     sources: 2,
-  },
+  }
+}
+
+export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approvers" | "watchlist" | "close">, Record<string, unknown>> = {
   rule: {
     headline: "A credit sale debits trade receivables and credits sales revenue; the 14% VAT goes to VAT output (210201).",
     matches: "Configuration / Posting map",
@@ -474,6 +482,7 @@ export type BriefingLive = {
   oldestUnmatched: string | null
   treasuriesUnreconciled: number
   draftEntries: number
+  closeBlockers: number
 }
 
 export function buildBriefing(live: BriefingLive): Record<string, unknown> {
@@ -486,7 +495,7 @@ export function buildBriefing(live: BriefingLive): Record<string, unknown> {
         value: live.treasuriesUnreconciled,
         caption: `${live.unmatchedLines} unmatched lines`,
       },
-      { id: "blockers", label: "Close blockers", value: FIN_ANCHORS.close.blockers, caption: "Readiness checks failing" },
+      { id: "blockers", label: "Close blockers", value: live.closeBlockers, caption: "Readiness checks failing" },
       {
         id: "seal",
         label: "Days to seal expiry",
