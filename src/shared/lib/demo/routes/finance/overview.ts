@@ -10,6 +10,7 @@ import {
 } from "../../seed/finance/overview"
 import { presentTreasuries, unmatchedTotal, unreconciledTreasuries } from "./banking-model"
 import { FIN_COLLECTIONS } from "./collections"
+import { periodResult, storedJournals } from "./ledger-model"
 import { dueWithin, totals } from "./subledger-model"
 
 /** Treasuries with their EGP-equivalent balance, the basis of every cash figure. */
@@ -29,13 +30,16 @@ function worstUnmatched() {
 /** Close readiness, with the reconciliation check read live (and dropped once it passes). */
 function closeChecks(): Row[] {
   const unreconciled = unreconciledTreasuries().length
-  return FIN_CLOSE_CHECK_ROWS.flatMap((check) =>
-    check.id !== "check-reconciled"
-      ? [check]
-      : unreconciled > 0
+  const drafts = storedJournals().filter((row) => row.status === "draft").length
+  return FIN_CLOSE_CHECK_ROWS.flatMap((check) => {
+    if (check.id === "check-reconciled") {
+      return unreconciled > 0
         ? [{ ...check, detail: `${unreconciled} ${unreconciled === 1 ? "account" : "accounts"} with unmatched lines` }]
-        : [],
-  )
+        : []
+    }
+    if (check.id === "check-drafts") return drafts > 0 ? [{ ...check, detail: `${drafts} drafts` }] : []
+    return [check]
+  })
 }
 
 function closeProgress() {
@@ -75,8 +79,12 @@ export const financeOverviewRoutes: DemoRoute[] = [
           outstanding: payables.total_base,
           due_this_week: dueWithin("payable", 7),
         },
-        net_result: { period_label: "March", amount: FIN_ANCHORS.netResult.amount },
-        attention: buildAttentionItems({ unallocatedReceipts, unmatched: worstUnmatched() }),
+        net_result: { period_label: "March", amount: periodResult(FIN_ANCHORS.netResult.period) },
+        attention: buildAttentionItems({
+          unallocatedReceipts,
+          unmatched: worstUnmatched(),
+          pendingJournals: storedJournals().filter((row) => row.status === "pending").length,
+        }),
         cash_weeks: FIN_CASH_WEEK_ROWS,
         close: closeProgress(),
         activity: FIN_ACTIVITY_ROWS,

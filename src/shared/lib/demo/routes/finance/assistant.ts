@@ -15,6 +15,7 @@ import {
 import { FIN_NOW } from "../../seed/finance/calendar"
 import { unreconciledTreasuries } from "./banking-model"
 import { FIN_COLLECTIONS } from "./collections"
+import { storedJournals } from "./ledger-model"
 import { listResponse } from "./helpers"
 import { pendingBills } from "./payables"
 import { documents, summaries, totals, daysLate } from "./subledger-model"
@@ -56,6 +57,7 @@ function briefingLive() {
     unmatchedLines: unreconciled.reduce((sum, row) => sum + row.count, 0),
     oldestUnmatched: unreconciled.map((row) => row.oldest).sort()[0] ?? null,
     treasuriesUnreconciled: unreconciled.length,
+    draftEntries: storedJournals().filter((row) => row.status === "draft").length,
   }
 }
 

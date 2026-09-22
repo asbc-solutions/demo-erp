@@ -48,6 +48,7 @@ export type AttentionCounts = {
   unallocatedReceipts: number
   /** The treasury with the most unmatched statement lines, if any. */
   unmatched: { treasuryId: string; name: string; count: number } | null
+  pendingJournals: number
 }
 
 export function buildAttentionItems(live: AttentionCounts): Row[] {
@@ -89,8 +90,8 @@ export function buildAttentionItems(live: AttentionCounts): Row[] {
     },
     {
       id: "att-journals",
-      label: `${FIN_ANCHORS.approvals.journalsAwaitingApproval} journals awaiting your approval`,
-      count: FIN_ANCHORS.approvals.journalsAwaitingApproval,
+      label: `${live.pendingJournals} journals awaiting your approval`,
+      count: live.pendingJournals,
       tone: "info",
       href: "/finance/journals",
     },

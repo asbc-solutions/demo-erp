@@ -72,7 +72,7 @@ export type FinanceTreasury = {
   unmatched_lines: number
 }
 
-export type AccountType = "asset" | "liability" | "equity" | "income" | "expense"
+export type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense"
 
 export type FinanceAccount = {
   id: string

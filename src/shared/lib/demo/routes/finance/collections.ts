@@ -17,6 +17,13 @@ import {
 import { buildFinancePeriods } from "../../seed/finance/calendar"
 import { FIN_CLOSE_TASK_ROWS } from "../../seed/finance/close"
 import {
+  FIN_BOOK_RATES,
+  FIN_JOURNAL_TEMPLATE_ROWS,
+  FIN_RECURRING_ROWS,
+  buildJournals,
+  buildOpeningBalances,
+} from "../../seed/finance/ledger"
+import {
   FIN_ACCOUNT_ROWS,
   FIN_CONTACT_ROWS,
   FIN_CURRENCY_ROWS,
@@ -52,6 +59,14 @@ export const FIN_COLLECTIONS = {
   chequeBooks: "finance/cheque-books",
   custody: "finance/custody",
   employees: "finance/employees",
+  journals: "finance/journals",
+  ledgerOpenings: "finance/ledger-openings",
+  ledgerSettings: "finance/ledger-settings",
+  journalTemplates: "finance/journal-templates",
+  recurringJournals: "finance/recurring-journals",
+  taxCodes: "finance/tax-codes",
+  costCenters: "finance/cost-centers",
+  dimensions: "finance/dimensions",
 } as const
 
 /** Seeds are copied so edits in one session never mutate the module-level fixtures. */
@@ -82,3 +97,21 @@ defineCollection(FIN_COLLECTIONS.cheques, buildCheques)
 defineCollection(FIN_COLLECTIONS.chequeBooks, copy(FIN_CHEQUE_BOOK_ROWS))
 defineCollection(FIN_COLLECTIONS.custody, buildCustody)
 defineCollection(FIN_COLLECTIONS.employees, copy(FIN_EMPLOYEE_ROWS))
+defineCollection(FIN_COLLECTIONS.journals, buildJournals)
+defineCollection(FIN_COLLECTIONS.ledgerOpenings, buildOpeningBalances)
+defineCollection(FIN_COLLECTIONS.ledgerSettings, () => [
+  {
+    id: "settings",
+    openings_locked: false,
+    openings_locked_at: null,
+    book_rates: { ...FIN_BOOK_RATES },
+    revaluations: [],
+    rates_refreshed_at: "2026-03-31T08:00:00.000Z",
+  },
+])
+defineCollection(FIN_COLLECTIONS.journalTemplates, copy(FIN_JOURNAL_TEMPLATE_ROWS))
+defineCollection(FIN_COLLECTIONS.recurringJournals, copy(FIN_RECURRING_ROWS))
+// Tax codes, cost centers and dimensions are seeded by their own sections; import appends to them.
+defineCollection(FIN_COLLECTIONS.taxCodes, () => [])
+defineCollection(FIN_COLLECTIONS.costCenters, () => [])
+defineCollection(FIN_COLLECTIONS.dimensions, () => [])

@@ -21,4 +21,4 @@ export const SUGGESTION_TONE: Record<MatchSuggestion["label"], StatusTone> = {
 }
 
 /** Counter accounts suggested for a new entry, by the direction of the money. */
-export const DEFAULT_COUNTER_ACCOUNT = { in: "110301", out: "5801" } as const
+export const DEFAULT_COUNTER_ACCOUNT = { in: "110301", out: "630101" } as const

@@ -247,7 +247,7 @@ export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approv
     sources: 2,
   },
   rule: {
-    headline: "A credit sale debits trade receivables and credits sales revenue; the 14% VAT goes to VAT output (2102).",
+    headline: "A credit sale debits trade receivables and credits sales revenue; the 14% VAT goes to VAT output (210201).",
     matches: "Configuration / Posting map",
     table: {
       columns: [
@@ -257,8 +257,8 @@ export const ASSISTANT_ANSWERS: Record<Exclude<AssistantTopic, "aging" | "approv
       ],
       rows: [
         { id: "l1", line: "Invoice total", account: "110301 · Trade receivables", side: "Debit" },
-        { id: "l2", line: "Net amount", account: "4101 · Sales revenue", side: "Credit" },
-        { id: "l3", line: "VAT 14%", account: "2102 · VAT output", side: "Credit" },
+        { id: "l2", line: "Net amount", account: "410101 · Product sales — local", side: "Credit" },
+        { id: "l3", line: "VAT 14%", account: "210201 · VAT output", side: "Credit" },
       ],
       footnote: "Posting map rule sale.credit · published 01 Jan 2026",
     },
@@ -473,6 +473,7 @@ export type BriefingLive = {
   unmatchedLines: number
   oldestUnmatched: string | null
   treasuriesUnreconciled: number
+  draftEntries: number
 }
 
 export function buildBriefing(live: BriefingLive): Record<string, unknown> {
@@ -492,7 +493,7 @@ export function buildBriefing(live: BriefingLive): Record<string, unknown> {
         value: FIN_ANCHORS.tax.sealExpiresInDays,
         caption: `${FIN_ANCHORS.tax.itemsUnmapped} of ${FIN_ANCHORS.tax.itemsTotal} items unmapped`,
       },
-      { id: "drafts", label: "Draft journal entries", value: FIN_ANCHORS.ledger.draftEntries, caption: "Not posted" },
+      { id: "drafts", label: "Draft journal entries", value: live.draftEntries, caption: "Not posted" },
     ],
     items: [
       { id: "b1", item: "Unmatched bank statement lines", count: live.unmatchedLines, oldest: live.oldestUnmatched, owner: "Finance · treasury", destination: "Bank reconciliation", href: "/finance/reconciliation" },
@@ -500,7 +501,7 @@ export function buildBriefing(live: BriefingLive): Record<string, unknown> {
       { id: "b3", item: "Items with no EGS or GS1 code", count: FIN_ANCHORS.tax.itemsUnmapped, oldest: "2026-02-01", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
       { id: "b4", item: "VAT pre-filing checks open", count: VAT.openChecks, oldest: "2026-03-16", owner: "Finance · tax", destination: "VAT return", href: "/finance/tax/vat-return" },
       { id: "b5", item: "Depreciation runs not posted", count: 1, oldest: "2026-03-31", owner: "Finance · assets", destination: "Depreciation run", href: "/finance/assets/depreciation" },
-      { id: "b6", item: "Draft entries in the period", count: FIN_ANCHORS.ledger.draftEntries, oldest: "2026-03-22", owner: "Finance · ledger", destination: "Journal entries", href: "/finance/journals" },
+      { id: "b6", item: "Draft entries in the period", count: live.draftEntries, oldest: "2026-03-22", owner: "Finance · ledger", destination: "Journal entries", href: "/finance/journals" },
       { id: "b7", item: "E-invoices never submitted", count: FIN_ANCHORS.tax.notSubmittedEInvoices, oldest: "2026-03-18", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
       { id: "b8", item: "Overdue supplier bills", count: live.overdueBills, oldest: live.oldestOverdueBill, owner: "Finance · payables", destination: "Payment runs", href: "/finance/ap/payment-runs" },
       { id: "b9", item: "Suspense account not at zero", count: 1, oldest: "2026-02-28", owner: "Finance · ledger", destination: `Account ${FIN_ANCHORS.ledger.suspenseAccount}`, href: "/finance/ledger" },

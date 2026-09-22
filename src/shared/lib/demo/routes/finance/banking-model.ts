@@ -28,9 +28,13 @@ export type MovementInput = {
   entry?: string
 }
 
+/** Journal numbers are shared by treasury movements and stored journals. */
 export function nextEntry(): string {
-  const highest = collection(FIN_COLLECTIONS.treasuryMovements)
-    .map((row) => Number(String(row.entry).split("-").pop()))
+  const highest = [
+    ...collection(FIN_COLLECTIONS.treasuryMovements).map((row) => row.entry),
+    ...collection(FIN_COLLECTIONS.journals).map((row) => row.number),
+  ]
+    .map((entry) => Number(String(entry).split("-").pop()))
     .filter((value) => value >= FIRST_SESSION_ENTRY)
     .reduce((max, value) => Math.max(max, value), FIRST_SESSION_ENTRY)
   return `JE-2026-${highest + 1}`
@@ -114,7 +118,7 @@ const SOURCE_HREF: Record<string, (movement: Row) => string | null> = {
     `/finance/cheques/${String(movement.source_id).startsWith("CHR") ? "received" : "issued"}/${String(movement.source_id)}`,
   custody: (movement) => `/finance/custody/${String(movement.source_id)}`,
   statement: (movement) => `/finance/reconciliation/${String(movement.treasury_id)}`,
-  journal: () => null,
+  journal: (movement) => `/finance/journals/${String(movement.entry)}`,
 }
 
 export function presentMovement(movement: Row): Row {

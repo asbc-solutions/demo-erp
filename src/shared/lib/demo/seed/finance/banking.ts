@@ -1,4 +1,5 @@
 import type { Row } from "../../demo-db"
+import { ledgerCashLegs } from "./ledger"
 import { FIN_CONTACT_ROWS, FIN_TREASURY_ROWS } from "./master-data"
 import { buildPayments } from "./payables"
 import { buildReceipts, rateFor } from "./receivables"
@@ -363,6 +364,20 @@ export function buildTreasuryMovements(): Row[] {
       source_id: null,
       amount: Number(entry.amount),
       entry: String(entry.entry),
+    })
+  }
+
+  for (const leg of ledgerCashLegs()) {
+    const account = FIN_TREASURY_ROWS.find((row) => row.account_code === leg.account_code) as Row
+    seeds.push({
+      treasury_id: String(account.id),
+      date: leg.date,
+      description: leg.description,
+      source: leg.entry,
+      source_type: "journal",
+      source_id: leg.entry,
+      amount: leg.amount,
+      entry: leg.entry,
     })
   }
 
