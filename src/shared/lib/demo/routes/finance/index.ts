@@ -6,6 +6,7 @@ import { withAudit } from "./audit-model"
 import { financeAssistantRoutes } from "./assistant"
 import { financeBankingRoutes } from "./banking"
 import { financeCloseRoutes } from "./close"
+import { financeConfigurationRoutes } from "./configuration"
 import { financeLedgerRoutes } from "./ledger"
 import { financeOverviewRoutes } from "./overview"
 import { financePayablesRoutes } from "./payables"
@@ -31,4 +32,5 @@ export const financeRoutes: DemoRoute[] = withAudit([
   ...financeAssetRoutes,
   ...financePlanningRoutes,
   ...financeReportRoutes,
+  ...financeConfigurationRoutes,
 ])

@@ -17,6 +17,7 @@ import {
 import { FIN_ASSET_CATEGORY_ROWS, buildAssets } from "../../seed/finance/assets"
 import { FIN_CLOSING_PERIOD, buildFinancePeriods } from "../../seed/finance/calendar"
 import { FIN_CLOSE_TASK_ROWS, FIN_YEAR_END_STEPS } from "../../seed/finance/close"
+import { FIN_APPROVAL_POLICY_ROWS, FIN_POSTING_RULE_ROWS, FIN_ROLE_ROWS } from "../../seed/finance/configuration"
 import {
   FIN_BOOK_RATES,
   FIN_JOURNAL_TEMPLATE_ROWS,
@@ -97,6 +98,10 @@ export const FIN_COLLECTIONS = {
   depreciationRuns: "finance/depreciation-runs",
   budgets: "finance/budgets",
   allocationRules: "finance/allocation-rules",
+  financeSettings: "finance/settings",
+  postingRules: "finance/posting-rules",
+  approvalPolicies: "finance/approval-policies",
+  roles: "finance/roles",
 } as const
 
 /** Seeds are copied so edits in one session never mutate the module-level fixtures. */
@@ -161,3 +166,15 @@ defineCollection(FIN_COLLECTIONS.depreciationRuns, () => [
 ])
 defineCollection(FIN_COLLECTIONS.budgets, copy(FIN_BUDGET_ROWS))
 defineCollection(FIN_COLLECTIONS.allocationRules, copy(FIN_ALLOCATION_RULE_ROWS))
+defineCollection(FIN_COLLECTIONS.financeSettings, () => [
+  {
+    id: "settings",
+    // Setup has not been run in this session; the seeded module is configured by hand.
+    setup: null,
+    fiscal: { year_start_month: 1, period_length: "monthly", periods_per_year: 12, adjusting_days: 10 },
+    persona: "administrator",
+  },
+])
+defineCollection(FIN_COLLECTIONS.postingRules, copy(FIN_POSTING_RULE_ROWS))
+defineCollection(FIN_COLLECTIONS.approvalPolicies, copy(FIN_APPROVAL_POLICY_ROWS))
+defineCollection(FIN_COLLECTIONS.roles, copy(FIN_ROLE_ROWS))

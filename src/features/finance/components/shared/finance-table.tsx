@@ -127,12 +127,27 @@ function FinanceTable<T>({
       <React.Fragment key={id}>
         <TableRow
           data-state={isSelected ? "selected" : undefined}
-          tabIndex={onRowClick ? 0 : undefined}
+          data-row-focus={onRowClick || selectable ? "" : undefined}
+          tabIndex={onRowClick || selectable ? 0 : undefined}
           onClick={onRowClick ? () => onRowClick(row) : undefined}
           onKeyDown={
-            onRowClick
+            onRowClick || selectable
               ? (event) => {
-                  if (event.key === "Enter") onRowClick(row)
+                  // Only the row itself: keys typed into a control inside it stay with the control.
+                  if (event.target !== event.currentTarget) return
+                  if (event.key === "Enter" && onRowClick) onRowClick(row)
+                  if (event.key === " " && selectable) {
+                    event.preventDefault()
+                    toggleRow(id, !isSelected)
+                  }
+                  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                    event.preventDefault()
+                    const rows = Array.from(
+                      event.currentTarget.closest("tbody")?.querySelectorAll<HTMLElement>("tr[data-row-focus]") ?? [],
+                    )
+                    const index = rows.indexOf(event.currentTarget)
+                    rows[index + (event.key === "ArrowDown" ? 1 : -1)]?.focus()
+                  }
                 }
               : undefined
           }

@@ -28,7 +28,7 @@ const ACTORS = ["Karim Fouad", "Nour Adel", "Sara Hany", "Omar Deeb", "Hala Most
 const HISTORY_SIZE = 600
 const STEP_MS = 3.6 * 60 * 60 * 1000
 const NEWEST = Date.UTC(2026, 2, 31, 9, 0)
-const POSTING_KEYS = ["sale.revenue", "sale.receivable", "sale.credit", "purchase.expense", "purchase.payable", "receipt.bank", "payment.bank", "vat.output", "vat.input"]
+const POSTING_KEYS = ["sale.local", "sale.service", "sale.credit", "purchase.goods", "purchase.services", "receipt.customer", "payment.supplier", "bank.charges", "tax.vat_settle"]
 
 function random(seed: number) {
   let state = seed
@@ -191,6 +191,11 @@ const VERBS: Record<string, string> = {
   "submit-batch": "Submitted",
   "resubmit-group": "Resubmitted",
   steps: "Completed",
+  publish: "Published",
+  discard: "Discarded changes to",
+  stage: "Staged a change to",
+  persona: "Previewed",
+  setup: "Completed",
 }
 
 /** Section → what the object is called and where it opens. */
@@ -232,6 +237,9 @@ const OBJECTS: [RegExp, string, ((id: string) => string | null) | null][] = [
   [/^ledger\/import/, "Data import", () => "/finance/import"],
   [/^currencies/, "Exchange rates", () => "/finance/currencies"],
   [/^settings\/posting-map/, "Posting map", () => "/finance/settings/posting-map"],
+  [/^settings\/fiscal-calendar/, "Fiscal calendar", () => "/finance/settings/fiscal-calendar"],
+  [/^settings\/approvals/, "Approval policy", () => "/finance/settings/approvals"],
+  [/^settings\/roles/, "Role", () => "/finance/settings/roles"],
   [/^settings/, "Finance setting", null],
   [/^setup/, "Finance setup", () => "/finance/setup"],
 ]

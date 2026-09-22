@@ -74,6 +74,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["110203", "QNB Alahli — payroll account", "asset", "1102", false],
   ["1103", "Accounts receivable", "asset", "11", true],
   ["110301", "Trade receivables — customers", "asset", "1103", false],
+  ["110302", "Cheques under collection", "asset", "1103", false],
   ["1104", "Inventory", "asset", "11", true],
   ["110401", "Raw materials", "asset", "1104", false],
   ["110402", "Finished goods", "asset", "1104", false],
@@ -109,6 +110,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["210202", "Withholding tax payable", "liability", "2102", false],
   ["210203", "Income tax payable", "liability", "2102", false],
   ["210204", "VAT payable to ETA", "liability", "2102", false],
+  ["210205", "Stamp tax payable", "liability", "2102", false],
   ["2103", "Accrued expenses", "liability", "21", true],
   ["210301", "Accrued salaries", "liability", "2103", false],
   ["210302", "Accrued services", "liability", "2103", false],
@@ -166,6 +168,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["65", "Depreciation", "expense", "6", true],
   ["650101", "Depreciation expense", "expense", "65", false],
   ["650102", "Loss on disposal and write-off", "expense", "65", false],
+  ["650103", "Bad debt expense", "expense", "65", false],
 ]
 
 export const FIN_ACCOUNT_ROWS: Row[] = ACCOUNT_SEEDS.map(([code, name, type, parent, isGroup]) => ({

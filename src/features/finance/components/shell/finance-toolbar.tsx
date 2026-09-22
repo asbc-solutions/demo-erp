@@ -1,5 +1,6 @@
 "use client"
 
+import { FinanceHelp } from "./finance-help"
 import { FinanceSearch } from "./finance-search"
 import { EntityPicker, PeriodPicker } from "./scope-pickers"
 
@@ -12,7 +13,10 @@ function FinanceToolbar() {
     >
       <EntityPicker />
       <PeriodPicker />
-      <FinanceSearch className="w-full sm:ml-auto sm:max-w-md" />
+      <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
+        <FinanceSearch className="w-full sm:w-md" />
+        <FinanceHelp />
+      </div>
     </div>
   )
 }

@@ -5,8 +5,6 @@ import type { NavChild, NavGroup } from "@/src/shared/lib/types"
 export type FinanceNavMatch = {
   group: NavGroup
   item: NavChild
-  /** 1-based position of the group, which is also its build phase. */
-  phase: number
 }
 
 /** The nav item a finance pathname belongs to — longest href wins, like the sidebar. */
@@ -14,11 +12,11 @@ export function matchFinanceNav(pathname: string): FinanceNavMatch | null {
   let best: FinanceNavMatch | null = null
   let bestLength = 0
 
-  for (const [index, group] of FINANCE_NAV_GROUPS.entries()) {
+  for (const group of FINANCE_NAV_GROUPS) {
     for (const item of group.items) {
       if (!item.href || !pathnameMatches(pathname, item.href)) continue
       if (item.href.length > bestLength) {
-        best = { group, item, phase: index + 1 }
+        best = { group, item }
         bestLength = item.href.length
       }
     }

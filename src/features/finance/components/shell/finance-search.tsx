@@ -62,7 +62,21 @@ function FinanceSearch({ className }: { className?: string }) {
   const router = useRouter()
   const [query, setQuery] = React.useState("")
   const [open, setOpen] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
   const term = query.trim().toLowerCase()
+
+  // "/" focuses search from anywhere in finance, unless the user is already typing.
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return
+      event.preventDefault()
+      inputRef.current?.focus()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [])
   const active = term.length >= MIN_QUERY
   const { data, isFetching } = useFinanceSearch(active ? term : "")
 
@@ -99,10 +113,12 @@ function FinanceSearch({ className }: { className?: string }) {
             className="text-content-quaternary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
           />
           <Input
+            ref={inputRef}
             type="search"
             role="combobox"
             aria-expanded={open && active}
             aria-label="Search finance"
+            aria-keyshortcuts="/"
             placeholder="Search accounts, documents, contacts…"
             value={query}
             onChange={(event) => {
