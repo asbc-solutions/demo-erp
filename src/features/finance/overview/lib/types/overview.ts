@@ -25,6 +25,7 @@ export type ActivityEvent = {
   actor: string
   action: string
   subject: string
+  href: string | null
 }
 
 export type FinanceHome = {

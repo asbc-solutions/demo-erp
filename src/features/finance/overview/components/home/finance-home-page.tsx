@@ -118,7 +118,14 @@ function FinanceHomePage() {
               />
             </FinanceSection>
 
-            <FinanceSection title="Recent activity">
+            <FinanceSection
+              title="Recent activity"
+              action={
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/finance/audit">Open audit log</Link>
+                </Button>
+              }
+            >
               <ul className="-mt-2 flex flex-col">
                 {data.activity.map((event) => (
                   <li
@@ -129,7 +136,14 @@ function FinanceHomePage() {
                       {formatDateTime(event.at)}
                     </span>
                     <span className="text-content-primary text-sm leading-5">
-                      {event.actor} · {event.action} · {event.subject}
+                      {event.actor} · {event.action} ·{" "}
+                      {event.href ? (
+                        <Link href={event.href} className="hover:underline">
+                          {event.subject}
+                        </Link>
+                      ) : (
+                        event.subject
+                      )}
                     </span>
                   </li>
                 ))}

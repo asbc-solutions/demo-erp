@@ -2,12 +2,12 @@ import { collection, type Row } from "../../demo-db"
 import { route, type DemoRoute } from "../../demo-router"
 import { FIN_ANCHORS } from "../../seed/finance/anchors"
 import {
-  FIN_ACTIVITY_ROWS,
   FIN_CASH_WEEK_ROWS,
   buildAttentionItems,
   buildExceptionRows,
 } from "../../seed/finance/overview"
 import { depreciationOutstanding } from "./assets-model"
+import { auditEvents } from "./audit-model"
 import { presentTreasuries, unmatchedTotal, unreconciledTreasuries } from "./banking-model"
 import { closeSummary, closeTasks, readinessChecks } from "./close-model"
 import { FIN_COLLECTIONS } from "./collections"
@@ -82,7 +82,10 @@ export const financeOverviewRoutes: DemoRoute[] = [
         }),
         cash_weeks: FIN_CASH_WEEK_ROWS,
         close: closeProgress(),
-        activity: FIN_ACTIVITY_ROWS,
+        // The newest events from the audit log, so session work shows up here too.
+        activity: auditEvents()
+          .slice(0, 8)
+          .map((event) => ({ id: event.id, at: event.at, actor: event.actor, action: event.action, subject: event.object, href: event.href ?? null })),
       },
     }
   }),

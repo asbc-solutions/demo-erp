@@ -31,17 +31,6 @@ export const FIN_CASH_WEEK_ROWS: Row[] = WEEKS.map(([label, closing, forecast], 
   forecast,
 }))
 
-export const FIN_ACTIVITY_ROWS: Row[] = [
-  { id: "act-1", at: "2026-03-31T09:00:00.000Z", actor: "Karim Fouad", action: "Posted entry", subject: "JE-2026-000841" },
-  { id: "act-2", at: "2026-03-31T05:24:00.000Z", actor: "Nour Adel", action: "Reversed entry", subject: "JE-2026-000838" },
-  { id: "act-3", at: "2026-03-31T01:48:00.000Z", actor: "Sara Hany", action: "Created voucher", subject: "PV-2026-0412" },
-  { id: "act-4", at: "2026-03-30T22:12:00.000Z", actor: "Omar Deeb", action: "Reconciled account", subject: "QNB Alahli — payroll account" },
-  { id: "act-5", at: "2026-03-30T18:36:00.000Z", actor: "Hala Mostafa", action: "Approved bill", subject: "BILL-2026-1987" },
-  { id: "act-6", at: "2026-03-30T15:00:00.000Z", actor: "Layla Adham", action: "Changed routing", subject: "Posting map · sale.credit" },
-  { id: "act-7", at: "2026-03-30T11:24:00.000Z", actor: "Karim Fouad", action: "Closed period", subject: "February 2026" },
-  { id: "act-8", at: "2026-03-30T07:48:00.000Z", actor: "Nour Adel", action: "Imported statement", subject: "CIB — current account 0021" },
-]
-
 /** "Needs your attention" on Finance home, worst first. */
 /** Live counts the attention list reads from the section collections. */
 export type AttentionCounts = {
