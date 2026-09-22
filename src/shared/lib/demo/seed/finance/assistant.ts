@@ -500,6 +500,7 @@ export type BriefingLive = {
   treasuriesUnreconciled: number
   draftEntries: number
   closeBlockers: number
+  depreciationRuns: number
   tax: TaxLive
 }
 
@@ -527,7 +528,7 @@ export function buildBriefing(live: BriefingLive): Record<string, unknown> {
       { id: "b2", item: "E-invoices rejected by the authority", count: live.tax.rejected, oldest: "2026-03-22", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
       { id: "b3", item: "Items with no EGS or GS1 code", count: live.tax.itemsUnmapped, oldest: "2026-02-01", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
       { id: "b4", item: "VAT pre-filing checks open", count: live.tax.openChecks, oldest: "2026-03-16", owner: "Finance · tax", destination: "VAT return", href: "/finance/tax/vat-return" },
-      { id: "b5", item: "Depreciation runs not posted", count: 1, oldest: "2026-03-31", owner: "Finance · assets", destination: "Depreciation run", href: "/finance/assets/depreciation" },
+      { id: "b5", item: "Depreciation runs not posted", count: live.depreciationRuns, oldest: "2026-03-31", owner: "Finance · assets", destination: "Depreciation run", href: "/finance/assets/depreciation" },
       { id: "b6", item: "Draft entries in the period", count: live.draftEntries, oldest: "2026-03-22", owner: "Finance · ledger", destination: "Journal entries", href: "/finance/journals" },
       { id: "b7", item: "E-invoices never submitted", count: live.tax.notSent, oldest: "2026-03-18", owner: "Finance · tax", destination: "E-invoicing console", href: "/finance/tax/e-invoicing" },
       { id: "b8", item: "Overdue supplier bills", count: live.overdueBills, oldest: live.oldestOverdueBill, owner: "Finance · payables", destination: "Payment runs", href: "/finance/ap/payment-runs" },

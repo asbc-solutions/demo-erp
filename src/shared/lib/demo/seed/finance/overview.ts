@@ -51,6 +51,8 @@ export type AttentionCounts = {
   pendingJournals: number
   rejectedEInvoices: number
   sealDays: number
+  /** Depreciation runs for the closing period still waiting to post. */
+  depreciationRuns: number
 }
 
 export function buildAttentionItems(live: AttentionCounts): Row[] {
@@ -80,7 +82,7 @@ export function buildAttentionItems(live: AttentionCounts): Row[] {
     {
       id: "att-depreciation",
       label: "March depreciation not posted",
-      count: 1,
+      count: live.depreciationRuns,
       tone: "warning",
       href: "/finance/assets/depreciation",
     },

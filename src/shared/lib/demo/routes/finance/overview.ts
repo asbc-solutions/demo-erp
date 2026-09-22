@@ -7,6 +7,7 @@ import {
   buildAttentionItems,
   buildExceptionRows,
 } from "../../seed/finance/overview"
+import { depreciationOutstanding } from "./assets-model"
 import { presentTreasuries, unmatchedTotal, unreconciledTreasuries } from "./banking-model"
 import { closeSummary, closeTasks, readinessChecks } from "./close-model"
 import { FIN_COLLECTIONS } from "./collections"
@@ -77,6 +78,7 @@ export const financeOverviewRoutes: DemoRoute[] = [
           pendingJournals: storedJournals().filter((row) => row.status === "pending").length,
           rejectedEInvoices: eInvoiceState().rejected,
           sealDays: eInvoiceState().seal_days,
+          depreciationRuns: depreciationOutstanding(),
         }),
         cash_weeks: FIN_CASH_WEEK_ROWS,
         close: closeProgress(),

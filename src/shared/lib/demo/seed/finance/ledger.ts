@@ -1,5 +1,6 @@
 import type { Row } from "../../demo-db"
 import { FIN_ANCHORS } from "./anchors"
+import { registerBalances, seededMonthlyDepreciation } from "./assets"
 import { VAT_PAYABLE_ACCOUNT, VAT_PAYABLE_CLOSING, VAT_SETTLEMENT_JOURNAL } from "./tax"
 
 /**
@@ -32,12 +33,8 @@ const CLOSING: Record<string, number> = {
   "110502": 96_000,
   "110503": 163_000,
   "110601": FIN_ANCHORS.tax.vatReturn.inputVat,
-  "120101": 6_420_000,
-  "120102": 1_122_000,
-  "120103": 1_400_000,
-  "120201": -2_640_000,
-  "120202": -280_000,
-  "120203": -196_400,
+  // Property, plant and equipment tie to the asset register (cost and accumulated depreciation).
+  ...registerBalances(),
   "120306": 420_000,
   "210105": -160_000,
   "210201": -FIN_ANCHORS.tax.vatReturn.outputVat,
@@ -67,8 +64,11 @@ const REVENUE: Record<string, number> = {
   "430101": 280_000,
 }
 
-/** Expenses that run at the same amount every month. */
-const FIXED_MONTHLY: Record<string, number> = { "620101": 180_000, "650101": 94_500, "640106": 42_300 }
+/** Expenses that run at the same amount every month. Depreciation comes from the asset register. */
+const FIXED_MONTHLY: Record<string, number> = { "620101": 180_000, "640106": 42_300 }
+
+/** March depreciation is the run still waiting to post, so only these months carry it. */
+const DEPRECIATED_MONTHS = new Set(["2026-01", "2026-02"])
 
 const VARIABLE_EXPENSES: Record<string, number> = {
   "510101": 5_420_000,
@@ -160,7 +160,10 @@ function monthlyJournals(): Row[] {
   const next = () => `JE-2026-${String(++sequence).padStart(6, "0")}`
   const rows: Row[] = []
 
-  MONTHS.forEach(({ date, label }, month) => {
+  const depreciation = seededMonthlyDepreciation()
+  const depreciationTotal = r2(Object.values(depreciation).reduce((sum, value) => sum + value, 0))
+
+  MONTHS.forEach(({ period, date, label }, month) => {
     const sales = revenue[month]
     const operating = ["410101", "410102", "410103", "410104", "430101"]
     const salesNet = operating.reduce((sum, code) => sum + sales[code], 0)
@@ -206,15 +209,19 @@ function monthlyJournals(): Row[] {
     )
 
     rows.push(
-      journal(next(), date, `Rent and depreciation — ${label}`, "Fixed charges", [
+      journal(next(), date, `Rent — ${label}`, "Fixed charges", [
         line("620101", FIXED_MONTHLY["620101"], "Prepaid rent released"),
         line("110501", -FIXED_MONTHLY["620101"]),
-        line("650101", FIXED_MONTHLY["650101"], "Monthly depreciation"),
-        line("120201", -64_000),
-        line("120202", -18_500),
-        line("120203", -12_000),
       ]),
     )
+    if (DEPRECIATED_MONTHS.has(period)) {
+      rows.push(
+        journal(next(), date, `Depreciation run — ${label}`, `DR-${period}`, [
+          line("650101", depreciationTotal, "Monthly depreciation"),
+          ...Object.entries(depreciation).map(([account, amount]) => line(account, -amount, "Accumulated depreciation")),
+        ], { source_type: "depreciation" }),
+      )
+    }
 
     const accrued = ["620102", "620110", "630101", "640101", "640104", "640201", "640301", "640401", "640501"]
     const accruedTotal = r2(accrued.reduce((sum, code) => sum + cost[code], 0) + FIXED_MONTHLY["640106"])

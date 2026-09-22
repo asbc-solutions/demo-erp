@@ -88,10 +88,12 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["120101", "Machinery and equipment", "asset", "1201", false],
   ["120102", "Furniture and fixtures", "asset", "1201", false],
   ["120103", "Vehicles", "asset", "1201", false],
+  ["120104", "Computers and IT equipment", "asset", "1201", false],
   ["1202", "Accumulated depreciation", "asset", "12", true],
   ["120201", "Accum. dep. — machinery", "asset", "1202", false],
   ["120202", "Accum. dep. — vehicles", "asset", "1202", false],
   ["120203", "Accum. dep. — furniture", "asset", "1202", false],
+  ["120204", "Accum. dep. — IT equipment", "asset", "1202", false],
   ["1203", "Advances and other receivables", "asset", "12", true],
   ["120302", "Supplier advances", "asset", "1203", false],
   ["120305", "Employee custody", "asset", "1203", false],
@@ -136,6 +138,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["420101", "Interest income", "revenue", "42", false],
   ["420102", "FX gains — realised", "revenue", "42", false],
   ["420103", "FX gains — unrealised", "revenue", "42", false],
+  ["420104", "Gain on disposal of assets", "revenue", "42", false],
   ["43", "Revenue deductions", "revenue", "4", true],
   ["430101", "Sales discounts", "revenue", "43", false],
   ["5", "Cost of sales", "expense", null, true],
@@ -162,6 +165,7 @@ const ACCOUNT_SEEDS: AccountSeed[] = [
   ["640501", "Repairs and maintenance", "expense", "64", false],
   ["65", "Depreciation", "expense", "6", true],
   ["650101", "Depreciation expense", "expense", "65", false],
+  ["650102", "Loss on disposal and write-off", "expense", "65", false],
 ]
 
 export const FIN_ACCOUNT_ROWS: Row[] = ACCOUNT_SEEDS.map(([code, name, type, parent, isGroup]) => ({

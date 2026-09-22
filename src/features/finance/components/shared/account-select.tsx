@@ -21,6 +21,8 @@ type AccountSelectProps = {
   invalid?: boolean
   className?: string
   "aria-label"?: string
+  /** Narrow the list, e.g. to fixed-asset cost accounts. */
+  filter?: (code: string) => boolean
 }
 
 /** Pick a postable ledger account, shown as `code · name`. */
@@ -32,8 +34,10 @@ function AccountSelect({
   invalid,
   className,
   "aria-label": ariaLabel,
+  filter,
 }: AccountSelectProps) {
-  const { data: accounts = [] } = useFinanceAccounts()
+  const { data = [] } = useFinanceAccounts()
+  const accounts = filter ? data.filter((account) => filter(account.code)) : data
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger

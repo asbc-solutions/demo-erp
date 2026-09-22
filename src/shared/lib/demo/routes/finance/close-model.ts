@@ -1,6 +1,7 @@
 import { collection, findRow, type Row } from "../../demo-db"
 import { FIN_ANCHORS } from "../../seed/finance/anchors"
 import { FIN_CLOSING_PERIOD, FIN_TODAY } from "../../seed/finance/calendar"
+import { depreciationOutstanding } from "./assets-model"
 import { unmatchedLines, unreconciledTreasuries } from "./banking-model"
 import { FIN_COLLECTIONS } from "./collections"
 import { accountBalances, storedJournals } from "./ledger-model"
@@ -31,11 +32,11 @@ function fxRevaluedThisPeriod(): boolean {
   return ((settings?.revaluations as Row[]) ?? []).some((row) => String(row.date).startsWith(FIN_CLOSING_PERIOD))
 }
 
-/** Items still in the way for each blocker source. Tax and assets read anchors until those sections post. */
+/** Items still in the way for each blocker source, read from the section that owns them. */
 const BLOCKERS: Record<string, () => number> = {
   unallocated_receipts: () => collection(FIN_COLLECTIONS.receipts).filter((row) => row.allocation === "unallocated").length,
   pending_bills: () => pendingBills().length,
-  depreciation: () => 1,
+  depreciation: () => depreciationOutstanding(),
   rejected_einvoices: () => eInvoiceState().rejected,
   fx_revaluation: () => 0,
 }
@@ -53,7 +54,8 @@ export function closeTasks(period = FIN_CLOSING_PERIOD): Row[] {
     .sort((a, b) => Number(a.position) - Number(b.position))
     .map((task) => {
       const blocking = blockerCount(task.blocker as string | null)
-      const autoDone = task.blocker === "fx_revaluation" && fxRevaluedThisPeriod()
+      const autoDone =
+        (task.blocker === "fx_revaluation" && fxRevaluedThisPeriod()) || (task.blocker === "depreciation" && depreciationOutstanding(period) === 0)
       const status = autoDone ? "done" : blocking > 0 ? "blocked" : String(task.status)
       return {
         ...task,
@@ -76,6 +78,7 @@ export function readinessChecks(period = FIN_CLOSING_PERIOD): ReadinessCheck[] {
   const suspense = balances.get(FIN_ANCHORS.ledger.suspenseAccount)?.closing ?? 0
   const afterEnd = storedJournals().filter((row) => row.status === "posted" && String(row.date) > FIN_TODAY && row.period === period).length
   const einvoices = eInvoiceState()
+  const depreciation = depreciationOutstanding(period)
   // A draft return is read from the VAT controls, so it can only drift once filed figures differ.
   const draft = draftReturn()
   const controls = vatControls()
@@ -84,7 +87,7 @@ export function readinessChecks(period = FIN_CLOSING_PERIOD): ReadinessCheck[] {
     { id: "check-trial-balance", title: "Trial balance is in balance", detail: `Difference ${money(Math.abs(imbalance) < 0.005 ? 0 : imbalance)}`, count: 0, pass: Math.abs(imbalance) < 0.005, href: "/finance/reports/trial-balance" },
     { id: "check-drafts", title: "No draft entries in the period", detail: `${drafts} drafts`, count: drafts, pass: drafts === 0, href: "/finance/journals" },
     { id: "check-reconciled", title: "All bank accounts reconciled", detail: `${unreconciled} ${unreconciled === 1 ? "account" : "accounts"} with unmatched lines`, count: unreconciled, pass: unreconciled === 0, href: "/finance/reconciliation" },
-    { id: "check-depreciation", title: "Depreciation posted for the period", detail: "Period run is still a draft", count: 1, pass: false, href: "/finance/assets/depreciation" },
+    { id: "check-depreciation", title: "Depreciation posted for the period", detail: depreciation ? "Period run is still a draft" : "Period run posted", count: depreciation, pass: depreciation === 0, href: "/finance/assets/depreciation" },
     { id: "check-suspense", title: "Suspense account at zero", detail: `Balance ${money(Math.abs(suspense))}`, count: Math.abs(suspense) < 0.005 ? 0 : 1, pass: Math.abs(suspense) < 0.005, href: `/finance/ledger?account=${FIN_ANCHORS.ledger.suspenseAccount}` },
     { id: "check-vat", title: "VAT control matches the return", detail: `Difference ${money(Math.abs(vatGap))}`, count: Math.abs(vatGap) < 0.005 ? 0 : 1, pass: Math.abs(vatGap) < 0.005, href: "/finance/tax/vat-return" },
     { id: "check-future", title: "No entries dated after period end", detail: `${afterEnd} entries`, count: afterEnd, pass: afterEnd === 0, href: "/finance/journals" },

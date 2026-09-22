@@ -15,6 +15,7 @@ import {
   type AssistantTopic,
 } from "../../seed/finance/assistant"
 import { FIN_NOW } from "../../seed/finance/calendar"
+import { depreciationOutstanding } from "./assets-model"
 import { unreconciledTreasuries } from "./banking-model"
 import { readinessChecks } from "./close-model"
 import { draftReturn, eInvoiceState, presentReturn, vatChecks } from "./tax-model"
@@ -88,6 +89,7 @@ function briefingLive() {
     treasuriesUnreconciled: unreconciled.length,
     draftEntries: storedJournals().filter((row) => row.status === "draft").length,
     closeBlockers: readinessChecks().filter((check) => !check.pass).length,
+    depreciationRuns: depreciationOutstanding(),
     tax: taxLive(),
   }
 }

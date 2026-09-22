@@ -14,7 +14,8 @@ import {
   buildTransfers,
   buildTreasuryMovements,
 } from "../../seed/finance/banking"
-import { buildFinancePeriods } from "../../seed/finance/calendar"
+import { FIN_ASSET_CATEGORY_ROWS, buildAssets } from "../../seed/finance/assets"
+import { FIN_CLOSING_PERIOD, buildFinancePeriods } from "../../seed/finance/calendar"
 import { FIN_CLOSE_TASK_ROWS, FIN_YEAR_END_STEPS } from "../../seed/finance/close"
 import {
   FIN_BOOK_RATES,
@@ -85,6 +86,9 @@ export const FIN_COLLECTIONS = {
   declarations: "finance/declarations",
   whtCertificates: "finance/wht-certificates",
   auditFiles: "finance/audit-files",
+  assets: "finance/assets",
+  assetCategories: "finance/asset-categories",
+  depreciationRuns: "finance/depreciation-runs",
 } as const
 
 /** Seeds are copied so edits in one session never mutate the module-level fixtures. */
@@ -141,3 +145,9 @@ defineCollection(FIN_COLLECTIONS.eInvoiceSettings, copy([FIN_EINVOICE_SETTINGS])
 defineCollection(FIN_COLLECTIONS.declarations, copy(FIN_DECLARATION_ROWS))
 defineCollection(FIN_COLLECTIONS.whtCertificates, copy(FIN_WHT_CERTIFICATE_ROWS))
 defineCollection(FIN_COLLECTIONS.auditFiles, copy(FIN_AUDIT_FILE_ROWS))
+defineCollection(FIN_COLLECTIONS.assets, buildAssets)
+defineCollection(FIN_COLLECTIONS.assetCategories, copy(FIN_ASSET_CATEGORY_ROWS))
+// The closing period's run waits as a draft; retired and fully depreciated assets drop out of it.
+defineCollection(FIN_COLLECTIONS.depreciationRuns, () => [
+  { id: `DR-${FIN_CLOSING_PERIOD}`, period: FIN_CLOSING_PERIOD, status: "draft", skipped: [], entry: null },
+])
