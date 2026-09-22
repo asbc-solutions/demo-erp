@@ -31,6 +31,7 @@ export function presentAsset(asset: Row): Row {
   return {
     ...asset,
     category_name: assetCategory(asset.category_id)?.name ?? "",
+    cost_center_name: findRow(FIN_COLLECTIONS.costCenters, String(asset.cost_center_id))?.name ?? null,
     // A retired asset keeps the carrying amount it was derecognised at; totals count only assets in service.
     nbv: r2(cost - accumulated),
     pct_depreciated: cost ? Math.round((accumulated / cost) * 100) : 0,

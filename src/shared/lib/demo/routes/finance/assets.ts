@@ -200,6 +200,8 @@ export const financeAssetRoutes: DemoRoute[] = [
     if (!meta) return refuse("Choose the asset's category. It sets the depreciation method and useful life.")
     if (!(cost > 0)) return refuse("Enter the acquisition cost. Depreciation is calculated from it.")
     if (!(salvagePct >= 0 && salvagePct < 100)) return refuse("Salvage is a percentage of cost, from 0 up to but not including 100.")
+    const center = findRow(FIN_COLLECTIONS.costCenters, String(req.body.cost_center_id ?? "CC-100"))
+    if (!center) return refuse("Choose the cost center the asset belongs to.")
     const year = inService.slice(0, 4)
     const serial = assets().filter((row) => String(row.number).startsWith(`FA-${year}-`)).length + 1
     const number = `FA-${year}-${String(serial).padStart(3, "0")}`
@@ -214,8 +216,8 @@ export const financeAssetRoutes: DemoRoute[] = [
       cost,
       salvage: r2((cost * salvagePct) / 100),
       accumulated: 0,
-      cost_center_id: String(req.body.cost_center_id ?? "CC-100"),
-      location: String(req.body.location ?? "Cairo HQ · Head office"),
+      cost_center_id: center ? String(center.id) : "CC-100",
+      location: String(req.body.location ?? center?.name ?? "Cairo HQ · Head office"),
       status: "in_service",
       retired_on: null,
       history: [{ date: inService, event: "Placed in service", amount: cost, entry: null }],
@@ -233,6 +235,7 @@ export const financeAssetRoutes: DemoRoute[] = [
     if (!name) return refuse("The asset needs a name.")
     if (!(life > 0)) return refuse("Useful life is a whole number of months above zero.")
     if (salvage < 0 || salvage >= Number(asset.cost)) return refuse("Salvage must be zero or more and below the asset's cost.")
+    if (req.body.cost_center_id && !findRow(FIN_COLLECTIONS.costCenters, String(req.body.cost_center_id))) return refuse("Choose an existing cost center.")
     Object.assign(asset, { name, life, salvage, cost_center_id: String(req.body.cost_center_id ?? asset.cost_center_id) })
     asset.history = [...((asset.history as Row[]) ?? []), { date: FIN_TODAY, event: "Details edited", amount: null, entry: null }]
     return { data: presentAsset(asset) }

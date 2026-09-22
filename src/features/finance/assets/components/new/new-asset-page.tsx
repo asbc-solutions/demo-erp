@@ -24,7 +24,8 @@ import { FinanceSection } from "../../../components/shared/finance-section"
 import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../components/shared/page-header"
 import { errorMessage } from "../../../lib/utils/api"
 import { formatAmount, round2 } from "../../../lib/utils/money"
-import { ASSET_COST_CENTERS, METHOD_LABELS } from "../../lib/constants/assets"
+import { useCostCenters } from "../../../planning/lib/queries/planning"
+import { METHOD_LABELS } from "../../lib/constants/assets"
 import { useCreateAsset } from "../../lib/mutations/assets"
 import { useAssetCategories } from "../../lib/queries/assets"
 import type { Asset, AssetCategory } from "../../lib/types/assets"
@@ -59,6 +60,7 @@ function NewAssetPage() {
   const router = useRouter()
   const create = useCreateAsset()
   const { data: categories } = useAssetCategories()
+  const { data: centers } = useCostCenters()
   const [saved, setSaved] = React.useState<Asset | null>(null)
   const [serverError, setServerError] = React.useState<string | null>(null)
   const {
@@ -210,9 +212,9 @@ function NewAssetPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {ASSET_COST_CENTERS.map((row) => (
+                        {centers?.items.map((row) => (
                           <SelectItem key={row.id} value={row.id}>
-                            {row.name}
+                            {row.code} · {row.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

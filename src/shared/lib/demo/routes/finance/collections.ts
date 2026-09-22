@@ -32,6 +32,12 @@ import {
   FIN_TREASURY_ROWS,
 } from "../../seed/finance/master-data"
 import { buildApDocuments, buildPayments } from "../../seed/finance/payables"
+import {
+  FIN_ALLOCATION_RULE_ROWS,
+  FIN_BUDGET_ROWS,
+  FIN_COST_CENTER_ROWS,
+  FIN_DIMENSION_ROWS,
+} from "../../seed/finance/planning"
 import { buildArDocuments, buildReceipts } from "../../seed/finance/receivables"
 import {
   FIN_AUDIT_FILE_ROWS,
@@ -89,6 +95,8 @@ export const FIN_COLLECTIONS = {
   assets: "finance/assets",
   assetCategories: "finance/asset-categories",
   depreciationRuns: "finance/depreciation-runs",
+  budgets: "finance/budgets",
+  allocationRules: "finance/allocation-rules",
 } as const
 
 /** Seeds are copied so edits in one session never mutate the module-level fixtures. */
@@ -133,10 +141,10 @@ defineCollection(FIN_COLLECTIONS.ledgerSettings, () => [
 ])
 defineCollection(FIN_COLLECTIONS.journalTemplates, copy(FIN_JOURNAL_TEMPLATE_ROWS))
 defineCollection(FIN_COLLECTIONS.recurringJournals, copy(FIN_RECURRING_ROWS))
-// Cost centers and dimensions are seeded by Planning; import appends to them.
 defineCollection(FIN_COLLECTIONS.taxCodes, copy(FIN_TAX_CODE_ROWS))
-defineCollection(FIN_COLLECTIONS.costCenters, () => [])
-defineCollection(FIN_COLLECTIONS.dimensions, () => [])
+// Import appends to cost centers and dimensions.
+defineCollection(FIN_COLLECTIONS.costCenters, copy(FIN_COST_CENTER_ROWS))
+defineCollection(FIN_COLLECTIONS.dimensions, copy(FIN_DIMENSION_ROWS))
 defineCollection(FIN_COLLECTIONS.yearEndSteps, copy(FIN_YEAR_END_STEPS))
 defineCollection(FIN_COLLECTIONS.vatReturns, copy(FIN_VAT_RETURN_ROWS))
 defineCollection(FIN_COLLECTIONS.vatChecks, copy(FIN_VAT_CHECK_ROWS))
@@ -151,3 +159,5 @@ defineCollection(FIN_COLLECTIONS.assetCategories, copy(FIN_ASSET_CATEGORY_ROWS))
 defineCollection(FIN_COLLECTIONS.depreciationRuns, () => [
   { id: `DR-${FIN_CLOSING_PERIOD}`, period: FIN_CLOSING_PERIOD, status: "draft", skipped: [], entry: null },
 ])
+defineCollection(FIN_COLLECTIONS.budgets, copy(FIN_BUDGET_ROWS))
+defineCollection(FIN_COLLECTIONS.allocationRules, copy(FIN_ALLOCATION_RULE_ROWS))

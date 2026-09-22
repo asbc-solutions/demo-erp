@@ -44,11 +44,12 @@ const WEIGHTS: Record<string, number[]> = {
   "AC-4": [130_550.4, 114_868.04, 75_144.59, 179_238.91, 139_498.11, 185_481.6, 90_251.6, 96_800, 118_400],
 }
 
+/** Where each asset sits, and the cost center its depreciation belongs to. */
 const LOCATIONS = [
   ["CC-100", "Cairo HQ · Head office"],
-  ["CC-200", "10th of Ramadan · Plant"],
-  ["CC-300", "Alexandria · Warehouse"],
-  ["CC-400", "Cairo HQ · Sales"],
+  ["CC-230", "Cairo · Workshop"],
+  ["CC-320", "Alexandria · Warehouse"],
+  ["CC-130", "Cairo HQ · IT"],
 ]
 
 function monthsBetween(fromIso: string, toPeriod: string): number {

@@ -26,6 +26,7 @@ export type Asset = {
   pct_depreciated: number
   monthly_charge: number
   cost_center_id: string
+  cost_center_name: string | null
   location: string
   status: AssetStatus
   retired_on: string | null

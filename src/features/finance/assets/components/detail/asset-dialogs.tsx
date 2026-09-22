@@ -29,9 +29,9 @@ import { Textarea } from "@/src/shared/components/ui/textarea"
 
 import { useBankingOverview } from "../../../banking/lib/queries/banking"
 import { FinanceAlert } from "../../../components/shared/finance-alert"
+import { useCostCenters } from "../../../planning/lib/queries/planning"
 import { errorMessage } from "../../../lib/utils/api"
 import { formatAmount } from "../../../lib/utils/money"
-import { ASSET_COST_CENTERS } from "../../lib/constants/assets"
 import { useDisposeAsset, useEditAsset, useWriteOffAsset } from "../../lib/mutations/assets"
 import type { Asset } from "../../lib/types/assets"
 
@@ -261,6 +261,7 @@ type EditValues = z.infer<ReturnType<typeof editSchema>>
 
 function EditAssetDialog({ asset, open, onOpenChange }: DialogProps) {
   const edit = useEditAsset()
+  const { data: centers } = useCostCenters()
   const schema = React.useMemo(() => editSchema(asset.cost), [asset.cost])
   const defaults = React.useCallback(
     (): EditValues => ({ name: asset.name, cost_center_id: asset.cost_center_id, life: String(asset.life), salvage: String(asset.salvage) }),
@@ -319,9 +320,9 @@ function EditAssetDialog({ asset, open, onOpenChange }: DialogProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {ASSET_COST_CENTERS.map((row) => (
+                      {centers?.items.map((row) => (
                         <SelectItem key={row.id} value={row.id}>
-                          {row.id} · {row.name}
+                          {row.code} · {row.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

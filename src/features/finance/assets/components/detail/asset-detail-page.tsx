@@ -19,7 +19,7 @@ import { FinancePageBody, FinancePageHeader, HeaderFigure, MetaChips } from "../
 import { StatusPill } from "../../../components/shared/status-pill"
 import { formatDate, formatPeriod } from "../../../lib/utils/date"
 import { formatAmount } from "../../../lib/utils/money"
-import { METHOD_LABELS, costCenterLabel } from "../../lib/constants/assets"
+import { METHOD_LABELS } from "../../lib/constants/assets"
 import { useAssetDetail } from "../../lib/queries/assets"
 import type { AssetHistoryEvent, AssetScheduleRow } from "../../lib/types/assets"
 import { DisposeDialog, EditAssetDialog, WriteOffDialog } from "./asset-dialogs"
@@ -135,7 +135,10 @@ function AssetDetailPage({ assetId }: { assetId: string }) {
               <StatusPill status="prepared" label={data.category_name} />
               <StatusPill status="prepared" label={METHOD_LABELS[data.method]} />
               <span>{data.location}</span>
-              <span>{costCenterLabel(data.cost_center_id)}</span>
+              <Link href={`/finance/cost-centers/${data.cost_center_id}`} className="hover:text-content-primary hover:underline">
+                {data.cost_center_id}
+                {data.cost_center_name ? ` · ${data.cost_center_name}` : ""}
+              </Link>
             </MetaChips>
 
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 2xl:grid-cols-5">

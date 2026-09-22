@@ -35,7 +35,14 @@ const ROUNDING_LOSS = "630102"
 const ROUNDING_GAIN = "420102"
 export const TREASURY_ACCOUNT = /^110[12]\d\d$/
 
-export type JournalLine = { account_code: string; description: string; debit: number; credit: number }
+export type JournalLine = {
+  account_code: string
+  description: string
+  debit: number
+  credit: number
+  /** Set when the line is charged to one cost center; otherwise Planning spreads it by account class. */
+  cost_center?: string | null
+}
 
 const line = (account: string, amount: number, description = ""): JournalLine =>
   amount >= 0
@@ -200,6 +207,7 @@ export type PostedLine = {
   account_code: string
   debit: number
   credit: number
+  cost_center: string | null
 }
 
 /** Posted lines in EGP; reversed journals still count (their reversal offsets them). */
@@ -217,6 +225,7 @@ export function postedLines(): PostedLine[] {
         account_code: entry.account_code,
         debit: r2(entry.debit * rate),
         credit: r2(entry.credit * rate),
+        cost_center: entry.cost_center ?? null,
       })
     }
   }
@@ -388,6 +397,7 @@ export function reverseJournal(journal: Row, date: string, reason: string): Row 
     description: row.description,
     debit: r2(row.credit * Number(journal.rate ?? 1)),
     credit: r2(row.debit * Number(journal.rate ?? 1)),
+    cost_center: row.cost_center ?? null,
   }))
   return createJournal({
     date: date || FIN_TODAY,
