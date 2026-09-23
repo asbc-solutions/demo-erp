@@ -91,6 +91,69 @@ function transition(
   return { data: row ?? null }
 }
 
+/**
+ * Price a single quotation line, mirroring `buildLines()` in `seed/sales.ts`.
+ *
+ * A line added from the product picker arrives with only a `product_id` (the
+ * form leaves Unit Price blank, showing "From product"), so the unit price and
+ * description are backfilled from the catalogue here — otherwise the line has
+ * no price at all.
+ */
+function priceQuotationLine(line: Row & Record<string, unknown>): Row {
+  const product = line.product_id
+    ? findRow("sales/products", String(line.product_id))
+    : undefined
+
+  const quantity = Number(line.quantity ?? 1)
+  const unitPrice = Number(
+    line.unit_price ?? product?.default_unit_price ?? 0,
+  )
+  const discountPercent = Number(line.discount_percent ?? 0)
+  const taxPercent = Number(line.tax_percent ?? 14)
+
+  const gross = quantity * unitPrice
+  const discount = (gross * discountPercent) / 100
+  const net = gross - discount
+  const tax = (net * taxPercent) / 100
+
+  return {
+    ...line,
+    description: String(line.description ?? product?.name ?? ""),
+    quantity,
+    unit_price: unitPrice,
+    discount_percent: discountPercent,
+    tax_percent: taxPercent,
+    line_total: Math.round(net + tax),
+  }
+}
+
+/**
+ * Recompute a quotation's rolled-up totals from its lines. Every line mutation
+ * must call this: leaving the totals untouched left every quotation built
+ * through the UI permanently at a grand total of 0.
+ */
+function retotalQuotation(quotation: Row): Row {
+  const lines = (quotation.lines as Row[]) ?? []
+  let subtotal = 0
+  let discountTotal = 0
+  let taxTotal = 0
+
+  for (const line of lines) {
+    const gross = Number(line.quantity ?? 0) * Number(line.unit_price ?? 0)
+    const discount = (gross * Number(line.discount_percent ?? 0)) / 100
+    const net = gross - discount
+    subtotal += gross
+    discountTotal += discount
+    taxTotal += (net * Number(line.tax_percent ?? 0)) / 100
+  }
+
+  quotation.subtotal = Math.round(subtotal)
+  quotation.discount_total = Math.round(discountTotal)
+  quotation.tax_total = Math.round(taxTotal)
+  quotation.grand_total = Math.round(subtotal - discountTotal + taxTotal)
+  return quotation
+}
+
 const EXPORT_RESULT = { async: false, job_id: "job-sales-1", download_url: "#" }
 
 export const salesRoutes: DemoRoute[] = [
@@ -99,6 +162,40 @@ export const salesRoutes: DemoRoute[] = [
   route("get", "/sales/customers", (req) =>
     tabbedList("sales/customers", ["active", "inactive", "blocked"], req.params),
   ),
+
+  /**
+   * The generic `:id` fallback hands back the stored row verbatim, and a customer
+   * created through `POST /sales/customers` only holds what the create form sent —
+   * none of the denormalized labels the seed rows carry. Derive them here so a
+   * customer opened straight after being created reads like a seeded one instead
+   * of showing blank type/status/salesperson fields.
+   */
+  route("get", "/sales/customers/:id", (req) => {
+    const row = findRow("sales/customers", req.vars.id)
+    if (!row) return { data: null }
+
+    const status = String(row.status ?? "active")
+    const customerType = String(row.customer_type ?? "company")
+    const salesperson = findRow(
+      "sales/salespeople",
+      String(row.assigned_salesperson_id ?? ""),
+    )
+
+    return {
+      data: {
+        ...row,
+        status,
+        status_label: row.status_label ?? status.charAt(0).toUpperCase() + status.slice(1),
+        customer_type: customerType,
+        customer_type_label:
+          row.customer_type_label ?? (customerType === "company" ? "Company" : "Individual"),
+        assigned_salesperson_name: row.assigned_salesperson_name ?? salesperson?.name ?? "",
+        tax_number: row.tax_number ?? null,
+        source: row.source ?? null,
+        addresses: row.addresses ?? [],
+      },
+    }
+  }),
 
   route("get", "/sales/quotations", (req) =>
     tabbedList(
@@ -159,6 +256,44 @@ export const salesRoutes: DemoRoute[] = [
 
   /* ---------------------------- Quotations ------------------------------ */
 
+  // The generic POST would store only the payload ids; the list and detail
+  // views need the denormalised names, totals and actions a real row carries.
+  route("post", "/sales/quotations", (req) => {
+    const rows = collection("sales/quotations")
+    const customer = findRow("sales/customers", String(req.body.customer_id ?? ""))
+    const salesperson = findRow("sales/salespeople", String(req.body.salesperson_id ?? ""))
+    const validityDays = Number(req.body.validity_days ?? 30)
+    const quotationDate = String(req.body.quotation_date ?? isoDay(0))
+    const row: Row = {
+      id: `qt-${Date.now()}`,
+      number: `QT-2026-${String(rows.length + 1).padStart(4, "0")}`,
+      customer_id: String(req.body.customer_id ?? ""),
+      customer_name: String(customer?.name ?? ""),
+      salesperson_id: String(req.body.salesperson_id ?? ""),
+      salesperson_name: String(salesperson?.name ?? ""),
+      quotation_date: quotationDate,
+      validity_date: isoDay(validityDays),
+      validity_days: validityDays,
+      days_left: null,
+      status: "draft",
+      status_label: "Draft",
+      terms_and_conditions: req.body.terms_and_conditions ?? null,
+      lines: [],
+      subtotal: 0,
+      discount_total: 0,
+      tax_total: 0,
+      grand_total: 0,
+      converted_order_id: null,
+      discount_approval_id: null,
+      discount_approved: false,
+      discount_approved_by: null,
+      discount_approved_at: null,
+      actions_available: ["edit", "delete", "send", "duplicate"],
+    }
+    rows.unshift(row)
+    return { data: row }
+  }),
+
   route("post", "/sales/quotations/:id/send", (req) =>
     transition("sales/quotations", req.vars.id, "sent"),
   ),
@@ -201,28 +336,39 @@ export const salesRoutes: DemoRoute[] = [
     const quotation = findRow("sales/quotations", req.vars.id)
     if (!quotation) return { data: null }
     const lines = (quotation.lines as Row[]) ?? []
-    const line = { id: `line-${Date.now()}`, line_no: lines.length + 1, ...req.body }
-    lines.push(line as Row)
+    lines.push(
+      priceQuotationLine({
+        id: `line-${Date.now()}`,
+        line_no: lines.length + 1,
+        ...req.body,
+      }),
+    )
     quotation.lines = lines
-    return { data: quotation }
+    return { data: retotalQuotation(quotation) }
   }),
 
   route("put", "/sales/quotations/:qid/lines/:lid", (req) => {
     const quotation = findRow("sales/quotations", req.vars.qid)
     if (!quotation) return { data: null }
     const lines = (quotation.lines as Row[]) ?? []
-    const line = lines.find((l) => String(l.id) === req.vars.lid)
-    if (line) Object.assign(line, req.body, { id: line.id })
-    return { data: quotation }
+    const index = lines.findIndex((l) => String(l.id) === req.vars.lid)
+    if (index !== -1) {
+      lines[index] = priceQuotationLine({
+        ...lines[index],
+        ...req.body,
+        id: lines[index].id,
+      })
+    }
+    return { data: retotalQuotation(quotation) }
   }),
 
   route("delete", "/sales/quotations/:qid/lines/:lid", (req) => {
     const quotation = findRow("sales/quotations", req.vars.qid)
     if (!quotation) return { data: null }
-    quotation.lines = ((quotation.lines as Row[]) ?? []).filter(
-      (l) => String(l.id) !== req.vars.lid,
-    )
-    return { data: quotation }
+    quotation.lines = ((quotation.lines as Row[]) ?? [])
+      .filter((l) => String(l.id) !== req.vars.lid)
+      .map((line, i) => ({ ...line, line_no: i + 1 }))
+    return { data: retotalQuotation(quotation) }
   }),
 
   route("post", "/sales/quotations/:qid/lines/:lid/discount-approvals", (req) => ({

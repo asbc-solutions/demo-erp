@@ -16,12 +16,14 @@ import { CustomerStatusBadge } from "./customer-status-badge"
 export function CustomersTable({
   customers,
   canManage,
+  onSelectCustomer,
   onEdit,
   onBlock,
   onUnblock,
 }: Readonly<{
   customers: CustomerListItem[]
   canManage: boolean
+  onSelectCustomer: (customerId: string) => void
   onEdit: (customer: CustomerListItem) => void
   onBlock: (customer: CustomerListItem) => void
   onUnblock: (customer: CustomerListItem) => void
@@ -43,7 +45,11 @@ export function CustomersTable({
         <TableBody>
           {customers.length ? (
             customers.map((customer) => (
-              <TableRow key={customer.id} className="h-17.5">
+              <TableRow
+                key={customer.id}
+                className="h-17.5 cursor-pointer"
+                onClick={() => onSelectCustomer(customer.id)}
+              >
                 <TableCell className="px-5 py-3">
                   <div className="flex min-w-0 items-center gap-3.5">
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-semibold text-brand-primary">
@@ -72,10 +78,14 @@ export function CustomersTable({
                 <TableCell className="py-3">
                   <CustomerStatusBadge status={customer.status} label={customer.status_label} />
                 </TableCell>
-                <TableCell className="px-5 py-3 text-right">
+                <TableCell
+                  className="px-5 py-3 text-right"
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <CustomerActions
                     customer={customer}
                     canManage={canManage}
+                    onView={() => onSelectCustomer(customer.id)}
                     onEdit={() => onEdit(customer)}
                     onBlock={() => onBlock(customer)}
                     onUnblock={() => onUnblock(customer)}

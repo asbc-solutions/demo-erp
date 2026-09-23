@@ -26,10 +26,12 @@ import { useCustomerDirectory } from "../lib/queries/customers"
 import { useActiveSalespeople } from "../lib/queries/salespeople"
 import type { CustomerListItem, CustomerTab } from "../lib/types"
 import { BlockCustomerDialog } from "./components/block-customer-dialog"
+import { CustomerDetailView } from "./components/customer-detail-view"
 import { CustomersTable } from "./components/customers-table"
 import { EditCustomerDialog } from "./components/edit-customer-dialog"
 import { NewCustomerDialog } from "./components/new-customer-dialog"
 import { UnblockCustomerDialog } from "./components/unblock-customer-dialog"
+import { useCustomerView } from "./hooks/use-customer-view"
 import { useDebouncedValue } from "./hooks/use-debounced-value"
 
 const CUSTOMER_TABS: { value: CustomerTab; label: string }[] = [
@@ -52,6 +54,7 @@ export function CustomersPage() {
   const [editCustomerId, setEditCustomerId] = React.useState<string | null>(null)
   const [blockTarget, setBlockTarget] = React.useState<CustomerListItem | null>(null)
   const [unblockTarget, setUnblockTarget] = React.useState<CustomerListItem | null>(null)
+  const { view, showList, showDetail } = useCustomerView()
 
   const handleTabChange = (tab: CustomerTab) => {
     setActiveTab(tab)
@@ -71,6 +74,16 @@ export function CustomersPage() {
   const exportCustomers = useExportCustomers()
   const { can } = usePermissions()
   const canManageCustomers = can.write(SALES_RESOURCES.customer)
+
+  if (view.mode === "detail") {
+    return (
+      <CustomerDetailView
+        customerId={view.customerId}
+        canManage={canManageCustomers}
+        onBack={showList}
+      />
+    )
+  }
 
   const selectedSalespersonName = salespeople.find(
     (person) => person.id === salespersonFilter
@@ -236,6 +249,7 @@ export function CustomersPage() {
           <CustomersTable
             customers={filteredCustomers}
             canManage={canManageCustomers}
+            onSelectCustomer={showDetail}
             onEdit={(customer) => setEditCustomerId(customer.id)}
             onBlock={(customer) => setBlockTarget(customer)}
             onUnblock={(customer) => setUnblockTarget(customer)}

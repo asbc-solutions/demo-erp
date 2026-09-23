@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/shared/components/ui/table"
+import { cn } from "@/src/shared/lib/utils/utils"
 
 import { useEmployees } from "../../lib/queries/employees"
 import {
@@ -126,13 +127,17 @@ function ContractTableSkeleton() {
   )
 }
 
-function StatusBadge({ status }: Readonly<{ status: ContractStatus }>) {
+function StatusBadge({ status }: Readonly<{ status?: ContractStatus | null }>) {
+  if (!status) return <span className="text-content-tertiary">-</span>
   return (
     <Badge
       variant="outline"
-      className={`rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase ${STATUS_STYLES[status]}`}
+      className={cn(
+        "rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase",
+        STATUS_STYLES[status] ?? STATUS_STYLES.draft,
+      )}
     >
-      {status.replace("_", " ")}
+      {status.replaceAll("_", " ")}
     </Badge>
   )
 }

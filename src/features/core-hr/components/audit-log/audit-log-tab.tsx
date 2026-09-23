@@ -53,7 +53,7 @@ export function AuditLogTab() {
     module_name: moduleFilter === "ALL" ? undefined : moduleFilter,
   })
 
-  const days = data?.days ?? []
+  const days = (data?.days ?? []).filter((d) => Array.isArray(d?.entries))
   const total = data?.meta?.total_entries ?? days.reduce((sum, d) => sum + d.entries.length, 0)
 
   return (

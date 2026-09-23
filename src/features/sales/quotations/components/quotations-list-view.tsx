@@ -197,7 +197,7 @@ function QuotationsTable({
                 </TableCell>
                 <TableCell className="truncate py-3 text-xs text-content-secondary">
                   {customerSalespeopleByName.get(
-                    quotation.customer_name.trim().toLocaleLowerCase()
+                    (quotation.customer_name ?? "").trim().toLocaleLowerCase()
                   ) ??
                     quotation.salesperson_name}
                 </TableCell>

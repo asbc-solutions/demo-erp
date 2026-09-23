@@ -8,12 +8,14 @@ export function ProjectStatusBadge({
   label,
   className,
 }: {
-  status: ProjectLifecycleStatus
+  status: ProjectLifecycleStatus | null | undefined
   /** Human label from the backend (`status_label`). Falls back to the key. */
   label?: string
   className?: string
 }) {
-  const style = LIFECYCLE_STATUS_STYLE[status]
+  // A row with an unrecognised (or missing) status must still render — this
+  // badge sits in every list cell, so throwing here takes the whole page down.
+  const style = (status && LIFECYCLE_STATUS_STYLE[status]) || LIFECYCLE_STATUS_STYLE.created
   return (
     <span
       className={cn(
@@ -23,7 +25,7 @@ export function ProjectStatusBadge({
       )}
     >
       <span className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
-      {label ?? status.replace(/_/g, " ")}
+      {label ?? status?.replace(/_/g, " ") ?? "Unknown"}
     </span>
   )
 }

@@ -41,7 +41,11 @@ export function ActiveProjectsCard({
       ) : (
         <ul className="flex flex-col">
           {projects.map((project) => {
-            const status = LIFECYCLE_STATUS_STYLE[project.status]
+            // Fall back so a project with an unrecognised status still renders
+            // rather than taking the whole card down.
+            const status =
+              LIFECYCLE_STATUS_STYLE[project.status] ??
+              LIFECYCLE_STATUS_STYLE.created
             return (
               <li key={project.id}>
                 <Link

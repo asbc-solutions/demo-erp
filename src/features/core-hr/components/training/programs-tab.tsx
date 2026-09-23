@@ -21,6 +21,8 @@ import { Skeleton } from "@/src/shared/components/ui/skeleton"
 import { useCertifications, usePrograms } from "../../lib/queries/training"
 import type { ProgramStatus, TrainingProgram } from "../../lib/types"
 import { HeroStatCard } from "../performance/performance-stats"
+import { NewProgramDialog } from "./new-program-dialog"
+import { ProgramDetailsDialog } from "./program-details-dialog"
 import { categoryBadge } from "./training-format"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -58,7 +60,10 @@ function MetaItem({
   )
 }
 
-function ProgramCard({ program }: Readonly<{ program: TrainingProgram }>) {
+function ProgramCard({
+  program,
+  onView,
+}: Readonly<{ program: TrainingProgram; onView: () => void }>) {
   const cat = categoryBadge(program.category)
   const st = STATUS_CFG[program.status] ?? STATUS_CFG.draft
   const cost = formatCost(program)
@@ -114,7 +119,7 @@ function ProgramCard({ program }: Readonly<{ program: TrainingProgram }>) {
           <GraduationCap className="size-4" strokeWidth={1.75} />
           {program.program_code}
         </span>
-        <Button variant="ghost-primary" size="sm">
+        <Button variant="ghost-primary" size="sm" onClick={onView}>
           View
         </Button>
       </div>
@@ -138,6 +143,8 @@ function ProgramsSkeleton() {
 
 export function ProgramsTab() {
   const [search, setSearch] = useState("")
+  const [newOpen, setNewOpen] = useState(false)
+  const [viewing, setViewing] = useState<TrainingProgram | null>(null)
 
   const { data, isLoading, isError } = usePrograms({ per_page: 100 })
   const { data: certData } = useCertifications({ per_page: 100 })
@@ -212,7 +219,7 @@ export function ProgramsTab() {
             className="pl-9"
           />
         </div>
-        <Button variant="primary" size="sm">
+        <Button variant="primary" size="sm" onClick={() => setNewOpen(true)}>
           <Plus strokeWidth={2} />
           New Program
         </Button>
@@ -244,9 +251,24 @@ export function ProgramsTab() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((p) => (
-            <ProgramCard key={p.program_id} program={p} />
+            <ProgramCard
+              key={p.program_id}
+              program={p}
+              onView={() => setViewing(p)}
+            />
           ))}
         </div>
+      )}
+
+      <NewProgramDialog open={newOpen} onOpenChange={setNewOpen} />
+      {viewing && (
+        <ProgramDetailsDialog
+          program={viewing}
+          open
+          onOpenChange={(next) => {
+            if (!next) setViewing(null)
+          }}
+        />
       )}
     </div>
   )

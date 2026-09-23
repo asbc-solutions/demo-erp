@@ -1,9 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import {
   AlertCircle,
-  Filter,
   Plus,
   Search,
   Sparkles,
@@ -41,6 +40,18 @@ import {
   useResourcePlannerSummary,
   useResources,
 } from "../../lib/queries/resources"
+import { useResourceDepartments } from "../lib/use-resource-departments"
+import { AssignResourceDialog } from "./assign-resource-dialog"
+import {
+  EMPTY_RESOURCE_FILTERS,
+  ResourceDirectoryFilters,
+  matchesAvailability,
+  type ResourceFilterValues,
+} from "./resource-directory-filters"
+import {
+  LevelResourcesDialog,
+  type OverAllocatedResource,
+} from "./level-resources-dialog"
 
 const STAT_ICON: Record<PlannerStat["icon"], LucideIcon> = {
   users: Users,
@@ -71,8 +82,6 @@ const STAT_ACCENT: Record<
   },
 }
 
-const FILTERS = ["Department", "Availability", "Skills"] as const
-
 function availabilityColor(value: number): ProgressColor {
   if (value > 100) return "red"
   if (value >= 85) return "indigo"
@@ -89,10 +98,17 @@ function heatCell(value: number): string {
 export function ResourcePlannerModule() {
   const period = useMemo(() => currentMonthRange(), [])
   const [search, setSearch] = useState("")
+  const [filters, setFilters] = useState<ResourceFilterValues>(
+    EMPTY_RESOURCE_FILTERS,
+  )
+  const [assignOpen, setAssignOpen] = useState(false)
+  const [assignEmployeeId, setAssignEmployeeId] = useState<string | null>(null)
+  const [levelOpen, setLevelOpen] = useState(false)
 
   const summaryQuery = useResourcePlannerSummary(period)
   const heatmapQuery = useResourceHeatmap(period)
   const resourcesQuery = useResources({ per_page: 100 })
+  const departmentByEmployee = useResourceDepartments()
 
   const stats = useMemo(
     () => buildPlannerStats(summaryQuery.data),
@@ -107,15 +123,79 @@ export function ResourcePlannerModule() {
     [heatmapQuery.data],
   )
 
+  const departmentOptions = useMemo(() => {
+    const names = new Set<string>()
+    for (const row of directory) {
+      const department = departmentByEmployee.get(row.id)
+      if (department) names.add(department)
+    }
+    return [...names].sort((a, b) => a.localeCompare(b))
+  }, [directory, departmentByEmployee])
+
+  const skillOptions = useMemo(() => {
+    const names = new Set<string>()
+    for (const row of directory) for (const skill of row.skills) names.add(skill)
+    return [...names].sort((a, b) => a.localeCompare(b))
+  }, [directory])
+
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return directory
-    return directory.filter(
-      (r) =>
+    return directory.filter((r) => {
+      const matchesSearch =
+        !q ||
         r.name.toLowerCase().includes(q) ||
-        r.skills.some((s) => s.toLowerCase().includes(q)),
+        r.skills.some((s) => s.toLowerCase().includes(q))
+      if (!matchesSearch) return false
+      if (
+        filters.department &&
+        departmentByEmployee.get(r.id) !== filters.department
+      ) {
+        return false
+      }
+      if (filters.skill && !r.skills.includes(filters.skill)) return false
+      if (
+        filters.availability &&
+        !matchesAvailability(filters.availability, r.availabilityPct)
+      ) {
+        return false
+      }
+      return true
+    })
+  }, [directory, search, filters, departmentByEmployee])
+
+  const overAllocated = useMemo<OverAllocatedResource[]>(() => {
+    const peakByEmployee = new Map(
+      heatmap.rows.map((row) => [
+        row.id,
+        row.cells.length ? Math.max(...row.cells) : null,
+      ]),
     )
-  }, [directory, search])
+    return directory
+      .flatMap((r) =>
+        r.availabilityPct != null && r.availabilityPct > 100
+          ? [
+              {
+                id: r.id,
+                name: r.name,
+                initials: r.initials,
+                color: r.color,
+                allocationPct: r.availabilityPct,
+                peakPct: peakByEmployee.get(r.id) ?? null,
+              },
+            ]
+          : [],
+      )
+      .sort((a, b) => b.allocationPct - a.allocationPct)
+  }, [directory, heatmap.rows])
+
+  const openAssign = useCallback((employeeId: string | null) => {
+    setAssignEmployeeId(employeeId)
+    // "Rebalance" hands over from the levelling dialog. Opening the second
+    // dialog in the same frame races the first one's focus-trap teardown, which
+    // is what leaves `pointer-events: none` stuck on <body>; let it close first.
+    setLevelOpen(false)
+    requestAnimationFrame(() => setAssignOpen(true))
+  }, [])
 
   const heatCols = `160px repeat(${heatmap.weeks.length}, minmax(44px, 1fr))`
 
@@ -131,10 +211,18 @@ export function ResourcePlannerModule() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" className="h-9 px-3 text-[13px]">
+          <Button
+            variant="outline"
+            className="h-9 px-3 text-[13px]"
+            onClick={() => setLevelOpen(true)}
+          >
             Level Resources
           </Button>
-          <Button variant="primary" className="h-9 gap-2 px-3 text-[13px]">
+          <Button
+            variant="primary"
+            className="h-9 gap-2 px-3 text-[13px]"
+            onClick={() => openAssign(null)}
+          >
             <Plus className="size-4" aria-hidden />
             Assign Resource
           </Button>
@@ -195,16 +283,15 @@ export function ResourcePlannerModule() {
               className="h-9 pl-9 text-[13px]"
             />
           </div>
-          {FILTERS.map((label) => (
-            <Button
-              key={label}
-              variant="outline"
-              className="h-9 gap-2 px-3 text-[13px]"
-            >
-              <Filter className="size-3.5" aria-hidden />
-              {label}
-            </Button>
-          ))}
+          <ResourceDirectoryFilters
+            values={filters}
+            onChange={setFilters}
+            departments={departmentOptions}
+            skills={skillOptions}
+          />
+          <span className="text-content-tertiary ml-auto text-xs tabular-nums">
+            {rows.length} of {directory.length}
+          </span>
         </div>
 
         <Table>
@@ -243,7 +330,7 @@ export function ResourcePlannerModule() {
                   colSpan={6}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  No resources found.
+                  No resources match the current search or filters.
                 </TableCell>
               </TableRow>
             ) : (
@@ -318,6 +405,7 @@ export function ResourcePlannerModule() {
                     <TableCell className="text-right">
                       <button
                         type="button"
+                        onClick={() => openAssign(r.id)}
                         className="text-brand-primary text-[13px] font-medium hover:underline"
                       >
                         Assign
@@ -399,6 +487,19 @@ export function ResourcePlannerModule() {
           </div>
         )}
       </Card>
+
+      <AssignResourceDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        resources={directory}
+        defaultEmployeeId={assignEmployeeId}
+      />
+      <LevelResourcesDialog
+        open={levelOpen}
+        onOpenChange={setLevelOpen}
+        resources={overAllocated}
+        onReassign={openAssign}
+      />
     </div>
   )
 }

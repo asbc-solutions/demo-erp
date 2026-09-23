@@ -22,7 +22,14 @@ import {
   NOTIFICATION_ROWS,
   POSITION_ROWS,
 } from "../seed/core-hr"
-import { DEPARTMENTS, intBetween, isoDay, makeRandom, monthLabels } from "../seed/faker"
+import {
+  DEPARTMENTS,
+  intBetween,
+  isoDateTime,
+  isoDay,
+  makeRandom,
+  monthLabels,
+} from "../seed/faker"
 import {
   APPRAISAL_ROWS,
   CERTIFICATION_ROWS,
@@ -97,30 +104,71 @@ function buildPayrollRuns(): Row[] {
   })
 }
 
+/** Seeded `AuditEntry` rows (see features/core-hr/types/audit.ts), newest first. */
 function buildHistory(): Row[] {
-  const actions = [
-    "hired", "promoted", "transferred", "salary_changed",
-    "terminated", "reactivated", "document_verified",
+  const events = [
+    { action: "insert", module: "hr", table: "employees", field: null, from: null, to: null, text: "Employee record created" },
+    { action: "update", module: "hr", table: "employees", field: "job_title", from: "Associate", to: "Senior Associate", text: "Job title updated" },
+    { action: "update", module: "payroll", table: "salaries", field: "base_salary", from: "52,000", to: "56,500", text: "Base salary changed" },
+    { action: "approve", module: "leave", table: "leave_requests", field: "status", from: "pending", to: "approved", text: "Annual leave approved" },
+    { action: "reject", module: "leave", table: "leave_requests", field: "status", from: "pending", to: "rejected", text: "Sick leave rejected" },
+    { action: "status_change", module: "hr", table: "employees", field: "status", from: "active", to: "on_leave", text: "Employment status changed" },
+    { action: "insert", module: "training", table: "enrollments", field: null, from: null, to: null, text: "Enrolled in training program" },
+    { action: "update", module: "performance", table: "appraisals", field: "rating", from: "3", to: "4", text: "Appraisal rating updated" },
+    { action: "delete", module: "benefits", table: "benefit_enrollments", field: null, from: null, to: null, text: "Benefit enrollment removed" },
+    { action: "export", module: "system", table: "employees", field: null, from: null, to: null, text: "Employee list exported" },
+    { action: "login", module: "system", table: "sessions", field: null, from: null, to: null, text: "Signed in" },
   ] as const
-  return Array.from({ length: 60 }, (_, i) => {
+  let hoursAgo = 0
+  return Array.from({ length: 80 }, (_, i) => {
     const rand = makeRandom(31_000 + i)
     const employee = EMPLOYEE_ROWS[i % EMPLOYEE_ROWS.length]
-    const action = actions[i % actions.length]
+    const event = events[i % events.length]
+    hoursAgo += intBetween(rand, 1, 18)
+    const changedAt = isoDateTime(-hoursAgo)
     return {
-      id: `hist-${i + 1}`,
+      id: i + 1,
+      action_type: event.action,
+      action_badge: event.action.toUpperCase(),
+      module_name: event.module,
+      module_badge: event.module.toUpperCase(),
+      table_name: event.table,
+      field_changed: event.field,
+      old_value: event.from,
+      new_value: event.to,
+      description: `${event.text} — ${employee.full_name}`,
+      time_label: changedAt.slice(11, 16),
+      changed_at: changedAt,
+      changed_by: 1,
+      changed_by_name: "Demo Admin",
+      change_reason: null,
       employee_id: employee.id,
       employee_name: employee.full_name,
       employee_number: employee.employee_number,
-      action,
-      action_label: action.replace(/_/g, " "),
-      module_name: "hr",
-      performed_by: "Demo Admin",
-      performed_at: isoDay(-intBetween(rand, 1, 400)),
-      notes: `${action.replace(/_/g, " ")} recorded for ${employee.full_name}.`,
-      old_values: null,
-      new_values: null,
+      ip_address: "10.0.0.12",
+      user_agent: "Mozilla/5.0",
     }
   })
+}
+
+/** Group history rows into the `AuditDay[]` shape `/history` returns. */
+function groupHistoryByDay(rows: Row[]) {
+  const days = new Map<string, Row[]>()
+  for (const row of rows) {
+    const date = String(row.changed_at).slice(0, 10)
+    days.set(date, [...(days.get(date) ?? []), row])
+  }
+  return [...days].map(([date, entries]) => ({
+    date,
+    date_label: new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    }),
+    entries,
+  }))
 }
 
 function buildOperations(): Row[] {
@@ -198,7 +246,35 @@ export const coreHrRoutes: DemoRoute[] = [
   })),
 
   route("get", "/employees/:id/history", (req) => ({
-    data: collection("history").filter((h) => h.employee_id === req.vars.id),
+    data: groupHistoryByDay(
+      collection("history")
+        .filter((h) => h.employee_id === req.vars.id)
+        .slice(0, Number(req.params.limit ?? 100)),
+    ),
+  })),
+
+  // `/history` is day-grouped, not a flat list, so it can't use the generic handler.
+  route("get", "/history", (req) => {
+    const rows = collection("history").filter(
+      (h) =>
+        (!req.params.action_type || h.action_type === req.params.action_type) &&
+        (!req.params.module_name || h.module_name === req.params.module_name) &&
+        (!req.params.employee_id || h.employee_id === req.params.employee_id),
+    )
+    const { rows: page, meta } = paginate(rows, req.params)
+    return {
+      data: groupHistoryByDay(page),
+      meta: {
+        current_page: meta.current_page,
+        per_page: meta.per_page,
+        total_entries: rows.length,
+        last_page: meta.last_page,
+      },
+    }
+  }),
+
+  route("get", "/history/:id", (req) => ({
+    data: findRow("history", req.vars.id) ?? null,
   })),
 
   route("get", "/employees/:id/operations", (req) => ({
@@ -382,17 +458,25 @@ export const coreHrRoutes: DemoRoute[] = [
 
   /* ------------------------ Contracts & documents ---------------------- */
 
-  route("get", "/contracts/expiring", () => ({
-    data: collection("contracts").filter(
-      (c) => Number(c.days_to_expiry) >= 0 && Number(c.days_to_expiry) <= 90,
-    ),
-  })),
+  // Both endpoints declare a required `meta` (`ExpiringContractsMeta` /
+  // `ExpiringDocumentsMeta`), so callers read `meta.count` without guarding it.
+  // Returning only `data` makes `toApiResponse` omit `meta` entirely and the
+  // consumer throws once the query resolves in the browser.
+  route("get", "/contracts/expiring", (req) => {
+    const days = Number(req.params.days ?? 90)
+    const rows = collection("contracts").filter(
+      (c) => Number(c.days_to_expiry) >= 0 && Number(c.days_to_expiry) <= days,
+    )
+    return { data: rows, meta: { days_threshold: days, count: rows.length } }
+  }),
 
-  route("get", "/documents/expiring", () => ({
-    data: collection("documents").filter(
-      (d) => Number(d.days_to_expiry) >= 0 && Number(d.days_to_expiry) <= 90,
-    ),
-  })),
+  route("get", "/documents/expiring", (req) => {
+    const days = Number(req.params.days ?? 90)
+    const rows = collection("documents").filter(
+      (d) => Number(d.days_to_expiry) >= 0 && Number(d.days_to_expiry) <= days,
+    )
+    return { data: rows, meta: { days_threshold: days, count: rows.length } }
+  }),
 
   /* ------------------------------ Leave -------------------------------- */
 
@@ -621,6 +705,42 @@ export const coreHrRoutes: DemoRoute[] = [
     data: FEEDBACK_REQUEST_ROWS.filter((f) => f.status === "pending"),
   })),
 
+  // The generic POST would store only the posted payload, so the new row would
+  // miss `program_id`, `enrolled_count` and the timestamps the Programs grid
+  // reads. Build a fully-formed row instead.
+  route("post", "/training/programs", (req) => {
+    const rows = collection("training/programs")
+    const id = `prg-${Date.now()}`
+    const now = isoDateTime(0)
+    const row: Row = {
+      id,
+      program_id: id,
+      program_code: String(
+        req.body.program_code ?? `PRG-${String(rows.length + 1).padStart(3, "0")}`,
+      ),
+      program_name: String(req.body.program_name ?? "Untitled Programme"),
+      program_name_local: req.body.program_name_local ?? null,
+      category: String(req.body.category ?? "general"),
+      description: req.body.description ?? null,
+      status: String(req.body.status ?? "draft"),
+      provider: req.body.provider ?? null,
+      owner_emp_id: req.body.owner_emp_id ?? null,
+      target_audience: req.body.target_audience ?? null,
+      total_duration_hours: req.body.total_duration_hours ?? null,
+      cost_per_seat: req.body.cost_per_seat ?? null,
+      currency_code: req.body.currency_code ?? "USD",
+      max_cohort_size: req.body.max_cohort_size ?? null,
+      start_date: req.body.start_date ?? null,
+      end_date: req.body.end_date ?? null,
+      is_active: req.body.is_active ?? req.body.status === "active",
+      enrolled_count: 0,
+      created_at: now,
+      updated_at: now,
+    }
+    rows.unshift(row)
+    return { data: row }
+  }),
+
   route("get", "/training/certifications/me", () => ({
     data: collection("training/certifications").filter(
       (c) => c.employee_id === "emp-1",
@@ -653,27 +773,34 @@ export const coreHrRoutes: DemoRoute[] = [
   route("get", "/salary/analytics", () => {
     const employees = collection("employees")
     const total = employees.reduce((sum, e) => sum + Number(e.base_salary ?? 0), 0)
+    const byDepartment = DEPARTMENTS.map((name, i) => {
+      const rows = employees.filter((e) => e.dept_id === `dept-${i + 1}`)
+      const sum = rows.reduce((acc, e) => acc + Number(e.base_salary ?? 0), 0)
+      return {
+        dept_id: `dept-${i + 1}`,
+        dept_name: name,
+        headcount: rows.length,
+        total_cost: sum,
+        avg_salary: rows.length ? Math.round(sum / rows.length) : 0,
+        pct_of_total: total ? Math.round((sum / total) * 1000) / 10 : 0,
+      }
+    })
+    const highest = byDepartment.reduce<(typeof byDepartment)[number] | null>(
+      (best, d) => (d.headcount && (!best || d.avg_salary > best.avg_salary) ? d : best),
+      null
+    )
     return {
       data: {
-        total_payroll: total,
-        avg_salary: Math.round(total / Math.max(1, employees.length)),
-        median_salary: 68_500,
-        currency_code: "USD",
-        by_department: DEPARTMENTS.map((name, i) => {
-          const rows = employees.filter((e) => e.dept_id === `dept-${i + 1}`)
-          const sum = rows.reduce((acc, e) => acc + Number(e.base_salary ?? 0), 0)
-          return {
-            dept_id: `dept-${i + 1}`,
-            dept_name: name,
-            headcount: rows.length,
-            total_cost: sum,
-            avg_salary: rows.length ? Math.round(sum / rows.length) : 0,
-          }
-        }),
-        monthly_trend: monthLabels(12).map((month, i) => ({
-          month,
-          total_cost: Math.round(total / 12) + i * 1_500,
-        })),
+        total_payroll: { amount: total, mom_change_pct: 2.4 },
+        average_salary: {
+          amount: Math.round(total / Math.max(1, employees.length)),
+          employee_count: employees.length,
+        },
+        highest_dept_avg: highest
+          ? { amount: highest.avg_salary, department: highest.dept_name }
+          : null,
+        mom_change_pct: 2.4,
+        by_department: byDepartment,
       },
     }
   }),

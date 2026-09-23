@@ -298,18 +298,34 @@ export const NOTIFICATION_ROWS: Row[] = Array.from({ length: 12 }, (_, i) => {
   }
 })
 
+const CONTRACT_TYPE_LABELS = {
+  permanent: "Permanent",
+  fixed_term: "Fixed Term",
+  temporary: "Temporary",
+} as const
+
 export const CONTRACT_ROWS: Row[] = EMPLOYEE_ROWS.slice(0, 48).map((emp, i) => {
   const rand = makeRandom(6_000 + i)
   const endOffset = intBetween(rand, -40, 420)
+  const contractType = pick(rand, ["permanent", "fixed_term", "temporary"] as const)
   return {
     id: `ctr-${i + 1}`,
     employee_id: emp.id,
     employee_name: emp.full_name,
     employee_number: emp.employee_number,
     contract_number: `CTR-${1_000 + i}`,
-    contract_type: pick(rand, ["permanent", "fixed_term", "probation"] as const),
+    contract_type: contractType,
+    contract_type_label: CONTRACT_TYPE_LABELS[contractType],
+    contract_status: endOffset < 0 ? "expired" : "active",
+    is_current: endOffset >= 0,
     start_date: isoDay(-intBetween(rand, 200, 1_400)),
     end_date: isoDay(endOffset),
+    days_remaining: endOffset >= 0 ? endOffset : null,
+    days_remaining_label:
+      endOffset < 0 ? `Expired ${-endOffset} days ago` : `${endOffset} days`,
+    renewal_count: i % 3,
+    notice_period_days: 1,
+    notice_period_unit: "month",
     status: endOffset < 0 ? "expired" : endOffset < 60 ? "expiring" : "active",
     is_active: endOffset >= 0,
     days_to_expiry: endOffset,

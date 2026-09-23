@@ -1,6 +1,6 @@
 "use client"
 
-import { Ban, Copy, MoreHorizontal, Pencil, ShieldCheck } from "lucide-react"
+import { Ban, Copy, Eye, MoreHorizontal, Pencil, ShieldCheck } from "lucide-react"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -16,12 +16,14 @@ import type { CustomerListItem } from "../../lib/types"
 export function CustomerActions({
   customer,
   canManage,
+  onView,
   onEdit,
   onBlock,
   onUnblock,
 }: Readonly<{
   customer: CustomerListItem
   canManage: boolean
+  onView: () => void
   onEdit: () => void
   onBlock: () => void
   onUnblock: () => void
@@ -45,6 +47,11 @@ export function CustomerActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onSelect={onView}>
+          <Eye aria-hidden />
+          View details
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => copy(customer.email)}>
           <Copy aria-hidden />
           Copy email

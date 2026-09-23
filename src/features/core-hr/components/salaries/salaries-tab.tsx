@@ -252,9 +252,9 @@ export function SalariesTab() {
           <>
             <StatPanel
               label="Total Payroll"
-              value={formatEGP(analytics?.total_payroll.amount ?? 0)}
+              value={formatEGP(analytics?.total_payroll?.amount ?? 0)}
               trend={
-                analytics?.total_payroll.mom_change_pct
+                analytics?.total_payroll?.mom_change_pct
                   ? `+${analytics.total_payroll.mom_change_pct.toFixed(1)}% from last month`
                   : undefined
               }
@@ -262,9 +262,9 @@ export function SalariesTab() {
             />
             <StatPanel
               label="Average Salary"
-              value={formatEGP(analytics?.average_salary.amount ?? 0)}
+              value={formatEGP(analytics?.average_salary?.amount ?? 0)}
               description={
-                analytics
+                analytics?.average_salary
                   ? `Based on ${analytics.average_salary.employee_count} employees`
                   : undefined
               }
