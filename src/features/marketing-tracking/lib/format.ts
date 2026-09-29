@@ -87,38 +87,50 @@ export function toCsv(visitors: VisitorRecord[], moduleIds: readonly ModuleId[])
     ...moduleIds.map((id) => `${id}_views`),
   ]
 
+  const quote = (text: string) =>
+    /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+
   /**
-   * Excel reads a cell opening with =, +, - or @ as a formula. That silently
-   * mangles E.164 numbers — "+201011274604" renders as 2.01011E+11 — and, since
-   * name and company are typed by the visitor, it is also how a spreadsheet
-   * export becomes a script that runs when the sales team opens it. A leading
-   * apostrophe pins the cell to text; Excel consumes it and shows the value.
+   * Excel reads a cell opening with =, +, - or @ as a formula. Since name and
+   * company are typed by the visitor, that is how a spreadsheet export becomes
+   * a script that runs when the sales team opens it, so such cells get a
+   * leading apostrophe to pin them to text.
    */
   const escape = (value: unknown) => {
     const raw = value === null || value === undefined ? "" : String(value)
-    const text = /^[=+@-]/.test(raw) ? `'${raw}` : raw
-    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+    return quote(/^[=+@-]/.test(raw) ? `'${raw}` : raw)
+  }
+
+  /**
+   * Excel keeps a CSV apostrophe visible and would otherwise mangle
+   * "+201011274604" into 2.01011E+11 (dropping any leading 0). Emitting the
+   * number as a ="…" string formula shows it verbatim as text; stripping it to
+   * digits and "+" first keeps that formula inert.
+   */
+  const phoneCell = (value: string | null | undefined) => {
+    const digits = (value ?? "").replace(/[^\d+]/g, "")
+    return digits ? quote(`="${digits}"`) : ""
   }
 
   const rows = visitors.map((visitor) =>
     [
-      visitor.name,
-      visitor.email,
-      visitor.phone,
-      visitor.company,
-      visitor.onboarding?.industry,
-      visitor.onboarding?.stage,
-      visitor.onboarding?.teamSize,
-      visitor.onboarding?.tools.join(" | "),
-      visitor.firstSeenAt,
-      visitor.lastSeenAt,
-      visitor.sessions,
-      visitor.totalViews,
-      Math.round(visitor.totalMs / 1_000),
-      ...moduleIds.map((id) => visitor.modules[id]?.views ?? 0),
-    ]
-      .map(escape)
-      .join(","),
+      escape(visitor.name),
+      escape(visitor.email),
+      phoneCell(visitor.phone),
+      ...[
+        visitor.company,
+        visitor.onboarding?.industry,
+        visitor.onboarding?.stage,
+        visitor.onboarding?.teamSize,
+        visitor.onboarding?.tools.join(" | "),
+        visitor.firstSeenAt,
+        visitor.lastSeenAt,
+        visitor.sessions,
+        visitor.totalViews,
+        Math.round(visitor.totalMs / 1_000),
+        ...moduleIds.map((id) => visitor.modules[id]?.views ?? 0),
+      ].map(escape),
+    ].join(","),
   )
 
   return [header.join(","), ...rows].join("\n")
