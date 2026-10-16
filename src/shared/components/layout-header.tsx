@@ -27,6 +27,7 @@ import {
 
 import { Button } from '@/src/shared/components/ui/button'
 import { Input } from '@/src/shared/components/ui/input'
+import { SidebarTrigger } from '@/src/shared/components/ui/sidebar'
 import { useLayoutHeaderTabLabel } from '@/src/shared/components/layout-header-context'
 import { cn } from '@/src/shared/lib/utils/utils'
 import { useUnreadNotifications } from '@/src/features/core-hr/lib/queries/notifications'
@@ -212,10 +213,14 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
   ] as const
 
   return (
-    <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-stroke-default bg-surface-page px-6">
-      {/* Left: title + date/time */}
-      <div className="flex min-w-0 flex-1 items-center gap-4">
-        <h1 className="font-heading min-w-0 truncate text-[20px] font-semibold leading-7 text-content-primary">
+    <header className="relative flex h-14 shrink-0 items-center justify-between border-b border-stroke-default bg-surface-page px-4 md:px-6">
+      {/* Left: mobile nav trigger + title + date/time */}
+      <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-4">
+        <SidebarTrigger
+          aria-label="Open navigation"
+          className="-ml-1 size-9 shrink-0 rounded-lg text-content-tertiary hover:bg-surface-hover hover:text-content-primary md:hidden"
+        />
+        <h1 className="font-heading min-w-0 truncate text-base font-semibold leading-6 text-content-primary md:text-[20px] md:leading-7">
           {title}
         </h1>
 
@@ -232,7 +237,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
       </div>
 
       {/* Right: search + actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
         <div ref={searchRef} className="relative">
           <Button
             variant="outline"
@@ -241,7 +246,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
               setSearchOpen((prev) => !prev)
               setNotificationOpen(false)
             }}
-            className="h-9 gap-2 rounded-xl border-stroke-default bg-surface-white px-3 text-content-tertiary hover:bg-surface-white hover:text-foreground"
+            className="h-9 w-9 gap-2 rounded-xl border-stroke-default bg-surface-white px-0 text-content-tertiary lg:w-auto lg:px-3 hover:bg-surface-white hover:text-foreground"
           >
             <Search className="size-4" strokeWidth={1.75} />
             <span className="hidden text-xs font-normal lg:inline">
@@ -253,20 +258,20 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
           </Button>
 
           {searchOpen && (
-            <div className="absolute right-0 top-11 z-50 w-[620px] overflow-hidden rounded-lg border border-stroke-default bg-surface-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
-              <div className="flex items-center border-b border-stroke-default px-4 py-3">
-                <Search className="mr-3 size-5 text-content-quaternary" strokeWidth={1.75} />
+            <div className="fixed inset-x-4 top-16 z-50 overflow-hidden md:absolute md:inset-x-auto md:right-0 md:top-11 md:w-[min(620px,calc(100vw-3rem))] rounded-lg border border-stroke-default bg-surface-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
+              <div className="flex items-center border-b border-stroke-default px-3 py-2.5 sm:px-4 sm:py-3">
+                <Search className="mr-3 size-5 shrink-0 text-content-quaternary" strokeWidth={1.75} />
                 <Input
                   autoFocus
                   placeholder="Search or type a command..."
-                  className="h-8 border-none px-0 text-base shadow-none focus-visible:ring-0"
+                  className="h-8 min-w-0 border-none px-0 text-base shadow-none focus-visible:ring-0"
                 />
-                <kbd className="rounded border border-stroke-default bg-surface-hover px-2 py-1 font-mono text-[11px] leading-[16.5px] text-content-quaternary">
+                <kbd className="hidden rounded border border-stroke-default bg-surface-hover px-2 py-1 font-mono text-[11px] leading-[16.5px] text-content-quaternary sm:inline">
                   ESC
                 </kbd>
               </div>
 
-              <div className="max-h-[360px] overflow-y-auto p-2">
+              <div className="max-h-[min(360px,60svh)] overflow-y-auto p-2">
                 <p className="px-2 py-1.5 text-xs font-medium text-content-quaternary">
                   Quick Actions
                 </p>
@@ -277,7 +282,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
                       key={action.label}
                       type="button"
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-base text-content-primary',
+                        'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-content-primary sm:text-base',
                         index === 0 ? 'bg-surface-hover' : 'hover:bg-surface-muted',
                       )}
                     >
@@ -299,7 +304,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
                   <button
                     key={action.label}
                     type="button"
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-base text-content-primary hover:bg-surface-muted"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-content-primary hover:bg-surface-muted sm:text-base"
                   >
                     <action.icon className="size-4 text-content-tertiary" strokeWidth={1.75} />
                     <span>{action.label}</span>
@@ -330,7 +335,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
           variant="ghost"
           size="icon"
           aria-label="Help"
-          className="size-9 rounded-lg text-content-tertiary hover:bg-surface-hover hover:text-content-primary"
+          className="hidden size-9 sm:inline-flex rounded-lg text-content-tertiary hover:bg-surface-hover hover:text-content-primary"
         >
           <HelpCircle strokeWidth={1.75} />
         </Button>
@@ -356,7 +361,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
           </Button>
 
           {notificationOpen && (
-            <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-lg border border-stroke-default bg-surface-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)]">
+            <div className="absolute right-0 top-11 z-50 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-stroke-default bg-surface-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)]">
               <div className="flex items-center justify-between border-b border-stroke-default px-4 py-3">
                 <p className="text-sm font-medium text-content-primary">
                   Notifications

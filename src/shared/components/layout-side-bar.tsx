@@ -40,7 +40,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/src/shared/components/ui/accordion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavChild, NavItem } from '../lib/types'
 import {
   NAV_ITEMS,
@@ -493,8 +493,11 @@ function UserProfileButton() {
 }
 
 function SidebarRailToggle() {
-  const { state, toggleSidebar } = useSidebar()
+  const { state, isMobile, toggleSidebar } = useSidebar()
   const collapsed = state === 'collapsed'
+
+  // On mobile the sidebar is a sheet opened from the header trigger; there is no rail to collapse.
+  if (isMobile) return null
 
   return (
     <Button
@@ -525,8 +528,14 @@ const LayoutSideBar = () => {
       ? submenuSelection.id
       : routeParentId
   const router = useRouter()
-  const { state } = useSidebar()
-  const collapsed = state === 'collapsed'
+  const { state, isMobile, setOpenMobile } = useSidebar()
+  // The mobile sheet always shows the full-width nav, whatever the desktop rail state is.
+  const collapsed = !isMobile && state === 'collapsed'
+
+  // Close the mobile sheet once a nav item routes somewhere.
+  useEffect(() => {
+    setOpenMobile(false)
+  }, [pathname, setOpenMobile])
 
   const openParent =
     NAV_ITEMS.find((item) => item.id === openSubmenu) ?? null
