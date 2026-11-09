@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
         try {
           const { data } = await axios.post(
-            `${process.env.NEXT_PUBLIC_ERP_API_URL}/auth/login`,
+            `${(process.env.ERP_API_URL ?? process.env.NEXT_PUBLIC_ERP_API_URL)}/auth/login`,
             { email: credentials.email, password: credentials.password },
             { headers: { "Content-Type": "application/json" } }
           );

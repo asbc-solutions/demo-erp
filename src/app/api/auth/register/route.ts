@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_ERP_API_URL
+  const baseUrl = (process.env.ERP_API_URL ?? process.env.NEXT_PUBLIC_ERP_API_URL)
   if (!baseUrl) {
     return NextResponse.json(
       { ok: false, message: "Sign-up is unavailable right now." },
