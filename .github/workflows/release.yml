@@ -1,12 +1,11 @@
 name: release
-# Build once, promote by tag (DEPLOYMENT_PLAYBOOK Part 4, infra repo asbc-solutions/infra).
-#   push to main  → build ghcr.io/asbc-solutions/demo-erp:<sha> (no deploy: there is no staging server yet)
-#   push tag v*   → deploy that commit's image to production (no rebuild)
+# Build once, deploy that image (DEPLOYMENT_PLAYBOOK Part 4, infra repo asbc-solutions/infra).
+#   push to main  → build ghcr.io/asbc-solutions/demo-erp:<sha>, then deploy that image to production
+#   rollback      → asbc-solutions/infra: Actions → deploy → Run workflow with an older commit SHA
 # Needs one secret: INFRA_TOKEN (fine-grained PAT on asbc-solutions/infra, Actions: read and write).
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
 
 concurrency: release-${{ github.ref }}
@@ -33,12 +32,14 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    if: github.ref_type == 'tag'
+    needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch the production deploy in asbc-solutions/infra
         env:
           GH_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
+          test -n "$GH_TOKEN" || { echo "::error::secret INFRA_TOKEN is missing (fine-grained PAT on asbc-solutions/infra, Actions: read and write)"; exit 1; }
           gh workflow run deploy.yml -R asbc-solutions/infra -f app=demo -f env=production -f tag="$GITHUB_SHA"
           echo "Follow it: https://github.com/asbc-solutions/infra/actions/workflows/deploy.yml"
