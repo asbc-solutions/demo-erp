@@ -41,5 +41,7 @@ jobs:
           GH_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
           test -n "$GH_TOKEN" || { echo "::error::secret INFRA_TOKEN is missing (fine-grained PAT on asbc-solutions/infra, Actions: read and write)"; exit 1; }
-          gh workflow run deploy.yml -R asbc-solutions/infra -f app=demo -f env=production -f tag="$GITHUB_SHA"
+          # REST dispatch needs only Actions: write on infra (`gh workflow run` also needs Contents: read)
+          gh api -X POST repos/asbc-solutions/infra/actions/workflows/deploy.yml/dispatches \
+            -f ref=main -f "inputs[app]=demo" -f "inputs[env]=production" -f "inputs[tag]=$GITHUB_SHA"
           echo "Follow it: https://github.com/asbc-solutions/infra/actions/workflows/deploy.yml"
