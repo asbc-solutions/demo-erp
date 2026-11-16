@@ -46,7 +46,7 @@ export function HrToolbar({
           <div className="relative w-full max-w-[360px]">
             <Search
               aria-hidden
-              className="text-content-quaternary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+              className="text-content-quaternary pointer-events-none absolute top-1/2 inset-s-3 size-4 -translate-y-1/2"
               strokeWidth={1.75}
             />
             <Input
@@ -54,7 +54,7 @@ export function HrToolbar({
               value={searchValue ?? ""}
               onChange={(event) => onSearchChange?.(event.target.value)}
               placeholder={searchPlaceholder}
-              className="bg-surface-page h-10 rounded-[10px] border-transparent pl-9 shadow-none"
+              className="bg-surface-page h-10 rounded-[10px] border-transparent ps-9 shadow-none"
             />
           </div>
         )}

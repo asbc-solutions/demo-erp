@@ -110,12 +110,12 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "focus:bg-surface-hover focus:text-content-primary relative flex w-full cursor-default items-center gap-2 rounded-md py-1.5 pr-8 pl-2 text-sm outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50",
+        "focus:bg-surface-hover focus:text-content-primary relative flex w-full cursor-default items-center gap-2 rounded-md py-1.5 pe-8 ps-2 text-sm outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50",
         className,
       )}
       {...props}
     >
-      <span className="absolute right-2 flex size-3.5 items-center justify-center">
+      <span className="absolute inset-e-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
           <Check className="text-brand-primary size-4" />
         </SelectPrimitive.ItemIndicator>

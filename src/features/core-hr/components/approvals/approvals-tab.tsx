@@ -222,7 +222,7 @@ function ApprovalTableSkeleton() {
     <TableBody>
       {Array.from({ length: 5 }).map((_, index) => (
         <TableRow key={index} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <Skeleton className="h-4 w-24" />
           </TableCell>
           <TableCell>
@@ -249,8 +249,8 @@ function ApprovalTableSkeleton() {
           <TableCell>
             <Skeleton className="h-5 w-20 rounded-md" />
           </TableCell>
-          <TableCell className="pr-6">
-            <Skeleton className="ml-auto h-8 w-32 rounded-md" />
+          <TableCell className="pe-6">
+            <Skeleton className="ms-auto h-8 w-32 rounded-md" />
           </TableCell>
         </TableRow>
       ))}
@@ -739,14 +739,14 @@ export function ApprovalsTab() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Request #</TableHead>
+              <TableHead className="ps-6">Request #</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Employee</TableHead>
               <TableHead>Requested by</TableHead>
               <TableHead>Date submitted</TableHead>
               <TableHead>Details summary</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="pr-6 text-right">Actions</TableHead>
+              <TableHead className="pe-6 text-end">Actions</TableHead>
             </TableRow>
           </TableHeader>
           {isLoading ? (
@@ -790,7 +790,7 @@ export function ApprovalsTab() {
                       }
                     }}
                   >
-                    <TableCell className="pl-6">
+                    <TableCell className="ps-6">
                       <span className="inline-flex items-center gap-0.5 font-mono text-sm font-medium text-content-primary">
                         {row.requestNumber}
                         <ChevronRight className="size-3.5 text-content-quaternary" />
@@ -847,7 +847,7 @@ export function ApprovalsTab() {
                         {STATUS_LABEL[row.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell className="pr-6 text-right">
+                    <TableCell className="pe-6 text-end">
                       {row.status === "PENDING" ? (
                         <div className="flex justify-end gap-2">
                           <Button

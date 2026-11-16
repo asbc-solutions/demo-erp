@@ -16,7 +16,7 @@ export function EmployeeChip({
   subtitle,
 }: Readonly<{ initials?: string; name: string; subtitle?: string }>) {
   return (
-    <div className="bg-surface-page inline-flex w-fit items-center gap-2 rounded-full py-1 pr-3 pl-1">
+    <div className="bg-surface-page inline-flex w-fit items-center gap-2 rounded-full py-1 pe-3 ps-1">
       <Avatar size="sm" alt={name} fallback={initials} />
       <span className="text-content-primary text-sm font-semibold">{name}</span>
       {subtitle && (

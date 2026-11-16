@@ -255,7 +255,7 @@ export function ReportsAnalyticsModule() {
                     <TableHead>Type</TableHead>
                     <TableHead>Projects</TableHead>
                     <TableHead>Share</TableHead>
-                    <TableHead className="text-right">Budget</TableHead>
+                    <TableHead className="text-end">Budget</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -270,7 +270,7 @@ export function ReportsAnalyticsModule() {
                       <TableCell className="text-content-secondary text-[13px] tabular-nums">
                         {Math.round(row.share_pct)}%
                       </TableCell>
-                      <TableCell className="text-content-primary text-right text-[13px] font-semibold tabular-nums">
+                      <TableCell className="text-content-primary text-end text-[13px] font-semibold tabular-nums">
                         {formatMoney(row.total_budget)}
                       </TableCell>
                     </TableRow>
@@ -295,9 +295,9 @@ export function ReportsAnalyticsModule() {
                 <TableRow className="hover:bg-transparent">
                   <TableHead>Project</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Budget</TableHead>
-                  <TableHead className="text-right">Actual Cost</TableHead>
-                  <TableHead className="text-right">Invoiced</TableHead>
+                  <TableHead className="text-end">Budget</TableHead>
+                  <TableHead className="text-end">Actual Cost</TableHead>
+                  <TableHead className="text-end">Invoiced</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -338,12 +338,12 @@ export function ReportsAnalyticsModule() {
                             {p.status}
                           </span>
                         </TableCell>
-                        <TableCell className="text-content-secondary text-right text-[13px] tabular-nums">
+                        <TableCell className="text-content-secondary text-end text-[13px] tabular-nums">
                           {formatMoney(p.budget_amount)}
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "text-right text-[13px] font-semibold tabular-nums",
+                            "text-end text-[13px] font-semibold tabular-nums",
                             overBudget
                               ? "text-brand-danger"
                               : "text-content-primary",
@@ -351,7 +351,7 @@ export function ReportsAnalyticsModule() {
                         >
                           {formatMoney(p.actual_cost)}
                         </TableCell>
-                        <TableCell className="text-content-secondary text-right text-[13px] tabular-nums">
+                        <TableCell className="text-content-secondary text-end text-[13px] tabular-nums">
                           {formatMoney(p.total_invoiced)}
                         </TableCell>
                       </TableRow>

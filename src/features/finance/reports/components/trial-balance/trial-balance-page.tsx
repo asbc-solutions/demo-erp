@@ -161,7 +161,7 @@ function TrialBalancePage() {
                 Basis <span className="text-content-primary">Accrual — count when it happens</span>
               </span>
               <ResultCount>{data.accounts} accounts</ResultCount>
-              <div className="ml-auto flex gap-2">
+              <div className="ms-auto flex gap-2">
                 <Button variant="secondary" size="sm" onClick={exportCsv}>
                   <Download aria-hidden />
                   Export

@@ -87,12 +87,12 @@ export function HrEmployeeTable({
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="pl-6">Employee</TableHead>
+            <TableHead className="ps-6">Employee</TableHead>
             <TableHead>Employee #</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Hire Date</TableHead>
-            <TableHead className="pr-6 text-right">Actions</TableHead>
+            <TableHead className="pe-6 text-end">Actions</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -125,7 +125,7 @@ export function HrEmployeeTable({
                 }}
                 className="hover:bg-surface-hover focus-visible:ring-brand-primary/30 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset"
               >
-                <TableCell className="pl-6">
+                <TableCell className="ps-6">
                   <div className="flex items-center gap-3">
                     <Avatar
                       size="sm"
@@ -150,7 +150,7 @@ export function HrEmployeeTable({
                   {employee.hire_date}
                 </TableCell>
                 <TableCell
-                  className="pr-6 text-right"
+                  className="pe-6 text-end"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <EmployeeRowActions

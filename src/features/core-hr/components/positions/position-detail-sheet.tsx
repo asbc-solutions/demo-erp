@@ -157,7 +157,7 @@ export function PositionDetailSheet({
             <div className="bg-stroke-default relative h-2 w-full overflow-hidden rounded-full">
               <span
                 aria-hidden
-                className={cn("absolute inset-y-0 left-0 rounded-full transition-all", barColor)}
+                className={cn("absolute inset-y-0 inset-s-0 rounded-full transition-all", barColor)}
                 style={{ width: `${headcountPercent}%` }}
               />
             </div>

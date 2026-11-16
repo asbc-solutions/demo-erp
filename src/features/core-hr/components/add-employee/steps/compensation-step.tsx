@@ -55,7 +55,7 @@ export function CompensationStep({
           <div className="relative">
             <span
               aria-hidden
-              className="text-content-quaternary pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm"
+              className="text-content-quaternary pointer-events-none absolute top-1/2 inset-s-3 -translate-y-1/2 text-sm"
             >
               EGP
             </span>
@@ -64,7 +64,7 @@ export function CompensationStep({
               type="number"
               min={0}
               placeholder="950000"
-              className="pl-12"
+              className="ps-12"
               aria-invalid={Boolean(errors.grossAnnual)}
               aria-describedby={
                 errors.grossAnnual ? "grossAnnual-error" : undefined

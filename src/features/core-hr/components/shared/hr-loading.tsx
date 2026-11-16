@@ -31,7 +31,7 @@ export function HrTableSkeleton({ rows = 5 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         // eslint-disable-next-line react/no-array-index-key
         <TableRow key={i} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <div className="flex items-center gap-3">
               <Skeleton className="size-8 shrink-0 rounded-full" />
               <Skeleton className="h-4 w-32" />
@@ -49,8 +49,8 @@ export function HrTableSkeleton({ rows = 5 }: { rows?: number }) {
           <TableCell>
             <Skeleton className="h-4 w-20" />
           </TableCell>
-          <TableCell className="pr-6 text-right">
-            <Skeleton className="ml-auto h-7 w-7 rounded-md" />
+          <TableCell className="pe-6 text-end">
+            <Skeleton className="ms-auto h-7 w-7 rounded-md" />
           </TableCell>
         </TableRow>
       ))}

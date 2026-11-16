@@ -70,14 +70,14 @@ export function CoursesTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative w-full max-w-96">
           <Search
-            className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-content-quaternary"
+            className="absolute top-1/2 inset-s-3 size-4 -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
           />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search courses..."
-            className="pl-9"
+            className="ps-9"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">

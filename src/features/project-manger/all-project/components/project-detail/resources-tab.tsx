@@ -53,7 +53,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
       value: String(summary.total),
       caption: "On this project",
       icon: Users,
-      border: "border-l-brand-primary",
+      border: "border-s-brand-primary",
       tile: "bg-brand-primary/10 text-brand-primary",
     },
     {
@@ -62,7 +62,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
       value: `${summary.avgAllocation}%`,
       caption: summary.avgAllocation > 100 ? "Over capacity" : "Across assignees",
       icon: Zap,
-      border: "border-l-brand-success",
+      border: "border-s-brand-success",
       tile: "bg-brand-success/10 text-brand-success",
     },
     {
@@ -71,7 +71,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
       value: String(summary.overloaded),
       caption: ">100% allocated",
       icon: AlertCircle,
-      border: "border-l-brand-danger",
+      border: "border-s-brand-danger",
       tile: "bg-brand-danger/10 text-brand-danger",
     },
     {
@@ -80,7 +80,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
       value: summary.totalPlannedHours.toLocaleString(),
       caption: "Total committed",
       icon: Clock,
-      border: "border-l-violet-500",
+      border: "border-s-violet-500",
       tile: "bg-violet-500/10 text-violet-500",
     },
   ]
@@ -108,7 +108,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
           <Card
             key={stat.id}
             variant="elevated"
-            className={cn("flex-row items-center gap-3 border-l-4 p-4", stat.border)}
+            className={cn("flex-row items-center gap-3 border-s-4 p-4", stat.border)}
           >
             <div
               className={cn(
@@ -142,7 +142,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
               <TableHead>Allocation</TableHead>
               <TableHead>Planned Hours</TableHead>
               <TableHead>Assignments</TableHead>
-              <TableHead className="text-right">Status</TableHead>
+              <TableHead className="text-end">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -222,7 +222,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
                     <TableCell className="text-content-secondary text-[13px] tabular-nums">
                       {row.assignment_count}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <span
                         className={cn(
                           "rounded-md px-2 py-0.5 text-[11px] font-medium",

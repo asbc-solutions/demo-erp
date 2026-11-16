@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"

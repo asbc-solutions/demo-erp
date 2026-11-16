@@ -167,7 +167,7 @@ function PolicyCard({ policy }: { policy: ApprovalPolicy }) {
       <header className="flex flex-wrap items-center gap-2">
         <h3 className="text-content-primary text-sm leading-5 font-semibold">{policy.name}</h3>
         <StatusPill status="prepared" label={policy.type_label} />
-        <span className="text-content-secondary ml-auto text-[13px] tabular-nums">
+        <span className="text-content-secondary ms-auto text-[13px] tabular-nums">
           Threshold {policy.threshold === null ? "Any" : formatAmount(policy.threshold).replace(/\.00$/, "")}
         </span>
       </header>

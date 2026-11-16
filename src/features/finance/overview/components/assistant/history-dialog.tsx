@@ -94,7 +94,7 @@ function HistoryDialog({ open, onOpenChange, retentionDays, onPick }: HistoryDia
                       <button
                         type="button"
                         onClick={() => onPick(conversation.question)}
-                        className="hover:bg-surface-hover/60 focus-visible:bg-surface-hover -mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-md px-2 py-2.5 text-left outline-none"
+                        className="hover:bg-surface-hover/60 focus-visible:bg-surface-hover -mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-md px-2 py-2.5 text-start outline-none"
                       >
                         <span className="text-content-primary min-w-0 flex-1 truncate text-sm leading-5">
                           {conversation.question}
@@ -102,7 +102,7 @@ function HistoryDialog({ open, onOpenChange, retentionDays, onPick }: HistoryDia
                         {conversation.scope_label ? (
                           <StatusPill status="pending" label={conversation.scope_label} />
                         ) : null}
-                        <span className="text-content-tertiary w-11 shrink-0 text-right text-[13px] tabular-nums">
+                        <span className="text-content-tertiary w-11 shrink-0 text-end text-[13px] tabular-nums">
                           {formatTime(conversation.asked_at)}
                         </span>
                       </button>

@@ -41,7 +41,7 @@ function GradeCardActions({ onView, onEdit, onDelete }: GradeCardActionsProps) {
           variant="ghost"
           size="icon-sm"
           aria-label="Grade actions"
-          className="text-content-tertiary -mr-1 shrink-0 rounded-[8px]"
+          className="text-content-tertiary -me-1 shrink-0 rounded-[8px]"
         >
           <MoreHorizontal />
         </Button>
@@ -129,7 +129,7 @@ function GradeCard({ grade, onView, onEdit, onDelete }: GradeCardProps) {
         <div className="bg-stroke-default relative h-2 w-full overflow-hidden rounded-full">
           <span
             aria-hidden
-            className="bg-brand-primary absolute inset-y-0 left-0 rounded-full transition-all"
+            className="bg-brand-primary absolute inset-y-0 inset-s-0 rounded-full transition-all"
             style={{ width: `${fillPercent}%` }}
           />
         </div>

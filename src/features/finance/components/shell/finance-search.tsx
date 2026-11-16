@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/src/i18n/navigation"
 import { Search } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Input } from "@/src/shared/components/ui/input"
 import { Popover, PopoverAnchor, PopoverContent } from "@/src/shared/components/ui/popover"
@@ -17,10 +18,10 @@ const SCREEN_LIMIT = 5
 
 type SearchHit = { id: string; label: string; sub: string; href: string }
 
-const SCREENS = FINANCE_NAV_GROUPS.flatMap((group) =>
+const SCREEN_ITEMS = FINANCE_NAV_GROUPS.flatMap((group) =>
   group.items
     .filter((item) => item.href)
-    .map((item) => ({ id: item.id, label: item.label, sub: group.label, href: item.href as string })),
+    .map((item) => ({ group, item, href: item.href as string })),
 )
 
 function contactHref(contact: FinanceContact): string {
@@ -47,7 +48,7 @@ function ResultGroup({
           key={hit.id}
           type="button"
           onClick={() => onSelect(hit.href)}
-          className="hover:bg-surface-hover focus-visible:bg-surface-hover flex items-baseline justify-between gap-3 rounded-md px-2 py-1.5 text-left outline-none"
+          className="hover:bg-surface-hover focus-visible:bg-surface-hover flex items-baseline justify-between gap-3 rounded-md px-2 py-1.5 text-start outline-none"
         >
           <span className="text-content-primary truncate text-sm leading-5">{hit.label}</span>
           <span className="text-content-tertiary shrink-0 text-xs leading-4">{hit.sub}</span>
@@ -59,6 +60,7 @@ function ResultGroup({
 
 /** Toolbar search across finance screens, contacts and accounts. */
 function FinanceSearch({ className }: { className?: string }) {
+  const tNav = useTranslations("Nav")
   const router = useRouter()
   const [query, setQuery] = React.useState("")
   const [open, setOpen] = React.useState(false)
@@ -81,7 +83,14 @@ function FinanceSearch({ className }: { className?: string }) {
   const { data, isFetching } = useFinanceSearch(active ? term : "")
 
   const screens: SearchHit[] = active
-    ? SCREENS.filter((screen) => screen.label.toLowerCase().includes(term)).slice(0, SCREEN_LIMIT)
+    ? SCREEN_ITEMS.map(({ group, item, href }) => ({
+        id: item.id,
+        label: tNav(item.labelKey),
+        sub: tNav(group.labelKey),
+        href,
+      }))
+        .filter((screen) => screen.label.toLowerCase().includes(term))
+        .slice(0, SCREEN_LIMIT)
     : []
   const contacts: SearchHit[] = (data?.contacts ?? []).map((contact) => ({
     id: contact.id,
@@ -110,7 +119,7 @@ function FinanceSearch({ className }: { className?: string }) {
         <div data-slot="finance-search" className={cn("relative", className)}>
           <Search
             aria-hidden
-            className="text-content-quaternary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            className="text-content-quaternary pointer-events-none absolute top-1/2 inset-s-3 size-4 -translate-y-1/2"
           />
           <Input
             ref={inputRef}
@@ -130,7 +139,7 @@ function FinanceSearch({ className }: { className?: string }) {
               if (event.key === "Escape") setOpen(false)
               if (event.key === "Enter" && first) select(first.href)
             }}
-            className="h-9 pl-9"
+            className="h-9 ps-9"
           />
         </div>
       </PopoverAnchor>

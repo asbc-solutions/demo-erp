@@ -108,7 +108,7 @@ function ProgramCard({
         {cost && (
           <span className="text-sm text-content-primary">
             <span className="font-semibold">{cost}</span>
-            <span className="ml-1 text-xs text-content-tertiary">/seat</span>
+            <span className="ms-1 text-xs text-content-tertiary">/seat</span>
           </span>
         )}
       </div>
@@ -209,14 +209,14 @@ export function ProgramsTab() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative w-full max-w-96">
           <Search
-            className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-content-quaternary"
+            className="absolute top-1/2 inset-s-3 size-4 -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
           />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search programmes..."
-            className="pl-9"
+            className="ps-9"
           />
         </div>
         <Button variant="primary" size="sm" onClick={() => setNewOpen(true)}>

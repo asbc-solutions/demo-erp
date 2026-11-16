@@ -76,7 +76,7 @@ export function ChangePlanDialog({
                   disabled={isCurrent}
                   onClick={() => setSelectedPlanId(plan.id)}
                   className={cn(
-                    "flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                    "flex items-center justify-between rounded-xl border px-4 py-3 text-start transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                     isSelected
                       ? "border-brand-primary bg-brand-primary/5"
                       : "border-stroke-default bg-surface-page hover:bg-surface-hover",
@@ -86,7 +86,7 @@ export function ChangePlanDialog({
                     <span className="text-content-primary text-sm font-medium">
                       {plan.name}
                       {isCurrent ? (
-                        <span className="text-content-tertiary ml-2 text-xs font-normal">
+                        <span className="text-content-tertiary ms-2 text-xs font-normal">
                           (current)
                         </span>
                       ) : null}

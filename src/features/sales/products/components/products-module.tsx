@@ -450,7 +450,7 @@ function ProductsTable({
             <TableHead className="w-[140px]">Stock on Hand</TableHead>
             <TableHead className="w-[140px]">Status</TableHead>
             <TableHead className="w-[110px]">Active</TableHead>
-            <TableHead className="w-[120px] px-5 text-right">Actions</TableHead>
+            <TableHead className="w-[120px] px-5 text-end">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -493,7 +493,7 @@ function ProductsTable({
                     {product.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
-                <TableCell className="px-5 py-3 text-right">
+                <TableCell className="px-5 py-3 text-end">
                   <Button
                     type="button"
                     variant="secondary"
@@ -552,7 +552,7 @@ export function ProductsModule() {
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
         <div className="relative min-w-0 flex-1">
           <Search
-            className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-content-quaternary"
+            className="pointer-events-none absolute top-1/2 inset-s-3.5 size-[18px] -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
             aria-hidden
           />
@@ -563,7 +563,7 @@ export function ProductsModule() {
             }
             placeholder="Search by name or SKU…"
             aria-label="Search products"
-            className="h-10 rounded-[10px] pl-10 shadow-none"
+            className="h-10 rounded-[10px] ps-10 shadow-none"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">

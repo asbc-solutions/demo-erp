@@ -156,7 +156,7 @@ function LineEditorFields({
                   <button
                     key={product.id}
                     type="button"
-                    className="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm hover:bg-surface-hover"
+                    className="flex w-full flex-col gap-0.5 px-3 py-2 text-start text-sm hover:bg-surface-hover"
                     onClick={() => {
                       setSelectedProductId(product.id)
                       setProductQuery(product.name)
@@ -422,12 +422,12 @@ function LinesTable({
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="px-5">Description</TableHead>
-            <TableHead className="w-[90px] text-right">Qty</TableHead>
-            <TableHead className="w-[120px] text-right">Unit Price</TableHead>
-            <TableHead className="w-[100px] text-right">Discount</TableHead>
-            <TableHead className="w-[90px] text-right">Tax</TableHead>
-            <TableHead className="w-[130px] text-right">Line Total</TableHead>
-            {isEditable ? <TableHead className="w-[140px] px-5 text-right">Actions</TableHead> : null}
+            <TableHead className="w-[90px] text-end">Qty</TableHead>
+            <TableHead className="w-[120px] text-end">Unit Price</TableHead>
+            <TableHead className="w-[100px] text-end">Discount</TableHead>
+            <TableHead className="w-[90px] text-end">Tax</TableHead>
+            <TableHead className="w-[130px] text-end">Line Total</TableHead>
+            {isEditable ? <TableHead className="w-[140px] px-5 text-end">Actions</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -437,15 +437,15 @@ function LinesTable({
                 <TableCell className="px-5 py-3 font-medium text-content-primary">
                   {line.description}
                 </TableCell>
-                <TableCell className="py-3 text-right">{line.quantity}</TableCell>
-                <TableCell className="py-3 text-right">{formatCurrency(line.unit_price)}</TableCell>
-                <TableCell className="py-3 text-right">{line.discount_percent}%</TableCell>
-                <TableCell className="py-3 text-right">{line.tax_percent}%</TableCell>
-                <TableCell className="py-3 text-right font-semibold">
+                <TableCell className="py-3 text-end">{line.quantity}</TableCell>
+                <TableCell className="py-3 text-end">{formatCurrency(line.unit_price)}</TableCell>
+                <TableCell className="py-3 text-end">{line.discount_percent}%</TableCell>
+                <TableCell className="py-3 text-end">{line.tax_percent}%</TableCell>
+                <TableCell className="py-3 text-end font-semibold">
                   {formatCurrency(line.line_total)}
                 </TableCell>
                 {isEditable ? (
-                  <TableCell className="px-5 py-3 text-right">
+                  <TableCell className="px-5 py-3 text-end">
                     <div className="flex items-center justify-end gap-1">
                       {line.discount_percent > 0 ? (
                         <Button
@@ -667,7 +667,7 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
         <ArrowLeft aria-hidden />
         Back
       </Button>
-      <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="ms-auto flex flex-wrap items-center gap-2">
         {allows("delete") ? (
           <Button type="button" variant="secondary" onClick={() => setDeleteOpen(true)}>
             <Trash2 aria-hidden />

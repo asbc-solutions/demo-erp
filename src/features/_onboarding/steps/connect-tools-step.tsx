@@ -64,7 +64,7 @@ export function ConnectToolsStep({
               aria-pressed={isSelected}
               onClick={() => toggle(tool.id)}
               className={cn(
-                "bg-surface-white flex flex-col items-start gap-1 rounded-2xl border p-4 text-left transition-all",
+                "bg-surface-white flex flex-col items-start gap-1 rounded-2xl border p-4 text-start transition-all",
                 "hover:border-brand-primary/40 hover:bg-brand-primary/5",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary",
                 isSelected

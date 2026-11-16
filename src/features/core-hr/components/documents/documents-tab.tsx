@@ -58,7 +58,7 @@ function DocumentTableSkeleton() {
     <TableBody>
       {Array.from({ length: 5 }).map((_, i) => (
         <TableRow key={i} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <div className="flex flex-col gap-1">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-3 w-20" />
@@ -68,8 +68,8 @@ function DocumentTableSkeleton() {
           <TableCell><Skeleton className="h-4 w-36" /></TableCell>
           <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
           <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-          <TableCell className="pr-6 text-right">
-            <Skeleton className="ml-auto h-7 w-20 rounded-md" />
+          <TableCell className="pe-6 text-end">
+            <Skeleton className="ms-auto h-7 w-20 rounded-md" />
           </TableCell>
         </TableRow>
       ))}
@@ -318,12 +318,12 @@ export function DocumentsTab() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Employee</TableHead>
+              <TableHead className="ps-6">Employee</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Document</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Expiry</TableHead>
-              <TableHead className="pr-6 text-right">Actions</TableHead>
+              <TableHead className="pe-6 text-end">Actions</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -363,7 +363,7 @@ export function DocumentsTab() {
 
                   return (
                     <TableRow key={doc.id}>
-                      <TableCell className="pl-6">
+                      <TableCell className="ps-6">
                         <div className="flex flex-col">
                           <span className="text-content-primary text-sm font-semibold">
                             {employeeName}
@@ -398,7 +398,7 @@ export function DocumentsTab() {
                       <TableCell className="text-content-tertiary text-sm">
                         {doc.expiry_date ?? "—"}
                       </TableCell>
-                      <TableCell className="pr-6 text-right">
+                      <TableCell className="pe-6 text-end">
                         <ActionButtons
                           doc={doc}
                           isPending={isMutating}

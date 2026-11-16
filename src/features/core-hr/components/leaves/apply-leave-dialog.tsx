@@ -159,7 +159,7 @@ export function ApplyLeaveDialog({
           className="flex flex-col gap-5 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle>Apply for Leave</DialogTitle>
             <DialogDescription>
               Submit a new leave request for approval.

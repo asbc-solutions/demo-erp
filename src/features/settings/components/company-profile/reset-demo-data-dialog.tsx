@@ -61,7 +61,7 @@ export function ResetDemoDataDialog({
             immediately end every active session, including your own. You will be signed out.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="flex flex-col gap-1.5 px-6 pb-6 text-left">
+        <div className="flex flex-col gap-1.5 px-6 pb-6 text-start">
           <Label htmlFor="reset-demo-confirm" className="text-content-secondary text-xs font-medium">
             Type <span className="text-content-primary font-semibold">{CONFIRM_PHRASE}</span> to
             confirm

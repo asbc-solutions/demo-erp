@@ -165,11 +165,11 @@ function QuotationsTable({
           <TableRow className="hover:bg-transparent">
             <TableHead className="w-[160px] px-5">Quotation #</TableHead>
             <TableHead className="w-[280px]">Customer</TableHead>
-            <TableHead className="w-[150px] text-right">Total</TableHead>
+            <TableHead className="w-[150px] text-end">Total</TableHead>
             <TableHead className="w-[190px]">Validity Date</TableHead>
             <TableHead className="w-[160px]">Status</TableHead>
             <TableHead className="w-[190px]">Salesperson</TableHead>
-            <TableHead className="w-[72px] px-5 text-right">Actions</TableHead>
+            <TableHead className="w-[72px] px-5 text-end">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -186,7 +186,7 @@ function QuotationsTable({
                 <TableCell className="truncate py-3 font-medium text-content-primary">
                   {quotation.customer_name}
                 </TableCell>
-                <TableCell className="py-3 text-right font-bold text-content-primary">
+                <TableCell className="py-3 text-end font-bold text-content-primary">
                   {formatCurrency(quotation.grand_total)}
                 </TableCell>
                 <TableCell className="py-3">
@@ -202,7 +202,7 @@ function QuotationsTable({
                     quotation.salesperson_name}
                 </TableCell>
                 <TableCell
-                  className="px-5 py-3 text-right"
+                  className="px-5 py-3 text-end"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <QuotationActions
@@ -424,7 +424,7 @@ export function QuotationsListView({
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
         <div className="relative min-w-0 flex-1">
           <Search
-            className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-content-quaternary"
+            className="pointer-events-none absolute top-1/2 inset-s-3.5 size-[18px] -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
             aria-hidden
           />
@@ -433,7 +433,7 @@ export function QuotationsListView({
             onChange={(event) => handleSearchChange(event.target.value)}
             placeholder="Search by quotation # or customer…"
             aria-label="Search quotations"
-            className="h-10 rounded-[10px] pl-10 shadow-none"
+            className="h-10 rounded-[10px] ps-10 shadow-none"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">

@@ -21,7 +21,7 @@ function DocumentHistory({ className, events, ...props }: DocumentHistoryProps) 
             {isLast ? null : (
               <span
                 aria-hidden
-                className="bg-stroke-default absolute top-8 bottom-0 left-3.5 w-px"
+                className="bg-stroke-default absolute top-8 bottom-0 inset-s-3.5 w-px"
               />
             )}
             <Avatar size="sm" alt={event.actor} color={avatarToneFor(event.actor)} />

@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { CircleAlert, Landmark, Vault } from "lucide-react"
 
 import { Button } from "@/src/shared/components/ui/button"

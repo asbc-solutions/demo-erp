@@ -1,8 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Link, useRouter } from "@/src/i18n/navigation"
 import { CircleAlert, CircleCheck, Printer } from "lucide-react"
 import { toast } from "sonner"
 
@@ -91,7 +90,7 @@ function BoxTable({ title, rows, boxes, total, totalLabel }: { title: string; ro
             <TableRow>
               <TableHead className="w-16">Box</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead className="text-right">Value (EGP)</TableHead>
+              <TableHead className="text-end">Value (EGP)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -99,7 +98,7 @@ function BoxTable({ title, rows, boxes, total, totalLabel }: { title: string; ro
               <TableRow key={box}>
                 <TableCell className="tabular-nums">{box}</TableCell>
                 <TableCell>{label}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-end">
                   <Amount value={boxes[key]} />
                 </TableCell>
               </TableRow>
@@ -108,7 +107,7 @@ function BoxTable({ title, rows, boxes, total, totalLabel }: { title: string; ro
           <TableFooter>
             <TableRow>
               <TableCell colSpan={2}>{totalLabel}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <Amount value={total} emphasis="strong" />
               </TableCell>
             </TableRow>

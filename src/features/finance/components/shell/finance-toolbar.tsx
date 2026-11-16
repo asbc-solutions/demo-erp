@@ -13,7 +13,7 @@ function FinanceToolbar() {
     >
       <EntityPicker />
       <PeriodPicker />
-      <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
+      <div className="flex w-full items-center gap-2 sm:ms-auto sm:w-auto">
         <FinanceSearch className="w-full sm:w-md" />
         <FinanceHelp />
       </div>

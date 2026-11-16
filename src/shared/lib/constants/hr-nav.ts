@@ -14,9 +14,11 @@ import {
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
+import type { NavLabelKey } from "@/src/shared/lib/types"
+
 export type HrNavItem = {
   id: string
-  label: string
+  labelKey: NavLabelKey
   href: string
   icon: LucideIcon
 }
@@ -26,20 +28,20 @@ export type HrNavItem = {
  * submenu and for the section label shown in the shell header.
  */
 export const HR_NAV: readonly HrNavItem[] = [
-  { id: "employees", label: "Employees", href: "/hr/employees", icon: Users },
-  { id: "organization", label: "Organization", href: "/hr/organization", icon: Building2 },
-  { id: "job-grades", label: "Job Grades", href: "/hr/job-grades", icon: Award },
-  { id: "positions", label: "Positions", href: "/hr/positions", icon: Briefcase },
-  { id: "salaries", label: "Salaries", href: "/hr/salaries", icon: DollarSign },
-  { id: "leaves", label: "Leaves", href: "/hr/leaves", icon: CalendarRange },
-  { id: "performance", label: "Performance", href: "/hr/performance", icon: BarChart3 },
-  { id: "training", label: "Training", href: "/hr/training", icon: GraduationCap },
-  { id: "approvals", label: "Approvals", href: "/hr/approvals", icon: CheckCircle2 },
-  { id: "reports", label: "Reports", href: "/hr/reports", icon: BarChart3 },
-  { id: "contracts", label: "Contracts", href: "/hr/contracts", icon: FileText },
-  { id: "documents", label: "Documents", href: "/hr/documents", icon: FileText },
-  { id: "emergency", label: "Emergency Contacts", href: "/hr/emergency", icon: UsersRound },
-  { id: "audit", label: "Audit Log", href: "/hr/audit", icon: History },
+  { id: "employees", labelKey: "hrEmployees", href: "/hr/employees", icon: Users },
+  { id: "organization", labelKey: "hrOrganization", href: "/hr/organization", icon: Building2 },
+  { id: "job-grades", labelKey: "hrJobGrades", href: "/hr/job-grades", icon: Award },
+  { id: "positions", labelKey: "hrPositions", href: "/hr/positions", icon: Briefcase },
+  { id: "salaries", labelKey: "hrSalaries", href: "/hr/salaries", icon: DollarSign },
+  { id: "leaves", labelKey: "hrLeaves", href: "/hr/leaves", icon: CalendarRange },
+  { id: "performance", labelKey: "hrPerformance", href: "/hr/performance", icon: BarChart3 },
+  { id: "training", labelKey: "hrTraining", href: "/hr/training", icon: GraduationCap },
+  { id: "approvals", labelKey: "hrApprovals", href: "/hr/approvals", icon: CheckCircle2 },
+  { id: "reports", labelKey: "hrReports", href: "/hr/reports", icon: BarChart3 },
+  { id: "contracts", labelKey: "hrContracts", href: "/hr/contracts", icon: FileText },
+  { id: "documents", labelKey: "hrDocuments", href: "/hr/documents", icon: FileText },
+  { id: "emergency", labelKey: "hrEmergency", href: "/hr/emergency", icon: UsersRound },
+  { id: "audit", labelKey: "hrAudit", href: "/hr/audit", icon: History },
 ]
 
 export const HR_DEFAULT_ROUTE = HR_NAV[0].href

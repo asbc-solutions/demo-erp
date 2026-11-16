@@ -75,7 +75,7 @@ function ActivityRow({ item }: Readonly<{ item: ActivityFeedItem }>) {
         {activityIcon(item.module)}
         <span
           className={cn(
-            "absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full border border-white",
+            "absolute -inset-e-0.5 -bottom-0.5 size-1.5 rounded-full border border-white",
             toneDot[item.tone],
           )}
         />

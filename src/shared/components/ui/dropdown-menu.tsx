@@ -78,7 +78,7 @@ function DropdownMenuItem({
         "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-content-tertiary",
         variant === "danger" &&
           "text-brand-danger focus:bg-brand-danger/5 data-highlighted:bg-brand-danger/5 [&_svg]:text-brand-danger",
-        inset && "pl-8",
+        inset && "ps-8",
         className,
       )}
       onSelect={
@@ -109,7 +109,7 @@ function DropdownMenuCheckboxItem({
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        "relative flex cursor-pointer items-center rounded-[6px] py-1.5 pr-2 pl-8 text-sm leading-5 outline-none select-none",
+        "relative flex cursor-pointer items-center rounded-[6px] py-1.5 pe-2 ps-8 text-sm leading-5 outline-none select-none",
         "focus:bg-surface-hover data-highlighted:bg-surface-hover",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         className,
@@ -117,7 +117,7 @@ function DropdownMenuCheckboxItem({
       checked={checked}
       {...props}
     >
-      <span className="absolute left-2 flex size-4 items-center justify-center">
+      <span className="absolute inset-s-2 flex size-4 items-center justify-center">
         <DropdownMenuPrimitive.ItemIndicator>
           <Check className="size-4" />
         </DropdownMenuPrimitive.ItemIndicator>
@@ -136,14 +136,14 @@ function DropdownMenuRadioItem({
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       className={cn(
-        "relative flex cursor-pointer items-center rounded-[6px] py-1.5 pr-2 pl-8 text-sm leading-5 outline-none select-none",
+        "relative flex cursor-pointer items-center rounded-[6px] py-1.5 pe-2 ps-8 text-sm leading-5 outline-none select-none",
         "focus:bg-surface-hover data-highlighted:bg-surface-hover",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         className,
       )}
       {...props}
     >
-      <span className="absolute left-2 flex size-4 items-center justify-center">
+      <span className="absolute inset-s-2 flex size-4 items-center justify-center">
         <DropdownMenuPrimitive.ItemIndicator>
           <Circle className="size-2 fill-current" />
         </DropdownMenuPrimitive.ItemIndicator>
@@ -165,7 +165,7 @@ function DropdownMenuLabel({
       data-slot="dropdown-menu-label"
       className={cn(
         "text-content-tertiary px-2 py-1.5 text-xs font-medium",
-        inset && "pl-8",
+        inset && "ps-8",
         className,
       )}
       {...props}
@@ -194,7 +194,7 @@ function DropdownMenuShortcut({
     <span
       data-slot="dropdown-menu-shortcut"
       className={cn(
-        "text-content-quaternary ml-auto text-xs tracking-widest",
+        "text-content-quaternary ms-auto text-xs tracking-widest",
         className,
       )}
       {...props}
@@ -216,13 +216,13 @@ function DropdownMenuSubTrigger({
       className={cn(
         "flex cursor-pointer items-center gap-2 rounded-[6px] px-2 py-1.5 text-sm leading-5 outline-none select-none",
         "focus:bg-surface-hover data-[state=open]:bg-surface-hover",
-        inset && "pl-8",
+        inset && "ps-8",
         className,
       )}
       {...props}
     >
       {children}
-      <ChevronRight className="text-content-tertiary ml-auto size-4" />
+      <ChevronRight className="text-content-tertiary ms-auto size-4 rtl:rotate-180" />
     </DropdownMenuPrimitive.SubTrigger>
   )
 }

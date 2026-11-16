@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowRight, Plus } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
@@ -146,7 +146,7 @@ function NewTemplateDialog({ open, onOpenChange }: { open: boolean; onOpenChange
             </Field>
             <Field>
               <FieldLabel htmlFor="template-amount">Default amount (EGP)</FieldLabel>
-              <Input id="template-amount" inputMode="decimal" placeholder="0.00" className="text-right tabular-nums" {...register("amount")} />
+              <Input id="template-amount" inputMode="decimal" placeholder="0.00" className="text-end tabular-nums" {...register("amount")} />
               <FieldDescription>Leave at zero to prompt for the amount each time.</FieldDescription>
             </Field>
             <Field>

@@ -136,7 +136,7 @@ export function ExportEmployeesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg gap-0 p-0">
         <div className="flex flex-col gap-5 p-6">
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
               Export Employees
             </DialogTitle>

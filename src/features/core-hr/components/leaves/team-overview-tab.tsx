@@ -30,7 +30,7 @@ function TeamTableSkeleton() {
     <TableBody>
       {Array.from({ length: 6 }).map((_, i) => (
         <TableRow key={i} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <div className="flex items-center gap-2">
               <Skeleton className="size-7 rounded-full" />
               <Skeleton className="h-4 w-28" />
@@ -101,12 +101,12 @@ export function TeamOverviewTab() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Employee</TableHead>
+              <TableHead className="ps-6">Employee</TableHead>
               <TableHead>Annual Available</TableHead>
               <TableHead>Annual Used</TableHead>
               <TableHead>Annual Pending</TableHead>
               <TableHead>Sick Used</TableHead>
-              <TableHead className="pr-6">Total Days</TableHead>
+              <TableHead className="pe-6">Total Days</TableHead>
             </TableRow>
           </TableHeader>
           {isLoading ? (
@@ -128,7 +128,7 @@ export function TeamOverviewTab() {
                     key={row.id}
                     className="border-b border-stroke-default hover:bg-surface-hover/50"
                   >
-                    <TableCell className="pl-6">
+                    <TableCell className="ps-6">
                       <div className="flex items-center gap-2">
                         <Avatar
                           size="sm"
@@ -168,7 +168,7 @@ export function TeamOverviewTab() {
                     </TableCell>
                     <TableCell
                       className={cn(
-                        "pr-6 text-sm font-semibold tabular-nums",
+                        "pe-6 text-sm font-semibold tabular-nums",
                         row.totalPending > 0
                           ? "text-content-primary"
                           : "text-content-quaternary",

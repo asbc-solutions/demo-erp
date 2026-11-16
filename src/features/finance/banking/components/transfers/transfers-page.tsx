@@ -254,10 +254,10 @@ function TransfersPage({ fromTreasuryId }: { fromTreasuryId?: string }) {
                 ) : null}
                 <TableFooter>
                   <TableRow>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={round2(arriving * (to?.rate ?? 1))} emphasis="strong" />
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={round2(amount * (from?.rate ?? 1))} emphasis="strong" />
                     </TableCell>
                   </TableRow>

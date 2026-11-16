@@ -50,7 +50,7 @@ export function OnboardingFunnelCard({ funnel, totalVisitors }: FunnelCardProps)
                 <span className="text-content-tertiary font-mono text-[11px] leading-[15.4px]">
                   {step.count} · {percent}%
                   {dropped > 0 && (
-                    <span className="text-brand-danger ml-1.5">−{dropped}</span>
+                    <span className="text-brand-danger ms-1.5">−{dropped}</span>
                   )}
                 </span>
               </div>

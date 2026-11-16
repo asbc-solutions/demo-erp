@@ -188,7 +188,7 @@ export function PersonalInfoStep({
         <Field>
           <FieldLabel htmlFor="dateOfBirth">
             <RequiredLabel>Date of Birth</RequiredLabel>
-            <span className="text-content-quaternary ml-1 text-[11px] font-normal">
+            <span className="text-content-quaternary ms-1 text-[11px] font-normal">
               {MINIMUM_EMPLOYEE_AGE}+ years
             </span>
           </FieldLabel>
@@ -238,7 +238,7 @@ export function PersonalInfoStep({
         <Field>
           <FieldLabel htmlFor="nationality">
             <RequiredLabel>Nationality</RequiredLabel>
-            <span className="text-content-quaternary ml-1 text-[11px] font-normal">
+            <span className="text-content-quaternary ms-1 text-[11px] font-normal">
               ISO-3 code
             </span>
           </FieldLabel>
@@ -327,7 +327,7 @@ export function PersonalInfoStep({
         <Field>
           <FieldLabel htmlFor="country">
             <RequiredLabel>Country</RequiredLabel>
-            <span className="text-content-quaternary ml-1 text-[11px] font-normal">
+            <span className="text-content-quaternary ms-1 text-[11px] font-normal">
               ISO-3 code
             </span>
           </FieldLabel>

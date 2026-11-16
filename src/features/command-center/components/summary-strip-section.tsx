@@ -9,10 +9,10 @@ import { formatCurrency, formatNumber } from "../lib/utils/format"
 type StripAccent = "amber" | "indigo" | "red" | "emerald"
 
 const summaryAccentClass: Record<StripAccent, string> = {
-  amber: "border-l-brand-warning",
-  indigo: "border-l-brand-primary",
-  red: "border-l-brand-danger",
-  emerald: "border-l-brand-success",
+  amber: "border-s-brand-warning",
+  indigo: "border-s-brand-primary",
+  red: "border-s-brand-danger",
+  emerald: "border-s-brand-success",
 }
 
 const summaryIconGradient: Record<StripAccent, string> = {
@@ -77,8 +77,8 @@ export function SummaryStripSection({
           key={item.label}
           variant="elevated"
           className={cn(
-            "gap-2 rounded-2xl border py-[17px] pr-[17px] pl-[18px]",
-            "border-stroke-default border-l-[1.5px]",
+            "gap-2 rounded-2xl border py-[17px] pe-[17px] ps-[18px]",
+            "border-stroke-default border-s-[1.5px]",
             summaryAccentClass[item.accent],
           )}
         >

@@ -68,7 +68,7 @@ function DetailRow({
         </span>
         {label}
       </span>
-      <span className="min-w-0 text-right text-sm font-medium text-content-primary">
+      <span className="min-w-0 text-end text-sm font-medium text-content-primary">
         {value}
       </span>
     </div>
@@ -98,7 +98,7 @@ export function ProgramDetailsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-lg gap-0 overflow-y-auto p-0 sm:max-w-lg">
-        <DialogHeader className="pr-12">
+        <DialogHeader className="pe-12">
           <DialogTitle className="text-lg leading-6 font-semibold text-content-primary">
             {p.program_name}
           </DialogTitle>

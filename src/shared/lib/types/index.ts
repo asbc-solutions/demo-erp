@@ -1,8 +1,12 @@
 import { LucideIcon } from "lucide-react"
+import type { Messages } from "next-intl"
+
+/** A key of the `Nav` message namespace; render it with `useTranslations("Nav")`. */
+export type NavLabelKey = keyof Messages["Nav"]
 
 export type NavChild = {
   id: string
-  label: string
+  labelKey: NavLabelKey
   /** Target route to navigate to when clicked. Omit for not-yet-wired (dummy) items. */
   href?: string
   icon?: LucideIcon
@@ -12,7 +16,7 @@ export type NavChild = {
 /** A labeled section of children shown inside a parent's submenu. */
 export type NavGroup = {
   id: string
-  label: string
+  labelKey: NavLabelKey
   items: NavChild[]
   /** Shown on the group header when groups are collapsible, and in the icon rail. */
   icon?: LucideIcon
@@ -20,7 +24,7 @@ export type NavGroup = {
 
 export type NavItem = {
   id: string
-  label: string
+  labelKey: NavLabelKey
   icon: LucideIcon
   badge?: number
   children?: NavChild[]

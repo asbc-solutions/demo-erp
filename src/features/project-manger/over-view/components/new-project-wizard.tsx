@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/src/i18n/navigation"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 
@@ -91,7 +91,7 @@ function StepHeader({ current }: { current: number }) {
                     ? "text-content-secondary"
                     : "text-content-quaternary",
                 // keep labels aligned under their circle (not the connector)
-                !isLast && "self-start pl-0",
+                !isLast && "self-start ps-0",
               )}
             >
               {step.label}

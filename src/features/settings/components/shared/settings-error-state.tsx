@@ -14,7 +14,7 @@ export function SettingsErrorState({
         <button
           type="button"
           onClick={onRetry}
-          className="text-brand-primary ml-1 underline"
+          className="text-brand-primary ms-1 underline"
         >
           Try again
         </button>

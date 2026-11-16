@@ -166,7 +166,7 @@ function HeadcountCell({ filled, budget }: { filled: number; budget: number }) {
       <span className="bg-stroke-default relative block h-1 w-full overflow-hidden rounded-full">
         <span
           aria-hidden
-          className={cn("absolute inset-y-0 left-0 rounded-full", indicator)}
+          className={cn("absolute inset-y-0 inset-s-0 rounded-full", indicator)}
           style={{ width: `${Math.min(100, percent)}%` }}
         />
       </span>
@@ -179,7 +179,7 @@ function PositionsTableSkeleton() {
     <TableBody>
       {Array.from({ length: 6 }).map((_, i) => (
         <TableRow key={i} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <Skeleton className="h-4 w-44" />
           </TableCell>
           <TableCell>
@@ -197,8 +197,8 @@ function PositionsTableSkeleton() {
           <TableCell>
             <Skeleton className="h-6 w-16 rounded-md" />
           </TableCell>
-          <TableCell className="pr-6 text-right">
-            <Skeleton className="ml-auto h-7 w-7 rounded-md" />
+          <TableCell className="pe-6 text-end">
+            <Skeleton className="ms-auto h-7 w-7 rounded-md" />
           </TableCell>
         </TableRow>
       ))}
@@ -285,12 +285,12 @@ export function PositionsTab() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Title</TableHead>
+              <TableHead className="ps-6">Title</TableHead>
               <TableHead>Code</TableHead>
               <TableHead>Headcount</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Vacancy</TableHead>
-              <TableHead className="pr-6 text-right">Actions</TableHead>
+              <TableHead className="pe-6 text-end">Actions</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -310,7 +310,7 @@ export function PositionsTab() {
               )}
               {filtered.map((pos) => (
                 <TableRow key={pos.id}>
-                  <TableCell className="pl-6">
+                  <TableCell className="ps-6">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-content-primary text-sm font-medium">
                         {pos.position_title}
@@ -338,7 +338,7 @@ export function PositionsTab() {
                   <TableCell>
                     <VacancyBadge status={pos.vacancy_status} />
                   </TableCell>
-                  <TableCell className="pr-6 text-right">
+                  <TableCell className="pe-6 text-end">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button

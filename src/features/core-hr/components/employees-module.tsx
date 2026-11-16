@@ -186,7 +186,7 @@ function EmployeeDetailLoader({
         <button
           type="button"
           onClick={onBack}
-          className="text-brand-primary ml-1 underline"
+          className="text-brand-primary ms-1 underline"
         >
           Back to list
         </button>
@@ -222,7 +222,7 @@ function EmployeeEditLoader({
         <button
           type="button"
           onClick={onBack}
-          className="text-brand-primary ml-1 underline"
+          className="text-brand-primary ms-1 underline"
         >
           Back to list
         </button>

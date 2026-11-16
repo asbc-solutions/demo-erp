@@ -130,7 +130,7 @@ function PostingSimulatorPage() {
               </Field>
               <Field>
                 <FieldLabel htmlFor="sim-amount">Amount (EGP)</FieldLabel>
-                <Input id="sim-amount" inputMode="decimal" className="text-right tabular-nums" value={amountText} onChange={(event) => setAmountText(event.target.value)} />
+                <Input id="sim-amount" inputMode="decimal" className="text-end tabular-nums" value={amountText} onChange={(event) => setAmountText(event.target.value)} />
                 <FieldDescription>{rule?.description}</FieldDescription>
               </Field>
               <Field>

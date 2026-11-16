@@ -146,14 +146,14 @@ export function OrdersListView({
           <span className="sr-only">Search sales orders</span>
           <Search
             aria-hidden
-            className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-content-quaternary"
+            className="absolute top-1/2 inset-s-3.5 size-4 -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
           />
           <Input
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
             placeholder="Search by order # or customer…"
-            className="h-10 rounded-lg border-stroke-input pl-10 text-[13px] shadow-none"
+            className="h-10 rounded-lg border-stroke-input ps-10 text-[13px] shadow-none"
           />
         </label>
 
@@ -210,7 +210,7 @@ export function OrdersListView({
               aria-pressed={isActive}
               onClick={() => handleTabChange(tab.value)}
               className={cn(
-                "relative flex h-10 shrink-0 items-center gap-2 px-3 text-[13px] font-medium transition-colors first:pl-2",
+                "relative flex h-10 shrink-0 items-center gap-2 px-3 text-[13px] font-medium transition-colors first:ps-2",
                 isActive ? "text-brand-primary" : "text-content-tertiary hover:text-content-primary",
               )}
             >
@@ -244,20 +244,20 @@ export function OrdersListView({
             <Table className="min-w-[1000px]">
               <TableHeader className="bg-surface-white">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[150px] pl-5">Order #</TableHead>
+                  <TableHead className="w-[150px] ps-5">Order #</TableHead>
                   <TableHead className="min-w-[230px]">Customer</TableHead>
                   <TableHead className="w-[150px]">Delivery Date</TableHead>
                   <TableHead className="w-[150px] text-center">Total</TableHead>
                   <TableHead className="w-[190px]">Status</TableHead>
                   <TableHead className="w-[190px]">Salesperson</TableHead>
-                  <TableHead className="w-[92px] pr-5 text-right">Actions</TableHead>
+                  <TableHead className="w-[92px] pe-5 text-end">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders.length ? (
                   orders.map((order: OrderListItem) => (
                     <TableRow key={order.id} className="h-16 cursor-pointer" onClick={() => onSelectOrder(order.id)}>
-                      <TableCell className="py-4 pl-5 font-mono text-[12px] font-medium text-content-primary">
+                      <TableCell className="py-4 ps-5 font-mono text-[12px] font-medium text-content-primary">
                         {order.number}
                       </TableCell>
                       <TableCell className="py-4 text-[13px] font-medium text-content-primary">
@@ -275,7 +275,7 @@ export function OrdersListView({
                       <TableCell className="py-4 text-[12px] text-content-secondary">
                         {order.salesperson_name}
                       </TableCell>
-                      <TableCell className="py-3 pr-5 text-right" onClick={(event) => event.stopPropagation()}>
+                      <TableCell className="py-3 pe-5 text-end" onClick={(event) => event.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button

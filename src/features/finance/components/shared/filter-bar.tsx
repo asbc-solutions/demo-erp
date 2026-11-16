@@ -44,13 +44,13 @@ function FilterSearch({
     <div data-slot="filter-search" className={cn("relative w-64", className)}>
       <Search
         aria-hidden
-        className="text-content-quaternary pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
+        className="text-content-quaternary pointer-events-none absolute top-1/2 inset-s-2.5 size-3.5 -translate-y-1/2"
       />
       <Input
         type="search"
         aria-label={placeholder}
         placeholder={placeholder}
-        className="h-8 pl-8 text-[13px]"
+        className="h-8 ps-8 text-[13px]"
         {...props}
       />
     </div>
@@ -203,7 +203,7 @@ function ResultCount({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
       data-slot="result-count"
-      className={cn("text-content-tertiary ml-auto text-[13px] leading-5 whitespace-nowrap", className)}
+      className={cn("text-content-tertiary ms-auto text-[13px] leading-5 whitespace-nowrap", className)}
       {...props}
     />
   )
@@ -230,7 +230,7 @@ function SelectionBar({
     >
       <Checkbox checked aria-label="Clear selection" onCheckedChange={onClear} />
       <span className="text-content-primary text-[13px] leading-5 font-medium">{count} selected</span>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ms-auto flex items-center gap-2">
         {children}
         <Button variant="ghost" size="sm" onClick={onClear}>
           Clear

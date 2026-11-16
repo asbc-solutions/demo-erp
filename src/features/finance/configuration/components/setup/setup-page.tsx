@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -108,7 +108,7 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
                     aria-checked={selected}
                     onClick={() => setChoices((current) => ({ ...current, industry: option.id }))}
                     className={cn(
-                      "border-stroke-default bg-surface-white hover:border-stroke-input flex flex-col gap-1 rounded-xl border px-4 py-3.5 text-left outline-none focus-visible:ring-2",
+                      "border-stroke-default bg-surface-white hover:border-stroke-input flex flex-col gap-1 rounded-xl border px-4 py-3.5 text-start outline-none focus-visible:ring-2",
                       selected && "border-brand-primary ring-brand-primary/20 ring-2",
                     )}
                   >

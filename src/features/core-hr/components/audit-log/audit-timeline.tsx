@@ -149,7 +149,7 @@ function AuditEntryCard({ entry }: Readonly<{ entry: AuditEntry }>) {
       <div className="flex flex-wrap items-center gap-2">
         <ActionBadge badge={entry.action_badge} />
         <ModuleBadge badge={entry.module_badge} />
-        <span className="text-content-tertiary ml-auto text-xs leading-4">
+        <span className="text-content-tertiary ms-auto text-xs leading-4">
           {entry.time_label}
         </span>
       </div>
@@ -166,7 +166,7 @@ export function AuditDayGroup({
   return (
     <section className="bg-surface-page border-stroke-default rounded-[14px] border p-4">
       <p className="text-content-tertiary mb-4 text-sm leading-5">{label}</p>
-      <ol className="relative flex flex-col gap-3 pl-2">
+      <ol className="relative flex flex-col gap-3 ps-2">
         {entries.map((entry, index) => {
           const isLast = index === entries.length - 1
           const config = getActionConfig(entry.action_badge)
@@ -176,7 +176,7 @@ export function AuditDayGroup({
               {!isLast && (
                 <span
                   aria-hidden
-                  className="bg-stroke-default absolute top-9 left-3.75 h-[calc(100%-12px)] w-px"
+                  className="bg-stroke-default absolute top-9 inset-s-3.75 h-[calc(100%-12px)] w-px"
                 />
               )}
               <span

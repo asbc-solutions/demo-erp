@@ -89,7 +89,7 @@ function DraftsTab({ scopeLabel }: { scopeLabel: string }) {
           Every action the assistant proposed, who reviewed it, and what it became. Nothing here was
           applied by the assistant.
         </p>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ms-auto flex items-center gap-2">
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger aria-label="Filter by status" className="h-9 w-44">
               <SelectValue />

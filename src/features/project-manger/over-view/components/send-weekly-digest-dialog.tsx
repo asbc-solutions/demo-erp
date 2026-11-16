@@ -188,7 +188,7 @@ export function SendWeeklyDigestDialog({
                 recipients.map((id) => (
                   <span
                     key={id}
-                    className="bg-brand-primary/[0.08] text-brand-primary inline-flex items-center gap-1.5 rounded-full py-1 pr-1.5 pl-2.5 text-[12px] leading-4 font-medium"
+                    className="bg-brand-primary/[0.08] text-brand-primary inline-flex items-center gap-1.5 rounded-full py-1 pe-1.5 ps-2.5 text-[12px] leading-4 font-medium"
                   >
                     {employeeLabel.get(id) ?? "Employee"}
                     <button
@@ -227,7 +227,7 @@ export function SendWeeklyDigestDialog({
             <span className="text-content-secondary text-[13px] leading-5 font-semibold">
               Include
             </span>
-            <div className="flex flex-col gap-2.5 pl-1">
+            <div className="flex flex-col gap-2.5 ps-1">
               {DIGEST_INCLUDES.map((item) => (
                 <Label
                   key={item.id}

@@ -191,7 +191,7 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
                           value={Math.round((stat!.views / maxViews) * 100)}
                           size="sm"
                         />
-                        <ul className="flex flex-col gap-0.5 pl-6">
+                        <ul className="flex flex-col gap-0.5 ps-6">
                           {pages.slice(0, 6).map(([path, count]) => (
                             <li
                               key={path}

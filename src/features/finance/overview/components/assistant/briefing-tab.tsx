@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { RefreshCw } from "lucide-react"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -58,7 +58,7 @@ function BriefingTab({
         <p className="text-content-secondary text-sm leading-5">
           What still needs a person today, across every group you can see.
         </p>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ms-auto flex items-center gap-3">
           <StatusPill status="pending" label={`Scope: ${entityCode}`} />
           {data ? (
             <span className="text-content-tertiary text-[13px] leading-5">

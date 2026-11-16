@@ -159,7 +159,7 @@ export function SignupStep({
             autoComplete="new-password"
             placeholder="••••••••"
             aria-invalid={Boolean(errors.password) || undefined}
-            className={cn(onboardingInputClass, "pr-10")}
+            className={cn(onboardingInputClass, "pe-10")}
             {...form.register("password")}
           />
         </OnboardingField>
@@ -174,7 +174,7 @@ export function SignupStep({
             autoComplete="new-password"
             placeholder="••••••••"
             aria-invalid={Boolean(errors.password_confirmation) || undefined}
-            className={cn(onboardingInputClass, "pr-10")}
+            className={cn(onboardingInputClass, "pe-10")}
             {...form.register("password_confirmation")}
           />
         </OnboardingField>

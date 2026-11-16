@@ -106,7 +106,7 @@ export function MarketingTrackingDashboard() {
             <Zap className="size-5 fill-white" strokeWidth={2} suppressHydrationWarning />
           </div>
 
-          <div className="mr-auto flex min-w-0 flex-col">
+          <div className="me-auto flex min-w-0 flex-col">
             <h1 className="font-heading text-content-primary text-base leading-6 font-semibold">
               Demo Insights
             </h1>
@@ -257,13 +257,13 @@ export function MarketingTrackingDashboard() {
               <div className="relative min-w-[220px] flex-1">
                 <Search
                   aria-hidden
-                  className="text-content-quaternary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+                  className="text-content-quaternary pointer-events-none absolute top-1/2 inset-s-3 size-4 -translate-y-1/2"
                 />
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search name, e-mail, phone or company"
-                  className="pl-9"
+                  className="ps-9"
                   aria-label="Search visitors"
                 />
               </div>
@@ -282,7 +282,7 @@ export function MarketingTrackingDashboard() {
                 </SelectContent>
               </Select>
 
-              <span className="text-content-tertiary ml-auto text-xs leading-4">
+              <span className="text-content-tertiary ms-auto text-xs leading-4">
                 {visitors.length} of {data.visitors.length} visitors
               </span>
             </section>

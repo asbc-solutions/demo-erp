@@ -39,7 +39,7 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "focus-visible:ring-brand-primary/30 flex flex-1 items-center gap-3 py-2 text-left text-sm outline-none transition-all focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50",
+          "focus-visible:ring-brand-primary/30 flex flex-1 items-center gap-3 py-2 text-start text-sm outline-none transition-all focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50",
           !hideChevron && "justify-between [&[data-state=open]>svg]:rotate-180",
           className,
         )}

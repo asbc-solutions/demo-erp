@@ -94,7 +94,7 @@ function ContractTableSkeleton() {
     <TableBody>
       {Array.from({ length: 5 }).map((_, index) => (
         <TableRow key={index} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <div className="flex flex-col gap-1.5">
               <Skeleton className="h-4 w-36" />
               <Skeleton className="h-3 w-20" />
@@ -118,8 +118,8 @@ function ContractTableSkeleton() {
           <TableCell>
             <Skeleton className="h-4 w-24" />
           </TableCell>
-          <TableCell className="pr-6 text-right">
-            <Skeleton className="ml-auto h-7 w-7 rounded-md" />
+          <TableCell className="pe-6 text-end">
+            <Skeleton className="ms-auto h-7 w-7 rounded-md" />
           </TableCell>
         </TableRow>
       ))}
@@ -240,7 +240,7 @@ function ContractDetailsDialog({
     <Dialog open={!!contract} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md gap-0 p-0 sm:max-w-md">
         <div className="flex flex-col gap-4 p-6">
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
               {contract.contract_number}
             </DialogTitle>
@@ -389,14 +389,14 @@ export function ContractsTab() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="pl-6">Employee</TableHead>
+                <TableHead className="ps-6">Employee</TableHead>
                 <TableHead>Contract #</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Start Date</TableHead>
                 <TableHead>End Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Days Remaining</TableHead>
-                <TableHead className="pr-6 text-right">Actions</TableHead>
+                <TableHead className="pe-6 text-end">Actions</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -436,7 +436,7 @@ export function ContractsTab() {
 
                     return (
                       <TableRow key={contract.id}>
-                        <TableCell className="pl-6">
+                        <TableCell className="ps-6">
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold text-content-primary">
                               {employee.name}
@@ -473,7 +473,7 @@ export function ContractsTab() {
                             label={contract.days_remaining_label}
                           />
                         </TableCell>
-                        <TableCell className="pr-6 text-right">
+                        <TableCell className="pe-6 text-end">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button

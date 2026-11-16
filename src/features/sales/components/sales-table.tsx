@@ -26,7 +26,7 @@ export function SalesTable() {
             <TableHead>Deal</TableHead>
             <TableHead>Company</TableHead>
             <TableHead>Stage</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
+            <TableHead className="text-end">Amount</TableHead>
             <TableHead>Close Date</TableHead>
             <TableHead>Owner</TableHead>
           </TableRow>
@@ -50,7 +50,7 @@ export function SalesTable() {
                   {deal.stage}
                 </span>
               </TableCell>
-              <TableCell className="text-content-primary text-right font-mono text-[12px] leading-[18px]">
+              <TableCell className="text-content-primary text-end font-mono text-[12px] leading-[18px]">
                 {formatAmount(deal.amount)}
               </TableCell>
               <TableCell className="text-content-secondary text-[12px] leading-[18px]">

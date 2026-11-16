@@ -49,7 +49,7 @@ export function ProjectsFilterBar({ value, onChange }: ProjectsFilterBarProps) {
     <Card className="flex flex-row flex-wrap items-center gap-3 p-3">
       <div className="relative w-full sm:w-60">
         <Search
-          className="text-content-quaternary pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2"
+          className="text-content-quaternary pointer-events-none absolute top-1/2 inset-s-3 size-3.5 -translate-y-1/2"
           aria-hidden
         />
         <Input
@@ -58,7 +58,7 @@ export function ProjectsFilterBar({ value, onChange }: ProjectsFilterBarProps) {
           onChange={(e) => onChange({ search: e.target.value })}
           placeholder="Search projects…"
           aria-label="Search projects"
-          className="h-[34px] rounded-lg pl-9 text-[13px] shadow-none"
+          className="h-[34px] rounded-lg ps-9 text-[13px] shadow-none"
         />
       </div>
 
@@ -98,7 +98,7 @@ export function ProjectsFilterBar({ value, onChange }: ProjectsFilterBarProps) {
         </SelectContent>
       </Select>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ms-auto flex items-center gap-2">
         <Button
           variant="outline"
           className="h-[34px] gap-1.5 px-3 text-[13px] font-normal"

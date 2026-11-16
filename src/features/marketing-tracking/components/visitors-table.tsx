@@ -113,9 +113,9 @@ export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
                   <TableHead>Profile</TableHead>
                   <TableHead>Top module</TableHead>
                   <TableHead>Modules</TableHead>
-                  <TableHead className="text-right">Views</TableHead>
-                  <TableHead className="text-right">Time</TableHead>
-                  <TableHead className="text-right">Last active</TableHead>
+                  <TableHead className="text-end">Views</TableHead>
+                  <TableHead className="text-end">Time</TableHead>
+                  <TableHead className="text-end">Last active</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -200,15 +200,15 @@ export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
                         </div>
                       </TableCell>
 
-                      <TableCell className="text-content-secondary text-right font-mono text-xs leading-4">
+                      <TableCell className="text-content-secondary text-end font-mono text-xs leading-4">
                         {visitor.totalViews}
                       </TableCell>
 
-                      <TableCell className="text-content-secondary text-right font-mono text-xs leading-4">
+                      <TableCell className="text-content-secondary text-end font-mono text-xs leading-4">
                         {formatDuration(visitor.totalMs)}
                       </TableCell>
 
-                      <TableCell className="text-content-tertiary text-right text-xs leading-4">
+                      <TableCell className="text-content-tertiary text-end text-xs leading-4">
                         {formatRelative(visitor.lastSeenAt)}
                       </TableCell>
                     </TableRow>

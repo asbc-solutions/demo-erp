@@ -189,7 +189,7 @@ export function ChatTab({ projectId }: { projectId?: string }) {
                       aria-label="Delete message"
                       onClick={() => handleDelete(message.id)}
                       disabled={deleteMessage.isPending}
-                      className="text-content-quaternary hover:text-brand-danger ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                      className="text-content-quaternary hover:text-brand-danger ms-auto opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <Trash2 className="size-3.5" aria-hidden />
                     </button>

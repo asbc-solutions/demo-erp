@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { CalendarDays, ChevronLeft } from "lucide-react"
 import { toast } from "sonner"
 

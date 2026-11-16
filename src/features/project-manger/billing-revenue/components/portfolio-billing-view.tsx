@@ -60,7 +60,7 @@ export function PortfolioBillingView() {
       value: formatMoney(summary.total_contract_value),
       caption: "All active projects",
       icon: Wallet,
-      accent: "border-l-brand-primary",
+      accent: "border-s-brand-primary",
       tile: "bg-brand-primary/10 text-brand-primary",
     },
     {
@@ -69,7 +69,7 @@ export function PortfolioBillingView() {
       value: formatMoney(summary.total_invoiced),
       caption: "Billed to date",
       icon: Receipt,
-      accent: "border-l-brand-success",
+      accent: "border-s-brand-success",
       tile: "bg-brand-success/10 text-brand-success",
     },
     {
@@ -78,7 +78,7 @@ export function PortfolioBillingView() {
       value: formatMoney(summary.total_recognized),
       caption: "POC revenue recognition",
       icon: CheckCircle2,
-      accent: "border-l-brand-info",
+      accent: "border-s-brand-info",
       tile: "bg-brand-info/10 text-brand-info",
     },
     {
@@ -87,7 +87,7 @@ export function PortfolioBillingView() {
       value: formatMoney(summary.unbilled),
       caption: "Recognized minus invoiced",
       icon: BadgeDollarSign,
-      accent: "border-l-brand-warning",
+      accent: "border-s-brand-warning",
       tile: "bg-brand-warning/10 text-brand-warning",
     },
   ]
@@ -103,7 +103,7 @@ export function PortfolioBillingView() {
             <Card
               key={card.id}
               variant="elevated"
-              className={cn("flex-row items-center gap-3 border-l-4 p-4", card.accent)}
+              className={cn("flex-row items-center gap-3 border-s-4 p-4", card.accent)}
             >
               <div
                 className={cn(

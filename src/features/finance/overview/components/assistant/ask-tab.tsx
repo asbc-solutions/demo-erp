@@ -88,7 +88,7 @@ function EmptyConversation({ onAsk }: { onAsk: (question: string) => void }) {
           Search records, explain a rule, compare figures, or find what needs a person today.
         </p>
       </div>
-      <div className="grid w-full grid-cols-1 gap-3 text-left md:grid-cols-2">
+      <div className="grid w-full grid-cols-1 gap-3 text-start md:grid-cols-2">
         {ASSISTANT_SUGGESTIONS.map((suggestion) => (
           <button
             key={suggestion.id}
@@ -180,7 +180,7 @@ function AskTab({
           onValueChange={(role) => onScopeChange({ ...scope, role })}
         />
         {!showContext ? (
-          <Button variant="secondary" size="sm" className="ml-auto" onClick={() => setShowContext(true)}>
+          <Button variant="secondary" size="sm" className="ms-auto" onClick={() => setShowContext(true)}>
             <PanelRightOpen aria-hidden />
             Show context
           </Button>
@@ -210,7 +210,7 @@ function AskTab({
                     </div>
                   </div>
                   {turn.status === "pending" ? (
-                    <div className="text-content-tertiary flex items-center gap-2 pl-4 text-[13px] leading-5">
+                    <div className="text-content-tertiary flex items-center gap-2 ps-4 text-[13px] leading-5">
                       <Spinner className="size-3.5" />
                       Reading Finance Core…
                     </div>

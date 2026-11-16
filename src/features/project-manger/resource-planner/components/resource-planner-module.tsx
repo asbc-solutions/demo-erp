@@ -65,19 +65,19 @@ const STAT_ACCENT: Record<
   { border: string; tile: string }
 > = {
   indigo: {
-    border: "border-l-brand-primary",
+    border: "border-s-brand-primary",
     tile: "bg-brand-primary/10 text-brand-primary",
   },
   emerald: {
-    border: "border-l-brand-success",
+    border: "border-s-brand-success",
     tile: "bg-brand-success/10 text-brand-success",
   },
   red: {
-    border: "border-l-brand-danger",
+    border: "border-s-brand-danger",
     tile: "bg-brand-danger/10 text-brand-danger",
   },
   violet: {
-    border: "border-l-violet-500",
+    border: "border-s-violet-500",
     tile: "bg-violet-500/10 text-violet-500",
   },
 }
@@ -239,7 +239,7 @@ export function ResourcePlannerModule() {
               key={stat.id}
               variant="elevated"
               className={cn(
-                "flex-row items-center gap-3 border-l-4 p-4",
+                "flex-row items-center gap-3 border-s-4 p-4",
                 accent.border,
               )}
             >
@@ -272,7 +272,7 @@ export function ResourcePlannerModule() {
         <div className="border-stroke-default flex flex-wrap items-center gap-2 border-b px-4 py-3">
           <div className="relative max-w-xs flex-1">
             <Search
-              className="text-content-quaternary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+              className="text-content-quaternary pointer-events-none absolute top-1/2 inset-s-3 size-4 -translate-y-1/2"
               aria-hidden
             />
             <Input
@@ -280,7 +280,7 @@ export function ResourcePlannerModule() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name or skill"
-              className="h-9 pl-9 text-[13px]"
+              className="h-9 ps-9 text-[13px]"
             />
           </div>
           <ResourceDirectoryFilters
@@ -289,7 +289,7 @@ export function ResourcePlannerModule() {
             departments={departmentOptions}
             skills={skillOptions}
           />
-          <span className="text-content-tertiary ml-auto text-xs tabular-nums">
+          <span className="text-content-tertiary ms-auto text-xs tabular-nums">
             {rows.length} of {directory.length}
           </span>
         </div>
@@ -302,7 +302,7 @@ export function ResourcePlannerModule() {
               <TableHead>Allocation</TableHead>
               <TableHead>Billable</TableHead>
               <TableHead>Rate</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              <TableHead className="text-end">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -402,7 +402,7 @@ export function ResourcePlannerModule() {
                     <TableCell className="text-content-secondary text-[13px] tabular-nums">
                       {r.rate}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <button
                         type="button"
                         onClick={() => openAssign(r.id)}

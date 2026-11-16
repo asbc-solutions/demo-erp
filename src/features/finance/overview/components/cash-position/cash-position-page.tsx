@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { Banknote, Landmark } from "lucide-react"
 
 import { KpiCard, type KpiAccent } from "@/src/shared/components/ui/kpi-card"

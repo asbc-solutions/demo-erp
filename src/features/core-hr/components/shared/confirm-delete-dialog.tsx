@@ -38,12 +38,12 @@ export function ConfirmDeleteDialog({
       <AlertDialogContent className="block max-w-md p-6">
         <AlertDialogCancel
           aria-label="Close"
-          className="text-content-tertiary hover:text-content-primary hover:bg-surface-hover absolute top-4 right-4 inline-flex size-7 items-center justify-center rounded-lg border-0 bg-transparent p-0 shadow-none"
+          className="text-content-tertiary hover:text-content-primary hover:bg-surface-hover absolute top-4 inset-e-4 inline-flex size-7 items-center justify-center rounded-lg border-0 bg-transparent p-0 shadow-none"
         >
           <X className="size-4" aria-hidden />
         </AlertDialogCancel>
 
-        <div className="flex items-start gap-3 pr-6">
+        <div className="flex items-start gap-3 pe-6">
           <span
             aria-hidden
             className="bg-brand-danger/10 text-brand-danger flex size-9 shrink-0 items-center justify-center rounded-full"

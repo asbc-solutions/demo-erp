@@ -317,7 +317,7 @@ export function BudgetTab({ projectId }: { projectId: string }) {
                   <div className="flex flex-col gap-0.5">
                     <span className="text-content-primary text-sm font-semibold">
                       {formatMoney(budget.budget_amount)}
-                      <span className="text-content-tertiary ml-2 text-[11px] font-normal">
+                      <span className="text-content-tertiary ms-2 text-[11px] font-normal">
                         FY {budget.fiscal_year}
                       </span>
                     </span>

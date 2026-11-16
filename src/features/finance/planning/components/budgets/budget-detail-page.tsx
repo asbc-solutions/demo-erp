@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { SearchX } from "lucide-react"
 import { toast } from "sonner"
 
@@ -42,7 +42,7 @@ function UsedBar({ used }: { used: number | null }) {
   return (
     <span className="flex items-center justify-end gap-2">
       <Progress value={Math.min(used, 100)} size="sm" color={used > 100 ? "red" : "indigo"} className="w-24" aria-label={`${used}% of budget used`} />
-      <span className="text-content-secondary w-10 text-right text-xs tabular-nums">{used}%</span>
+      <span className="text-content-secondary w-10 text-end text-xs tabular-nums">{used}%</span>
     </span>
   )
 }
@@ -78,7 +78,7 @@ function DraftLines({ budget }: { budget: Budget }) {
         <Input
           aria-label={`Annual budget for ${row.name}`}
           inputMode="decimal"
-          className="ml-auto h-8 w-44 text-right tabular-nums"
+          className="ms-auto h-8 w-44 text-end tabular-nums"
           value={values[row.cost_center_id] ?? ""}
           aria-invalid={!(Number(values[row.cost_center_id]) >= 0) || values[row.cost_center_id]?.trim() === ""}
           onChange={(event) => setValues((current) => ({ ...current, [row.cost_center_id]: event.target.value }))}

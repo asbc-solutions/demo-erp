@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { ChevronRight, Layers } from "lucide-react"
 
 import { Card } from "@/src/shared/components/ui/card"
@@ -60,9 +60,9 @@ export function WbsIndexView() {
           <TableHeader>
             <TableRow>
               <TableHead>Project</TableHead>
-              <TableHead className="text-right">Phases</TableHead>
-              <TableHead className="text-right">Tasks</TableHead>
-              <TableHead className="text-right">Levels</TableHead>
+              <TableHead className="text-end">Phases</TableHead>
+              <TableHead className="text-end">Tasks</TableHead>
+              <TableHead className="text-end">Levels</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -77,13 +77,13 @@ export function WbsIndexView() {
                     {row.project_name}
                   </Link>
                 </TableCell>
-                <TableCell className="text-content-secondary text-right text-sm leading-5 tabular-nums">
+                <TableCell className="text-content-secondary text-end text-sm leading-5 tabular-nums">
                   {row.phases}
                 </TableCell>
-                <TableCell className="text-content-secondary text-right text-sm leading-5 tabular-nums">
+                <TableCell className="text-content-secondary text-end text-sm leading-5 tabular-nums">
                   {row.tasks}
                 </TableCell>
-                <TableCell className="text-content-secondary text-right text-sm leading-5 tabular-nums">
+                <TableCell className="text-content-secondary text-end text-sm leading-5 tabular-nums">
                   {row.levels}
                 </TableCell>
                 <TableCell>

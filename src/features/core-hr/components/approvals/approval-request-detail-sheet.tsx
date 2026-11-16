@@ -227,12 +227,12 @@ function TimelineStep({
   const isDelegated = step.variant === "delegated"
 
   return (
-    <li className="relative flex gap-4 pl-0.5">
+    <li className="relative flex gap-4 ps-0.5">
       {!isLast && (
         <span
           aria-hidden
           className={cn(
-            "absolute top-9 left-[15px] h-[calc(100%-8px)] w-px",
+            "absolute top-9 inset-s-[15px] h-[calc(100%-8px)] w-px",
             isComplete && "bg-brand-success",
             isRejected && "bg-brand-danger",
             isReturned && "bg-brand-info",
@@ -344,9 +344,9 @@ export function ApprovalRequestDetailSheet({
       {request ? (
         <SheetContent
           side="right"
-          className="flex h-full w-full flex-col gap-0 overflow-hidden border-l border-stroke-default bg-surface-page p-0 sm:max-w-[min(1024px,calc(100vw-1.5rem))] data-[side=right]:sm:max-w-none"
+          className="flex h-full w-full flex-col gap-0 overflow-hidden border-s border-stroke-default bg-surface-page p-0 sm:max-w-[min(1024px,calc(100vw-1.5rem))] data-[side=right]:sm:max-w-none"
         >
-          <SheetHeader className="shrink-0 space-y-0 border-b border-stroke-default px-6 py-5 text-left">
+          <SheetHeader className="shrink-0 space-y-0 border-b border-stroke-default px-6 py-5 text-start">
             <nav
               className="mb-3 flex flex-wrap items-center gap-1 text-xs text-content-tertiary"
               aria-label="Breadcrumb"
@@ -541,7 +541,7 @@ export function ApprovalRequestDetailSheet({
                     />
                     Impact Summary
                   </header>
-                  <ul className="list-disc space-y-2 px-5 py-5 pl-9 text-sm leading-5 text-content-secondary">
+                  <ul className="list-disc space-y-2 px-5 py-5 ps-9 text-sm leading-5 text-content-secondary">
                     {(
                       request.impactSummaryLines ??
                       DEFAULT_REJECTED_IMPACT_LINES

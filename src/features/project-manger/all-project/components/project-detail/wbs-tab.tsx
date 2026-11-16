@@ -150,7 +150,7 @@ export function WbsTab({ projectId }: { projectId: string }) {
           <span />
           <span>Status</span>
           <span>Schedule</span>
-          <span className="text-right">Budget</span>
+          <span className="text-end">Budget</span>
         </div>
 
         {isLoading ? (
@@ -243,7 +243,7 @@ export function WbsTab({ projectId }: { projectId: string }) {
                   <span className="text-content-secondary text-xs">
                     {node.schedule}
                   </span>
-                  <span className="text-content-primary text-right text-xs font-semibold">
+                  <span className="text-content-primary text-end text-xs font-semibold">
                     {node.budget}
                   </span>
                 </div>

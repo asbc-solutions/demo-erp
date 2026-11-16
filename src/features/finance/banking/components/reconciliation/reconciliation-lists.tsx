@@ -44,16 +44,16 @@ function LineRow({
       data-selected={selected || undefined}
       data-suggested={suggestion ? "" : undefined}
       className={cn(
-        "border-stroke-light flex items-center gap-3 border-b border-l-2 border-l-transparent px-3 py-2.5 last:border-b-0",
-        suggestion && "bg-status-info-bg border-l-status-info-fg/40",
-        selected && "bg-brand-primary/10 border-l-brand-primary",
+        "border-stroke-light flex items-center gap-3 border-b border-s-2 border-s-transparent px-3 py-2.5 last:border-b-0",
+        suggestion && "bg-status-info-bg border-s-status-info-fg/40",
+        selected && "bg-brand-primary/10 border-s-brand-primary",
       )}
     >
       <button
         type="button"
         aria-pressed={selected}
         onClick={onSelect}
-        className="focus-visible:ring-ring flex min-w-0 flex-1 items-center gap-3 rounded-sm text-left outline-none focus-visible:ring-2"
+        className="focus-visible:ring-ring flex min-w-0 flex-1 items-center gap-3 rounded-sm text-start outline-none focus-visible:ring-2"
       >
         <span className="text-content-secondary w-12 shrink-0 text-[13px] leading-5">{dayMonth(line.date)}</span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">

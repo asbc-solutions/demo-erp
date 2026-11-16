@@ -103,7 +103,7 @@ export function CertificationsTab() {
                 <Badge
                   variant="neutral"
                   className={cn(
-                    "ml-1 px-1.5 tabular-nums",
+                    "ms-1 px-1.5 tabular-nums",
                     active && "bg-white/20 text-white",
                   )}
                 >

@@ -640,7 +640,7 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
             <TableHead>Cost Δ</TableHead>
             <TableHead>Schedule Δ</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="text-end">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -718,7 +718,7 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                   <TableCell>
                     <StatusPill status={cr.status_label} />
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     {cr.status === "draft" ? (
                       <Button
                         variant="outline-primary"
@@ -789,7 +789,7 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                           )
                         }
                       >
-                        <SelectTrigger className="ml-auto h-7 w-[120px] text-[11px]">
+                        <SelectTrigger className="ms-auto h-7 w-[120px] text-[11px]">
                           <SelectValue placeholder="Execution…" />
                         </SelectTrigger>
                         <SelectContent>

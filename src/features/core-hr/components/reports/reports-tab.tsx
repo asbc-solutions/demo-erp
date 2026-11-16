@@ -802,7 +802,7 @@ export function ReportsTab() {
                       <span
                         aria-hidden
                         className={cn(
-                          "absolute inset-y-0 left-0 rounded-full",
+                          "absolute inset-y-0 inset-s-0 rounded-full",
                           BAR_COLOR[row.color],
                         )}
                         style={{ width: `${percent}%` }}

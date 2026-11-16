@@ -246,7 +246,7 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
             {blockers.length === 0 ? (
               <p className="text-status-success-fg text-[13px] leading-5">Nothing is in the way.</p>
             ) : (
-              <ul className="text-content-primary flex list-disc flex-col gap-1 pl-5 text-[13px] leading-5">
+              <ul className="text-content-primary flex list-disc flex-col gap-1 ps-5 text-[13px] leading-5">
                 {blockers.map((blocker) => (
                   <li key={blocker}>{blocker}</li>
                 ))}
@@ -261,8 +261,8 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
                   <TableRow>
                     <TableHead>Line</TableHead>
                     <TableHead>Account</TableHead>
-                    <TableHead className="text-right">Debit</TableHead>
-                    <TableHead className="text-right">Credit</TableHead>
+                    <TableHead className="text-end">Debit</TableHead>
+                    <TableHead className="text-end">Credit</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -271,7 +271,7 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
                     <TableCell>
                       <span className="font-mono">{accountCode}</span> {account?.name}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={net} />
                     </TableCell>
                     <TableCell />
@@ -281,7 +281,7 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
                     <TableCell>
                       <span className="font-mono">{list.vat_account}</span> Input VAT
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={vat} />
                     </TableCell>
                     <TableCell />
@@ -292,7 +292,7 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
                       <span className="font-mono">{treasury?.account_code ?? "—"}</span> {treasury?.name}
                     </TableCell>
                     <TableCell />
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={amount} />
                     </TableCell>
                   </TableRow>
@@ -300,10 +300,10 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
                 <TableFooter>
                   <TableRow>
                     <TableCell colSpan={2}>Total</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={round2(net + vat)} emphasis="strong" />
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={amount} emphasis="strong" />
                     </TableCell>
                   </TableRow>

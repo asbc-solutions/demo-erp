@@ -104,7 +104,7 @@ function AvgScore({ score }: Readonly<{ score: number | null }>) {
   return (
     <span className="text-content-primary">
       <span className="text-sm font-bold">{score}</span>
-      <span className="ml-0.5 text-xs text-content-tertiary">/5</span>
+      <span className="ms-0.5 text-xs text-content-tertiary">/5</span>
     </span>
   )
 }

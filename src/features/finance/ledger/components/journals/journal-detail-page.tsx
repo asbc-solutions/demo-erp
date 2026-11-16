@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Printer, SearchX, Undo2 } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -65,8 +65,8 @@ function LinesTable({ lines, currency, caption }: { lines: JournalLine[]; curren
           <TableRow>
             <TableHead>Account</TableHead>
             <TableHead>Description</TableHead>
-            <TableHead className="text-right">Debit ({currency})</TableHead>
-            <TableHead className="text-right">Credit ({currency})</TableHead>
+            <TableHead className="text-end">Debit ({currency})</TableHead>
+            <TableHead className="text-end">Credit ({currency})</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -79,10 +79,10 @@ function LinesTable({ lines, currency, caption }: { lines: JournalLine[]; curren
                 </Link>
               </TableCell>
               <TableCell className="text-content-secondary">{row.description || "—"}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <Amount value={row.debit} />
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <Amount value={row.credit} />
               </TableCell>
             </TableRow>
@@ -91,10 +91,10 @@ function LinesTable({ lines, currency, caption }: { lines: JournalLine[]; curren
         <TableFooter>
           <TableRow>
             <TableCell colSpan={2}>Total</TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-end">
               <Amount value={debit} emphasis="strong" />
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-end">
               <Amount value={credit} emphasis="strong" />
             </TableCell>
           </TableRow>

@@ -15,7 +15,7 @@ export function StepBackButton({ onClick, className }: StepBackButtonProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        "text-content-quaternary hover:text-content-primary -ml-1 inline-flex w-fit items-center gap-1.5 rounded text-xs leading-[18px] font-normal transition-colors",
+        "text-content-quaternary hover:text-content-primary -ms-1 inline-flex w-fit items-center gap-1.5 rounded text-xs leading-[18px] font-normal transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary",
         className,
       )}

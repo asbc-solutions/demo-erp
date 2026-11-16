@@ -113,7 +113,7 @@ function NewCustodyDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
                 id="custody-amount"
                 inputMode="decimal"
                 placeholder="0.00"
-                className="text-right tabular-nums"
+                className="text-end tabular-nums"
                 aria-invalid={Boolean(errors.amount)}
                 {...register("amount")}
               />

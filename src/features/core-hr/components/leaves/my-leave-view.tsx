@@ -116,7 +116,7 @@ function StatCard({
           </div>
           <div className="relative h-2 overflow-hidden rounded-full bg-stroke-light">
             <div
-              className="absolute inset-y-0 left-0 rounded-full bg-brand-primary"
+              className="absolute inset-y-0 inset-s-0 rounded-full bg-brand-primary"
               style={{ width: `${Math.min(Math.max(progress ?? 0, 0), 100)}%` }}
             />
           </div>
@@ -158,7 +158,7 @@ function AnnualBalanceCard({
             </p>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-end">
           <p
             className={cn(
               "text-3xl font-bold leading-9 tabular-nums",
@@ -179,11 +179,11 @@ function AnnualBalanceCard({
         </div>
         <div className="relative h-3 overflow-hidden rounded-full bg-stroke-light">
           <div
-            className="absolute inset-y-0 left-0 rounded-full bg-brand-primary"
+            className="absolute inset-y-0 inset-s-0 rounded-full bg-brand-primary"
             style={{ width: `${Math.min(Math.max(remainingPct, 0), 100)}%` }}
           />
         </div>
-        <p className="text-right text-xs text-content-tertiary">
+        <p className="text-end text-xs text-content-tertiary">
           {remainingPct}% remaining
         </p>
       </div>
@@ -198,7 +198,7 @@ function RequestsTableSkeleton() {
     <TableBody>
       {Array.from({ length: 4 }).map((_, i) => (
         <TableRow key={i} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <Skeleton className="h-5 w-20 rounded-full" />
           </TableCell>
           <TableCell>
@@ -210,7 +210,7 @@ function RequestsTableSkeleton() {
           <TableCell>
             <Skeleton className="h-5 w-20 rounded-full" />
           </TableCell>
-          <TableCell className="pr-6">
+          <TableCell className="pe-6">
             <Skeleton className="h-4 w-20" />
           </TableCell>
           <TableCell />
@@ -241,7 +241,7 @@ function RequestRow({
 
   return (
     <TableRow className="border-b border-stroke-default hover:bg-surface-hover/50">
-      <TableCell className="pl-6">
+      <TableCell className="ps-6">
         <span className="inline-flex items-center gap-2 text-sm text-content-primary">
           <span className={cn("size-2.5 shrink-0 rounded-full", style.dotClass)} />
           {type?.name ?? "Leave"}
@@ -266,10 +266,10 @@ function RequestRow({
           {request.status_label ?? status.label}
         </span>
       </TableCell>
-      <TableCell className="pr-6 text-sm text-content-tertiary">
+      <TableCell className="pe-6 text-sm text-content-tertiary">
         {formatLeaveDate(request.submitted_at ?? request.created_at)}
       </TableCell>
-      <TableCell className="pr-4 text-right">
+      <TableCell className="pe-4 text-end">
         {canCancel ? (
           <Button
             variant="ghost"
@@ -469,11 +469,11 @@ export function MyLeaveView() {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="pl-6">Type</TableHead>
+                  <TableHead className="ps-6">Type</TableHead>
                   <TableHead>Dates</TableHead>
                   <TableHead>Days</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="pr-6">Submitted</TableHead>
+                  <TableHead className="pe-6">Submitted</TableHead>
                   <TableHead className="w-0" />
                 </TableRow>
               </TableHeader>

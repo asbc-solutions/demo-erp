@@ -162,7 +162,7 @@ export function UploadDocumentDialog({
           className="flex flex-col gap-4 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-base font-semibold text-content-primary">
               Upload Document
             </DialogTitle>

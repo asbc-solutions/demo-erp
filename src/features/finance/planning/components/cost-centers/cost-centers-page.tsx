@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/src/i18n/navigation"
 import { Plus } from "lucide-react"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -19,7 +19,7 @@ import { useCostCenters } from "../../lib/queries/planning"
 import type { CostCenter } from "../../lib/types/planning"
 import { NewCostCenterDialog } from "./new-cost-center-dialog"
 
-const INDENT = ["", "pl-5", "pl-10", "pl-14"] as const
+const INDENT = ["", "ps-5", "ps-10", "ps-14"] as const
 
 const COLUMNS: FinanceColumn<CostCenter>[] = [
   {

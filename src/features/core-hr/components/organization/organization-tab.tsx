@@ -162,7 +162,7 @@ function OrgRowHeader({ icon, title, meta }: OrgRowHeaderProps) {
   return (
     <AccordionTrigger
       hideChevron
-      className="group hover:bg-surface-white rounded-[10px] px-2 pr-12"
+      className="group hover:bg-surface-white rounded-[10px] px-2 pe-12"
     >
       <ChevronRight className="text-content-quaternary size-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90" />
       <span
@@ -261,10 +261,10 @@ function BranchRow({ branch, branchDepts, onEdit, onDelete }: BranchRowProps) {
         title={branch.branch_name}
         meta={`${branch.branch_code} · ${formatType(branch.branch_type)} · ${employeeCount} employees`}
       />
-      <div className="absolute top-2 right-2">
+      <div className="absolute top-2 inset-e-2">
         <OrgRowActions editLabel="Edit Branch" onEdit={onEdit} onDelete={onDelete} />
       </div>
-      <AccordionContent className="pr-2 pl-9">
+      <AccordionContent className="pe-2 ps-9">
         {branchDepts.length === 0 ? (
           <p className="text-content-tertiary py-3 text-center text-xs">
             No departments in this branch.
@@ -278,7 +278,7 @@ function BranchRow({ branch, branchDepts, onEdit, onDelete }: BranchRowProps) {
               return (
                 <li
                   key={dept.id}
-                  className="border-brand-primary bg-surface-white flex items-center gap-3 rounded-[8px] border-l-2 px-3 py-2"
+                  className="border-brand-primary bg-surface-white flex items-center gap-3 rounded-[8px] border-s-2 px-3 py-2"
                 >
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span className="text-content-primary truncate text-sm leading-5 font-semibold">
@@ -412,14 +412,14 @@ export function OrganizationTab() {
                 title={dept.dept_name}
                 meta={`${dept.dept_code} · ${formatType(dept.dept_type)}`}
               />
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 inset-e-2">
                 <OrgRowActions
                   editLabel="Edit Department"
                   onEdit={() => setEditDept(dept)}
                   onDelete={() => setDeleteDept(dept)}
                 />
               </div>
-              <AccordionContent className="pr-2 pl-9">
+              <AccordionContent className="pe-2 ps-9">
                 <DepartmentPositions deptId={dept.id} />
               </AccordionContent>
             </AccordionItem>

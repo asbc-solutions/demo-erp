@@ -330,7 +330,7 @@ export function TransferEmployeeDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl gap-0 p-0">
         <div className="flex flex-col gap-5 p-6">
-          <div className="flex flex-col gap-3 pr-8">
+          <div className="flex flex-col gap-3 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
               Transfer Employee
             </DialogTitle>

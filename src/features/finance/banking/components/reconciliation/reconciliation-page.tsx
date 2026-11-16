@@ -1,8 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Link, useRouter } from "@/src/i18n/navigation"
 import { CircleCheck, Link2, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
@@ -128,7 +127,7 @@ function Matched({ data, onUnmatch, busy }: { data: ReconciliationWorkspace; onU
               ) : null}
             </span>
             {pair.auto ? (
-              <span className="text-content-tertiary w-20 text-right text-xs">Bank feed</span>
+              <span className="text-content-tertiary w-20 text-end text-xs">Bank feed</span>
             ) : (
               <Button variant="ghost" size="sm" className="w-20" disabled={busy} onClick={() => onUnmatch(pair.line.id)}>
                 Unmatch
@@ -331,7 +330,7 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
               <Button
                 variant="outline"
                 size="sm"
-                className="ml-auto"
+                className="ms-auto"
                 disabled={!showSuggestions || bulk === 0 || busy}
                 onClick={() =>
                   actions.acceptAll.mutate(ACCEPT_ALL_FROM, {
@@ -393,7 +392,7 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
                   Too far apart to match. Create an entry for the difference, or pick another pair.
                 </span>
               ) : null}
-              <Button variant="primary" size="sm" className="ml-auto" disabled={!canMatch || busy} onClick={() => setConfirmPair(true)}>
+              <Button variant="primary" size="sm" className="ms-auto" disabled={!canMatch || busy} onClick={() => setConfirmPair(true)}>
                 <Link2 aria-hidden />
                 Match pair
               </Button>

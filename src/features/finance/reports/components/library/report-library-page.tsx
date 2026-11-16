@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { ArrowDownUp, Banknote, ChartColumn, Scale, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/src/shared/lib/utils/utils"

@@ -74,10 +74,10 @@ function LinesCard({ invoice }: Readonly<{ invoice: Invoice }>) {
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="px-5">Description</TableHead>
-            <TableHead className="w-[90px] text-right">Qty</TableHead>
-            <TableHead className="w-[120px] text-right">Unit Price</TableHead>
-            <TableHead className="w-[90px] text-right">Tax</TableHead>
-            <TableHead className="w-[130px] px-5 text-right">Line Total</TableHead>
+            <TableHead className="w-[90px] text-end">Qty</TableHead>
+            <TableHead className="w-[120px] text-end">Unit Price</TableHead>
+            <TableHead className="w-[90px] text-end">Tax</TableHead>
+            <TableHead className="w-[130px] px-5 text-end">Line Total</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -85,10 +85,10 @@ function LinesCard({ invoice }: Readonly<{ invoice: Invoice }>) {
             invoice.lines.map((line) => (
               <TableRow key={line.id}>
                 <TableCell className="px-5 py-3 font-medium text-content-primary">{line.description}</TableCell>
-                <TableCell className="py-3 text-right">{line.quantity}</TableCell>
-                <TableCell className="py-3 text-right">{formatCurrency(line.unit_price)}</TableCell>
-                <TableCell className="py-3 text-right">{line.tax_percent}%</TableCell>
-                <TableCell className="px-5 py-3 text-right font-semibold">
+                <TableCell className="py-3 text-end">{line.quantity}</TableCell>
+                <TableCell className="py-3 text-end">{formatCurrency(line.unit_price)}</TableCell>
+                <TableCell className="py-3 text-end">{line.tax_percent}%</TableCell>
+                <TableCell className="px-5 py-3 text-end font-semibold">
                   {formatCurrency(line.line_total)}
                 </TableCell>
               </TableRow>
@@ -403,7 +403,7 @@ function ActionBar({ invoice, onBack }: Readonly<{ invoice: Invoice; onBack: () 
         <ArrowLeft aria-hidden />
         Back
       </Button>
-      <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="ms-auto flex flex-wrap items-center gap-2">
         {can.write(SALES_RESOURCES.invoice) ? (
           <>
             {invoice.status === "draft" ? (

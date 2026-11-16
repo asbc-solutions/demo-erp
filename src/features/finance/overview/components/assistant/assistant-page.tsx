@@ -124,7 +124,7 @@ function AssistantPage() {
               <StatusPill status="pending" label={`${enabledGroups} data groups`} />
             ) : null}
             <StatusPill status="prepared" label="Read only" />
-            <p className="text-content-tertiary ml-auto text-[13px] leading-5">
+            <p className="text-content-tertiary ms-auto text-[13px] leading-5">
               Ask about the ledger, cash, tax or the close. Every answer says where it came from.
             </p>
           </div>

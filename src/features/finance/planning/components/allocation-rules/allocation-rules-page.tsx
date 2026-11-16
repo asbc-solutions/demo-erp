@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
@@ -209,7 +209,7 @@ function RuleCard({ rule, onEdit }: { rule: AllocationRule; onEdit: () => void }
         </h3>
         <StatusPill status={`rule-${rule.status}`} label={status.label} tone={status.tone} />
         <StatusPill status="prepared" label={rule.basis_label} />
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ms-auto flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"

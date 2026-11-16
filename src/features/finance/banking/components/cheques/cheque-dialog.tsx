@@ -146,11 +146,11 @@ function ChequeDialog({ direction, open, onOpenChange, nextNumber }: ChequeDialo
                     id="cheque-amount"
                     inputMode="decimal"
                     placeholder="0.00"
-                    className="pr-14 text-right tabular-nums"
+                    className="pe-14 text-end tabular-nums"
                     aria-invalid={Boolean(errors.amount)}
                     {...register("amount")}
                   />
-                  <span className="text-content-tertiary pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[13px]">
+                  <span className="text-content-tertiary pointer-events-none absolute top-1/2 inset-e-3 -translate-y-1/2 text-[13px]">
                     EGP
                   </span>
                 </div>

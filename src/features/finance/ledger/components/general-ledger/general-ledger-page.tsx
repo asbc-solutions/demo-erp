@@ -1,8 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Link, useRouter } from "@/src/i18n/navigation"
 import { SearchX } from "lucide-react"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -94,9 +93,9 @@ function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: str
                   <TableHead>Entry no.</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Source</TableHead>
-                  <TableHead className="text-right">Debit (EGP)</TableHead>
-                  <TableHead className="text-right">Credit (EGP)</TableHead>
-                  <TableHead className="text-right">Balance (EGP)</TableHead>
+                  <TableHead className="text-end">Debit (EGP)</TableHead>
+                  <TableHead className="text-end">Credit (EGP)</TableHead>
+                  <TableHead className="text-end">Balance (EGP)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -104,7 +103,7 @@ function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: str
                   <TableCell colSpan={6} className="text-content-secondary font-medium">
                     Opening balance
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <Amount value={data.opening} emphasis="strong" />
                   </TableCell>
                 </TableRow>
@@ -118,9 +117,9 @@ function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: str
                     </TableCell>
                     <TableCell className="max-w-72 truncate">{row.description}</TableCell>
                     <TableCell className="text-content-secondary">{row.source}</TableCell>
-                    <TableCell className="text-right">{row.debit ? <Amount value={row.debit} /> : null}</TableCell>
-                    <TableCell className="text-right">{row.credit ? <Amount value={row.credit} /> : null}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">{row.debit ? <Amount value={row.debit} /> : null}</TableCell>
+                    <TableCell className="text-end">{row.credit ? <Amount value={row.credit} /> : null}</TableCell>
+                    <TableCell className="text-end">
                       <Amount value={row.balance} />
                     </TableCell>
                   </TableRow>
@@ -129,13 +128,13 @@ function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: str
               <TableFooter>
                 <TableRow>
                   <TableCell colSpan={4}>Closing balance</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <Amount value={data.debit_total} emphasis="strong" />
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <Amount value={data.credit_total} emphasis="strong" />
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <Amount value={data.closing} emphasis="strong" />
                   </TableCell>
                 </TableRow>

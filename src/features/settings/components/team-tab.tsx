@@ -63,7 +63,7 @@ function MemberRow({
         <span className="text-content-primary truncate text-[13px] leading-[18px] font-medium">
           {member.name}
           {!member.is_active ? (
-            <span className="text-content-quaternary ml-2 text-[11px] font-normal">
+            <span className="text-content-quaternary ms-2 text-[11px] font-normal">
               (inactive)
             </span>
           ) : null}

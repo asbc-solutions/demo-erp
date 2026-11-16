@@ -60,7 +60,7 @@ function AddressesCard({ addresses }: Readonly<{ addresses: CustomerAddress[] }>
             <TableHead>Address</TableHead>
             <TableHead className="w-40">City</TableHead>
             <TableHead className="w-44">Governorate</TableHead>
-            <TableHead className="w-28 px-6 text-right">Country</TableHead>
+            <TableHead className="w-28 px-6 text-end">Country</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -86,7 +86,7 @@ function AddressesCard({ addresses }: Readonly<{ addresses: CustomerAddress[] }>
                 <TableCell className="py-3 text-content-secondary">
                   {address.governorate}
                 </TableCell>
-                <TableCell className="px-6 py-3 text-right text-content-secondary">
+                <TableCell className="px-6 py-3 text-end text-content-secondary">
                   {address.country_code ?? "—"}
                 </TableCell>
               </TableRow>
@@ -131,7 +131,7 @@ export function CustomerDetailView({
           <Button
             type="button"
             variant="secondary"
-            className="ml-auto"
+            className="ms-auto"
             onClick={() => setEditOpen(true)}
           >
             <Pencil aria-hidden />

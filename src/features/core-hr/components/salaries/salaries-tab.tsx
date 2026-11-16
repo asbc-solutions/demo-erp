@@ -137,7 +137,7 @@ function SalaryCostByDepartment({
                 <span
                   aria-hidden
                   className={cn(
-                    "absolute inset-y-0 left-0 rounded-full",
+                    "absolute inset-y-0 inset-s-0 rounded-full",
                     BAR_COLOR_CLASS[color]
                   )}
                   style={{ width: `${percent}%` }}
@@ -163,11 +163,11 @@ function DepartmentBreakdown({
         <table className="w-full text-sm">
           <thead>
             <tr className="text-content-tertiary text-xs">
-              <th className="py-2 text-left font-medium">Department</th>
-              <th className="py-2 text-right font-medium">Headcount</th>
-              <th className="py-2 text-right font-medium">Total Cost</th>
-              <th className="py-2 text-right font-medium">Avg Salary</th>
-              <th className="py-2 text-right font-medium">% of Total</th>
+              <th className="py-2 text-start font-medium">Department</th>
+              <th className="py-2 text-end font-medium">Headcount</th>
+              <th className="py-2 text-end font-medium">Total Cost</th>
+              <th className="py-2 text-end font-medium">Avg Salary</th>
+              <th className="py-2 text-end font-medium">% of Total</th>
             </tr>
           </thead>
           <tbody className="text-content-secondary">
@@ -188,15 +188,15 @@ function DepartmentBreakdown({
                     {row.dept_name}
                   </span>
                 </td>
-                <td className="text-right">{row.headcount}</td>
-                <td className="text-right">{formatEGPK(row.total_cost)}</td>
-                <td className="text-right">
+                <td className="text-end">{row.headcount}</td>
+                <td className="text-end">{formatEGPK(row.total_cost)}</td>
+                <td className="text-end">
                   EGP{" "}
                   {row.avg_salary.toLocaleString("en-US", {
                     maximumFractionDigits: 0,
                   })}
                 </td>
-                <td className="text-content-primary text-right font-semibold">
+                <td className="text-content-primary text-end font-semibold">
                   {row.pct_of_total.toFixed(1)}%
                 </td>
               </tr>

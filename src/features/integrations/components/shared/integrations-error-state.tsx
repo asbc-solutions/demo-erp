@@ -14,7 +14,7 @@ export function IntegrationsErrorState({
         <button
           type="button"
           onClick={onRetry}
-          className="ml-1 text-brand-primary underline"
+          className="ms-1 text-brand-primary underline"
         >
           Try again
         </button>

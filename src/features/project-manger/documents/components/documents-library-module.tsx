@@ -141,7 +141,7 @@ export function DocumentsLibraryModule() {
                     <button
                       type="button"
                       aria-label="Document options"
-                      className="text-content-tertiary hover:text-content-primary absolute top-2 right-2"
+                      className="text-content-tertiary hover:text-content-primary absolute top-2 inset-e-2"
                     >
                       <MoreHorizontal className="size-4" aria-hidden />
                     </button>

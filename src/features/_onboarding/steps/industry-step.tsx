@@ -95,7 +95,7 @@ export function IndustryStep({
                 aria-pressed={selected}
                 onClick={() => setStage(opt.id)}
                 className={cn(
-                  "bg-surface-white flex w-full items-center justify-between gap-4 rounded-2xl border p-4 text-left transition-all",
+                  "bg-surface-white flex w-full items-center justify-between gap-4 rounded-2xl border p-4 text-start transition-all",
                   "hover:border-brand-primary/40 hover:bg-brand-primary/5",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary",
                   selected

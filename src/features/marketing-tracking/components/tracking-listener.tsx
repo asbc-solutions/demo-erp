@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/src/i18n/navigation"
 import { useSession } from "next-auth/react"
 
 import { resolveModuleFromPath } from "@/src/shared/lib/constants/modules"

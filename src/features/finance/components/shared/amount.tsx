@@ -8,8 +8,8 @@ import { formatAmount, formatRate } from "../../lib/utils/money"
 const amountVariants = cva("inline-flex flex-col tabular-nums", {
   variants: {
     align: {
-      end: "items-end text-right",
-      start: "items-start text-left",
+      end: "items-end text-end",
+      start: "items-start text-start",
     },
     emphasis: {
       default: "text-content-primary",

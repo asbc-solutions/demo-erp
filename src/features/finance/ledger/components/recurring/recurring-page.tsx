@@ -191,7 +191,7 @@ function NewRecurringDialog({ open, onOpenChange }: { open: boolean; onOpenChang
             </Field>
             <Field>
               <FieldLabel htmlFor="recurring-amount">Amount (EGP) *</FieldLabel>
-              <Input id="recurring-amount" inputMode="decimal" placeholder="0.00" className="text-right tabular-nums" aria-invalid={Boolean(errors.amount)} {...register("amount")} />
+              <Input id="recurring-amount" inputMode="decimal" placeholder="0.00" className="text-end tabular-nums" aria-invalid={Boolean(errors.amount)} {...register("amount")} />
               {errors.amount ? <FieldError>{errors.amount.message}</FieldError> : null}
             </Field>
           </DialogBody>

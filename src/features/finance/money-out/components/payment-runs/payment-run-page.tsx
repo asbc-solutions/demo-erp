@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -100,10 +100,10 @@ function PostingPreview({
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <Amount value={total} emphasis="strong" />
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <Amount value={total} emphasis="strong" />
               </TableCell>
             </TableRow>

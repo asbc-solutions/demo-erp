@@ -135,7 +135,7 @@ export function NewProgramDialog({
           className="flex flex-col gap-5 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
               New Programme
             </DialogTitle>

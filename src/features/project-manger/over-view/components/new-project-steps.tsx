@@ -81,14 +81,14 @@ export function ClassificationStep({ form, update }: StepProps) {
               type="button"
               onClick={() => update({ type: type.id })}
               className={cn(
-                "relative flex flex-col gap-2 rounded-xl border p-4 text-left transition-colors",
+                "relative flex flex-col gap-2 rounded-xl border p-4 text-start transition-colors",
                 selected
                   ? "border-brand-primary bg-brand-primary/[0.06]"
                   : "border-stroke-default hover:border-stroke-input bg-surface-white",
               )}
             >
               {selected && (
-                <span className="bg-brand-primary absolute top-3 right-3 flex size-5 items-center justify-center rounded-full text-white">
+                <span className="bg-brand-primary absolute top-3 inset-e-3 flex size-5 items-center justify-center rounded-full text-white">
                   <Check className="size-3" strokeWidth={3} aria-hidden />
                 </span>
               )}

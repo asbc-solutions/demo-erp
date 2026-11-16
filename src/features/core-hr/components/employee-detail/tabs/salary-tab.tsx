@@ -209,7 +209,7 @@ function CompensationHistoryCard({
           No compensation changes recorded yet.
         </p>
       ) : (
-        <ol className="relative flex flex-col gap-3 pl-2">
+        <ol className="relative flex flex-col gap-3 ps-2">
           {records.map((record, index) => {
             const isLast = index === records.length - 1
             const config = typeConfig(record.change_type)
@@ -222,7 +222,7 @@ function CompensationHistoryCard({
                 {!isLast && (
                   <span
                     aria-hidden
-                    className="bg-stroke-default absolute top-9 left-3.75 h-[calc(100%-12px)] w-px"
+                    className="bg-stroke-default absolute top-9 inset-s-3.75 h-[calc(100%-12px)] w-px"
                   />
                 )}
                 <span
@@ -244,7 +244,7 @@ function CompensationHistoryCard({
                     {record.is_current && (
                       <Badge variant="neutral">Current</Badge>
                     )}
-                    <span className="text-content-primary ml-auto text-sm font-semibold">
+                    <span className="text-content-primary ms-auto text-sm font-semibold">
                       {formatMoney(record.basic_salary, currency)}
                     </span>
                   </div>

@@ -39,7 +39,7 @@ function ContactTableSkeleton() {
     <TableBody>
       {Array.from({ length: 5 }).map((_, index) => (
         <TableRow key={index} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <Skeleton className="h-4 w-36" />
           </TableCell>
           <TableCell>
@@ -57,8 +57,8 @@ function ContactTableSkeleton() {
           <TableCell>
             <Skeleton className="h-4 w-6" />
           </TableCell>
-          <TableCell className="pr-6 text-right">
-            <Skeleton className="ml-auto h-7 w-16 rounded-md" />
+          <TableCell className="pe-6 text-end">
+            <Skeleton className="ms-auto h-7 w-16 rounded-md" />
           </TableCell>
         </TableRow>
       ))}
@@ -165,13 +165,13 @@ export function EmergencyContactsTab() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Contact</TableHead>
+              <TableHead className="ps-6">Contact</TableHead>
               <TableHead>Employee</TableHead>
               <TableHead>Relationship</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Primary</TableHead>
-              <TableHead className="pr-6 text-right">Actions</TableHead>
+              <TableHead className="pe-6 text-end">Actions</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -210,7 +210,7 @@ export function EmergencyContactsTab() {
 
                   return (
                     <TableRow key={contact.id}>
-                      <TableCell className="text-content-primary pl-6 text-sm font-semibold">
+                      <TableCell className="text-content-primary ps-6 text-sm font-semibold">
                         {contact.full_name}
                       </TableCell>
                       <TableCell className="text-content-tertiary text-sm">
@@ -242,7 +242,7 @@ export function EmergencyContactsTab() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="pr-6 text-right">
+                      <TableCell className="pe-6 text-end">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"

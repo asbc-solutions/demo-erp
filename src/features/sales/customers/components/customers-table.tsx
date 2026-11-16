@@ -39,7 +39,7 @@ export function CustomersTable({
             <TableHead className="w-62.5">Email</TableHead>
             <TableHead className="w-47.5">Salesperson</TableHead>
             <TableHead className="w-30">Status</TableHead>
-            <TableHead className="w-18 px-5 text-right">Actions</TableHead>
+            <TableHead className="w-18 px-5 text-end">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -79,7 +79,7 @@ export function CustomersTable({
                   <CustomerStatusBadge status={customer.status} label={customer.status_label} />
                 </TableCell>
                 <TableCell
-                  className="px-5 py-3 text-right"
+                  className="px-5 py-3 text-end"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <CustomerActions

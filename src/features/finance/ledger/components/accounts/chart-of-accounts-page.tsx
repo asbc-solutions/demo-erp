@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/src/i18n/navigation"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -14,7 +14,7 @@ import { StatusPill } from "../../../components/shared/status-pill"
 import { useLedgerAccounts } from "../../lib/queries/ledger"
 import type { LedgerAccount } from "../../lib/types/ledger"
 
-const INDENT = ["pl-0", "pl-4", "pl-8", "pl-12"]
+const INDENT = ["ps-0", "ps-4", "ps-8", "ps-12"]
 
 const COLUMNS: FinanceColumn<LedgerAccount>[] = [
   {

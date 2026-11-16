@@ -36,7 +36,7 @@ const SUMMARY_CARDS: {
     label: "Milestones",
     caption: "Across active projects",
     icon: Diamond,
-    accent: "border-l-brand-primary",
+    accent: "border-s-brand-primary",
     tile: "bg-brand-primary/10 text-brand-primary",
   },
   {
@@ -44,7 +44,7 @@ const SUMMARY_CARDS: {
     label: "Overdue",
     caption: "Past their due date",
     icon: TriangleAlert,
-    accent: "border-l-brand-danger",
+    accent: "border-s-brand-danger",
     tile: "bg-brand-danger/10 text-brand-danger",
   },
   {
@@ -52,7 +52,7 @@ const SUMMARY_CARDS: {
     label: "Due This Week",
     caption: "Need attention now",
     icon: CalendarClock,
-    accent: "border-l-brand-warning",
+    accent: "border-s-brand-warning",
     tile: "bg-brand-warning/10 text-brand-warning",
   },
   {
@@ -60,7 +60,7 @@ const SUMMARY_CARDS: {
     label: "On Critical Path",
     caption: "Zero float items",
     icon: Flag,
-    accent: "border-l-brand-info",
+    accent: "border-s-brand-info",
     tile: "bg-brand-info/10 text-brand-info",
   },
 ]
@@ -90,7 +90,7 @@ export function PortfolioScheduleView() {
             <Card
               key={card.id}
               variant="elevated"
-              className={cn("flex-row items-center gap-3 border-l-4 p-4", card.accent)}
+              className={cn("flex-row items-center gap-3 border-s-4 p-4", card.accent)}
             >
               <div
                 className={cn(

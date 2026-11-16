@@ -136,7 +136,7 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
                   </Label>
                 </div>
                 {group.id === cash?.id ? (
-                  <div className="flex items-start gap-2.5 pl-7">
+                  <div className="flex items-start gap-2.5 ps-7">
                     <Checkbox
                       id="assistant-bank-balances"
                       checked={settings.bank_balances_admin_only}
@@ -198,7 +198,7 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
 
       <SettingsCard title="What it will never do">
         <p className="text-content-primary text-sm leading-5 font-semibold">These are not settings.</p>
-        <ul className="text-content-secondary flex list-disc flex-col gap-1 pl-5 text-sm leading-5">
+        <ul className="text-content-secondary flex list-disc flex-col gap-1 ps-5 text-sm leading-5">
           {ASSISTANT_NEVER.map((rule) => (
             <li key={rule}>{rule}</li>
           ))}

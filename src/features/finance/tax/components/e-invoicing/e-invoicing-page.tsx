@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/src/i18n/navigation"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"

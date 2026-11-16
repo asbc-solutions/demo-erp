@@ -55,7 +55,7 @@ export function QuickActionsCard({
               key={action.id}
               type="button"
               onClick={() => onAction(action.id)}
-              className="border-stroke-default hover:border-brand-primary/40 hover:bg-surface-hover flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors"
+              className="border-stroke-default hover:border-brand-primary/40 hover:bg-surface-hover flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-start transition-colors"
             >
               <Icon className="text-content-tertiary size-4 shrink-0" aria-hidden />
               <span className="text-content-primary text-[13px] leading-5 font-medium">

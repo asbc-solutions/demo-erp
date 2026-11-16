@@ -205,7 +205,7 @@ export function PromoteEmployeeDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl gap-0 p-0">
         <div className="flex flex-col gap-5 p-6">
-          <div className="flex flex-col gap-3 pr-8">
+          <div className="flex flex-col gap-3 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
               Promote Employee
             </DialogTitle>
@@ -262,7 +262,7 @@ export function PromoteEmployeeDialog({
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
-                    <span className="text-content-quaternary absolute top-1/2 left-3 -translate-y-1/2 font-mono text-xs">
+                    <span className="text-content-quaternary absolute top-1/2 inset-s-3 -translate-y-1/2 font-mono text-xs">
                       {currency}
                     </span>
                     <Input
@@ -271,7 +271,7 @@ export function PromoteEmployeeDialog({
                       value={newBasicSalary}
                       onChange={(e) => setNewBasicSalary(e.target.value)}
                       placeholder="40000"
-                      className="h-10 rounded-md pl-12 font-mono text-sm"
+                      className="h-10 rounded-md ps-12 font-mono text-sm"
                     />
                   </div>
                   {deltaPct !== null && (
@@ -362,7 +362,7 @@ export function PromoteEmployeeDialog({
                   <TriangleAlert />
                   <AlertTitle>Review before submitting</AlertTitle>
                   <AlertDescription>
-                    <ul className="list-disc space-y-1 pl-4">
+                    <ul className="list-disc space-y-1 ps-4">
                       {preview.warnings.map((w) => (
                         <li key={w}>{w}</li>
                       ))}

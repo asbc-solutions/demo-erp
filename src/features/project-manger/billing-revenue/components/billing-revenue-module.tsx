@@ -47,19 +47,19 @@ const STAT_ACCENT: Record<
   { border: string; tile: string }
 > = {
   indigo: {
-    border: "border-l-brand-primary",
+    border: "border-s-brand-primary",
     tile: "bg-brand-primary/10 text-brand-primary",
   },
   emerald: {
-    border: "border-l-brand-success",
+    border: "border-s-brand-success",
     tile: "bg-brand-success/10 text-brand-success",
   },
   amber: {
-    border: "border-l-brand-warning",
+    border: "border-s-brand-warning",
     tile: "bg-brand-warning/10 text-brand-warning",
   },
   violet: {
-    border: "border-l-violet-500",
+    border: "border-s-violet-500",
     tile: "bg-violet-500/10 text-violet-500",
   },
 }
@@ -130,7 +130,7 @@ function BillingRevenueContent({ projectId }: { projectId: string }) {
               key={stat.id}
               variant="elevated"
               className={cn(
-                "flex-row items-center gap-3 border-l-4 p-4",
+                "flex-row items-center gap-3 border-s-4 p-4",
                 accent.border,
               )}
             >

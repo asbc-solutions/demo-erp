@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/src/i18n/navigation"
 
 import { AccessDeniedCard } from "@/src/shared/components/ui/access-denied-card"
 import { Spinner } from "@/src/shared/components/ui/spinner"

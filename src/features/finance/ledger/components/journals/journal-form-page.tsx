@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form"
@@ -157,8 +157,8 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
                 <TableRow>
                   <TableHead className="w-80">Account</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead className="w-40 text-right">Debit (EGP)</TableHead>
-                  <TableHead className="w-40 text-right">Credit (EGP)</TableHead>
+                  <TableHead className="w-40 text-end">Debit (EGP)</TableHead>
+                  <TableHead className="w-40 text-end">Credit (EGP)</TableHead>
                   <TableHead className="w-12">
                     <span className="sr-only">Remove</span>
                   </TableHead>
@@ -180,10 +180,10 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
                       <Input aria-label={`Description for line ${index + 1}`} className="h-9" {...register(`lines.${index}.description`)} />
                     </TableCell>
                     <TableCell>
-                      <Input aria-label={`Debit for line ${index + 1}`} inputMode="decimal" placeholder="0.00" className="h-9 text-right tabular-nums" {...register(`lines.${index}.debit`)} />
+                      <Input aria-label={`Debit for line ${index + 1}`} inputMode="decimal" placeholder="0.00" className="h-9 text-end tabular-nums" {...register(`lines.${index}.debit`)} />
                     </TableCell>
                     <TableCell>
-                      <Input aria-label={`Credit for line ${index + 1}`} inputMode="decimal" placeholder="0.00" className="h-9 text-right tabular-nums" {...register(`lines.${index}.credit`)} />
+                      <Input aria-label={`Credit for line ${index + 1}`} inputMode="decimal" placeholder="0.00" className="h-9 text-end tabular-nums" {...register(`lines.${index}.credit`)} />
                     </TableCell>
                     <TableCell>
                       <Button
@@ -208,8 +208,8 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
                       Add line
                     </Button>
                   </TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">{formatAmount(debit)}</TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">{formatAmount(credit)}</TableCell>
+                  <TableCell className="text-end font-semibold tabular-nums">{formatAmount(debit)}</TableCell>
+                  <TableCell className="text-end font-semibold tabular-nums">{formatAmount(credit)}</TableCell>
                   <TableCell />
                 </TableRow>
               </TableFooter>

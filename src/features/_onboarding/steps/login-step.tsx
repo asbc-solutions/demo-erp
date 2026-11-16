@@ -84,7 +84,7 @@ export function LoginStep({ onSuccess, isSubmitting = false }: LoginStepProps) {
             placeholder="••••••••"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className={`${onboardingInputClass} pr-10`}
+            className={`${onboardingInputClass} pe-10`}
           />
         </OnboardingField>
       </div>

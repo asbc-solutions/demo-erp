@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/src/i18n/navigation";
 
 import { flush, now, track } from "@/src/features/marketing-tracking/lib/tracker";
 

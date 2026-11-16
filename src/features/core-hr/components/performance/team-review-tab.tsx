@@ -99,7 +99,7 @@ function FinalRating({ score }: Readonly<{ score: number | null }>) {
   return (
     <span className="text-content-primary">
       <span className="text-base font-bold">{score}</span>
-      <span className="ml-0.5 text-xs text-content-tertiary">/5</span>
+      <span className="ms-0.5 text-xs text-content-tertiary">/5</span>
     </span>
   )
 }
@@ -180,7 +180,7 @@ export function TeamReviewTab() {
                 <TableHead className={HEAD_CLASS}>Manager Rating</TableHead>
                 <TableHead className={HEAD_CLASS}>Final Rating</TableHead>
                 <TableHead className={HEAD_CLASS}>Status</TableHead>
-                <TableHead className={cn(HEAD_CLASS, "text-right")}>
+                <TableHead className={cn(HEAD_CLASS, "text-end")}>
                   Actions
                 </TableHead>
               </TableRow>
@@ -241,7 +241,7 @@ export function TeamReviewTab() {
                       <TableCell>
                         <Badge variant={st.variant}>{st.label}</Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-end">
                         <Button variant="ghost-primary" size="sm">
                           View
                         </Button>

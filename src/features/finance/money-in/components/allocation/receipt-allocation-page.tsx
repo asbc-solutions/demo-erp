@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { toast } from "sonner"
 
 import {
@@ -160,7 +160,7 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
           value={allocations[row.id] ?? ""}
           aria-invalid={parseAmount(allocations[row.id] ?? "") > row.outstanding}
           onChange={(event) => setAllocations((current) => ({ ...current, [row.id]: event.target.value }))}
-          className="ml-auto h-8 w-36 text-right tabular-nums"
+          className="ms-auto h-8 w-36 text-end tabular-nums"
         />
       ),
     },
@@ -217,7 +217,7 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
               value={amountText}
               aria-invalid={showErrors && receipt <= 0}
               onChange={(event) => setAmountText(event.target.value)}
-              className="h-9 text-right tabular-nums"
+              className="h-9 text-end tabular-nums"
             />
           </Field>
         </div>

@@ -96,7 +96,7 @@ export function CreatePositionDialog({
           className="flex flex-col gap-4 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
               Create Position
             </DialogTitle>
@@ -127,7 +127,7 @@ export function CreatePositionDialog({
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
                 Code
-                <span className="text-content-quaternary ml-1.5 text-[11px] font-normal">
+                <span className="text-content-quaternary ms-1.5 text-[11px] font-normal">
                   auto-generated if blank
                 </span>
               </Label>

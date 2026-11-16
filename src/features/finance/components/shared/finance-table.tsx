@@ -64,8 +64,8 @@ type FinanceTableProps<T> = {
 }
 
 const ALIGN_CLASS = {
-  start: "text-left",
-  end: "text-right",
+  start: "text-start",
+  end: "text-end",
   center: "text-center",
 } as const
 
@@ -163,7 +163,7 @@ function FinanceTable<T>({
             </TableCell>
           ) : null}
           {renderExpanded ? (
-            <TableCell className="w-8 pr-0" onClick={(event) => event.stopPropagation()}>
+            <TableCell className="w-8 pe-0" onClick={(event) => event.stopPropagation()}>
               <button
                 type="button"
                 aria-label={isExpanded ? "Collapse row" : "Expand row"}
@@ -225,7 +225,7 @@ function FinanceTable<T>({
                 />
               </TableHead>
             ) : null}
-            {renderExpanded ? <TableHead className="w-8 pr-0" aria-label="Expand" /> : null}
+            {renderExpanded ? <TableHead className="w-8 pe-0" aria-label="Expand" /> : null}
             {visibleColumns.map((column) => (
               <TableHead
                 key={column.id}

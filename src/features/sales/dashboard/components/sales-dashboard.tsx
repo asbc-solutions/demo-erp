@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -171,11 +171,11 @@ function PipelineFunnel({ stages }: Readonly<{ stages: PipelineStage[] }>) {
                   meta?.tone ?? "bg-content-quaternary",
                 )}
               >
-                <span className="ml-auto text-xs font-semibold text-white">
+                <span className="ms-auto text-xs font-semibold text-white">
                   {stage.count}
                 </span>
               </div>
-              <span className="text-right text-[11px] text-content-quaternary">
+              <span className="text-end text-[11px] text-content-quaternary">
                 {stage.advance_pct != null ? `${stage.advance_pct}% →` : "—"}
               </span>
             </div>

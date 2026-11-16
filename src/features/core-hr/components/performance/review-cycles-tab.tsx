@@ -253,7 +253,7 @@ export function ReviewCyclesTab() {
               )}
             </div>
 
-            <div className="text-right">
+            <div className="text-end">
               <p className="text-sm leading-5 text-content-tertiary">
                 Overall Progress
               </p>

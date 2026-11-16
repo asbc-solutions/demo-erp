@@ -1,6 +1,8 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
+
+import { usePathname } from "@/src/i18n/navigation"
 
 import { FinanceSectionGate } from "@/src/features/finance/components/shell/finance-section-gate"
 import { FinanceToolbar } from "@/src/features/finance/components/shell/finance-toolbar"
@@ -12,8 +14,10 @@ import { useRegisterLayoutHeaderTab } from "@/src/shared/components/layout-heade
 export default function FinanceLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const tNav = useTranslations("Nav")
   const pathname = usePathname()
-  useRegisterLayoutHeaderTab(matchFinanceNav(pathname)?.item.label ?? "")
+  const activeItem = matchFinanceNav(pathname)?.item
+  useRegisterLayoutHeaderTab(activeItem ? tNav(activeItem.labelKey) : "")
 
   return (
     <FinanceScopeProvider>

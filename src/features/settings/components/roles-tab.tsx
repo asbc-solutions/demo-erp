@@ -234,7 +234,7 @@ export function RolesTab() {
                 type="button"
                 onClick={() => setSelectedRoleId(role.id)}
                 className={cn(
-                  "flex flex-col gap-0.5 rounded-lg px-3 py-2 text-left transition-colors",
+                  "flex flex-col gap-0.5 rounded-lg px-3 py-2 text-start transition-colors",
                   role.id === selectedRoleId
                     ? "bg-brand-primary/8 text-brand-primary"
                     : "hover:bg-surface-hover text-content-primary",

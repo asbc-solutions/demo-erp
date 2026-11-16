@@ -221,8 +221,8 @@ export function CalendarTab() {
                 <div
                   key={idx}
                   className={cn(
-                    "min-h-[110px] border-b border-r border-stroke-default p-2 last:border-r-0",
-                    idx % 7 === 6 && "border-r-0",
+                    "min-h-[110px] border-b border-e border-stroke-default p-2 last:border-e-0",
+                    idx % 7 === 6 && "border-e-0",
                     !day && "bg-surface-page",
                   )}
                 >

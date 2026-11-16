@@ -330,7 +330,7 @@ export function BudgetCostsModule() {
               <TableHead>Committed</TableHead>
               <TableHead>Actual</TableHead>
               <TableHead>Variance</TableHead>
-              <TableHead className="text-right">% Consumed</TableHead>
+              <TableHead className="text-end">% Consumed</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -356,7 +356,7 @@ export function BudgetCostsModule() {
               costDetail.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="text-content-primary text-[13px] font-medium">
-                    <span className="text-content-tertiary mr-2 font-mono text-[11px]">
+                    <span className="text-content-tertiary me-2 font-mono text-[11px]">
                       {row.code}
                     </span>
                     {row.element}
@@ -396,7 +396,7 @@ export function BudgetCostsModule() {
                       />
                       <span
                         className={cn(
-                          "w-10 text-right text-xs font-semibold tabular-nums",
+                          "w-10 text-end text-xs font-semibold tabular-nums",
                           row.consumed > 100
                             ? "text-brand-danger"
                             : "text-content-secondary",

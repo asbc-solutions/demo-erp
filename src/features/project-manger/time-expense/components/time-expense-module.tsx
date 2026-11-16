@@ -52,19 +52,19 @@ const STAT_ACCENT: Record<
   { border: string; tile: string }
 > = {
   indigo: {
-    border: "border-l-brand-primary",
+    border: "border-s-brand-primary",
     tile: "bg-brand-primary/10 text-brand-primary",
   },
   emerald: {
-    border: "border-l-brand-success",
+    border: "border-s-brand-success",
     tile: "bg-brand-success/10 text-brand-success",
   },
   amber: {
-    border: "border-l-brand-warning",
+    border: "border-s-brand-warning",
     tile: "bg-brand-warning/10 text-brand-warning",
   },
   violet: {
-    border: "border-l-violet-500",
+    border: "border-s-violet-500",
     tile: "bg-violet-500/10 text-violet-500",
   },
 }
@@ -150,7 +150,7 @@ export function TimeExpenseModule() {
               key={stat.id}
               variant="elevated"
               className={cn(
-                "flex-row items-center gap-3 border-l-4 p-4",
+                "flex-row items-center gap-3 border-s-4 p-4",
                 accent.border,
               )}
             >
@@ -199,7 +199,7 @@ export function TimeExpenseModule() {
                     {day.label.toUpperCase()}
                   </TableHead>
                 ))}
-                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-end">Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -230,7 +230,7 @@ export function TimeExpenseModule() {
                       </span>
                     </TableCell>
                   ))}
-                  <TableCell className="text-content-primary text-right text-[13px] font-bold tabular-nums">
+                  <TableCell className="text-content-primary text-end text-[13px] font-bold tabular-nums">
                     {row.total}h
                   </TableCell>
                 </TableRow>
@@ -250,7 +250,7 @@ export function TimeExpenseModule() {
                     {total}h
                   </TableCell>
                 ))}
-                <TableCell className="text-brand-primary text-right text-[13px] font-bold tabular-nums">
+                <TableCell className="text-brand-primary text-end text-[13px] font-bold tabular-nums">
                   {grid.weekTotal}h
                 </TableCell>
               </TableRow>

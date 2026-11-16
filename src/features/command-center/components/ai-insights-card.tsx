@@ -18,10 +18,10 @@ export function AiInsightsCard({ orgLabel }: Readonly<{ orgLabel: string }>) {
       <SectionLabel>AI Insights</SectionLabel>
       <Card
         variant="elevated"
-        className="relative overflow-hidden rounded-2xl border border-stroke-default border-l-[1.5px] border-l-brand-primary py-11 pl-[22px] pr-5 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+        className="relative overflow-hidden rounded-2xl border border-stroke-default border-s-[1.5px] border-s-brand-primary py-11 ps-[22px] pe-5 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
       >
         <div
-          className="pointer-events-none absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-brand-primary via-violet-500 to-transparent opacity-40"
+          className="pointer-events-none absolute top-0 inset-e-0 inset-s-0 h-1 bg-gradient-to-r from-brand-primary via-violet-500 to-transparent opacity-40"
           aria-hidden
         />
         <div className="flex gap-4">

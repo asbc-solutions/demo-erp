@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslations } from "next-intl"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 import { Badge } from "./badge"
@@ -16,12 +17,12 @@ const statusBadgeVariant: Record<
   error: "danger",
 }
 
-const statusLabel: Record<IntegrationStatus, string> = {
-  connected: "Connected",
-  disconnected: "Connect",
-  pending: "Pending",
-  error: "Error",
-}
+const STATUS_LABEL_KEY = {
+  connected: "integrationConnected",
+  disconnected: "integrationConnect",
+  pending: "integrationPending",
+  error: "integrationError",
+} as const satisfies Record<IntegrationStatus, string>
 
 type IntegrationCardProps = Omit<React.ComponentProps<typeof Card>, "title"> & {
   icon: React.ReactNode
@@ -47,6 +48,7 @@ function IntegrationCard({
   variant = "default",
   ...props
 }: IntegrationCardProps) {
+  const t = useTranslations("Ui")
   return (
     <Card
       data-slot="integration-card"
@@ -76,7 +78,7 @@ function IntegrationCard({
       </div>
       {action ?? (
         <Badge variant={statusBadgeVariant[status]}>
-          {statusLabelProp ?? statusLabel[status]}
+          {statusLabelProp ?? t(STATUS_LABEL_KEY[status])}
         </Badge>
       )}
     </Card>

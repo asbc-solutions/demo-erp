@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { ChevronRight } from "lucide-react"
 
 import { Skeleton } from "@/src/shared/components/ui/skeleton"

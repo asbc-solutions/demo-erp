@@ -65,7 +65,7 @@ export function HrFilterPanel({
           <SlidersHorizontal />
           Filters
           {activeCount > 0 && (
-            <span className="bg-brand-primary ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-white">
+            <span className="bg-brand-primary ms-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-white">
               {activeCount}
             </span>
           )}

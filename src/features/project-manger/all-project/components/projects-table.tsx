@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/src/i18n/navigation"
 import { MoreHorizontal } from "lucide-react"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"

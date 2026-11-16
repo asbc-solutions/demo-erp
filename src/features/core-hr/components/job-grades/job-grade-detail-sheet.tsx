@@ -128,7 +128,7 @@ export function JobGradeDetailSheet({
             <div className="bg-stroke-default relative mt-2 h-2 w-full overflow-hidden rounded-full">
               <span
                 aria-hidden
-                className="bg-brand-primary absolute inset-y-0 left-0 rounded-full transition-all"
+                className="bg-brand-primary absolute inset-y-0 inset-s-0 rounded-full transition-all"
                 style={{ width: `${fillPercent}%` }}
               />
             </div>

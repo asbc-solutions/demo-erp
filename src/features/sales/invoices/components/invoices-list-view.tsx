@@ -147,14 +147,14 @@ export function InvoicesListView({
           <span className="sr-only">Search invoices</span>
           <Search
             aria-hidden
-            className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-content-quaternary"
+            className="absolute top-1/2 inset-s-3.5 size-4 -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
           />
           <Input
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
             placeholder="Search by invoice # or customer…"
-            className="h-10 rounded-lg border-stroke-input pl-10 text-[13px] shadow-none"
+            className="h-10 rounded-lg border-stroke-input ps-10 text-[13px] shadow-none"
           />
         </label>
 
@@ -173,7 +173,7 @@ export function InvoicesListView({
                 {INVOICE_TABS.map((tab) => (
                   <DropdownMenuRadioItem key={tab.value} value={tab.value}>
                     {tab.label}
-                    <span className="ml-auto text-xs text-content-quaternary">{meta?.tabs[tab.value] ?? 0}</span>
+                    <span className="ms-auto text-xs text-content-quaternary">{meta?.tabs[tab.value] ?? 0}</span>
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
@@ -211,7 +211,7 @@ export function InvoicesListView({
               aria-pressed={isActive}
               onClick={() => handleTabChange(tab.value)}
               className={cn(
-                "relative flex h-10 shrink-0 items-center gap-2 px-3 text-[13px] font-medium transition-colors first:pl-2",
+                "relative flex h-10 shrink-0 items-center gap-2 px-3 text-[13px] font-medium transition-colors first:ps-2",
                 isActive ? "text-brand-primary" : "text-content-tertiary hover:text-content-primary",
               )}
             >
@@ -245,21 +245,21 @@ export function InvoicesListView({
             <Table className="min-w-[1180px]">
               <TableHeader className="bg-surface-white">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[150px] pl-5">Invoice #</TableHead>
+                  <TableHead className="w-[150px] ps-5">Invoice #</TableHead>
                   <TableHead className="min-w-[190px]">Customer</TableHead>
                   <TableHead className="w-[130px]">Invoice Date</TableHead>
                   <TableHead className="w-[130px]">Due Date</TableHead>
                   <TableHead className="w-[140px] text-center">Total Due</TableHead>
                   <TableHead className="w-[130px]">Payment</TableHead>
                   <TableHead className="w-[150px]">Status</TableHead>
-                  <TableHead className="w-[92px] pr-5 text-right">Actions</TableHead>
+                  <TableHead className="w-[92px] pe-5 text-end">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.length ? (
                   invoices.map((invoice: InvoiceListItem) => (
                     <TableRow key={invoice.id} className="h-16 cursor-pointer" onClick={() => onSelectInvoice(invoice.id)}>
-                      <TableCell className="py-4 pl-5 font-mono text-[12px] font-medium text-content-primary">
+                      <TableCell className="py-4 ps-5 font-mono text-[12px] font-medium text-content-primary">
                         <InvoiceNumber value={invoice.number} status={invoice.status} />
                       </TableCell>
                       <TableCell className="py-4 text-[13px] font-medium text-content-primary">
@@ -276,7 +276,7 @@ export function InvoicesListView({
                       <TableCell className="py-4">
                         <StatusPill status={invoice.status} label={invoice.status_label} />
                       </TableCell>
-                      <TableCell className="py-3 pr-5 text-right" onClick={(event) => event.stopPropagation()}>
+                      <TableCell className="py-3 pe-5 text-end" onClick={(event) => event.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button

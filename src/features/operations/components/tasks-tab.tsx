@@ -94,14 +94,14 @@ export function TasksTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[280px]">
           <Search
-            className="text-content-tertiary absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            className="text-content-tertiary absolute top-1/2 inset-s-3 size-4 -translate-y-1/2"
             aria-hidden
           />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search tasks by title or assignee..."
-            className="h-9 pl-9 text-[13px]"
+            className="h-9 ps-9 text-[13px]"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">

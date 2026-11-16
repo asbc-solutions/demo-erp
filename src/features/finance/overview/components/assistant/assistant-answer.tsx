@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { ArrowRight, Copy, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
@@ -28,7 +28,7 @@ function AnswerTable({ table }: { table: NonNullable<AssistantAnswer["table"]> }
         <TableHeader className="bg-surface-white">
           <TableRow className="hover:bg-transparent">
             {table.columns.map((column) => (
-              <TableHead key={column.id} className={cn(column.align === "end" && "text-right")}>
+              <TableHead key={column.id} className={cn(column.align === "end" && "text-end")}>
                 {column.label}
               </TableHead>
             ))}
@@ -42,7 +42,7 @@ function AnswerTable({ table }: { table: NonNullable<AssistantAnswer["table"]> }
                 return (
                   <TableCell
                     key={column.id}
-                    className={cn("text-content-primary", column.align === "end" && "text-right tabular-nums")}
+                    className={cn("text-content-primary", column.align === "end" && "text-end tabular-nums")}
                   >
                     {column.id === "href" ? (
                       <Link
@@ -133,7 +133,7 @@ function AssistantAnswerView({ answer }: { answer: AssistantAnswer }) {
     <article
       aria-label="Assistant answer"
       data-slot="assistant-answer"
-      className="border-brand-primary flex flex-col gap-3 border-l-2 pl-4"
+      className="border-brand-primary flex flex-col gap-3 border-s-2 ps-4"
     >
       <div className="text-content-tertiary flex items-center gap-1.5 text-[13px] leading-5">
         <Sparkles aria-hidden className="size-3.5" />

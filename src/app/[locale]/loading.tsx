@@ -1,5 +1,5 @@
 
-import { Spinner } from "../shared/components/ui/spinner";
+import { Spinner } from "@/src/shared/components/ui/spinner";
 
 export default function Loading() {
   return (

@@ -12,7 +12,7 @@ const STATUS_LABEL: Record<CloseTaskStatus, string> = {
   not_started: "not started",
 }
 
-const segmentVariants = cva("h-full flex-1 first:rounded-l-full last:rounded-r-full", {
+const segmentVariants = cva("h-full flex-1 first:rounded-s-full last:rounded-e-full", {
   variants: {
     status: {
       done: "bg-status-success-fg",

@@ -166,7 +166,7 @@ export function AssignResourceDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg gap-0 p-0 sm:max-w-lg">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <DialogHeader className="pr-10">
+          <DialogHeader className="pe-10">
             <DialogTitle>Assign Resource</DialogTitle>
             <DialogDescription>
               Book capacity for a task and set the allocation for the period.

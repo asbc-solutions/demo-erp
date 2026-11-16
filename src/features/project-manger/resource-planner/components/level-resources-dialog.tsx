@@ -63,7 +63,7 @@ export function LevelResourcesDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl gap-0 p-0 sm:max-w-xl">
-        <DialogHeader className="pr-10">
+        <DialogHeader className="pe-10">
           <DialogTitle>Level Resources</DialogTitle>
           <DialogDescription>
             {resources.length === 0

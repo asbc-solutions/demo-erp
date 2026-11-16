@@ -101,7 +101,7 @@ function CompactSwitch({
     >
       <span
         className={cn(
-          "bg-surface-white pointer-events-none absolute top-px left-px size-[17px] rounded-full shadow-sm transition-transform",
+          "bg-surface-white pointer-events-none absolute top-px inset-s-px size-[17px] rounded-full shadow-sm transition-transform",
           checked && "translate-x-[15px]",
         )}
       />

@@ -53,7 +53,7 @@ export function BlockCustomerDialog({
             unblock them at any time.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="flex flex-col gap-1.5 px-6 pb-6 text-left">
+        <div className="flex flex-col gap-1.5 px-6 pb-6 text-start">
           <span className="text-xs font-medium text-content-secondary">Reason for blocking</span>
           <Textarea
             value={reason}

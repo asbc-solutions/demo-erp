@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { Layers, ListChecks } from "lucide-react"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"

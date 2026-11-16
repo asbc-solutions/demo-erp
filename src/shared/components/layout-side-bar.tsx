@@ -10,6 +10,7 @@ import {
   UserRoundCog,
 } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
+import { useLocale, useTranslations } from 'next-intl'
 
 import { cn } from '@/src/shared/lib/utils/utils'
 import { Button } from '@/src/shared/components/ui/button'
@@ -48,8 +49,7 @@ import {
   getRouteParentId,
   pathnameMatches,
 } from '../lib/constants/modules'
-// import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter } from '@/src/i18n/navigation'
 import { useCustomers } from '@/src/features/sales/lib/queries/customers'
 import { useQuotations } from '@/src/features/sales/lib/queries/quotations'
 import { useOrders } from '@/src/features/sales/lib/queries/orders'
@@ -90,7 +90,7 @@ function NavMenu({
   onOpenSubmenu: (id: string) => void
   badgeOverrides?: Record<string, number | undefined>
 }>) {
-
+  const t = useTranslations('Nav')
   const router = useRouter()
   const pathname = usePathname()
   const handleClick = (item: NavItem) => {
@@ -103,7 +103,7 @@ function NavMenu({
   return (
     <SidebarMenu
       className={cn(
-        'gap-1 duration-200 animate-in fade-in slide-in-from-left-4',
+        'gap-1 duration-200 animate-in fade-in slide-in-from-left-4 rtl:slide-in-from-right-4',
         collapsed && 'items-center justify-center',
       )}
     >
@@ -117,7 +117,7 @@ function NavMenu({
         return (
           <SidebarMenuItem key={item.id}>
             <SidebarMenuButton
-              tooltip={item.label}
+              tooltip={t(item.labelKey)}
               isActive={isActive}
               onClick={() => handleClick(item)}
               className={cn(
@@ -129,11 +129,11 @@ function NavMenu({
             >
               {/* <Link href={`/${item.id}`}> */}
                 <Icon strokeWidth={1.75} />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
               {/* </Link> */}
               {item.children?.length || item.groups?.length ? (
                 <ChevronRight
-                  className="ml-auto size-4 shrink-0 text-content-tertiary group-data-[collapsible=icon]:hidden"
+                  className="ms-auto size-4 shrink-0 text-content-tertiary group-data-[collapsible=icon]:hidden rtl:rotate-180"
                   strokeWidth={1.75}
                 />
               ) : null}
@@ -148,7 +148,7 @@ function NavMenu({
             {isActive && (
               <span
                 aria-hidden
-                className="pointer-events-none absolute -left-1 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-brand-primary shadow-[0_0_8px_0_rgba(99,102,241,0.5)] group-data-[collapsible=icon]:hidden"
+                className="pointer-events-none absolute -inset-s-1 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-brand-primary shadow-[0_0_8px_0_rgba(99,102,241,0.5)] group-data-[collapsible=icon]:hidden"
               />
             )}
           </SidebarMenuItem>
@@ -162,7 +162,7 @@ function NavCountBadge({ count, active }: Readonly<{ count: number; active: bool
   return (
     <span
       className={cn(
-        'ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold leading-none group-data-[collapsible=icon]:hidden',
+        'ms-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold leading-none group-data-[collapsible=icon]:hidden',
         active ? 'bg-brand-primary text-white' : 'bg-stroke-default text-content-tertiary',
       )}
     >
@@ -175,7 +175,7 @@ function ActiveItemBar() {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute -left-1 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-brand-primary shadow-[0_0_8px_0_rgba(99,102,241,0.5)] group-data-[collapsible=icon]:hidden"
+      className="pointer-events-none absolute -inset-s-1 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-brand-primary shadow-[0_0_8px_0_rgba(99,102,241,0.5)] group-data-[collapsible=icon]:hidden"
     />
   )
 }
@@ -195,7 +195,7 @@ function SubMenuBackButton({
         collapsed && 'justify-center px-0',
       )}
     >
-      <ChevronLeft className="size-4 shrink-0 text-content-tertiary" strokeWidth={1.75} />
+      <ChevronLeft className="size-4 shrink-0 text-content-tertiary rtl:rotate-180" strokeWidth={1.75} />
       <span className="group-data-[collapsible=icon]:hidden">{label}</span>
     </button>
   )
@@ -218,6 +218,7 @@ function CollapsibleNavSubMenu({
   onBack: () => void
   badgeOverrides?: Record<string, number | undefined>
 }>) {
+  const t = useTranslations('Nav')
   const router = useRouter()
   const pathname = usePathname()
   const groups = parent.groups ?? []
@@ -235,8 +236,8 @@ function CollapsibleNavSubMenu({
       : [...openGroups.ids, activeGroupId]
 
   return (
-    <div className="flex h-full min-h-0 flex-col duration-200 animate-in fade-in slide-in-from-right-4">
-      <SubMenuBackButton label={parent.label} collapsed={collapsed} onBack={onBack} />
+    <div className="flex h-full min-h-0 flex-col duration-200 animate-in fade-in slide-in-from-right-4 rtl:slide-in-from-left-4">
+      <SubMenuBackButton label={t(parent.labelKey)} collapsed={collapsed} onBack={onBack} />
 
       <div className="thin-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
         {collapsed ? (
@@ -247,7 +248,7 @@ function CollapsibleNavSubMenu({
               return (
                 <SidebarMenuItem key={group.id}>
                   <SidebarMenuButton
-                    tooltip={group.label}
+                    tooltip={t(group.labelKey)}
                     isActive={group.id === activeGroupId}
                     onClick={() => first?.href && router.push(first.href)}
                     className={cn(
@@ -257,7 +258,7 @@ function CollapsibleNavSubMenu({
                     )}
                   >
                     <Icon strokeWidth={1.75} />
-                    <span>{group.label}</span>
+                    <span>{t(group.labelKey)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )
@@ -284,12 +285,12 @@ function CollapsibleNavSubMenu({
                   >
                     <ChevronRight
                       aria-hidden
-                      className="size-3.5 shrink-0 text-content-quaternary transition-transform duration-200 group-data-[state=open]/nav-group:rotate-90"
+                      className="size-3.5 shrink-0 text-content-quaternary transition-transform duration-200 group-data-[state=open]/nav-group:rotate-90 rtl:rotate-180 rtl:group-data-[state=open]/nav-group:rotate-90"
                     />
                     {Icon ? (
                       <Icon aria-hidden className="size-4 shrink-0 text-content-tertiary" strokeWidth={1.75} />
                     ) : null}
-                    <span className="flex-1 truncate">{group.label}</span>
+                    <span className="flex-1 truncate">{t(group.labelKey)}</span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-0.5 pb-1">
                     <SidebarMenu className="gap-0.5">
@@ -302,12 +303,12 @@ function CollapsibleNavSubMenu({
                               isActive={isActive}
                               onClick={() => child.href && router.push(child.href)}
                               className={cn(
-                                'h-8 rounded-lg pr-2 pl-10 text-[13px] font-normal text-content-tertiary',
+                                'h-8 rounded-lg pe-2 ps-10 text-[13px] font-normal text-content-tertiary',
                                 'hover:bg-surface-hover/60 hover:text-content-primary',
                                 'data-active:bg-brand-primary/10 data-active:font-medium data-active:text-content-primary',
                               )}
                             >
-                              <span className="truncate">{child.label}</span>
+                              <span className="truncate">{t(child.labelKey)}</span>
                               {badge !== undefined ? (
                                 <NavCountBadge count={badge} active={isActive} />
                               ) : null}
@@ -339,6 +340,7 @@ function NavSubMenu({
   onBack: () => void
   badgeOverrides?: Record<string, number | undefined>
 }>) {
+  const t = useTranslations('Nav')
   const router = useRouter()
   const pathname = usePathname()
   const children = parent.children ?? []
@@ -367,7 +369,7 @@ function NavSubMenu({
     return (
       <SidebarMenuItem key={child.id}>
         <SidebarMenuButton
-          tooltip={child.label}
+          tooltip={t(child.labelKey)}
           isActive={isActive}
           onClick={() => handleClick(child)}
           className={cn(
@@ -382,7 +384,7 @@ function NavSubMenu({
           ) : (
             <span aria-hidden className="size-4 shrink-0" />
           )}
-          <span>{child.label}</span>
+          <span>{t(child.labelKey)}</span>
           {badge !== undefined ? <NavCountBadge count={badge} active={isActive} /> : null}
         </SidebarMenuButton>
         {isActive ? <ActiveItemBar /> : null}
@@ -391,8 +393,8 @@ function NavSubMenu({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col duration-200 animate-in fade-in slide-in-from-right-4">
-      <SubMenuBackButton label={parent.label} collapsed={collapsed} onBack={onBack} />
+    <div className="flex h-full min-h-0 flex-col duration-200 animate-in fade-in slide-in-from-right-4 rtl:slide-in-from-left-4">
+      <SubMenuBackButton label={t(parent.labelKey)} collapsed={collapsed} onBack={onBack} />
 
       <div
         className={cn(
@@ -404,7 +406,7 @@ function NavSubMenu({
           groups.map((group) => (
             <div key={group.id} className="flex flex-col gap-1">
               <span className="px-3 pt-1 text-[11px] font-semibold uppercase tracking-wide text-content-quaternary group-data-[collapsible=icon]:hidden">
-                {group.label}
+                {t(group.labelKey)}
               </span>
               <SidebarMenu className={cn('gap-1', collapsed && 'items-center justify-center')}>
                 {group.items.map((child) => renderChild(child))}
@@ -422,6 +424,8 @@ function NavSubMenu({
 }
 
 function UserProfileButton() {
+  const t = useTranslations('Sidebar')
+  const locale = useLocale()
   const { data: session } = useSession()
 
   const name = session?.user?.name ?? '—'
@@ -439,7 +443,7 @@ function UserProfileButton() {
         <Button
           variant="ghost"
           className={cn(
-            'h-12 w-full justify-start gap-3 rounded-xl px-3 py-2 text-left',
+            'h-12 w-full justify-start gap-3 rounded-xl px-3 py-2 text-start',
             'group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0',
           )}
         >
@@ -466,26 +470,26 @@ function UserProfileButton() {
         className="w-[220px] rounded-lg border-stroke-default bg-surface-white p-1.5"
       >
         <DropdownMenuLabel className="px-2 py-1.5 text-[11px] font-medium text-content-quaternary">
-          My Account
+          {t('myAccount')}
         </DropdownMenuLabel>
 
         <DropdownMenuItem className="gap-4 rounded-md px-2 py-1.5 text-xs text-content-primary">
           <UserRoundCog className="size-4 text-content-tertiary" strokeWidth={1.75} />
-          <span>Profile &amp; Setting</span>
+          <span>{t('profileSettings')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem className="gap-4 rounded-md px-2 py-1.5 text-xs text-content-primary">
           <Keyboard className="size-4 text-content-tertiary" strokeWidth={1.75} />
-          <span>Keyboard Shortcut</span>
+          <span>{t('keyboardShortcuts')}</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
           className="gap-4 rounded-md px-2 py-1.5 text-xs text-brand-danger"
-          onClick={() => signOut({ callbackUrl: '/' })}
+          onClick={() => signOut({ callbackUrl: `/${locale}` })}
         >
           <LogOut className="size-4 text-brand-danger" strokeWidth={1.75} />
-          <span>Sign Out</span>
+          <span>{t('signOut')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -493,6 +497,7 @@ function UserProfileButton() {
 }
 
 function SidebarRailToggle() {
+  const t = useTranslations('Sidebar')
   const { state, isMobile, toggleSidebar } = useSidebar()
   const collapsed = state === 'collapsed'
 
@@ -503,15 +508,15 @@ function SidebarRailToggle() {
     <Button
       variant="outline"
       size="icon-xs"
-      aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')}
       onClick={toggleSidebar}
       className={cn(
-        'absolute -right-3 top-1/2 z-20 size-6 -translate-y-1/2 rounded-full',
+        'absolute -inset-e-3 top-1/2 z-20 size-6 -translate-y-1/2 rounded-full',
         'border-stroke-default bg-surface-white text-content-tertiary shadow-sm',
         'hover:bg-surface-white hover:text-content-primary',
       )}
     >
-      {collapsed ? <ChevronRight /> : <ChevronLeft />}
+      {collapsed ? <ChevronRight className="rtl:rotate-180" /> : <ChevronLeft className="rtl:rotate-180" />}
     </Button>
   )
 }
@@ -527,6 +532,7 @@ const LayoutSideBar = () => {
     submenuSelection.pathname === pathname
       ? submenuSelection.id
       : routeParentId
+  const t = useTranslations('Nav')
   const router = useRouter()
   const { state, isMobile, setOpenMobile } = useSidebar()
   // The mobile sheet always shows the full-width nav, whatever the desktop rail state is.
@@ -609,7 +615,7 @@ const LayoutSideBar = () => {
         <SidebarMenu className={cn("gap-0", collapsed && "items-center justify-center")}>
           <SidebarMenuItem>
             <SidebarMenuButton
-              tooltip="Settings"
+              tooltip={t('settings')}
               onClick={() => router.push('/settings')}
               className={cn(
                 'h-10 rounded-xl px-3 text-sm font-medium text-content-tertiary',
@@ -617,7 +623,7 @@ const LayoutSideBar = () => {
               )}
             >
               <Settings strokeWidth={1.75} />
-              <span>Settings</span>
+              <span>{t('settings')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

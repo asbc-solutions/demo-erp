@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { UserX } from "lucide-react"
 import { Controller, useForm } from "react-hook-form"
@@ -131,11 +131,11 @@ function SettleDialog({ holder, open, onOpenChange }: { holder: CustodyHolder; o
             <div className="grid grid-cols-2 gap-4">
               <Field>
                 <FieldLabel htmlFor="settle-expenses">Expense claims (EGP)</FieldLabel>
-                <Input id="settle-expenses" inputMode="decimal" className="text-right tabular-nums" aria-invalid={Boolean(errors.expenses)} {...register("expenses")} />
+                <Input id="settle-expenses" inputMode="decimal" className="text-end tabular-nums" aria-invalid={Boolean(errors.expenses)} {...register("expenses")} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="settle-returned">Cash returned (EGP)</FieldLabel>
-                <Input id="settle-returned" inputMode="decimal" placeholder="0.00" className="text-right tabular-nums" {...register("cash_returned")} />
+                <Input id="settle-returned" inputMode="decimal" placeholder="0.00" className="text-end tabular-nums" {...register("cash_returned")} />
               </Field>
             </div>
             {errors.expenses ? <FieldError>{errors.expenses.message}</FieldError> : null}

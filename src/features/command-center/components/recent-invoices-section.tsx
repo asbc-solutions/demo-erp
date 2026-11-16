@@ -89,8 +89,8 @@ export function RecentInvoicesSection() {
               <TableRow className="border-stroke-default hover:bg-transparent">
                 <TableHead>Invoice #</TableHead>
                 <TableHead>Client</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Status</TableHead>
+                <TableHead className="text-end">Amount</TableHead>
+                <TableHead className="text-end">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -102,10 +102,10 @@ export function RecentInvoicesSection() {
                   <TableCell className="text-xs text-content-tertiary">
                     {invoice.client_name}
                   </TableCell>
-                  <TableCell className="text-right font-mono text-xs text-content-primary">
+                  <TableCell className="text-end font-mono text-xs text-content-primary">
                     {formatCurrency(invoice.total_amount, invoice.currency_code)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <Badge
                       variant={statusBadgeVariant(invoice.status)}
                       className={cn(

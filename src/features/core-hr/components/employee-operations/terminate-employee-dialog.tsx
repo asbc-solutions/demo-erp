@@ -169,7 +169,7 @@ export function TerminateEmployeeDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl gap-0 p-0">
         <div className="flex flex-col gap-5 p-6">
-          <div className="flex flex-col gap-3 pr-8">
+          <div className="flex flex-col gap-3 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
               Terminate Employee
             </DialogTitle>
@@ -257,7 +257,7 @@ export function TerminateEmployeeDialog({
 
           {step === 1 && (
             <div className="flex flex-col gap-4">
-              <div className="border-brand-danger bg-brand-danger/5 flex flex-col gap-3 rounded-[12px] border-l-4 p-4">
+              <div className="border-brand-danger bg-brand-danger/5 flex flex-col gap-3 rounded-[12px] border-s-4 p-4">
                 <div className="flex items-start gap-3">
                   <span className="bg-brand-danger/10 text-brand-danger flex size-9 shrink-0 items-center justify-center rounded-full">
                     <UserMinus className="size-5" />
@@ -272,7 +272,7 @@ export function TerminateEmployeeDialog({
                     </p>
                   </div>
                 </div>
-                <ul className="text-content-secondary flex flex-col gap-1.5 pl-1 text-sm">
+                <ul className="text-content-secondary flex flex-col gap-1.5 ps-1 text-sm">
                   <li>
                     System access: <strong>Will be revoked on {lastWorkingDay}</strong>
                   </li>

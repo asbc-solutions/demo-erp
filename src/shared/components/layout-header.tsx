@@ -1,8 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname } from '@/src/i18n/navigation'
 import { useTheme } from 'next-themes'
+import { useTranslations } from 'next-intl'
 import {
   AlertTriangle,
   Bell,
@@ -30,29 +31,32 @@ import { Input } from '@/src/shared/components/ui/input'
 import { SidebarTrigger } from '@/src/shared/components/ui/sidebar'
 import { useLayoutHeaderTabLabel } from '@/src/shared/components/layout-header-context'
 import { cn } from '@/src/shared/lib/utils/utils'
+import { LocaleSwitcher } from '@/src/shared/components/locale-switcher'
+import { useIntlLocale } from '@/src/i18n/intl-locale'
+import type { NavLabelKey } from '@/src/shared/lib/types'
 import { useUnreadNotifications } from '@/src/features/core-hr/lib/queries/notifications'
 import { useMarkNotificationRead, useMarkAllNotificationsRead } from '@/src/features/core-hr/lib/mutations/notifications'
 import type { NotificationType } from '@/src/features/core-hr/lib/types'
 
-const AREA_TITLE_BY_ROUTE: Record<string, string> = {
-  'command-center': 'Command Center',
-  finance: 'Finance',
-  hr: 'HR & People',
-  sales: 'Sales',
-  operations: 'Operations',
-  compliance: 'Compliance',
-  integrations: 'Integrations',
-  settings: 'Settings',
+const AREA_TITLE_KEY_BY_ROUTE: Record<string, NavLabelKey> = {
+  'command-center': 'commandCenter',
+  finance: 'finance',
+  hr: 'hr',
+  sales: 'sales',
+  operations: 'operations',
+  compliance: 'compliance',
+  integrations: 'integrations',
+  settings: 'settings',
 }
 
-const PAGE_TITLE_BY_ROUTE: Record<string, string> = {
-  '/sales': 'Sales · Dashboard',
-  '/sales/customers': 'Sales · Customers',
-  '/sales/quotations': 'Sales · Quotations',
-  '/sales/sales-orders': 'Sales · Sales Orders',
-  '/sales/invoices': 'Sales · Invoices',
-  '/sales/reports': 'Sales · Reports',
-  '/sales/settings': 'Sales · Settings',
+const SECTION_TITLE_KEY_BY_ROUTE: Record<string, NavLabelKey> = {
+  '/sales': 'salesDashboard',
+  '/sales/customers': 'salesCustomers',
+  '/sales/quotations': 'salesQuotations',
+  '/sales/sales-orders': 'salesOrders',
+  '/sales/invoices': 'salesInvoices',
+  '/sales/reports': 'salesReports',
+  '/sales/settings': 'salesSettings',
 }
 
 type LayoutHeaderProps = Readonly<{
@@ -61,12 +65,13 @@ type LayoutHeaderProps = Readonly<{
 }>
 
 type QuickActionItem = Readonly<{
-  label: string
+  labelKey: 'createInvoice' | 'addContact' | 'exportReport'
   icon: LucideIcon
   shortcut?: string
 }>
 
 function useHeaderClock() {
+  const intlLocale = useIntlLocale()
   const mounted = React.useSyncExternalStore(
     () => () => {},
     () => true,
@@ -82,7 +87,7 @@ function useHeaderClock() {
 
   const date =
     mounted &&
-    new Intl.DateTimeFormat('en-GB', {
+    new Intl.DateTimeFormat(intlLocale, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -90,7 +95,7 @@ function useHeaderClock() {
 
   const time =
     mounted &&
-    now.toLocaleTimeString('en-US', {
+    now.toLocaleTimeString(intlLocale, {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
@@ -125,18 +130,25 @@ function getNotificationMeta(type: NotificationType): {
   }
 }
 
-function formatNotificationTime(isoString: string): string {
-  const diff = Date.now() - new Date(isoString).getTime()
-  const minutes = Math.floor(diff / 60_000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
+function useNotificationTimeFormatter() {
+  const t = useTranslations('Header')
+  return (isoString: string): string => {
+    const diff = Date.now() - new Date(isoString).getTime()
+    const minutes = Math.floor(diff / 60_000)
+    if (minutes < 1) return t('justNow')
+    if (minutes < 60) return t('minutesAgo', { count: minutes })
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return t('hoursAgo', { count: hours })
+    return t('daysAgo', { count: Math.floor(hours / 24) })
+  }
 }
 
 const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
+  // Translation
+  const t = useTranslations('Header')
+  const tNav = useTranslations('Nav')
+  const formatNotificationTime = useNotificationTimeFormatter()
+  // Navigation
   const pathname = usePathname()
   const tabLabel = useLayoutHeaderTabLabel(pathname)
   const { date, time } = useHeaderClock()
@@ -148,12 +160,13 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
   )
 
   const segment = pathname.split('/').find(Boolean) ?? ''
-  const areaTitle = AREA_TITLE_BY_ROUTE[segment] ?? 'Workspace'
+  const areaTitleKey = AREA_TITLE_KEY_BY_ROUTE[segment]
+  const areaTitle = areaTitleKey ? tNav(areaTitleKey) : t('workspace')
+  const sectionTitleKey = SECTION_TITLE_KEY_BY_ROUTE[pathname]
+  const sectionTitle = tabLabel ?? (sectionTitleKey ? tNav(sectionTitleKey) : null)
   const title =
     titleOverride ??
-    (tabLabel
-      ? `${areaTitle} · ${tabLabel}`
-      : (PAGE_TITLE_BY_ROUTE[pathname] ?? areaTitle))
+    (sectionTitle ? t('titleWithSection', { area: areaTitle, section: sectionTitle }) : areaTitle)
 
   const isDark = mounted && resolvedTheme === 'dark'
   const [searchOpen, setSearchOpen] = React.useState(false)
@@ -202,14 +215,14 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
   const unreadCount = notificationsData?.meta?.total ?? 0
 
   const quickActions: readonly QuickActionItem[] = [
-    { label: 'Create new invoice', icon: Plus, shortcut: '⌘N' },
-    { label: 'Add new contact', icon: UserRound },
-    { label: 'Export Q2 report', icon: SearchCheck },
+    { labelKey: 'createInvoice', icon: Plus, shortcut: '⌘N' },
+    { labelKey: 'addContact', icon: UserRound },
+    { labelKey: 'exportReport', icon: SearchCheck },
   ]
 
   const navigationActions = [
-    { label: 'Go to Command Center', icon: ScanSearch },
-    { label: 'Go to Finance', icon: DollarSign },
+    { labelKey: 'goToCommandCenter', icon: ScanSearch },
+    { labelKey: 'goToFinance', icon: DollarSign },
   ] as const
 
   return (
@@ -217,8 +230,8 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
       {/* Left: mobile nav trigger + title + date/time */}
       <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-4">
         <SidebarTrigger
-          aria-label="Open navigation"
-          className="-ml-1 size-9 shrink-0 rounded-lg text-content-tertiary hover:bg-surface-hover hover:text-content-primary md:hidden"
+          aria-label={t('openNavigation')}
+          className="-ms-1 size-9 shrink-0 rounded-lg text-content-tertiary hover:bg-surface-hover hover:text-content-primary md:hidden"
         />
         <h1 className="font-heading min-w-0 truncate text-base font-semibold leading-6 text-content-primary md:text-[20px] md:leading-7">
           {title}
@@ -241,7 +254,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
         <div ref={searchRef} className="relative">
           <Button
             variant="outline"
-            aria-label="Open search"
+            aria-label={t('openSearch')}
             onClick={() => {
               setSearchOpen((prev) => !prev)
               setNotificationOpen(false)
@@ -250,46 +263,46 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
           >
             <Search className="size-4" strokeWidth={1.75} />
             <span className="hidden text-xs font-normal lg:inline">
-              Search...
+              {t('searchShort')}
             </span>
-            <kbd className="ml-1 hidden items-center gap-1 rounded border border-stroke-default bg-surface-hover px-1.5 py-0.5 font-mono text-[11px] leading-[16.5px] text-content-quaternary lg:inline-flex">
+            <kbd className="ms-1 hidden items-center gap-1 rounded border border-stroke-default bg-surface-hover px-1.5 py-0.5 font-mono text-[11px] leading-[16.5px] text-content-quaternary lg:inline-flex">
               <Command className="size-3" strokeWidth={1.75} />K
             </kbd>
           </Button>
 
           {searchOpen && (
-            <div className="fixed inset-x-4 top-16 z-50 overflow-hidden md:absolute md:inset-x-auto md:right-0 md:top-11 md:w-[min(620px,calc(100vw-3rem))] rounded-lg border border-stroke-default bg-surface-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
+            <div className="fixed inset-x-4 top-16 z-50 overflow-hidden md:absolute md:inset-x-auto md:inset-e-0 md:top-11 md:w-[min(620px,calc(100vw-3rem))] rounded-lg border border-stroke-default bg-surface-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
               <div className="flex items-center border-b border-stroke-default px-3 py-2.5 sm:px-4 sm:py-3">
-                <Search className="mr-3 size-5 shrink-0 text-content-quaternary" strokeWidth={1.75} />
+                <Search className="me-3 size-5 shrink-0 text-content-quaternary" strokeWidth={1.75} />
                 <Input
                   autoFocus
-                  placeholder="Search or type a command..."
+                  placeholder={t('searchPlaceholder')}
                   className="h-8 min-w-0 border-none px-0 text-base shadow-none focus-visible:ring-0"
                 />
                 <kbd className="hidden rounded border border-stroke-default bg-surface-hover px-2 py-1 font-mono text-[11px] leading-[16.5px] text-content-quaternary sm:inline">
-                  ESC
+                  {t('escKey')}
                 </kbd>
               </div>
 
               <div className="max-h-[min(360px,60svh)] overflow-y-auto p-2">
                 <p className="px-2 py-1.5 text-xs font-medium text-content-quaternary">
-                  Quick Actions
+                  {t('quickActions')}
                 </p>
                 {quickActions.map((action, index) => {
                   const Icon = action.icon
                   return (
                     <button
-                      key={action.label}
+                      key={action.labelKey}
                       type="button"
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-content-primary sm:text-base',
+                        'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-sm text-content-primary sm:text-base',
                         index === 0 ? 'bg-surface-hover' : 'hover:bg-surface-muted',
                       )}
                     >
                       <Icon className="size-4 text-brand-primary" strokeWidth={1.75} />
-                      <span>{action.label}</span>
+                      <span>{t(action.labelKey)}</span>
                       {action.shortcut ? (
-                        <span className="ml-auto font-mono text-[11px] leading-[15.4px] text-content-quaternary">
+                        <span className="ms-auto font-mono text-[11px] leading-[15.4px] text-content-quaternary">
                           {action.shortcut}
                         </span>
                       ) : null}
@@ -298,16 +311,16 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
                 })}
 
                 <p className="px-2 py-1.5 text-xs font-medium text-content-quaternary">
-                  Navigate
+                  {t('navigate')}
                 </p>
                 {navigationActions.map((action) => (
                   <button
-                    key={action.label}
+                    key={action.labelKey}
                     type="button"
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-content-primary hover:bg-surface-muted sm:text-base"
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-sm text-content-primary hover:bg-surface-muted sm:text-base"
                   >
                     <action.icon className="size-4 text-content-tertiary" strokeWidth={1.75} />
-                    <span>{action.label}</span>
+                    <span>{t(action.labelKey)}</span>
                   </button>
                 ))}
               </div>
@@ -318,9 +331,9 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
         <Button
           variant="ghost"
           size="icon"
-          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label={isDark ? t('switchToLight') : t('switchToDark')}
           aria-pressed={isDark}
-          title={isDark ? 'Switch to light mode (D)' : 'Switch to dark mode (D)'}
+          title={isDark ? t('switchToLightHint') : t('switchToDarkHint')}
           onClick={toggleTheme}
           className="size-9 rounded-lg text-content-tertiary hover:bg-surface-hover hover:text-content-primary"
         >
@@ -331,10 +344,12 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
           )}
         </Button>
 
+        <LocaleSwitcher />
+
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Help"
+          aria-label={t('help')}
           className="hidden size-9 sm:inline-flex rounded-lg text-content-tertiary hover:bg-surface-hover hover:text-content-primary"
         >
           <HelpCircle strokeWidth={1.75} />
@@ -344,7 +359,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Notifications"
+            aria-label={t('notifications')}
             onClick={() => {
               setNotificationOpen((prev) => !prev)
               setSearchOpen(false)
@@ -355,18 +370,18 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
             {unreadCount > 0 && (
               <span
                 aria-hidden
-                className="absolute right-1.5 top-1.5 size-2 rounded-full bg-brand-danger"
+                className="absolute inset-e-1.5 top-1.5 size-2 rounded-full bg-brand-danger"
               />
             )}
           </Button>
 
           {notificationOpen && (
-            <div className="absolute right-0 top-11 z-50 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-stroke-default bg-surface-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)]">
+            <div className="absolute inset-e-0 top-11 z-50 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-stroke-default bg-surface-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)]">
               <div className="flex items-center justify-between border-b border-stroke-default px-4 py-3">
                 <p className="text-sm font-medium text-content-primary">
-                  Notifications
+                  {t('notifications')}
                   {unreadCount > 0 && (
-                    <span className="ml-2 rounded-full bg-brand-danger px-1.5 py-0.5 text-[10px] font-medium text-white">
+                    <span className="ms-2 rounded-full bg-brand-danger px-1.5 py-0.5 text-[10px] font-medium text-white">
                       {unreadCount}
                     </span>
                   )}
@@ -377,7 +392,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
                     onClick={() => markAllRead()}
                     className="text-[11px] leading-[15.4px] text-brand-primary hover:opacity-80"
                   >
-                    Mark all read
+                    {t('markAllRead')}
                   </button>
                 )}
               </div>
@@ -396,7 +411,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="px-4 py-6 text-center text-xs text-content-quaternary">
-                  No unread notifications
+                  {t('noUnread')}
                 </div>
               ) : (
                 notifications.map((item, index) => {
@@ -407,7 +422,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
                       type="button"
                       onClick={() => markRead(item.id)}
                       className={cn(
-                        'flex w-full items-start gap-3 px-4 py-3 text-left',
+                        'flex w-full items-start gap-3 px-4 py-3 text-start',
                         index !== notifications.length - 1 && 'border-b border-stroke-default',
                         'hover:bg-surface-muted',
                       )}
@@ -429,7 +444,7 @@ const LayoutHeader = ({ title: titleOverride }: LayoutHeaderProps) => {
                   type="button"
                   className="w-full text-center text-[11px] leading-[15.4px] text-brand-primary hover:opacity-80"
                 >
-                  View all notifications
+                  {t('viewAllNotifications')}
                 </button>
               </div>
             </div>

@@ -135,7 +135,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                     {model.months.map((m, i) => (
                       <div
                         key={`${m.label}-${i}`}
-                        className="border-stroke-light text-content-secondary border-l py-1 text-center text-[11px] font-semibold"
+                        className="border-stroke-light text-content-secondary border-s py-1 text-center text-[11px] font-semibold"
                         style={{ width: m.weeks * WEEK_W }}
                       >
                         {m.label}
@@ -176,7 +176,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                         className={cn(
                           "text-content-primary flex-1 truncate text-[13px]",
                           row.kind === "phase" ? "font-semibold" : "font-normal",
-                          row.indent && "pl-3",
+                          row.indent && "ps-3",
                         )}
                       >
                         {row.name}
@@ -187,7 +187,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                       >
                         {row.owner.initials}
                       </Avatar>
-                      <span className="text-content-tertiary w-9 shrink-0 text-right text-[11px] font-medium tabular-nums">
+                      <span className="text-content-tertiary w-9 shrink-0 text-end text-[11px] font-medium tabular-nums">
                         {row.percent}%
                       </span>
                     </div>
