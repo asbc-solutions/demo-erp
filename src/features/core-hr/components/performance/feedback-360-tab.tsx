@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Clock, MessageSquare, Send, Star, Users } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -37,13 +38,10 @@ interface FeedbackRow {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<
-  FeedbackStatus,
-  { label: string; variant: "success" | "warning" | "neutral" }
-> = {
-  complete: { label: "Complete", variant: "success" },
-  in_progress: { label: "In Progress", variant: "warning" },
-  pending: { label: "Pending", variant: "neutral" },
+const STATUS_VARIANT: Record<FeedbackStatus, "success" | "warning" | "neutral"> = {
+  complete: "success",
+  in_progress: "warning",
+  pending: "neutral",
 }
 
 const ROWS: FeedbackRow[] = [
@@ -60,35 +58,37 @@ const ROWS: FeedbackRow[] = [
 // ─── Summary row ────────────────────────────────────────────────────────────────
 
 function FeedbackKpis() {
+  const t = useTranslations("HrPerformance")
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <SummaryStatCard
-        label="Requests Sent"
+        label={t("kpiRequestsSent")}
         value="40"
-        hint="Across 8 employees"
+        hint={t("acrossEmployees", { count: 8 })}
         icon={<Users strokeWidth={1.75} />}
         iconClassName="text-brand-info"
       />
       <SummaryStatCard
-        label="Responses"
+        label={t("kpiResponses")}
         value="32"
         valueClassName="text-brand-success"
-        hint="80% response rate"
+        hint={t("responseRate", { percent: 80 })}
         icon={<MessageSquare strokeWidth={1.75} />}
         iconClassName="text-brand-success"
       />
       <SummaryStatCard
-        label="Pending"
+        label={t("kpiPending")}
         value="8"
         valueClassName="text-brand-warning"
-        hint="Awaiting response"
+        hint={t("awaitingResponse")}
         icon={<Clock strokeWidth={1.75} />}
         iconClassName="text-brand-warning"
       />
       <SummaryStatCard
-        label="Avg Score"
+        label={t("kpiAvgScore")}
         value="4.1"
-        hint="Out of 5.0"
+        hint={t("outOfFivePointZero")}
         icon={<Star strokeWidth={1.75} />}
         iconClassName="text-brand-warning"
       />
@@ -99,12 +99,15 @@ function FeedbackKpis() {
 // ─── Cells ──────────────────────────────────────────────────────────────────────
 
 function AvgScore({ score }: Readonly<{ score: number | null }>) {
+  const t = useTranslations("HrPerformance")
   if (score === null)
     return <span className="text-sm text-content-quaternary">—</span>
   return (
     <span className="text-content-primary">
       <span className="text-sm font-bold">{score}</span>
-      <span className="ms-0.5 text-xs text-content-tertiary">/5</span>
+      <span className="ms-0.5 text-xs text-content-tertiary">
+        {t("outOfFive")}
+      </span>
     </span>
   )
 }
@@ -115,6 +118,7 @@ const HEAD_CLASS =
   "h-10 text-xs font-medium normal-case tracking-normal text-content-secondary"
 
 export function Feedback360Tab() {
+  const t = useTranslations("HrPerformance")
   const [requestOpen, setRequestOpen] = useState(false)
 
   return (
@@ -126,10 +130,10 @@ export function Feedback360Tab() {
         <div className="flex flex-wrap items-start justify-between gap-4 p-6">
           <div className="flex flex-col gap-1">
             <h3 className="text-lg leading-7 font-semibold text-content-primary">
-              360 Feedback Overview
+              {t("feedbackOverviewTitle")}
             </h3>
             <p className="text-sm leading-5 text-content-tertiary">
-              Multi-rater feedback requests and responses.
+              {t("feedbackOverviewSubtitle")}
             </p>
           </div>
           <Button
@@ -138,7 +142,7 @@ export function Feedback360Tab() {
             onClick={() => setRequestOpen(true)}
           >
             <Send strokeWidth={2} />
-            New Request
+            {t("newRequest")}
           </Button>
         </div>
 
@@ -147,22 +151,21 @@ export function Feedback360Tab() {
           <Table>
             <TableHeader className="bg-transparent">
               <TableRow className="hover:bg-transparent">
-                <TableHead className={HEAD_CLASS}>Employee</TableHead>
-                <TableHead className={HEAD_CLASS}>Reviewers</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colEmployee")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colReviewers")}</TableHead>
                 <TableHead className={cn(HEAD_CLASS, "text-center")}>
-                  Responses
+                  {t("kpiResponses")}
                 </TableHead>
                 <TableHead className={cn(HEAD_CLASS, "text-center")}>
-                  Avg Score
+                  {t("kpiAvgScore")}
                 </TableHead>
-                <TableHead className={HEAD_CLASS}>Top Strength</TableHead>
-                <TableHead className={HEAD_CLASS}>Top Area to Improve</TableHead>
-                <TableHead className={HEAD_CLASS}>Status</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colTopStrength")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colTopImprove")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colStatus")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {ROWS.map((row) => {
-                const st = STATUS_CONFIG[row.status]
                 return (
                   <TableRow key={row.id}>
                     <TableCell>
@@ -193,7 +196,9 @@ export function Feedback360Tab() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={st.variant}>{st.label}</Badge>
+                      <Badge variant={STATUS_VARIANT[row.status]}>
+                        {t(`feedbackStatus.${row.status}`)}
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 )

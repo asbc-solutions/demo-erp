@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { SlidersHorizontal } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import {
   Select,
@@ -17,33 +18,34 @@ import { AuditDayGroup } from "./audit-timeline"
 
 // ─── Filters ─────────────────────────────────────────────────────────────────
 
-const ACTION_FILTERS: { value: string; label: string }[] = [
-  { value: "ALL", label: "All Actions" },
-  { value: "insert", label: "Create" },
-  { value: "update", label: "Update" },
-  { value: "delete", label: "Delete" },
-  { value: "approve", label: "Approve" },
-  { value: "reject", label: "Reject" },
-  { value: "status_change", label: "Status Change" },
-  { value: "login", label: "Login" },
-  { value: "export", label: "Export" },
-]
+const ACTION_FILTERS = [
+  { value: "ALL", labelKey: "allActions" },
+  { value: "insert", labelKey: "action.INSERT" },
+  { value: "update", labelKey: "action.UPDATE" },
+  { value: "delete", labelKey: "action.DELETE" },
+  { value: "approve", labelKey: "action.APPROVE" },
+  { value: "reject", labelKey: "action.REJECT" },
+  { value: "status_change", labelKey: "action.STATUS_CHANGE" },
+  { value: "login", labelKey: "action.LOGIN" },
+  { value: "export", labelKey: "action.EXPORT" },
+] as const
 
-const MODULE_FILTERS: { value: string; label: string }[] = [
-  { value: "ALL", label: "All Modules" },
-  { value: "hr", label: "HR" },
-  { value: "payroll", label: "Payroll" },
-  { value: "recruitment", label: "Recruitment" },
-  { value: "performance", label: "Performance" },
-  { value: "leave", label: "Leave" },
-  { value: "training", label: "Training" },
-  { value: "benefits", label: "Benefits" },
-  { value: "system", label: "System" },
-]
+const MODULE_FILTERS = [
+  { value: "ALL", labelKey: "allModules" },
+  { value: "hr", labelKey: "module.hr" },
+  { value: "payroll", labelKey: "module.payroll" },
+  { value: "recruitment", labelKey: "module.recruitment" },
+  { value: "performance", labelKey: "module.performance" },
+  { value: "leave", labelKey: "module.leave" },
+  { value: "training", labelKey: "module.training" },
+  { value: "benefits", labelKey: "module.benefits" },
+  { value: "system", labelKey: "module.system" },
+] as const
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function AuditLogTab() {
+  const t = useTranslations("HrAuditLog")
   const [actionFilter, setActionFilter] = useState("ALL")
   const [moduleFilter, setModuleFilter] = useState("ALL")
 
@@ -62,7 +64,7 @@ export function AuditLogTab() {
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-content-secondary inline-flex items-center gap-2 text-sm font-medium">
             <SlidersHorizontal className="size-4" strokeWidth={1.75} />
-            Filters:
+            {t("filtersLabel")}
           </span>
           <Select value={actionFilter} onValueChange={setActionFilter}>
             <SelectTrigger className="h-9 w-40 rounded-[10px]">
@@ -71,7 +73,7 @@ export function AuditLogTab() {
             <SelectContent>
               {ACTION_FILTERS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -83,7 +85,7 @@ export function AuditLogTab() {
             <SelectContent>
               {MODULE_FILTERS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -91,7 +93,7 @@ export function AuditLogTab() {
         </div>
         {!isLoading && (
           <span className="text-content-tertiary text-xs leading-4">
-            {total} entries
+            {t("entriesCount", { count: total })}
           </span>
         )}
       </div>
@@ -100,7 +102,7 @@ export function AuditLogTab() {
         <HrSectionSpinner />
       ) : days.length === 0 ? (
         <div className="border-stroke-default bg-surface-white text-content-tertiary flex h-40 items-center justify-center rounded-[14px] border text-sm">
-          No audit entries match the current filters.
+          {t("empty")}
         </div>
       ) : (
         <div className="flex flex-col gap-4">

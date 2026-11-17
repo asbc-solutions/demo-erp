@@ -1,13 +1,25 @@
 import { Mail, MapPin, Phone } from "lucide-react"
+import { useTranslations } from "next-intl"
 
-import type { Employee } from "../../../lib/types"
+import type { Employee, Gender, MaritalStatus } from "../../../lib/types"
 import { DetailField, SectionCard } from "../section-card"
 
 type PersonalInfoTabProps = Readonly<{
   employee: Employee
 }>
 
+const GENDERS: readonly Gender[] = ["male", "female", "other"]
+const MARITAL_STATUSES: readonly MaritalStatus[] = [
+  "single",
+  "married",
+  "divorced",
+  "widowed",
+]
+
 export function PersonalInfoTab({ employee }: PersonalInfoTabProps) {
+  const t = useTranslations("HrEmployeeDetail")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
   const { personal_info, contact, address } = employee
 
   const addressDisplay =
@@ -15,42 +27,49 @@ export function PersonalInfoTab({ employee }: PersonalInfoTabProps) {
 
   return (
     <SectionCard
-      title="Personal Information"
-      description="Basic employee details"
+      title={t("personalTitle")}
+      description={t("personalDescription")}
     >
       <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-3">
-        <DetailField label="First Name" value={personal_info.first_name} />
-        <DetailField label="Last Name" value={personal_info.last_name} />
+        <DetailField label={t("firstName")} value={personal_info.first_name} />
+        <DetailField label={t("lastName")} value={personal_info.last_name} />
         <DetailField
-          label="Email"
+          label={tCommon("email")}
           value={contact.email_work}
           icon={<Mail className="text-content-tertiary size-3.5" strokeWidth={1.75} />}
         />
         <DetailField
-          label="Phone"
+          label={tCommon("phone")}
           value={contact.phone_mobile}
           icon={<Phone className="text-content-tertiary size-3.5" strokeWidth={1.75} />}
         />
         <DetailField
-          label="Date of Birth"
+          label={t("dateOfBirth")}
           value={personal_info.date_of_birth}
         />
         <DetailField
-          label="Gender"
+          label={t("gender")}
           value={
-            personal_info.gender
-              ? personal_info.gender.charAt(0).toUpperCase() +
-                personal_info.gender.slice(1)
-              : null
+            personal_info.gender && GENDERS.includes(personal_info.gender)
+              ? tShared(`gender.${personal_info.gender}`)
+              : personal_info.gender
           }
         />
-        <DetailField label="Marital Status" value={personal_info.marital_status} />
-        <DetailField label="Nationality" value={personal_info.nationality} />
-        <DetailField label="National ID" value={personal_info.national_id} />
-        <DetailField label="Blood Type" value={personal_info.blood_type} />
+        <DetailField
+          label={t("maritalStatus")}
+          value={
+            personal_info.marital_status &&
+            MARITAL_STATUSES.includes(personal_info.marital_status)
+              ? tShared(`maritalStatus.${personal_info.marital_status}`)
+              : personal_info.marital_status
+          }
+        />
+        <DetailField label={t("nationality")} value={personal_info.nationality} />
+        <DetailField label={t("nationalId")} value={personal_info.national_id} />
+        <DetailField label={t("bloodType")} value={personal_info.blood_type} />
         <DetailField
           className="md:col-span-3"
-          label="Address"
+          label={t("address")}
           value={addressDisplay}
           icon={
             <MapPin className="text-content-tertiary size-3.5" strokeWidth={1.75} />

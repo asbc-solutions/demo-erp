@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/src/shared/lib/utils/utils";
 
@@ -19,6 +20,8 @@ export function TeamSizeStep({
   onBack,
   onSubmit,
 }: TeamSizeStepProps) {
+  const t = useTranslations("OnboardingTeamSize");
+  const tOnboarding = useTranslations("Onboarding");
   const [teamSize, setTeamSize] = React.useState<TeamSizeId | undefined>(
     defaultValue,
   );
@@ -37,10 +40,10 @@ export function TeamSizeStep({
 
       <div className="flex flex-col gap-2">
         <h2 className="font-heading text-content-primary text-[31px] leading-[37.2px] font-bold">
-          How big is your team?
+          {t("title")}
         </h2>
         <p className="text-content-tertiary text-base leading-6 font-normal">
-          We&apos;ll tailor the People module for your team size.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -66,7 +69,7 @@ export function TeamSizeStep({
                 {opt.count}
               </span>
               <span className="text-content-tertiary text-[11px] leading-[15.4px] font-normal">
-                {opt.description}
+                {t(`sizes.${opt.id}`)}
               </span>
             </button>
           );
@@ -74,7 +77,7 @@ export function TeamSizeStep({
       </div>
 
       <OnboardingButton type="submit" disabled={!isValid}>
-        Continue
+        {tOnboarding("continue")}
       </OnboardingButton>
     </form>
   );

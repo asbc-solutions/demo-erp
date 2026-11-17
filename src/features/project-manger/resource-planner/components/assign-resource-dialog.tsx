@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -32,28 +33,34 @@ import { useCreateAssignment } from "../../lib/mutations/resources"
 import { useProjects } from "../../lib/queries/projects"
 import { useTasks } from "../../lib/queries/tasks"
 
-const assignResourceSchema = z
-  .object({
-    employee_id: z.string().min(1, "Select a resource"),
-    task_id: z.string().min(1, "Select a task"),
-    allocation_pct: z
-      .number({ invalid_type_error: "Must be a number" })
-      .int("Whole percentages only")
-      .min(1, "Allocate at least 1%")
-      .max(100, "Cannot exceed 100%"),
-    planned_hours: z
-      .number({ invalid_type_error: "Must be a number" })
-      .min(0, "Cannot be negative")
-      .optional(),
-    start_date: z.string().min(1, "Pick a start date"),
-    end_date: z.string().min(1, "Pick an end date"),
-  })
-  .refine((values) => values.end_date >= values.start_date, {
-    message: "End date must be on or after the start date",
-    path: ["end_date"],
-  })
+type Translator = ReturnType<typeof useTranslations<"ProjectsResourcePlanner">>
 
-type AssignResourceFormValues = z.infer<typeof assignResourceSchema>
+function buildAssignResourceSchema(t: Translator) {
+  return z
+    .object({
+      employee_id: z.string().min(1, t("errorSelectResource")),
+      task_id: z.string().min(1, t("errorSelectTask")),
+      allocation_pct: z
+        .number({ invalid_type_error: t("errorNumber") })
+        .int(t("errorWholePercent"))
+        .min(1, t("errorMinAllocation"))
+        .max(100, t("errorMaxAllocation")),
+      planned_hours: z
+        .number({ invalid_type_error: t("errorNumber") })
+        .min(0, t("errorNegative"))
+        .optional(),
+      start_date: z.string().min(1, t("errorStartDate")),
+      end_date: z.string().min(1, t("errorEndDate")),
+    })
+    .refine((values) => values.end_date >= values.start_date, {
+      message: t("errorEndBeforeStart"),
+      path: ["end_date"],
+    })
+}
+
+type AssignResourceFormValues = z.infer<
+  ReturnType<typeof buildAssignResourceSchema>
+>
 
 function isoDay(offsetDays: number): string {
   const date = new Date()
@@ -90,6 +97,9 @@ export function AssignResourceDialog({
   resources,
   defaultEmployeeId,
 }: AssignResourceDialogProps) {
+  const t = useTranslations("ProjectsResourcePlanner")
+  const tCommon = useTranslations("Common")
+  const assignResourceSchema = useMemo(() => buildAssignResourceSchema(t), [t])
   const tasksQuery = useTasks({ per_page: 100 }, { enabled: open })
   const projectsQuery = useProjects({ per_page: 100 }, { enabled: open })
 
@@ -144,10 +154,13 @@ export function AssignResourceDialog({
     createAssignment.mutate(values, {
       onSuccess: () => {
         toast.success(
-          `${selectedResource?.name ?? "Resource"} assigned at ${values.allocation_pct}%`,
+          t("assignedToast", {
+            name: selectedResource?.name ?? t("resourceFallback"),
+            pct: values.allocation_pct,
+          }),
           {
             description: selectedTask
-              ? `${selectedTask.title} · ${projectNameById.get(selectedTask.project_id) ?? "Project"}`
+              ? `${selectedTask.title} · ${projectNameById.get(selectedTask.project_id) ?? t("projectFallback")}`
               : undefined,
           },
         )
@@ -155,8 +168,8 @@ export function AssignResourceDialog({
       },
       onError: (error) => {
         const apiError = error as unknown as { message?: string }
-        toast.error("Couldn't create the assignment", {
-          description: apiError.message ?? "Please check the details and try again.",
+        toast.error(t("assignErrorToast"), {
+          description: apiError.message ?? t("assignErrorDescription"),
         })
       },
     })
@@ -167,16 +180,14 @@ export function AssignResourceDialog({
       <DialogContent className="max-w-lg gap-0 p-0 sm:max-w-lg">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogHeader className="pe-10">
-            <DialogTitle>Assign Resource</DialogTitle>
-            <DialogDescription>
-              Book capacity for a task and set the allocation for the period.
-            </DialogDescription>
+            <DialogTitle>{t("assignResource")}</DialogTitle>
+            <DialogDescription>{t("assignDescription")}</DialogDescription>
           </DialogHeader>
 
           <DialogBody>
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Resource <span className="text-brand-danger">*</span>
+                {t("fieldResource")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={employeeId}
@@ -185,7 +196,7 @@ export function AssignResourceDialog({
                 }
               >
                 <SelectTrigger className={cn(FIELD_CLASS, "w-full shadow-xs")}>
-                  <SelectValue placeholder="Select a resource…" />
+                  <SelectValue placeholder={t("selectResourcePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
                   {resources.map((resource) => (
@@ -193,7 +204,7 @@ export function AssignResourceDialog({
                       {resource.name}
                       {resource.availabilityPct == null
                         ? ""
-                        : ` — ${resource.availabilityPct}% allocated`}
+                        : ` — ${t("allocatedSuffix", { pct: resource.availabilityPct })}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -207,7 +218,7 @@ export function AssignResourceDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Task <span className="text-brand-danger">*</span>
+                {t("fieldTask")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={taskId}
@@ -219,14 +230,16 @@ export function AssignResourceDialog({
                 <SelectTrigger className={cn(FIELD_CLASS, "w-full shadow-xs")}>
                   <SelectValue
                     placeholder={
-                      tasksQuery.isLoading ? "Loading tasks…" : "Select a task…"
+                      tasksQuery.isLoading
+                        ? t("loadingTasks")
+                        : t("selectTaskPlaceholder")
                     }
                   />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
                   {tasks.length === 0 ? (
                     <p className="text-content-tertiary px-2 py-1.5 text-sm">
-                      No tasks available.
+                      {t("noTasks")}
                     </p>
                   ) : (
                     tasks.map((task) => (
@@ -250,7 +263,7 @@ export function AssignResourceDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-primary text-sm font-semibold">
-                  Allocation % <span className="text-brand-danger">*</span>
+                  {t("fieldAllocation")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("allocation_pct", { valueAsNumber: true })}
@@ -268,7 +281,7 @@ export function AssignResourceDialog({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-primary text-sm font-semibold">
-                  Planned hours
+                  {t("fieldPlannedHours")}
                 </Label>
                 <Input
                   {...register("planned_hours", {
@@ -277,7 +290,7 @@ export function AssignResourceDialog({
                   })}
                   type="number"
                   min={0}
-                  placeholder="Optional"
+                  placeholder={tCommon("optional")}
                   className={cn(FIELD_CLASS, "font-mono")}
                 />
                 {errors.planned_hours && (
@@ -291,7 +304,7 @@ export function AssignResourceDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-primary text-sm font-semibold">
-                  Start date <span className="text-brand-danger">*</span>
+                  {t("fieldStartDate")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("start_date")}
@@ -306,7 +319,7 @@ export function AssignResourceDialog({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-primary text-sm font-semibold">
-                  End date <span className="text-brand-danger">*</span>
+                  {t("fieldEndDate")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("end_date")}
@@ -330,10 +343,11 @@ export function AssignResourceDialog({
                     : "text-content-tertiary",
                 )}
               >
-                {selectedResource?.name} is currently {currentAllocation}%
-                allocated this period — this booking takes them to{" "}
-                {projectedAllocation}%
-                {projectedAllocation > 100 ? ", above capacity." : "."}
+                {t(projectedAllocation > 100 ? "projectionOver" : "projection", {
+                  name: selectedResource?.name ?? "",
+                  current: currentAllocation ?? 0,
+                  projected: projectedAllocation,
+                })}
               </p>
             )}
           </DialogBody>
@@ -346,7 +360,7 @@ export function AssignResourceDialog({
               className="h-9 px-4 text-sm font-semibold"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -355,7 +369,7 @@ export function AssignResourceDialog({
               disabled={createAssignment.isPending}
               className="h-9 px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {createAssignment.isPending ? "Assigning…" : "Assign Resource"}
+              {createAssignment.isPending ? t("assigning") : t("assignResource")}
             </Button>
           </DialogFooter>
         </form>

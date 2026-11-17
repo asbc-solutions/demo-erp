@@ -1,5 +1,6 @@
 import { Link } from "@/src/i18n/navigation"
 import { Layers, ListChecks } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Progress } from "@/src/shared/components/ui/progress"
@@ -19,6 +20,8 @@ const HEALTH_ACCENT = {
 } as const
 
 export function ProjectGridCard({ project }: { project: ProjectRow }) {
+  const t = useTranslations("ProjectsAllProjects")
+  const tShared = useTranslations("ProjectsShared")
   const hasProgress = typeof project.progress === "number"
   const accent = project.health ? HEALTH_ACCENT[project.health] : "indigo"
 
@@ -37,7 +40,7 @@ export function ProjectGridCard({ project }: { project: ProjectRow }) {
             TYPE_STYLE[project.typeLabel],
           )}
         >
-          {project.typeLabel}
+          {tShared(`projectType.${project.type}`)}
         </span>
         <ProjectStatusBadge status={project.status} label={project.statusLabel} />
       </div>
@@ -58,13 +61,18 @@ export function ProjectGridCard({ project }: { project: ProjectRow }) {
 
       <div className="mt-1.5 flex items-center justify-between text-[11px] leading-[16.5px]">
         <span>
-          <span className="text-content-primary font-semibold">
-            {hasProgress ? `${project.progress}%` : "—"}
-          </span>
-          <span className="text-content-tertiary font-medium"> complete</span>
+          {t.rich("percentComplete", {
+            percent: hasProgress ? `${project.progress}%` : "—",
+            value: (chunks) => (
+              <span className="text-content-primary font-semibold">{chunks}</span>
+            ),
+            label: (chunks) => (
+              <span className="text-content-tertiary font-medium">{chunks}</span>
+            ),
+          })}
         </span>
         <span className="text-content-tertiary">
-          {project.endDate ? `Due ${project.endDate}` : "—"}
+          {project.endDate ? t("due", { date: project.endDate }) : "—"}
         </span>
       </div>
 
@@ -91,13 +99,16 @@ export function ProjectGridCard({ project }: { project: ProjectRow }) {
           {typeof project.phases === "number" && (
             <span className="flex items-center gap-1">
               <Layers className="size-[11px]" aria-hidden />
-              {project.phases} phases
+              {t("phasesCount", { count: project.phases })}
             </span>
           )}
           {typeof project.tasksTotal === "number" && (
             <span className="flex items-center gap-1">
               <ListChecks className="size-[11px]" aria-hidden />
-              {project.tasksDone ?? 0}/{project.tasksTotal} tasks
+              {t("tasksProgress", {
+                done: project.tasksDone ?? 0,
+                total: project.tasksTotal,
+              })}
             </span>
           )}
         </div>

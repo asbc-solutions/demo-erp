@@ -10,6 +10,8 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -82,6 +84,8 @@ const STAT_ACCENT: Record<
   },
 }
 
+type PlannerStatId = "total" | "utilization" | "overloaded" | "matches"
+
 function availabilityColor(value: number): ProgressColor {
   if (value > 100) return "red"
   if (value >= 85) return "indigo"
@@ -96,6 +100,8 @@ function heatCell(value: number): string {
 }
 
 export function ResourcePlannerModule() {
+  const t = useTranslations("ProjectsResourcePlanner")
+  const locale = useIntlLocale()
   const period = useMemo(() => currentMonthRange(), [])
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState<ResourceFilterValues>(
@@ -115,12 +121,14 @@ export function ResourcePlannerModule() {
     [summaryQuery.data],
   )
   const directory = useMemo(
-    () => buildResourceDirectory(resourcesQuery.data ?? [], heatmapQuery.data ?? []),
-    [resourcesQuery.data, heatmapQuery.data],
+    () => buildResourceDirectory(resourcesQuery.data ?? [], heatmapQuery.data ?? [], (rate) =>
+        t("ratePerHour", { rate }),
+      ),
+    [resourcesQuery.data, heatmapQuery.data, t],
   )
   const heatmap = useMemo(
-    () => buildHeatmapView(heatmapQuery.data),
-    [heatmapQuery.data],
+    () => buildHeatmapView(heatmapQuery.data, locale),
+    [heatmapQuery.data, locale],
   )
 
   const departmentOptions = useMemo(() => {
@@ -204,10 +212,10 @@ export function ResourcePlannerModule() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-content-primary text-2xl leading-8 font-bold tracking-tight">
-            Resource Planner
+            {t("title")}
           </h1>
           <p className="text-content-tertiary text-sm">
-            Manage capacity, skills, and assignments across all projects
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -216,7 +224,7 @@ export function ResourcePlannerModule() {
             className="h-9 px-3 text-[13px]"
             onClick={() => setLevelOpen(true)}
           >
-            Level Resources
+            {t("levelResources")}
           </Button>
           <Button
             variant="primary"
@@ -224,7 +232,7 @@ export function ResourcePlannerModule() {
             onClick={() => openAssign(null)}
           >
             <Plus className="size-4" aria-hidden />
-            Assign Resource
+            {t("assignResource")}
           </Button>
         </div>
       </header>
@@ -234,6 +242,14 @@ export function ResourcePlannerModule() {
         {stats.map((stat) => {
           const Icon = STAT_ICON[stat.icon]
           const accent = STAT_ACCENT[stat.accent]
+          const statId = stat.id as PlannerStatId
+          const summary = summaryQuery.data
+          const caption =
+            statId === "total"
+              ? summary
+                ? t("statCaption.total", { count: summary.department_count })
+                : ""
+              : t(`statCaption.${statId}`)
           return (
             <Card
               key={stat.id}
@@ -253,13 +269,13 @@ export function ResourcePlannerModule() {
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-content-tertiary text-[11px] font-medium tracking-wide uppercase">
-                  {stat.label}
+                  {t(`statLabel.${statId}`)}
                 </span>
                 <span className="text-content-primary text-xl leading-[25px] font-bold">
                   {summaryQuery.isLoading ? "…" : stat.value}
                 </span>
                 <span className="text-content-tertiary text-[12px]">
-                  {stat.caption}
+                  {caption}
                 </span>
               </div>
             </Card>
@@ -279,7 +295,7 @@ export function ResourcePlannerModule() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or skill"
+              placeholder={t("searchPlaceholder")}
               className="h-9 ps-9 text-[13px]"
             />
           </div>
@@ -290,19 +306,19 @@ export function ResourcePlannerModule() {
             skills={skillOptions}
           />
           <span className="text-content-tertiary ms-auto text-xs tabular-nums">
-            {rows.length} of {directory.length}
+            {t("shownOfTotal", { shown: rows.length, total: directory.length })}
           </span>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead>Resource</TableHead>
-              <TableHead>Skills</TableHead>
-              <TableHead>Allocation</TableHead>
-              <TableHead>Billable</TableHead>
-              <TableHead>Rate</TableHead>
-              <TableHead className="text-end">Action</TableHead>
+              <TableHead>{t("colResource")}</TableHead>
+              <TableHead>{t("colSkills")}</TableHead>
+              <TableHead>{t("colAllocation")}</TableHead>
+              <TableHead>{t("colBillable")}</TableHead>
+              <TableHead>{t("colRate")}</TableHead>
+              <TableHead className="text-end">{t("colAction")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -312,7 +328,7 @@ export function ResourcePlannerModule() {
                   colSpan={6}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  Loading resources…
+                  {t("loadingResources")}
                 </TableCell>
               </TableRow>
             ) : resourcesQuery.isError ? (
@@ -321,7 +337,7 @@ export function ResourcePlannerModule() {
                   colSpan={6}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  Couldn&apos;t load resources.
+                  {t("loadError")}
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
@@ -330,7 +346,7 @@ export function ResourcePlannerModule() {
                   colSpan={6}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  No resources match the current search or filters.
+                  {t("noMatches")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -396,7 +412,7 @@ export function ResourcePlannerModule() {
                         variant={r.billable ? "success" : "neutral"}
                         className="text-[11px]"
                       >
-                        {r.billable ? "Billable" : "Non-billable"}
+                        {r.billable ? t("billable") : t("nonBillable")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-content-secondary text-[13px] tabular-nums">
@@ -408,7 +424,7 @@ export function ResourcePlannerModule() {
                         onClick={() => openAssign(r.id)}
                         className="text-brand-primary text-[13px] font-medium hover:underline"
                       >
-                        Assign
+                        {t("assign")}
                       </button>
                     </TableCell>
                   </TableRow>
@@ -423,10 +439,10 @@ export function ResourcePlannerModule() {
       <Card className="p-4">
         <div className="mb-3 flex flex-col gap-0.5">
           <h2 className="text-content-primary text-base leading-6 font-semibold">
-            Capacity Heatmap
+            {t("heatmapTitle")}
           </h2>
           <p className="text-content-tertiary text-xs">
-            Allocation % by week — orange/red indicates overload
+            {t("heatmapSubtitle")}
           </p>
         </div>
 
@@ -434,7 +450,7 @@ export function ResourcePlannerModule() {
           <div className="bg-surface-muted h-40 animate-pulse rounded-[14px]" />
         ) : heatmap.rows.length === 0 ? (
           <p className="text-content-tertiary py-8 text-center text-sm">
-            No active allocations this month.
+            {t("heatmapEmpty")}
           </p>
         ) : (
           <div className="overflow-x-auto">

@@ -4,6 +4,7 @@ import * as React from "react"
 import { Link } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { UserX } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -44,36 +45,50 @@ import { StatusPill } from "../../../components/shared/status-pill"
 import type { StatusTone } from "../../../lib/constants/statuses"
 import { useFinanceTreasuries } from "../../../lib/queries/master-data"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount } from "../../../lib/utils/money"
 import { useSettleCustody, useWriteOffCustody } from "../../lib/mutations/banking"
 import { useCustodyHolder } from "../../lib/queries/banking"
-import { reasonSchema, settleSchema, type ReasonFormValues, type SettleFormValues } from "../../lib/schema/banking"
+import {
+  reasonSchema,
+  settleSchema,
+  type BankingErrorKey,
+  type ReasonFormValues,
+  type SettleFormValues,
+} from "../../lib/schema/banking"
 import type { CustodyHolder, CustodyMovementType } from "../../lib/types/banking"
 
-const TYPE_PILL: Record<CustodyMovementType, { label: string; tone: StatusTone }> = {
-  advance: { label: "advance", tone: "info" },
-  settle: { label: "settle", tone: "success" },
-  return: { label: "cash returned", tone: "neutral" },
-  write_off: { label: "written off", tone: "danger" },
+type BankingT = ReturnType<typeof useTranslations<"FinanceBanking">>
+
+/** Pill tone per movement; the label is the `FinanceBanking` enum map `custodyType`. */
+const TYPE_TONE: Record<CustodyMovementType, StatusTone> = {
+  advance: "info",
+  settle: "success",
+  return: "neutral",
+  write_off: "danger",
 }
 
-const COLUMNS: FinanceColumn<CustodyHolder["movements"][number]>[] = [
-  { id: "date", header: "Date", cell: (row) => formatDate(row.date) },
-  {
-    id: "memo",
-    header: "Memo",
-    cell: (row) => (
-      <span className="flex flex-wrap items-center gap-2">
-        {row.memo}
-        <StatusPill status={`custody-${row.type}`} label={TYPE_PILL[row.type].label} tone={TYPE_PILL[row.type].tone} />
-      </span>
-    ),
-  },
-  { id: "amount", header: "Amount (EGP)", align: "end", cell: (row) => <Amount value={row.amount} /> },
-]
+function movementColumns(t: BankingT, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<CustodyHolder["movements"][number]>[] {
+  return [
+    { id: "date", header: t("colDate"), cell: (row) => formatDate(row.date) },
+    {
+      id: "memo",
+      header: t("colMemo"),
+      cell: (row) => (
+        <span className="flex flex-wrap items-center gap-2">
+          {row.memo}
+          <StatusPill status={`custody-${row.type}`} label={t(`custodyType.${row.type}`)} tone={TYPE_TONE[row.type]} />
+        </span>
+      ),
+    },
+    { id: "amount", header: t("amountEgp"), align: "end", cell: (row) => <Amount value={row.amount} /> },
+  ]
+}
 
 function SettleDialog({ holder, open, onOpenChange }: { holder: CustodyHolder; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
   const { data: treasuries = [] } = useFinanceTreasuries()
   const settle = useSettleCustody(holder.id)
   const empty = React.useMemo<SettleFormValues>(
@@ -104,12 +119,12 @@ function SettleDialog({ holder, open, onOpenChange }: { holder: CustodyHolder; o
         onSuccess: (updated) => {
           toast.success(
             updated.outstanding > 0
-              ? `${updated.name} still holds ${formatAmount(updated.outstanding)} EGP.`
-              : `${updated.name}'s custody is cleared.`,
+              ? t("stillHolds", { name: updated.name, amount: formatAmount(updated.outstanding) })
+              : t("custodyCleared", { name: updated.name }),
           )
           onOpenChange(false)
         },
-        onError: (error) => toast.error(errorMessage(error, "The custody could not be settled. Try again.")),
+        onError: (error) => toast.error(errorMessage(error, t("settleFailed"))),
       },
     )
 
@@ -118,29 +133,29 @@ function SettleDialog({ holder, open, onOpenChange }: { holder: CustodyHolder; o
       <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit(submit)} noValidate>
           <DialogHeader>
-            <DialogTitle>Settle this custody?</DialogTitle>
-            <DialogDescription>
-              Settlement posts the employee&apos;s expense claims against the custody and returns any unspent cash
-              to the treasury. The outstanding amount drops by what you settle. Partial settlements are allowed.
-            </DialogDescription>
+            <DialogTitle>{t("settleTitle")}</DialogTitle>
+            <DialogDescription>{t("settleDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <p className="text-content-secondary text-[13px] leading-5">
-              Outstanding: <span className="text-content-primary font-medium tabular-nums">{formatAmount(holder.outstanding)} EGP</span>
+              {t.rich("outstandingLine", {
+                amount: formatAmount(holder.outstanding),
+                value: (chunks) => <span className="text-content-primary font-medium tabular-nums">{chunks}</span>,
+              })}
             </p>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="settle-expenses">Expense claims (EGP)</FieldLabel>
+                <FieldLabel htmlFor="settle-expenses">{t("expenseClaimsEgp")}</FieldLabel>
                 <Input id="settle-expenses" inputMode="decimal" className="text-end tabular-nums" aria-invalid={Boolean(errors.expenses)} {...register("expenses")} />
               </Field>
               <Field>
-                <FieldLabel htmlFor="settle-returned">Cash returned (EGP)</FieldLabel>
+                <FieldLabel htmlFor="settle-returned">{t("cashReturnedEgp")}</FieldLabel>
                 <Input id="settle-returned" inputMode="decimal" placeholder="0.00" className="text-end tabular-nums" {...register("cash_returned")} />
               </Field>
             </div>
-            {errors.expenses ? <FieldError>{errors.expenses.message}</FieldError> : null}
+            {errors.expenses?.message ? <FieldError>{t(errors.expenses.message as BankingErrorKey)}</FieldError> : null}
             <Field>
-              <FieldLabel htmlFor="settle-treasury">Cash goes back to</FieldLabel>
+              <FieldLabel htmlFor="settle-treasury">{t("cashGoesBackTo")}</FieldLabel>
               <Controller
                 control={control}
                 name="treasury_id"
@@ -163,10 +178,10 @@ function SettleDialog({ holder, open, onOpenChange }: { holder: CustodyHolder; o
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={settle.isPending}>
-              Settle custody
+              {t("settleCustody")}
             </Button>
           </DialogFooter>
         </form>
@@ -176,6 +191,8 @@ function SettleDialog({ holder, open, onOpenChange }: { holder: CustodyHolder; o
 }
 
 function WriteOffDialog({ holder, open, onOpenChange }: { holder: CustodyHolder; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
   const writeOff = useWriteOffCustody(holder.id)
   const {
     register,
@@ -191,10 +208,10 @@ function WriteOffDialog({ holder, open, onOpenChange }: { holder: CustodyHolder;
   const submit = ({ reason }: ReasonFormValues) =>
     writeOff.mutate(reason, {
       onSuccess: () => {
-        toast.success(`${formatAmount(holder.outstanding)} EGP of ${holder.name}'s custody was written off.`)
+        toast.success(t("custodyWrittenOff", { amount: formatAmount(holder.outstanding), name: holder.name }))
         onOpenChange(false)
       },
-      onError: (error) => toast.error(errorMessage(error, "The custody could not be written off. Try again.")),
+      onError: (error) => toast.error(errorMessage(error, t("custodyWriteOffFailed"))),
     })
 
   return (
@@ -202,25 +219,24 @@ function WriteOffDialog({ holder, open, onOpenChange }: { holder: CustodyHolder;
       <DialogContent className="max-w-md" showCloseButton={false}>
         <form onSubmit={handleSubmit(submit)} noValidate>
           <DialogHeader>
-            <DialogTitle>Write off this custody?</DialogTitle>
+            <DialogTitle>{t("custodyWriteOffTitle")}</DialogTitle>
           </DialogHeader>
           <DialogBody>
             <FinanceAlert tone="warning" className="text-status-warning-fg">
-              Writing off charges the {formatAmount(holder.outstanding)} EGP still outstanding to expense and
-              clears {holder.name}&apos;s custody. Recovering it later needs a new entry.
+              {t("custodyWriteOffExplainer", { amount: formatAmount(holder.outstanding), name: holder.name })}
             </FinanceAlert>
             <Field>
-              <FieldLabel htmlFor="custody-write-off-reason">Reason</FieldLabel>
+              <FieldLabel htmlFor="custody-write-off-reason">{t("reason")}</FieldLabel>
               <Textarea id="custody-write-off-reason" rows={3} aria-invalid={Boolean(errors.reason)} {...register("reason")} />
-              {errors.reason ? <FieldError>{errors.reason.message}</FieldError> : null}
+              {errors.reason?.message ? <FieldError>{t(errors.reason.message as BankingErrorKey)}</FieldError> : null}
             </Field>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="danger" disabled={!isValid || writeOff.isPending}>
-              Write off
+              {t("writeOff")}
             </Button>
           </DialogFooter>
         </form>
@@ -231,6 +247,9 @@ function WriteOffDialog({ holder, open, onOpenChange }: { holder: CustodyHolder;
 
 /** 04.14 · Custody detail — one employee's advances, settlements and what is still out. */
 function CustodyDetailPage({ holderId }: { holderId: string }) {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
+  const { formatDate } = useFinanceDateFormat()
   const { data: holder, isError, isPending, refetch } = useCustodyHolder(holderId)
   const [settling, setSettling] = React.useState(false)
   const [writingOff, setWritingOff] = React.useState(false)
@@ -238,7 +257,7 @@ function CustodyDetailPage({ holderId }: { holderId: string }) {
   if (isError) {
     return (
       <>
-        <FinancePageHeader title="Custody" />
+        <FinancePageHeader title={t("custody")} />
         <FinancePageBody>
           <FinanceErrorState onRetry={() => refetch()} />
         </FinancePageBody>
@@ -249,16 +268,16 @@ function CustodyDetailPage({ holderId }: { holderId: string }) {
   if (!isPending && !holder) {
     return (
       <>
-        <FinancePageHeader title="Custody not found" />
+        <FinancePageHeader title={t("custodyNotFound")} />
         <FinancePageBody>
           <EmptyState
             variant="card"
             icon={<UserX />}
-            title="This employee holds no custody."
-            description="Advance custody from Employee custody first."
+            title={t("noCustodyHeld")}
+            description={t("noCustodyHeldDescription")}
             actions={
               <Button variant="secondary" size="sm" asChild>
-                <Link href="/finance/custody">Open Employee custody</Link>
+                <Link href="/finance/custody">{t("openEmployeeCustody")}</Link>
               </Button>
             }
           />
@@ -272,18 +291,18 @@ function CustodyDetailPage({ holderId }: { holderId: string }) {
   return (
     <>
       <FinancePageHeader
-        title={holder?.name ?? "Custody"}
-        figure={holder ? <HeaderFigure label="Outstanding (EGP)">{formatAmount(holder.outstanding)}</HeaderFigure> : null}
+        title={holder?.name ?? t("custody")}
+        figure={holder ? <HeaderFigure label={t("outstandingEgp")}>{formatAmount(holder.outstanding)}</HeaderFigure> : null}
         actions={
           <>
             <Button variant="secondary" asChild>
-              <Link href="/finance/custody">Back</Link>
+              <Link href="/finance/custody">{tCommon("back")}</Link>
             </Button>
             <Button variant="ghost" disabled={!open} onClick={() => setWritingOff(true)}>
-              Write off
+              {t("writeOff")}
             </Button>
             <Button variant="primary" disabled={!open} onClick={() => setSettling(true)}>
-              Settle
+              {t("settle")}
             </Button>
           </>
         }
@@ -294,18 +313,27 @@ function CustodyDetailPage({ holderId }: { holderId: string }) {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Advanced (EGP)" value={formatAmount(holder.advanced)} caption={holder.role} />
-              <KpiCard layout="bar" accent="teal" label="Settled (EGP)" value={formatAmount(holder.settled)} />
+              <KpiCard layout="bar" accent="indigo" label={t("advancedEgp")} value={formatAmount(holder.advanced)} caption={holder.role} />
+              <KpiCard layout="bar" accent="teal" label={t("settledEgp")} value={formatAmount(holder.settled)} />
               <KpiCard
                 layout="bar"
                 accent="amber"
-                label="Outstanding (EGP)"
+                label={t("outstandingEgp")}
                 value={formatAmount(holder.outstanding)}
-                caption={open ? `Held since ${holder.since ? formatDate(holder.since) : "—"}` : "Cleared"}
+                caption={
+                  open
+                    ? t("heldSince", { date: holder.since ? formatDate(holder.since) : "—" })
+                    : t("clearedCaption")
+                }
               />
             </div>
-            <FinanceSection title="Movements">
-              <FinanceTable caption={`Custody movements for ${holder.name}`} columns={COLUMNS} rows={holder.movements} getRowId={(row) => row.id} />
+            <FinanceSection title={t("movements")}>
+              <FinanceTable
+                caption={t("custodyMovementsFor", { name: holder.name })}
+                columns={movementColumns(t, formatDate)}
+                rows={holder.movements}
+                getRowId={(row) => row.id}
+              />
             </FinanceSection>
             <SettleDialog holder={holder} open={settling} onOpenChange={setSettling} />
             <WriteOffDialog holder={holder} open={writingOff} onOpenChange={setWritingOff} />

@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { Field, FieldError, FieldLabel } from "@/src/shared/components/ui/field"
 import { Input } from "@/src/shared/components/ui/input"
 import { PasswordInput } from "@/src/shared/components/ui/password-input"
@@ -12,6 +14,7 @@ import {
 } from "@/src/shared/components/ui/select"
 import { Textarea } from "@/src/shared/components/ui/textarea"
 
+import { useFieldError } from "../../../lib/hooks/use-field-error"
 import { MINIMUM_EMPLOYEE_AGE } from "../../../lib/schema/personal-info"
 import type { Gender, NewEmployeeDraft } from "../../../types/employee"
 import { StepShell } from "../step-shell"
@@ -75,6 +78,10 @@ export function PersonalInfoStep({
   errors = {},
   mode = "add",
 }: PersonalInfoStepProps) {
+  const t = useTranslations("HrAddEmployee")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const update =
     <K extends keyof NewEmployeeDraft["personal"]>(key: K) =>
     (next: NewEmployeeDraft["personal"][K]) =>
@@ -82,17 +89,17 @@ export function PersonalInfoStep({
 
   return (
     <StepShell
-      title="Step 1: Personal Info"
-      description="Enter basic personal information"
+      title={t("personalStepTitle")}
+      description={t("personalStepDescription")}
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="firstName">
-            <RequiredLabel>First Name</RequiredLabel>
+            <RequiredLabel>{t("firstName")}</RequiredLabel>
           </FieldLabel>
           <Input
             id="firstName"
-            placeholder="John"
+            placeholder={t("firstNamePlaceholder")}
             required
             aria-invalid={Boolean(errors.firstName)}
             aria-describedby={errors.firstName ? "firstName-error" : undefined}
@@ -100,16 +107,16 @@ export function PersonalInfoStep({
             onChange={(event) => update("firstName")(event.target.value)}
           />
           {errors.firstName && (
-            <FieldError id="firstName-error">{errors.firstName}</FieldError>
+            <FieldError id="firstName-error">{fieldError(errors.firstName)}</FieldError>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="lastName">
-            <RequiredLabel>Last Name</RequiredLabel>
+            <RequiredLabel>{t("lastName")}</RequiredLabel>
           </FieldLabel>
           <Input
             id="lastName"
-            placeholder="Smith"
+            placeholder={t("lastNamePlaceholder")}
             required
             aria-invalid={Boolean(errors.lastName)}
             aria-describedby={errors.lastName ? "lastName-error" : undefined}
@@ -117,12 +124,12 @@ export function PersonalInfoStep({
             onChange={(event) => update("lastName")(event.target.value)}
           />
           {errors.lastName && (
-            <FieldError id="lastName-error">{errors.lastName}</FieldError>
+            <FieldError id="lastName-error">{fieldError(errors.lastName)}</FieldError>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="email">
-            <RequiredLabel>Email</RequiredLabel>
+            <RequiredLabel>{tCommon("email")}</RequiredLabel>
           </FieldLabel>
           <Input
             id="email"
@@ -135,12 +142,12 @@ export function PersonalInfoStep({
             onChange={(event) => update("email")(event.target.value)}
           />
           {errors.email && (
-            <FieldError id="email-error">{errors.email}</FieldError>
+            <FieldError id="email-error">{fieldError(errors.email)}</FieldError>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="phone">
-            <RequiredLabel>Phone</RequiredLabel>
+            <RequiredLabel>{tCommon("phone")}</RequiredLabel>
           </FieldLabel>
           <Input
             id="phone"
@@ -157,7 +164,7 @@ export function PersonalInfoStep({
             }
           />
           {errors.phone && (
-            <FieldError id="phone-error">{errors.phone}</FieldError>
+            <FieldError id="phone-error">{fieldError(errors.phone)}</FieldError>
           )}
         </Field>
       </div>
@@ -165,7 +172,7 @@ export function PersonalInfoStep({
       {mode === "add" && (
         <Field>
           <FieldLabel htmlFor="password">
-            <RequiredLabel>Password</RequiredLabel>
+            <RequiredLabel>{t("password")}</RequiredLabel>
           </FieldLabel>
           <PasswordInput
             id="password"
@@ -179,7 +186,7 @@ export function PersonalInfoStep({
             }
           />
           {errors.password && (
-            <FieldError id="password-error">{errors.password}</FieldError>
+            <FieldError id="password-error">{fieldError(errors.password)}</FieldError>
           )}
         </Field>
       )}
@@ -187,9 +194,9 @@ export function PersonalInfoStep({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Field>
           <FieldLabel htmlFor="dateOfBirth">
-            <RequiredLabel>Date of Birth</RequiredLabel>
+            <RequiredLabel>{t("dateOfBirth")}</RequiredLabel>
             <span className="text-content-quaternary ms-1 text-[11px] font-normal">
-              {MINIMUM_EMPLOYEE_AGE}+ years
+              {t("minAge", { age: MINIMUM_EMPLOYEE_AGE })}
             </span>
           </FieldLabel>
           <Input
@@ -206,13 +213,13 @@ export function PersonalInfoStep({
           />
           {errors.dateOfBirth && (
             <FieldError id="dateOfBirth-error">
-              {errors.dateOfBirth}
+              {fieldError(errors.dateOfBirth)}
             </FieldError>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="gender">
-            <RequiredLabel>Gender</RequiredLabel>
+            <RequiredLabel>{t("gender")}</RequiredLabel>
           </FieldLabel>
           <Select
             value={value.gender}
@@ -223,23 +230,23 @@ export function PersonalInfoStep({
               aria-invalid={Boolean(errors.gender)}
               aria-describedby={errors.gender ? "gender-error" : undefined}
             >
-              <SelectValue placeholder="Select..." />
+              <SelectValue placeholder={t("selectPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="MALE">Male</SelectItem>
-              <SelectItem value="FEMALE">Female</SelectItem>
-              <SelectItem value="OTHER">Other</SelectItem>
+              <SelectItem value="MALE">{tShared("gender.male")}</SelectItem>
+              <SelectItem value="FEMALE">{tShared("gender.female")}</SelectItem>
+              <SelectItem value="OTHER">{tShared("gender.other")}</SelectItem>
             </SelectContent>
           </Select>
           {errors.gender && (
-            <FieldError id="gender-error">{errors.gender}</FieldError>
+            <FieldError id="gender-error">{fieldError(errors.gender)}</FieldError>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="nationality">
-            <RequiredLabel>Nationality</RequiredLabel>
+            <RequiredLabel>{t("nationality")}</RequiredLabel>
             <span className="text-content-quaternary ms-1 text-[11px] font-normal">
-              ISO-3 code
+              {t("iso3Code")}
             </span>
           </FieldLabel>
           <Input
@@ -259,7 +266,7 @@ export function PersonalInfoStep({
           />
           {errors.nationality && (
             <FieldError id="nationality-error">
-              {errors.nationality}
+              {fieldError(errors.nationality)}
             </FieldError>
           )}
         </Field>
@@ -267,11 +274,11 @@ export function PersonalInfoStep({
 
       <Field>
         <FieldLabel htmlFor="nationalId">
-          <RequiredLabel>National ID</RequiredLabel>
+          <RequiredLabel>{t("nationalId")}</RequiredLabel>
         </FieldLabel>
         <Input
           id="nationalId"
-          placeholder="ID number"
+          placeholder={t("idNumberPlaceholder")}
           required
           aria-invalid={Boolean(errors.nationalId)}
           aria-describedby={
@@ -281,19 +288,19 @@ export function PersonalInfoStep({
           onChange={(event) => update("nationalId")(event.target.value)}
         />
         {errors.nationalId && (
-          <FieldError id="nationalId-error">{errors.nationalId}</FieldError>
+          <FieldError id="nationalId-error">{fieldError(errors.nationalId)}</FieldError>
         )}
       </Field>
 
       {mode === "add" && (
         <Field>
           <FieldLabel htmlFor="address">
-            <RequiredLabel>Address</RequiredLabel>
+            <RequiredLabel>{t("address")}</RequiredLabel>
           </FieldLabel>
           <Textarea
             id="address"
             rows={2}
-            placeholder="Full address"
+            placeholder={t("fullAddressPlaceholder")}
             required
             aria-invalid={Boolean(errors.address)}
             aria-describedby={errors.address ? "address-error" : undefined}
@@ -301,7 +308,7 @@ export function PersonalInfoStep({
             onChange={(event) => update("address")(event.target.value)}
           />
           {errors.address && (
-            <FieldError id="address-error">{errors.address}</FieldError>
+            <FieldError id="address-error">{fieldError(errors.address)}</FieldError>
           )}
         </Field>
       )}
@@ -309,11 +316,11 @@ export function PersonalInfoStep({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Field>
           <FieldLabel htmlFor="city">
-            <RequiredLabel>City</RequiredLabel>
+            <RequiredLabel>{t("city")}</RequiredLabel>
           </FieldLabel>
           <Input
             id="city"
-            placeholder="New York"
+            placeholder={t("cityPlaceholder")}
             required
             aria-invalid={Boolean(errors.city)}
             aria-describedby={errors.city ? "city-error" : undefined}
@@ -321,14 +328,14 @@ export function PersonalInfoStep({
             onChange={(event) => update("city")(event.target.value)}
           />
           {errors.city && (
-            <FieldError id="city-error">{errors.city}</FieldError>
+            <FieldError id="city-error">{fieldError(errors.city)}</FieldError>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="country">
-            <RequiredLabel>Country</RequiredLabel>
+            <RequiredLabel>{t("country")}</RequiredLabel>
             <span className="text-content-quaternary ms-1 text-[11px] font-normal">
-              ISO-3 code
+              {t("iso3Code")}
             </span>
           </FieldLabel>
           <Input
@@ -345,13 +352,13 @@ export function PersonalInfoStep({
             }
           />
           {errors.country && (
-            <FieldError id="country-error">{errors.country}</FieldError>
+            <FieldError id="country-error">{fieldError(errors.country)}</FieldError>
           )}
         </Field>
         {mode === "add" && (
           <Field>
             <FieldLabel htmlFor="postalCode">
-              <RequiredLabel>Postal Code</RequiredLabel>
+              <RequiredLabel>{t("postalCode")}</RequiredLabel>
             </FieldLabel>
             <Input
               id="postalCode"
@@ -365,7 +372,7 @@ export function PersonalInfoStep({
               onChange={(event) => update("postalCode")(event.target.value)}
             />
             {errors.postalCode && (
-              <FieldError id="postalCode-error">{errors.postalCode}</FieldError>
+              <FieldError id="postalCode-error">{fieldError(errors.postalCode)}</FieldError>
             )}
           </Field>
         )}

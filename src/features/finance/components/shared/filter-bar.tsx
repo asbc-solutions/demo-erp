@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ChevronDown, Columns3, Funnel, Search } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { Checkbox } from "@/src/shared/components/ui/checkbox"
@@ -37,9 +38,11 @@ function FilterBar({ className, ...props }: React.ComponentProps<"div">) {
 
 function FilterSearch({
   className,
-  placeholder = "Search accounts, documents, contacts…",
+  placeholder: placeholderProp,
   ...props
 }: React.ComponentProps<"input">) {
+  const t = useTranslations("FinanceShared")
+  const placeholder = placeholderProp ?? t("searchPlaceholder")
   return (
     <div data-slot="filter-search" className={cn("relative w-64", className)}>
       <Search
@@ -81,8 +84,10 @@ function FilterChip({
   allValue = "all",
   className,
 }: FilterChipProps) {
+  const t = useTranslations("FinanceShared")
+  const tCommon = useTranslations("Common")
   const current =
-    value === allValue ? "all" : (options.find((o) => o.value === value)?.label ?? value)
+    value === allValue ? t("filterAll") : (options.find((o) => o.value === value)?.label ?? value)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -95,15 +100,13 @@ function FilterChip({
             className,
           )}
         >
-          <span>
-            {label}: {current}
-          </span>
+          <span>{t("filterChipLabel", { label, value: current })}</span>
           <ChevronDown aria-hidden className="text-content-tertiary size-3.5" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-44">
         <DropdownMenuRadioGroup value={value} onValueChange={onValueChange}>
-          <DropdownMenuRadioItem value={allValue}>All</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value={allValue}>{tCommon("all")}</DropdownMenuRadioItem>
           {options.map((option) => (
             <DropdownMenuRadioItem key={option.value} value={option.value}>
               {option.label}
@@ -127,10 +130,11 @@ function GroupBySelect({
   onValueChange: (value: string) => void
   className?: string
 }) {
-  const current = options.find((o) => o.value === value)?.label ?? "No grouping"
+  const t = useTranslations("FinanceShared")
+  const current = options.find((o) => o.value === value)?.label ?? t("noGrouping")
   return (
     <div data-slot="group-by-select" className={cn("flex items-center gap-2", className)}>
-      <span className="text-content-secondary text-[13px] leading-5">Group by</span>
+      <span className="text-content-secondary text-[13px] leading-5">{t("groupBy")}</span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" size="sm" className="text-content-primary text-[13px]">
@@ -164,17 +168,18 @@ function ColumnChooser({
   onHiddenIdsChange: (ids: string[]) => void
   className?: string
 }) {
+  const t = useTranslations("FinanceShared")
   const visible = columns.length - hiddenIds.length
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="secondary" size="sm" className={cn("text-content-primary", className)}>
           <Columns3 aria-hidden />
-          Columns · {visible}/{columns.length}
+          {t("columnsCount", { visible, total: columns.length })}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
-        <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("visibleColumns")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map((column) => {
           const checked = !hiddenIds.includes(column.id)
@@ -217,23 +222,25 @@ function SelectionBar({
   children,
   ...props
 }: React.ComponentProps<"div"> & { count: number; onClear: () => void }) {
+  const t = useTranslations("FinanceShared")
+  const tCommon = useTranslations("Common")
   return (
     <div
       data-slot="selection-bar"
       role="toolbar"
-      aria-label={`${count} selected`}
+      aria-label={t("selectedCount", { count })}
       className={cn(
         "border-brand-primary bg-brand-primary/10 flex flex-wrap items-center gap-3 rounded-lg border px-4 py-2",
         className,
       )}
       {...props}
     >
-      <Checkbox checked aria-label="Clear selection" onCheckedChange={onClear} />
-      <span className="text-content-primary text-[13px] leading-5 font-medium">{count} selected</span>
+      <Checkbox checked aria-label={t("clearSelection")} onCheckedChange={onClear} />
+      <span className="text-content-primary text-[13px] leading-5 font-medium">{t("selectedCount", { count })}</span>
       <div className="ms-auto flex items-center gap-2">
         {children}
         <Button variant="ghost" size="sm" onClick={onClear}>
-          Clear
+          {tCommon("clear")}
         </Button>
       </div>
     </div>

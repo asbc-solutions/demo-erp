@@ -1,3 +1,5 @@
+import type { Messages } from "next-intl"
+
 import type { ModuleId } from "@/src/shared/lib/constants/modules"
 
 /* -------------------------------------------------------------------------- */
@@ -19,6 +21,7 @@ export const ONBOARDING_STEP_IDS: readonly OnboardingStepId[] = [
   "login",
 ]
 
+/** English step names, sent as `FunnelStep.label` by the summary API. */
 export const ONBOARDING_STEP_LABELS: Record<OnboardingStepId, string> = {
   company: "Company name",
   industry: "Industry & stage",
@@ -26,6 +29,15 @@ export const ONBOARDING_STEP_LABELS: Record<OnboardingStepId, string> = {
   "connect-tools": "Connect tools",
   login: "Signed in",
 }
+
+/** `MarketingTrackingSteps` message keys the dashboard renders for each step id. */
+export const ONBOARDING_STEP_LABEL_KEYS = {
+  company: "company",
+  industry: "industry",
+  "team-size": "teamSize",
+  "connect-tools": "connectTools",
+  login: "login",
+} as const satisfies Record<OnboardingStepId, keyof Messages["MarketingTrackingSteps"]>
 
 export type OnboardingAnswers = {
   companyName?: string | null

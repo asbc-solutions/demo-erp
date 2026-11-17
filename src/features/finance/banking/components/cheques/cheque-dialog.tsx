@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -25,18 +26,20 @@ import {
   SelectValue,
 } from "@/src/shared/components/ui/select"
 
+import { useStatusLabel } from "../../../components/shared/status-pill"
 import { useFinanceContacts, useFinanceTreasuries } from "../../../lib/queries/master-data"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { useCreateCheque } from "../../lib/mutations/banking"
-import { chequeSchema, type ChequeFormValues } from "../../lib/schema/banking"
+import { chequeSchema, type BankingErrorKey, type ChequeFormValues } from "../../lib/schema/banking"
 import type { ChequeDirection } from "../../lib/types/banking"
 
 const TODAY = "2026-03-31"
 
+/** Per direction: the contact kind, and `FinanceBanking` keys for its copy. */
 export const CHEQUE_COPY = {
-  received: { title: "Record cheque", party: "Drawer", contactKind: "customer", partyHint: "The customer who wrote the cheque" },
-  issued: { title: "Write cheque", party: "Payee", contactKind: "supplier", partyHint: "The supplier the cheque is made out to" },
+  received: { title: "recordCheque", party: "drawer", contactKind: "customer", partyHint: "drawerHint" },
+  issued: { title: "writeCheque", party: "payee", contactKind: "supplier", partyHint: "payeeHint" },
 } as const
 
 type ChequeDialogProps = {
@@ -49,6 +52,12 @@ type ChequeDialogProps = {
 
 /** Record cheque / Write cheque — registers it at its opening status; nothing posts until it clears. */
 function ChequeDialog({ direction, open, onOpenChange, nextNumber }: ChequeDialogProps) {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
+  const tShared = useTranslations("FinanceShared")
+  const { formatDate } = useFinanceDateFormat()
+  const statusLabel = useStatusLabel()
+  const errorText = (message?: string) => (message ? t(message as BankingErrorKey) : null)
   const copy = CHEQUE_COPY[direction]
   const { data: contacts = [] } = useFinanceContacts(copy.contactKind)
   const { data: treasuries = [] } = useFinanceTreasuries()
@@ -87,10 +96,10 @@ function ChequeDialog({ direction, open, onOpenChange, nextNumber }: ChequeDialo
       { ...values, direction, amount: Number(values.amount) },
       {
         onSuccess: (cheque) => {
-          toast.success(`Cheque ${cheque.number} is in the register as ${cheque.status.replace(/_/g, " ")}.`)
+          toast.success(t("chequeSaved", { number: cheque.number, status: statusLabel(cheque.status) }))
           onOpenChange(false)
         },
-        onError: (error) => toast.error(errorMessage(error, "The cheque could not be saved. Try again.")),
+        onError: (error) => toast.error(errorMessage(error, t("chequeSaveFailed"))),
       },
     )
 
@@ -99,28 +108,25 @@ function ChequeDialog({ direction, open, onOpenChange, nextNumber }: ChequeDialo
       <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit(submit)} noValidate>
           <DialogHeader>
-            <DialogTitle>{copy.title}</DialogTitle>
-            <DialogDescription>
-              Saving registers the cheque in the register at its opening status. It does not post an entry;
-              that happens as the cheque clears.
-            </DialogDescription>
+            <DialogTitle>{t(copy.title)}</DialogTitle>
+            <DialogDescription>{t("chequeDialogDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field>
-                <FieldLabel htmlFor="cheque-number">Cheque no. *</FieldLabel>
+                <FieldLabel htmlFor="cheque-number">{t("colChequeNo")} *</FieldLabel>
                 <Input id="cheque-number" inputMode="numeric" className="font-mono" aria-invalid={Boolean(errors.number)} {...register("number")} />
-                {errors.number ? <FieldError>{errors.number.message}</FieldError> : null}
+                {errors.number ? <FieldError>{errorText(errors.number.message)}</FieldError> : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="cheque-party">{copy.party} *</FieldLabel>
+                <FieldLabel htmlFor="cheque-party">{t(copy.party)} *</FieldLabel>
                 <Controller
                   control={control}
                   name="contact_id"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger id="cheque-party" aria-invalid={Boolean(errors.contact_id)}>
-                        <SelectValue placeholder={copy.partyHint} />
+                        <SelectValue placeholder={t(copy.partyHint)} />
                       </SelectTrigger>
                       <SelectContent>
                         {contacts.map((row) => (
@@ -132,15 +138,15 @@ function ChequeDialog({ direction, open, onOpenChange, nextNumber }: ChequeDialo
                     </Select>
                   )}
                 />
-                {errors.contact_id ? <FieldError>{errors.contact_id.message}</FieldError> : null}
+                {errors.contact_id ? <FieldError>{errorText(errors.contact_id.message)}</FieldError> : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="cheque-bank">Bank *</FieldLabel>
-                <Input id="cheque-bank" placeholder="e.g. CIB" aria-invalid={Boolean(errors.bank)} {...register("bank")} />
-                {errors.bank ? <FieldError>{errors.bank.message}</FieldError> : null}
+                <FieldLabel htmlFor="cheque-bank">{t("colBank")} *</FieldLabel>
+                <Input id="cheque-bank" placeholder={t("bankPlaceholder")} aria-invalid={Boolean(errors.bank)} {...register("bank")} />
+                {errors.bank ? <FieldError>{errorText(errors.bank.message)}</FieldError> : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="cheque-amount">Amount *</FieldLabel>
+                <FieldLabel htmlFor="cheque-amount">{t("colAmount")} *</FieldLabel>
                 <div className="relative">
                   <Input
                     id="cheque-amount"
@@ -154,32 +160,32 @@ function ChequeDialog({ direction, open, onOpenChange, nextNumber }: ChequeDialo
                     EGP
                   </span>
                 </div>
-                {errors.amount ? <FieldError>{errors.amount.message}</FieldError> : null}
+                {errors.amount ? <FieldError>{errorText(errors.amount.message)}</FieldError> : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="cheque-issued">Issue date *</FieldLabel>
+                <FieldLabel htmlFor="cheque-issued">{t("issueDate")} *</FieldLabel>
                 <Input id="cheque-issued" type="date" {...register("issue_date")} />
                 <FieldDescription>{issueDate ? formatDate(issueDate) : "—"}</FieldDescription>
               </Field>
               <Field>
-                <FieldLabel htmlFor="cheque-due">Due date *</FieldLabel>
+                <FieldLabel htmlFor="cheque-due">{t("dueDate")} *</FieldLabel>
                 <Input id="cheque-due" type="date" aria-invalid={Boolean(errors.due_date)} {...register("due_date")} />
                 {errors.due_date ? (
-                  <FieldError>{errors.due_date.message}</FieldError>
+                  <FieldError>{errorText(errors.due_date.message)}</FieldError>
                 ) : (
                   <FieldDescription>{dueDate ? formatDate(dueDate) : "—"}</FieldDescription>
                 )}
               </Field>
             </div>
             <Field>
-              <FieldLabel htmlFor="cheque-treasury">Treasury *</FieldLabel>
+              <FieldLabel htmlFor="cheque-treasury">{t("treasury")} *</FieldLabel>
               <Controller
                 control={control}
                 name="treasury_id"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="cheque-treasury">
-                      <SelectValue placeholder="Choose the bank account" />
+                      <SelectValue placeholder={t("errorBookTreasury")} />
                     </SelectTrigger>
                     <SelectContent>
                       {banks.map((row) => (
@@ -192,17 +198,14 @@ function ChequeDialog({ direction, open, onOpenChange, nextNumber }: ChequeDialo
                 )}
               />
             </Field>
-            <p className="text-content-tertiary text-[13px] leading-5">
-              Saved records live in this session only. The seeded data is never modified, so a reload returns the
-              prototype to its known state.
-            </p>
+            <p className="text-content-tertiary text-[13px] leading-5">{tShared("sessionOnlyNote")}</p>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={createCheque.isPending}>
-              Save
+              {tCommon("save")}
             </Button>
           </DialogFooter>
         </form>

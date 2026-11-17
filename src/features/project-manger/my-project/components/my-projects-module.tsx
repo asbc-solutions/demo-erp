@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react"
 import { Link } from "@/src/i18n/navigation"
 import { Plus, Users } from "lucide-react"
+import { useTranslations } from "next-intl"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -31,52 +33,57 @@ import { SubmitExpenseDialog } from "./submit-expense-dialog"
 import { UpcomingMilestonesCard } from "./upcoming-milestones-card"
 import { UpdateStatusDialog } from "./update-status-dialog"
 
-const MY_PROJECT_TABS = ["Active", "All Mine", "Following", "Archived"] as const
+/** Tab ids; each is a `ProjectsMyProjects.tab` message key. */
+const MY_PROJECT_TABS = ["active", "allMine", "following", "archived"] as const
 
 type MyProjectTab = (typeof MY_PROJECT_TABS)[number]
 
 /** Each tab maps to a `GET /pm/me/projects` membership/status filter. */
 const TAB_PARAMS: Record<MyProjectTab, MyProjectsParams> = {
-  Active: { status: "released" },
-  "All Mine": {},
-  Following: { membership: "following" },
-  Archived: { status: "closed" },
+  active: { status: "released" },
+  allMine: {},
+  following: { membership: "following" },
+  archived: { status: "closed" },
 }
 
-function buildStats(stats: MyProjectsStats): MyProjectStat[] {
+type MyProjectsT = ReturnType<typeof useTranslations<"ProjectsMyProjects">>
+
+function buildStats(stats: MyProjectsStats, t: MyProjectsT): MyProjectStat[] {
   return [
     {
       id: "managed",
-      label: "Managed by me",
+      label: t("statManaged"),
       value: String(stats.managed_count),
-      caption: "As Project Manager",
+      caption: t("statManagedCaption"),
       icon: "folder",
       accent: "indigo",
     },
     {
       id: "contributing",
-      label: "Contributing",
+      label: t("statContributing"),
       value: String(stats.contributing_count),
-      caption: "As team member",
+      caption: t("statContributingCaption"),
       icon: "activity",
       accent: "emerald",
     },
     {
       id: "following",
-      label: "Following",
+      label: t("statFollowing"),
       value: String(stats.following_count),
-      caption: "Watch only",
+      caption: t("statFollowingCaption"),
       icon: "trending",
       accent: "blue",
     },
     {
       id: "health",
-      label: "Avg Health",
+      label: t("statHealth"),
       value: `${stats.avg_health_pct}%`,
       caption:
         stats.avg_health_delta_pct != null
-          ? `${stats.avg_health_delta_pct > 0 ? "+" : ""}${stats.avg_health_delta_pct}% vs last month`
-          : "Across my projects",
+          ? t("statHealthDelta", {
+              delta: `${stats.avg_health_delta_pct > 0 ? "+" : ""}${stats.avg_health_delta_pct}`,
+            })
+          : t("statHealthCaption"),
       icon: "health",
       accent: "emerald",
     },
@@ -84,7 +91,9 @@ function buildStats(stats: MyProjectsStats): MyProjectStat[] {
 }
 
 export function MyProjectsModule() {
-  const [tab, setTab] = useState<MyProjectTab>("Active")
+  const t = useTranslations("ProjectsMyProjects")
+  const locale = useIntlLocale()
+  const [tab, setTab] = useState<MyProjectTab>("active")
   const [newProjectOpen, setNewProjectOpen] = useState(false)
   const [logTimeOpen, setLogTimeOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
@@ -97,10 +106,13 @@ export function MyProjectsModule() {
     per_page: 25,
   })
 
-  const projects = useMemo(() => (data ?? []).map(mapProjectRow), [data])
+  const projects = useMemo(
+    () => (data ?? []).map((item) => mapProjectRow(item, locale)),
+    [data, locale],
+  )
   const stats = useMemo(
-    () => (statsQ.data ? buildStats(statsQ.data) : null),
-    [statsQ.data],
+    () => (statsQ.data ? buildStats(statsQ.data, t) : null),
+    [statsQ.data, t],
   )
 
   const handleQuickAction = (id: QuickActionId) => {
@@ -116,12 +128,12 @@ export function MyProjectsModule() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/over-view">PM Module</Link>
+              <Link href="/over-view">{t("breadcrumbModule")}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>My Projects</BreadcrumbPage>
+            <BreadcrumbPage>{t("title")}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -129,20 +141,22 @@ export function MyProjectsModule() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-content-primary text-2xl leading-8 font-semibold tracking-tight">
-            My Projects
+            {t("title")}
           </h1>
           <p className="text-content-tertiary text-sm leading-5">
-            Projects you manage, contribute to, or follow
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
             className="h-9 gap-2 px-3 text-[12px]"
-            onClick={() => setTab("Following")}
+            onClick={() => setTab("following")}
           >
             <Users className="size-4" aria-hidden />
-            Following{statsQ.data ? ` (${statsQ.data.following_count})` : ""}
+            {statsQ.data
+              ? t("followingCount", { count: statsQ.data.following_count })
+              : t("tab.following")}
           </Button>
           <Button
             variant="primary"
@@ -150,7 +164,7 @@ export function MyProjectsModule() {
             onClick={() => setNewProjectOpen(true)}
           >
             <Plus className="size-4" aria-hidden />
-            New Project
+            {t("newProject")}
           </Button>
         </div>
       </header>
@@ -174,7 +188,7 @@ export function MyProjectsModule() {
                   : "text-content-tertiary hover:text-content-primary",
               )}
             >
-              {item}
+              {t(`tab.${item}`)}
             </button>
           )
         })}
@@ -185,7 +199,7 @@ export function MyProjectsModule() {
           stats.map((stat) => <MyProjectStatCard key={stat.id} stat={stat} />)
         ) : statsQ.isError ? (
           <p className="text-content-tertiary col-span-full py-4 text-sm">
-            Couldn&apos;t load your project stats.
+            {t("statsLoadFailed")}
           </p>
         ) : (
           Array.from({ length: 4 }).map((_, i) => (

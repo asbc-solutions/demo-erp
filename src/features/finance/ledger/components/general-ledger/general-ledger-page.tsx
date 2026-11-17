@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Link, useRouter } from "@/src/i18n/navigation"
 import { SearchX } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { EmptyState } from "@/src/shared/components/ui/empty-state"
@@ -23,7 +24,7 @@ import { Amount } from "../../../components/shared/amount"
 import { DocNumber } from "../../../components/shared/doc-number"
 import { FinanceErrorState } from "../../../components/shared/finance-states"
 import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../components/shared/page-header"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount } from "../../../lib/utils/money"
 import { useGeneralLedger } from "../../lib/queries/ledger"
 
@@ -32,6 +33,8 @@ import { useGeneralLedger } from "../../lib/queries/ledger"
  * from its opening to its closing. `contact` opens that contact's control account.
  */
 function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: string; contact?: string }) {
+  const t = useTranslations("FinanceLedger")
+  const { formatDate } = useFinanceDateFormat()
   const router = useRouter()
   const { data, isError, isPending, refetch } = useGeneralLedger(account, contact)
 
@@ -40,11 +43,11 @@ function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: str
   return (
     <>
       <FinancePageHeader
-        title="General ledger"
+        title={t("generalLedger")}
         figure={
           data ? (
-            <HeaderFigure label={`${data.account.code} — ${data.account.name} (${side} balance)`}>
-              EGP {formatAmount(Math.abs(data.closing))}
+            <HeaderFigure label={t(side === "credit" ? "glFigureLabelCredit" : "glFigureLabelDebit", { code: data.account.code, name: data.account.name })}>
+              {t("egpAmount", { amount: formatAmount(Math.abs(data.closing)) })}
             </HeaderFigure>
           ) : null
         }
@@ -52,7 +55,7 @@ function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: str
       <FinancePageBody>
         <div className="flex flex-wrap items-end gap-4">
           <Field className="w-96">
-            <FieldLabel htmlFor="gl-account">Account</FieldLabel>
+            <FieldLabel htmlFor="gl-account">{t("account")}</FieldLabel>
             <AccountSelect
               id="gl-account"
               value={data?.account.code ?? account}
@@ -61,8 +64,8 @@ function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: str
           </Field>
           {data ? (
             <span className="text-content-tertiary pb-2 text-[13px] leading-5">
-              {data.lines.length} movements · Jan–Mar 2026
-              {data.contact_name ? ` · control account for ${data.contact_name}` : ""}
+              {t("glMovements", { count: data.lines.length })}
+              {data.contact_name ? t("glControlAccountFor", { name: data.contact_name }) : ""}
             </span>
           ) : null}
         </div>
@@ -70,38 +73,38 @@ function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: str
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : isPending ? (
-          <Skeleton aria-busy aria-label="Loading ledger" className="h-96 rounded-lg" />
+          <Skeleton aria-busy aria-label={t("loadingLedger")} className="h-96 rounded-lg" />
         ) : !data ? (
           <EmptyState
             variant="card"
             icon={<SearchX />}
-            title="That account cannot be posted to."
-            description="Group accounts roll up their members. Pick a postable account."
+            title={t("glNotPostableTitle")}
+            description={t("glNotPostableDescription")}
             actions={
               <Button variant="secondary" size="sm" asChild>
-                <Link href="/finance/accounts">Open chart of accounts</Link>
+                <Link href="/finance/accounts">{t("openChartOfAccounts")}</Link>
               </Button>
             }
           />
         ) : (
           <div className="border-stroke-default bg-surface-white overflow-x-auto rounded-lg border">
             <Table>
-              <caption className="sr-only">{`Ledger for ${data.account.code} ${data.account.name}`}</caption>
+              <caption className="sr-only">{t("glCaption", { code: data.account.code, name: data.account.name })}</caption>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Entry no.</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead className="text-end">Debit (EGP)</TableHead>
-                  <TableHead className="text-end">Credit (EGP)</TableHead>
-                  <TableHead className="text-end">Balance (EGP)</TableHead>
+                  <TableHead>{t("date")}</TableHead>
+                  <TableHead>{t("entryNo")}</TableHead>
+                  <TableHead>{t("description")}</TableHead>
+                  <TableHead>{t("source")}</TableHead>
+                  <TableHead className="text-end">{t("debitEgp")}</TableHead>
+                  <TableHead className="text-end">{t("creditEgp")}</TableHead>
+                  <TableHead className="text-end">{t("balanceEgp")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow>
                   <TableCell colSpan={6} className="text-content-secondary font-medium">
-                    Opening balance
+                    {t("openingBalance")}
                   </TableCell>
                   <TableCell className="text-end">
                     <Amount value={data.opening} emphasis="strong" />
@@ -127,7 +130,7 @@ function GeneralLedgerPage({ account = "110101", contact = "" }: { account?: str
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={4}>Closing balance</TableCell>
+                  <TableCell colSpan={4}>{t("closingBalance")}</TableCell>
                   <TableCell className="text-end">
                     <Amount value={data.debit_total} emphasis="strong" />
                   </TableCell>

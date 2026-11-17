@@ -16,6 +16,7 @@ import {
   UserMinus,
   Users,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import {
   Bar,
@@ -45,6 +46,7 @@ import {
 } from "@/src/shared/components/ui/select"
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
 import { cn } from "@/src/shared/lib/utils/utils"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { useDepartments } from "../../lib/queries/departments"
 import {
@@ -65,47 +67,47 @@ type TimeRangeKey = "30d" | "3m" | "6m" | "12m" | "custom"
 
 type EmploymentKey = "all" | "full-time" | "part-time" | "contractor"
 
-const TIME_RANGE_OPTIONS: { id: TimeRangeKey; label: string }[] = [
-  { id: "30d", label: "Last 30 days" },
-  { id: "3m", label: "Last 3 months" },
-  { id: "6m", label: "Last 6 months" },
-  { id: "12m", label: "Last 12 months" },
-  { id: "custom", label: "Custom range" },
-]
+const TIME_RANGE_OPTIONS = [
+  { id: "30d", labelKey: "last30Days" },
+  { id: "3m", labelKey: "last3Months" },
+  { id: "6m", labelKey: "last6Months" },
+  { id: "12m", labelKey: "last12Months" },
+  { id: "custom", labelKey: "customRange" },
+] as const satisfies readonly { id: TimeRangeKey; labelKey: string }[]
 
-const EMPLOYMENT_OPTIONS: { id: EmploymentKey; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "full-time", label: "Full-time" },
-  { id: "part-time", label: "Part-time" },
-  { id: "contractor", label: "Contractor" },
-]
+const EMPLOYMENT_OPTIONS = [
+  { id: "all", labelKey: "employmentAll" },
+  { id: "full-time", labelKey: "fullTime" },
+  { id: "part-time", labelKey: "partTime" },
+  { id: "contractor", labelKey: "contractor" },
+] as const satisfies readonly { id: EmploymentKey; labelKey: string }[]
 
-const SUB_TABS: {
-  id: ReportSubTab
-  label: string
-  icon: React.ReactNode
-}[] = [
+const SUB_TABS = [
   {
     id: "headcount",
-    label: "Headcount",
+    labelKey: "tabHeadcount",
     icon: <Users className="size-4" strokeWidth={1.75} />,
   },
   {
     id: "attrition",
-    label: "Attrition",
+    labelKey: "tabAttrition",
     icon: <LineChartIcon className="size-4" strokeWidth={1.75} />,
   },
   {
     id: "salary-cost",
-    label: "Salary Cost",
+    labelKey: "tabSalaryCost",
     icon: <DollarSign className="size-4" strokeWidth={1.75} />,
   },
   {
     id: "document-compliance",
-    label: "Document Compliance",
+    labelKey: "tabDocumentCompliance",
     icon: <ShieldCheck className="size-4" strokeWidth={1.75} />,
   },
-]
+] as const satisfies readonly {
+  id: ReportSubTab
+  labelKey: string
+  icon: React.ReactNode
+}[]
 
 const DEPT_COLOR_SEQUENCE = [
   "indigo",
@@ -125,20 +127,24 @@ const BAR_COLOR: Record<(typeof DEPT_COLOR_SEQUENCE)[number], string> = {
   blue: "bg-brand-info",
 }
 
-const terminationsConfig = {
-  terminations: { label: "Terminations", color: "#ef4444" },
-} satisfies ChartConfig
+type ReportsTranslator = ReturnType<typeof useTranslations<"HrReports">>
 
-const attritionTrendConfig = {
-  rate: { label: "Attrition rate", color: "#6366f1" },
-} satisfies ChartConfig
-
-const docComplianceConfig = {
-  compliant: { label: "Compliant", color: "#10b981" },
-  expiring: { label: "Expiring soon", color: "#f59e0b" },
-  expired: { label: "Expired", color: "#ef4444" },
-  missing: { label: "Missing", color: "#a1a1aa" },
-} satisfies ChartConfig
+function buildChartConfigs(t: ReportsTranslator) {
+  return {
+    terminations: {
+      terminations: { label: t("terminations"), color: "#ef4444" },
+    } satisfies ChartConfig,
+    attritionTrend: {
+      rate: { label: t("attritionRate"), color: "#6366f1" },
+    } satisfies ChartConfig,
+    docCompliance: {
+      compliant: { label: t("compliance.compliant"), color: "#10b981" },
+      expiring: { label: t("compliance.expiring"), color: "#f59e0b" },
+      expired: { label: t("compliance.expired"), color: "#ef4444" },
+      missing: { label: t("compliance.missing"), color: "#a1a1aa" },
+    } satisfies ChartConfig,
+  }
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -156,10 +162,10 @@ function toDateRange(
   return { date_from: from.toISOString().split("T")[0], date_to: to }
 }
 
-function formatPeriod(period: string): string {
+function formatPeriod(period: string, intlLocale: string): string {
   const [year, month] = period.split("-")
   const date = new Date(Number(year), Number(month) - 1, 1)
-  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+  return date.toLocaleDateString(intlLocale, { month: "short", year: "numeric" })
 }
 
 // ─── Shared components ───────────────────────────────────────────────────────
@@ -245,6 +251,8 @@ function ReportFilters({
   onEmployment: (v: EmploymentKey) => void
   deptOptions: { id: string; label: string }[]
 }>) {
+  const t = useTranslations("HrReports")
+
   return (
     <div className="border-stroke-default bg-surface-white flex flex-col gap-4 rounded-[14px] border p-4">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -256,7 +264,7 @@ function ReportFilters({
               type="button"
               onClick={() => {
                 if (opt.id === "custom") {
-                  toast.message("Custom date range coming soon")
+                  toast.message(t("customRangeComingSoon"))
                   return
                 }
                 onTimeRange(opt.id)
@@ -268,7 +276,7 @@ function ReportFilters({
                   : "bg-surface-hover text-content-tertiary hover:text-content-primary",
               )}
             >
-              {opt.label}
+              {t(opt.labelKey)}
             </button>
           )
         })}
@@ -277,7 +285,7 @@ function ReportFilters({
       <div className="flex flex-col flex-wrap gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Select value={department} onValueChange={onDepartment}>
           <SelectTrigger className="border-stroke-default bg-surface-page h-9 w-full max-w-[220px] rounded-[10px] text-sm shadow-none">
-            <SelectValue placeholder="Department" />
+            <SelectValue placeholder={t("department")} />
           </SelectTrigger>
           <SelectContent>
             {deptOptions.map((d) => (
@@ -303,7 +311,7 @@ function ReportFilters({
                     : "text-content-tertiary hover:text-content-primary",
                 )}
               >
-                {opt.label}
+                {t(opt.labelKey)}
               </button>
             )
           })}
@@ -316,6 +324,9 @@ function ReportFilters({
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function ReportsTab() {
+  const t = useTranslations("HrReports")
+  const intlLocale = useIntlLocale()
+  const chartConfigs = React.useMemo(() => buildChartConfigs(t), [t])
   const [subTab, setSubTab] = React.useState<ReportSubTab>("headcount")
   const [timeRange, setTimeRange] = React.useState<TimeRangeKey>("30d")
   const [department, setDepartment] = React.useState("all")
@@ -355,35 +366,36 @@ export function ReportsTab() {
 
   const deptOptions = React.useMemo(
     () => [
-      { id: "all", label: "All Departments" },
+      { id: "all", label: t("allDepartments") },
       ...(departments?.data ?? []).map((d) => ({
         id: d.id,
         label: d.dept_name,
       })),
     ],
-    [departments],
+    [departments, t],
   )
 
   const headcountStats = React.useMemo(() => {
     if (!headcount) return null
     const rows = headcount.rows
     const total = rows.reduce((sum, r) => sum + r.headcount, 0)
+    const share = (count: number) =>
+      total > 0
+        ? t("percentOfWorkforce", { percent: ((count / total) * 100).toFixed(1) })
+        : "—"
     const fullTime = rows.find((r) => r.group_key === "full_time")?.headcount ?? 0
     const partTime = rows.find((r) => r.group_key === "part_time")?.headcount ?? 0
     const contractors = rows.find((r) => r.group_key === "contract")?.headcount ?? 0
     return {
       total,
       fullTime,
-      fullTimePct:
-        total > 0 ? `${((fullTime / total) * 100).toFixed(1)}% of workforce` : "—",
+      fullTimePct: share(fullTime),
       partTime,
-      partTimePct:
-        total > 0 ? `${((partTime / total) * 100).toFixed(1)}% of workforce` : "—",
+      partTimePct: share(partTime),
       contractors,
-      contractorsPct:
-        total > 0 ? `${((contractors / total) * 100).toFixed(1)}% of workforce` : "—",
+      contractorsPct: share(contractors),
     }
-  }, [headcount])
+  }, [headcount, t])
 
   const attritionStats = React.useMemo(() => {
     if (!attrition?.rows) return null
@@ -401,28 +413,28 @@ export function ReportsTab() {
     )
     const totalTerminations = rows.reduce((sum, r) => sum + (r.terminations ?? 0), 0)
     return {
-      rate: `${avgRate.toFixed(1)}%`,
+      rate: t("percent", { percent: avgRate.toFixed(1) }),
       voluntary,
       involuntary: totalTerminations - voluntary,
       avgTenureYears: "—",
     }
-  }, [attrition])
+  }, [attrition, t])
 
   const hiresTerminationsData = React.useMemo(() => {
     if (!attrition?.rows) return []
     return attrition.rows.map((p) => ({
-      month: formatPeriod(p.period),
+      month: formatPeriod(p.period, intlLocale),
       terminations: p.terminations ?? 0,
     }))
-  }, [attrition])
+  }, [attrition, intlLocale])
 
   const attritionTrendData = React.useMemo(() => {
     if (!attrition?.rows) return []
     return attrition.rows.map((p) => ({
-      month: formatPeriod(p.period),
+      month: formatPeriod(p.period, intlLocale),
       rate: p.attrition_rate_pct ?? 0,
     }))
-  }, [attrition])
+  }, [attrition, intlLocale])
 
   const salaryCostStats = React.useMemo(() => {
     if (!salaryCost) return null
@@ -443,13 +455,15 @@ export function ReportsTab() {
           )
         : null
     return {
-      totalGross: `${totalGross.toLocaleString()}`,
-      totalNet: `${totalNet.toLocaleString()}`,
-      avgGross: `${Math.round(weightedAvgGross).toLocaleString()}`,
-      highestDeptAvg: highest ? `${parseFloat(highest.avg_gross).toLocaleString()}` : "—",
+      totalGross: totalGross.toLocaleString(intlLocale),
+      totalNet: totalNet.toLocaleString(intlLocale),
+      avgGross: Math.round(weightedAvgGross).toLocaleString(intlLocale),
+      highestDeptAvg: highest
+        ? parseFloat(highest.avg_gross).toLocaleString(intlLocale)
+        : "—",
       highestDeptName: highest?.group_label ?? "—",
     }
-  }, [salaryCost])
+  }, [salaryCost, intlLocale])
 
   const salaryCostBarsData = React.useMemo(() => {
     if (!salaryCost) return []
@@ -471,11 +485,14 @@ export function ReportsTab() {
     return {
       total,
       compliant,
-      compliantPct: total > 0 ? `${((compliant / total) * 100).toFixed(1)}% of total` : "—",
+      compliantPct:
+        total > 0
+          ? t("percentOfTotal", { percent: ((compliant / total) * 100).toFixed(1) })
+          : "—",
       expiring,
       expired,
     }
-  }, [docCompliance])
+  }, [docCompliance, t])
 
   const docCompliancePieData = React.useMemo(() => {
     if (!docCompliance?.rows) return []
@@ -483,30 +500,30 @@ export function ReportsTab() {
     return [
       {
         key: "compliant",
-        label: "Compliant",
+        label: t("compliance.compliant"),
         amount: rows.filter((r) => r.status === "valid").length,
         color: "#10b981",
       },
       {
         key: "expiring",
-        label: "Expiring soon",
+        label: t("compliance.expiring"),
         amount: rows.filter((r) => r.status === "expiring").length,
         color: "#f59e0b",
       },
       {
         key: "expired",
-        label: "Expired",
+        label: t("compliance.expired"),
         amount: rows.filter((r) => r.status === "expired").length,
         color: "#ef4444",
       },
       {
         key: "missing",
-        label: "Missing",
+        label: t("compliance.missing"),
         amount: rows.filter((r) => r.status === "missing").length,
         color: "#a1a1aa",
       },
     ]
-  }, [docCompliance])
+  }, [docCompliance, t])
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -528,7 +545,7 @@ export function ReportsTab() {
               )}
             >
               {tab.icon}
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           )
         })}
@@ -537,27 +554,27 @@ export function ReportsTab() {
       {subTab === "headcount" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
-            label="Total"
+            label={t("metricTotal")}
             value={headcountStats?.total ?? "—"}
             icon={<Users className="size-4" strokeWidth={1.75} />}
             loading={headcountLoading}
           />
           <MetricCard
-            label="Full-time"
+            label={t("fullTime")}
             value={headcountStats?.fullTime ?? "—"}
             description={headcountStats?.fullTimePct}
             icon={<UserCheck className="size-4" strokeWidth={1.75} />}
             loading={headcountLoading}
           />
           <MetricCard
-            label="Part-time"
+            label={t("partTime")}
             value={headcountStats?.partTime ?? "—"}
             description={headcountStats?.partTimePct}
             icon={<Clock className="size-4" strokeWidth={1.75} />}
             loading={headcountLoading}
           />
           <MetricCard
-            label="Contractors"
+            label={t("contractors")}
             value={headcountStats?.contractors ?? "—"}
             description={headcountStats?.contractorsPct}
             icon={<Briefcase className="size-4" strokeWidth={1.75} />}
@@ -569,29 +586,29 @@ export function ReportsTab() {
       {subTab === "attrition" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
-            label="Attrition rate"
+            label={t("attritionRate")}
             value={attritionStats?.rate ?? "—"}
             icon={<TrendingDown className="size-4" strokeWidth={1.75} />}
             loading={attritionLoading}
           />
           <MetricCard
-            label="Voluntary exits"
+            label={t("voluntaryExits")}
             value={attritionStats?.voluntary ?? "—"}
-            description="This period"
+            description={t("thisPeriod")}
             icon={<UserMinus className="size-4" strokeWidth={1.75} />}
             loading={attritionLoading}
           />
           <MetricCard
-            label="Involuntary exits"
+            label={t("involuntaryExits")}
             value={attritionStats?.involuntary ?? "—"}
-            description="This period"
+            description={t("thisPeriod")}
             icon={<AlertTriangle className="size-4" strokeWidth={1.75} />}
             loading={attritionLoading}
           />
           <MetricCard
-            label="Avg tenure at exit"
+            label={t("avgTenureAtExit")}
             value={attritionStats?.avgTenureYears ?? "—"}
-            description="Across all exits"
+            description={t("acrossAllExits")}
             icon={<Clock className="size-4" strokeWidth={1.75} />}
             loading={attritionLoading}
           />
@@ -601,26 +618,26 @@ export function ReportsTab() {
       {subTab === "salary-cost" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
-            label="Total payroll"
+            label={t("totalPayroll")}
             value={salaryCostStats?.totalGross ?? "—"}
             icon={<DollarSign className="size-4" strokeWidth={1.75} />}
             loading={salaryCostLoading}
           />
           <MetricCard
-            label="Avg salary"
+            label={t("avgSalary")}
             value={salaryCostStats?.avgGross ?? "—"}
             icon={<LineChartIcon className="size-4" strokeWidth={1.75} />}
             loading={salaryCostLoading}
           />
           <MetricCard
-            label="Highest dept avg"
+            label={t("highestDeptAvg")}
             value={salaryCostStats?.highestDeptAvg ?? "—"}
             description={salaryCostStats?.highestDeptName}
             icon={<ArrowUpRight className="size-4" strokeWidth={1.75} />}
             loading={salaryCostLoading}
           />
           <MetricCard
-            label="Net payroll"
+            label={t("netPayroll")}
             value={salaryCostStats?.totalNet ?? "—"}
             icon={<LineChartIcon className="size-4" strokeWidth={1.75} />}
             loading={salaryCostLoading}
@@ -631,13 +648,13 @@ export function ReportsTab() {
       {subTab === "document-compliance" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
-            label="Total documents"
+            label={t("totalDocuments")}
             value={docStats?.total ?? "—"}
             icon={<Shield className="size-4" strokeWidth={1.75} />}
             loading={docComplianceLoading}
           />
           <MetricCard
-            label="Compliant"
+            label={t("compliance.compliant")}
             value={docStats?.compliant ?? "—"}
             trend={docStats?.compliantPct}
             trendTone="success"
@@ -645,14 +662,14 @@ export function ReportsTab() {
             loading={docComplianceLoading}
           />
           <MetricCard
-            label="Expiring"
+            label={t("expiring")}
             value={docStats?.expiring ?? "—"}
             icon={<AlertTriangle className="size-4" strokeWidth={1.75} />}
             iconClassName="bg-brand-danger/10 text-brand-danger"
             loading={docComplianceLoading}
           />
           <MetricCard
-            label="Expired"
+            label={t("compliance.expired")}
             value={docStats?.expired ?? "—"}
             icon={<FileX2 className="size-4" strokeWidth={1.75} />}
             iconClassName="bg-brand-danger/10 text-brand-danger"
@@ -674,7 +691,7 @@ export function ReportsTab() {
       {subTab === "headcount" && (
         <section className="border-stroke-default bg-surface-white flex flex-col gap-4 rounded-[14px] border p-5">
           <h3 className="text-content-primary text-base leading-6 font-semibold">
-            Terminations by month
+            {t("terminationsByMonth")}
           </h3>
           {attritionLoading ? (
             <HrSectionSpinner />
@@ -683,11 +700,11 @@ export function ReportsTab() {
               <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-content-tertiary">
                 <span className="inline-flex items-center gap-2">
                   <span className="bg-brand-danger size-2 rounded-full" />{" "}
-                  Terminations
+                  {t("terminations")}
                 </span>
               </div>
               <ChartContainer
-                config={terminationsConfig}
+                config={chartConfigs.terminations}
                 className="aspect-auto h-72 w-full"
               >
                 <BarChart
@@ -729,13 +746,13 @@ export function ReportsTab() {
       {subTab === "attrition" && (
         <section className="border-stroke-default bg-surface-white flex flex-col gap-4 rounded-[14px] border p-5">
           <h3 className="text-content-primary text-base leading-6 font-semibold">
-            Attrition rate trend
+            {t("attritionRateTrend")}
           </h3>
           {attritionLoading ? (
             <HrSectionSpinner />
           ) : (
             <ChartContainer
-              config={attritionTrendConfig}
+              config={chartConfigs.attritionTrend}
               className="aspect-auto h-72 w-full"
             >
               <LineChart
@@ -784,7 +801,7 @@ export function ReportsTab() {
       {subTab === "salary-cost" && (
         <section className="border-stroke-default bg-surface-white flex min-h-80 flex-col gap-4 rounded-[14px] border p-5">
           <h3 className="text-content-primary text-base leading-6 font-semibold">
-            Salary cost by department
+            {t("salaryCostByDepartment")}
           </h3>
           {salaryCostLoading ? (
             <HrSectionSpinner />
@@ -820,11 +837,10 @@ export function ReportsTab() {
         <section className="border-stroke-default bg-surface-white flex flex-col gap-4 rounded-[14px] border p-5 md:flex-row md:items-center md:gap-8">
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <h3 className="text-content-primary text-base leading-6 font-semibold">
-              Document compliance distribution
+              {t("documentComplianceDistribution")}
             </h3>
             <p className="text-content-tertiary text-sm">
-              Share of employee documents by compliance status for the selected
-              filters.
+              {t("documentComplianceDescription")}
             </p>
           </div>
           {docComplianceLoading ? (
@@ -832,7 +848,7 @@ export function ReportsTab() {
           ) : (
             <>
               <ChartContainer
-                config={docComplianceConfig}
+                config={chartConfigs.docCompliance}
                 className="mx-auto aspect-square h-55 w-55 shrink-0 md:mx-0"
               >
                 <PieChart>

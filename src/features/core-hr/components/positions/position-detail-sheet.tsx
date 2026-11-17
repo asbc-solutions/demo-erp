@@ -9,6 +9,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import {
@@ -35,18 +36,18 @@ type PositionDetailSheetProps = Readonly<{
 // Pull enough active jobs in one page to resolve a position's job_id to a title.
 const JOB_LOOKUP_PARAMS = { is_active: true, per_page: 200 } as const
 
-const POSITION_STATUS_BADGE: Record<PositionStatus, { label: string; className: string }> = {
-  open: { label: "Open", className: "border-brand-success/30 bg-brand-success/10 text-brand-success" },
-  filled: { label: "Filled", className: "border-brand-primary/30 bg-brand-primary/10 text-brand-primary" },
-  frozen: { label: "Frozen", className: "border-brand-warning/30 bg-brand-warning/10 text-brand-warning" },
-  closed: { label: "Closed", className: "border-stroke-default bg-surface-hover text-content-tertiary" },
-  on_hold: { label: "On Hold", className: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger" },
+const POSITION_STATUS_BADGE: Record<PositionStatus, string> = {
+  open: "border-brand-success/30 bg-brand-success/10 text-brand-success",
+  filled: "border-brand-primary/30 bg-brand-primary/10 text-brand-primary",
+  frozen: "border-brand-warning/30 bg-brand-warning/10 text-brand-warning",
+  closed: "border-stroke-default bg-surface-hover text-content-tertiary",
+  on_hold: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
 }
 
-const VACANCY_STATUS_BADGE: Record<VacancyStatus, { label: string; className: string }> = {
-  open: { label: "Open — No Assignees", className: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger" },
-  partial: { label: "Partial", className: "border-brand-warning/30 bg-brand-warning/10 text-brand-warning" },
-  filled: { label: "Fully Filled", className: "border-brand-success/30 bg-brand-success/10 text-brand-success" },
+const VACANCY_STATUS_BADGE: Record<VacancyStatus, string> = {
+  open: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
+  partial: "border-brand-warning/30 bg-brand-warning/10 text-brand-warning",
+  filled: "border-brand-success/30 bg-brand-success/10 text-brand-success",
 }
 
 function DetailRow({
@@ -80,6 +81,8 @@ export function PositionDetailSheet({
   open,
   onOpenChange,
 }: PositionDetailSheetProps) {
+  const t = useTranslations("HrPositions")
+  const tShared = useTranslations("HrShared")
   // Reference data to resolve the position's dept/branch/job IDs to names.
   // Shares react-query cache with the create/edit dialogs' selectors.
   const { data: deptData } = useActiveDepartmentOptions({ enabled: open })
@@ -98,8 +101,6 @@ export function PositionDetailSheet({
     ? jobData?.data.find((j) => j.id === position.job_id)?.job_title ?? null
     : null
 
-  const psConfig = POSITION_STATUS_BADGE[position.position_status]
-  const vsConfig = VACANCY_STATUS_BADGE[position.vacancy_status]
   const headcountPercent =
     position.headcount_budget === 0
       ? 0
@@ -125,15 +126,21 @@ export function PositionDetailSheet({
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
-                className={`rounded-full px-2.5 py-0.5 text-[11px] uppercase tracking-[0.4px] ${psConfig.className}`}
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[11px] uppercase tracking-[0.4px]",
+                  POSITION_STATUS_BADGE[position.position_status],
+                )}
               >
-                {psConfig.label}
+                {tShared(`positionStatus.${position.position_status}`)}
               </Badge>
               <Badge
                 variant="outline"
-                className={`rounded-full px-2.5 py-0.5 text-[11px] uppercase tracking-[0.4px] ${vsConfig.className}`}
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[11px] uppercase tracking-[0.4px]",
+                  VACANCY_STATUS_BADGE[position.vacancy_status],
+                )}
               >
-                {vsConfig.label}
+                {t(`vacancyDetail.${position.vacancy_status}`)}
               </Badge>
             </div>
           </div>
@@ -143,15 +150,20 @@ export function PositionDetailSheet({
           {/* Headcount bar */}
           <div className="py-4">
             <p className="text-content-quaternary mb-2 text-[11px] uppercase tracking-[0.4px]">
-              Headcount
+              {t("colHeadcount")}
             </p>
             <div className="flex items-center justify-between text-sm font-medium mb-1.5">
               <span className="text-content-primary">
-                {position.headcount_filled}
-                <span className="text-content-quaternary"> / {position.headcount_budget} filled</span>
+                {t.rich("headcountFilled", {
+                  filled: position.headcount_filled,
+                  budget: position.headcount_budget,
+                  muted: (chunks) => (
+                    <span className="text-content-quaternary">{chunks}</span>
+                  ),
+                })}
               </span>
               <span className="text-content-tertiary text-xs">
-                {position.headcount_vacant} vacant
+                {t("vacantCount", { count: position.headcount_vacant })}
               </span>
             </div>
             <div className="bg-stroke-default relative h-2 w-full overflow-hidden rounded-full">
@@ -167,21 +179,21 @@ export function PositionDetailSheet({
           <div className="divide-y divide-stroke-default/50">
             <DetailRow
               icon={<Building2 className="size-4" strokeWidth={1.75} />}
-              label="Department"
+              label={t("department")}
             >
               {deptName ?? <span className="text-content-quaternary">—</span>}
             </DetailRow>
 
             <DetailRow
               icon={<Building2 className="size-4" strokeWidth={1.75} />}
-              label="Branch"
+              label={t("branch")}
             >
               {branchName ?? <span className="text-content-quaternary">—</span>}
             </DetailRow>
 
             <DetailRow
               icon={<Briefcase className="size-4" strokeWidth={1.75} />}
-              label="Job"
+              label={t("job")}
             >
               {jobTitle ?? <span className="text-content-quaternary">—</span>}
             </DetailRow>
@@ -194,24 +206,24 @@ export function PositionDetailSheet({
                   <Lock className="size-4" strokeWidth={1.75} />
                 )
               }
-              label="Budget"
+              label={t("budget")}
             >
-              {position.is_budgeted ? "Budgeted" : "Unbudgeted"}
+              {position.is_budgeted ? t("budgeted") : t("unbudgeted")}
             </DetailRow>
 
             <DetailRow
               icon={<Users className="size-4" strokeWidth={1.75} />}
-              label="Active"
+              label={t("active")}
             >
               {position.is_active ? (
                 <span className="text-brand-success inline-flex items-center gap-1">
                   <CheckCircle2 className="size-3.5" strokeWidth={2} />
-                  Active
+                  {t("active")}
                 </span>
               ) : (
                 <span className="text-content-tertiary inline-flex items-center gap-1">
                   <XCircle className="size-3.5" strokeWidth={2} />
-                  Inactive
+                  {t("inactive")}
                 </span>
               )}
             </DetailRow>

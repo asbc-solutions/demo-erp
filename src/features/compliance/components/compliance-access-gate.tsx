@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { useTranslations } from "next-intl"
 
 import { AccessDeniedCard } from "@/src/shared/components/ui/access-denied-card"
 import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
@@ -12,6 +13,7 @@ export function ComplianceAccessGate({
   resource,
   children,
 }: Readonly<{ resource: ComplianceResource; children: ReactNode }>) {
+  const t = useTranslations("Compliance")
   const { accessState, isLoading } = usePermissions()
 
   if (isLoading) {
@@ -20,7 +22,10 @@ export function ComplianceAccessGate({
 
   if (accessState(resource) === "no_access") {
     return (
-      <AccessDeniedCard description="Ask an admin to grant your role access to this Compliance section." />
+      <AccessDeniedCard
+        title={t("accessDeniedTitle")}
+        description={t("accessDeniedDescription")}
+      />
     )
   }
 

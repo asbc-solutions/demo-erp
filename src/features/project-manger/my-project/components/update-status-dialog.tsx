@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -28,6 +29,7 @@ import { cn } from "@/src/shared/lib/utils/utils"
 import { collaborationApi } from "../../lib/api/collaboration"
 import { pmKeys } from "../../lib/constants/query-keys"
 import { useProjects } from "../../lib/queries/projects"
+import { HEALTH_STATE_KEY } from "../../all-project/data/project-detail-data"
 
 type UpdateStatusDialogProps = {
   open: boolean
@@ -57,6 +59,9 @@ export function UpdateStatusDialog({
   open,
   onOpenChange,
 }: UpdateStatusDialogProps) {
+  const t = useTranslations("ProjectsMyProjects")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
   const [projectId, setProjectId] = useState("")
   const [health, setHealth] = useState<ProjectHealth>("On Track")
   const [summary, setSummary] = useState("")
@@ -94,25 +99,29 @@ export function UpdateStatusDialog({
 
   const handleSubmit = () => {
     if (!projectId) {
-      toast.error("Pick a project")
+      toast.error(t("statusPickProject"))
       return
     }
+    const healthLabel = tShared(`health.${HEALTH_STATE_KEY[health]}`)
     const projectName =
-      projects.find((p) => p.id === projectId)?.name ?? "project"
-    const body = [`Status update: ${health}`, summary.trim()]
+      projects.find((p) => p.id === projectId)?.name ?? t("statusProjectFallback")
+    const body = [t("statusUpdateBody", { health: healthLabel }), summary.trim()]
       .filter(Boolean)
       .join("\n\n")
     postUpdate.mutate(
       { id: projectId, body },
       {
         onSuccess: () => {
-          toast.success("Status update posted", {
-            description: `${projectName} marked “${health}”.`,
+          toast.success(t("statusPosted"), {
+            description: t("statusPostedDescription", {
+              project: projectName,
+              health: healthLabel,
+            }),
           })
           close()
         },
         onError: (err) =>
-          toast.error("Couldn't post update", {
+          toast.error(t("statusPostFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
@@ -124,23 +133,25 @@ export function UpdateStatusDialog({
       <DialogContent className="max-w-[640px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-lg leading-7 font-semibold">
-            Update Status
+            {t("statusTitle")}
           </DialogTitle>
           <DialogDescription className="text-content-tertiary text-[13px] leading-5">
-            Post a health update to the project discussion
+            {t("statusDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <DialogBody className="gap-4">
           <div className="flex flex-col gap-2">
             <span className="text-content-tertiary text-[11px] leading-4 font-semibold tracking-wide uppercase">
-              Project
+              {tShared("projectLabel")}
             </span>
             <Select value={projectId} onValueChange={setProjectId}>
               <SelectTrigger className="h-10 w-full text-[13px]">
                 <SelectValue
                   placeholder={
-                    projectsQ.isLoading ? "Loading…" : "Select a project"
+                    projectsQ.isLoading
+                      ? tCommon("loading")
+                      : tShared("selectProject")
                   }
                 />
               </SelectTrigger>
@@ -156,7 +167,7 @@ export function UpdateStatusDialog({
 
           <div className="flex flex-col gap-2">
             <span className="text-content-tertiary text-[11px] leading-4 font-semibold tracking-wide uppercase">
-              Health
+              {t("statusHealth")}
             </span>
             <div className="grid grid-cols-3 gap-3">
               {HEALTH_OPTIONS.map((option) => {
@@ -172,7 +183,7 @@ export function UpdateStatusDialog({
                       active ? style.active : style.idle,
                     )}
                   >
-                    {option}
+                    {tShared(`health.${HEALTH_STATE_KEY[option]}`)}
                   </button>
                 )
               })}
@@ -181,10 +192,10 @@ export function UpdateStatusDialog({
 
           <div className="flex flex-col gap-2">
             <span className="text-content-tertiary text-[11px] leading-4 font-semibold tracking-wide uppercase">
-              Weekly Summary
+              {t("statusWeeklySummary")}
             </span>
             <Textarea
-              placeholder="Highlights, blockers, and next-week focus..."
+              placeholder={t("statusSummaryPlaceholder")}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
               className="min-h-[120px] text-[13px]"
@@ -194,7 +205,7 @@ export function UpdateStatusDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={close} className="text-[13px]">
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             variant="primary"
@@ -202,7 +213,7 @@ export function UpdateStatusDialog({
             disabled={postUpdate.isPending}
             className="text-[13px]"
           >
-            {postUpdate.isPending ? "Posting…" : "Post Update"}
+            {postUpdate.isPending ? t("statusPosting") : t("statusPost")}
           </Button>
         </DialogFooter>
       </DialogContent>

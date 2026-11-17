@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -40,43 +41,54 @@ import { useFinanceTreasuries } from "../../../lib/queries/master-data"
 import { errorMessage } from "../../../lib/utils/api"
 import { useCreateChequeBook } from "../../lib/mutations/banking"
 import { useChequeBooks } from "../../lib/queries/banking"
-import { chequeBookSchema, type ChequeBookFormValues } from "../../lib/schema/banking"
+import { chequeBookSchema, type BankingErrorKey, type ChequeBookFormValues } from "../../lib/schema/banking"
 import type { ChequeBook } from "../../lib/types/banking"
 
-const COLUMNS: FinanceColumn<ChequeBook>[] = [
-  { id: "book", header: "Book", cell: (row) => <DocNumber>{row.code}</DocNumber> },
-  { id: "bank", header: "Bank", cell: (row) => row.bank },
-  {
-    id: "range",
-    header: "Number range",
-    cell: (row) => (
-      <span className="font-mono text-xs">
-        {row.first}–{row.last}
-      </span>
-    ),
-  },
-  { id: "direction", header: "Direction", cell: (row) => (row.direction === "received" ? "Received" : "Issued") },
-  {
-    id: "remaining",
-    header: "Remaining",
-    align: "end",
-    cell: (row) => (
-      <span className="flex items-center justify-end gap-2 tabular-nums">
-        {row.remaining === 0 ? <StatusPill status="closed" label="Used up" /> : null}
-        {row.remaining} / {row.size}
-      </span>
-    ),
-  },
-  {
-    id: "next",
-    header: "Next leaf",
-    cell: (row) => (row.next_number ? <span className="font-mono text-xs">{row.next_number}</span> : "—"),
-  },
-]
+type BankingT = ReturnType<typeof useTranslations<"FinanceBanking">>
+
+function bookColumns(t: BankingT): FinanceColumn<ChequeBook>[] {
+  return [
+    { id: "book", header: t("colBook"), cell: (row) => <DocNumber>{row.code}</DocNumber> },
+    { id: "bank", header: t("colBank"), cell: (row) => row.bank },
+    {
+      id: "range",
+      header: t("colNumberRange"),
+      cell: (row) => (
+        <span className="font-mono text-xs">
+          {row.first}–{row.last}
+        </span>
+      ),
+    },
+    {
+      id: "direction",
+      header: t("colDirection"),
+      cell: (row) => (row.direction === "received" ? t("received") : t("colIssued")),
+    },
+    {
+      id: "remaining",
+      header: t("colRemaining"),
+      align: "end",
+      cell: (row) => (
+        <span className="flex items-center justify-end gap-2 tabular-nums">
+          {row.remaining === 0 ? <StatusPill status="closed" label={t("usedUp")} /> : null}
+          {row.remaining} / {row.size}
+        </span>
+      ),
+    },
+    {
+      id: "next",
+      header: t("colNextLeaf"),
+      cell: (row) => (row.next_number ? <span className="font-mono text-xs">{row.next_number}</span> : "—"),
+    },
+  ]
+}
 
 const EMPTY: ChequeBookFormValues = { treasury_id: "", first: "", leaves: "25", direction: "issued" }
 
 function RegisterBookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
+  const errorText = (message?: string) => (message ? t(message as BankingErrorKey) : null)
   const { data: treasuries = [] } = useFinanceTreasuries()
   const banks = treasuries.filter((row) => row.kind === "bank")
   const createBook = useCreateChequeBook()
@@ -100,10 +112,10 @@ function RegisterBookDialog({ open, onOpenChange }: { open: boolean; onOpenChang
       { treasury_id: values.treasury_id, first: Number(values.first), leaves: Number(values.leaves), direction: values.direction },
       {
         onSuccess: (book) => {
-          toast.success(`${book.code} reserves ${book.first}–${book.last} on ${book.bank}.`)
+          toast.success(t("bookRegistered", { code: book.code, first: book.first, last: book.last, bank: book.bank }))
           onOpenChange(false)
         },
-        onError: (error) => toast.error(errorMessage(error, "The cheque book could not be registered. Try again.")),
+        onError: (error) => toast.error(errorMessage(error, t("bookRegisterFailed"))),
       },
     )
 
@@ -112,22 +124,19 @@ function RegisterBookDialog({ open, onOpenChange }: { open: boolean; onOpenChang
       <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit(submit)} noValidate>
           <DialogHeader>
-            <DialogTitle>Register book</DialogTitle>
-            <DialogDescription>
-              A book reserves a continuous number range on one bank account. Ranges never overlap, so a number
-              is never reused.
-            </DialogDescription>
+            <DialogTitle>{t("registerBook")}</DialogTitle>
+            <DialogDescription>{t("registerBookDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Field>
-              <FieldLabel htmlFor="book-treasury">Bank account *</FieldLabel>
+              <FieldLabel htmlFor="book-treasury">{t("bankAccount")} *</FieldLabel>
               <Controller
                 control={control}
                 name="treasury_id"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="book-treasury" aria-invalid={Boolean(errors.treasury_id)}>
-                      <SelectValue placeholder="Choose the bank account" />
+                      <SelectValue placeholder={t("errorBookTreasury")} />
                     </SelectTrigger>
                     <SelectContent>
                       {banks.map((row) => (
@@ -139,23 +148,23 @@ function RegisterBookDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                   </Select>
                 )}
               />
-              {errors.treasury_id ? <FieldError>{errors.treasury_id.message}</FieldError> : null}
+              {errors.treasury_id ? <FieldError>{errorText(errors.treasury_id.message)}</FieldError> : null}
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="book-first">First number *</FieldLabel>
+                <FieldLabel htmlFor="book-first">{t("firstNumber")} *</FieldLabel>
                 <Input id="book-first" inputMode="numeric" className="font-mono" aria-invalid={Boolean(errors.first)} {...register("first")} />
-                {errors.first ? <FieldError>{errors.first.message}</FieldError> : null}
+                {errors.first ? <FieldError>{errorText(errors.first.message)}</FieldError> : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="book-leaves">Leaves *</FieldLabel>
+                <FieldLabel htmlFor="book-leaves">{t("leaves")} *</FieldLabel>
                 <Input id="book-leaves" inputMode="numeric" aria-invalid={Boolean(errors.leaves)} {...register("leaves")} />
-                {errors.leaves ? <FieldError>{errors.leaves.message}</FieldError> : null}
+                {errors.leaves ? <FieldError>{errorText(errors.leaves.message)}</FieldError> : null}
               </Field>
             </div>
-            {last ? <FieldDescription>Reserves {first}–{last}.</FieldDescription> : null}
+            {last ? <FieldDescription>{t("reservesRange", { first, last })}</FieldDescription> : null}
             <Field>
-              <FieldLabel htmlFor="book-direction">Direction *</FieldLabel>
+              <FieldLabel htmlFor="book-direction">{t("colDirection")} *</FieldLabel>
               <Controller
                 control={control}
                 name="direction"
@@ -165,8 +174,8 @@ function RegisterBookDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="issued">Issued — cheques we write</SelectItem>
-                      <SelectItem value="received">Received — cheques we take in</SelectItem>
+                      <SelectItem value="issued">{t("directionIssued")}</SelectItem>
+                      <SelectItem value="received">{t("directionReceived")}</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -175,10 +184,10 @@ function RegisterBookDialog({ open, onOpenChange }: { open: boolean; onOpenChang
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={createBook.isPending}>
-              Register
+              {t("register")}
             </Button>
           </DialogFooter>
         </form>
@@ -189,6 +198,7 @@ function RegisterBookDialog({ open, onOpenChange }: { open: boolean; onOpenChang
 
 /** 04.12 · Cheque books — the number ranges reserved on each bank account. */
 function ChequeBooksPage() {
+  const t = useTranslations("FinanceBanking")
   const { data, isError, refetch } = useChequeBooks()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const active = data?.filter((book) => book.remaining > 0).length
@@ -196,24 +206,27 @@ function ChequeBooksPage() {
   return (
     <>
       <FinancePageHeader
-        title="Cheque books"
-        figure={data ? <HeaderFigure label="Active books">{active}</HeaderFigure> : null}
+        title={t("chequeBooks")}
+        figure={data ? <HeaderFigure label={t("activeBooks")}>{active}</HeaderFigure> : null}
         actions={
           <Button variant="primary" onClick={() => setDialogOpen(true)}>
             <Plus aria-hidden />
-            Register book
+            {t("registerBook")}
           </Button>
         }
       />
       <FinancePageBody>
-        <FinanceAlert tone="info">
-          Each cheque book reserves a continuous number range against a bank treasury. Leaves are consumed in
-          order, so a missing number is always visible as a gap rather than reused.
-        </FinanceAlert>
+        <FinanceAlert tone="info">{t("chequeBooksNote")}</FinanceAlert>
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : (
-          <FinanceTable caption="Cheque books" columns={COLUMNS} rows={data ?? []} loading={!data} getRowId={(row) => row.id} />
+          <FinanceTable
+            caption={t("chequeBooks")}
+            columns={bookColumns(t)}
+            rows={data ?? []}
+            loading={!data}
+            getRowId={(row) => row.id}
+          />
         )}
       </FinancePageBody>
       <RegisterBookDialog open={dialogOpen} onOpenChange={setDialogOpen} />

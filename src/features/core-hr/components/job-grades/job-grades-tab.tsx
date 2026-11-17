@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Briefcase, Eye, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -33,6 +34,9 @@ type GradeCardActionsProps = Readonly<{
 }>
 
 function GradeCardActions({ onView, onEdit, onDelete }: GradeCardActionsProps) {
+  const t = useTranslations("HrJobGrades")
+  const tCommon = useTranslations("Common")
+
   return (
     // modal={false} so the dialog/sheet it opens stays interactive (Radix gotcha).
     <DropdownMenu modal={false}>
@@ -40,7 +44,7 @@ function GradeCardActions({ onView, onEdit, onDelete }: GradeCardActionsProps) {
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Grade actions"
+          aria-label={t("gradeActions")}
           className="text-content-tertiary -me-1 shrink-0 rounded-[8px]"
         >
           <MoreHorizontal />
@@ -49,15 +53,15 @@ function GradeCardActions({ onView, onEdit, onDelete }: GradeCardActionsProps) {
       <DropdownMenuContent align="end" className="min-w-[160px]">
         <DropdownMenuItem onSelect={() => onView()}>
           <Eye />
-          View Details
+          {t("viewDetails")}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onEdit()}>
           <Pencil />
-          Edit Grade
+          {t("editGrade")}
         </DropdownMenuItem>
         <DropdownMenuItem variant="danger" onSelect={() => onDelete()}>
           <Trash2 />
-          Delete
+          {tCommon("delete")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -72,6 +76,8 @@ type GradeCardProps = Readonly<{
 }>
 
 function GradeCard({ grade, onView, onEdit, onDelete }: GradeCardProps) {
+  const t = useTranslations("HrJobGrades")
+  const tShared = useTranslations("HrShared")
   const { min_salary, mid_salary, max_salary, currency_code } = grade
   const range = max_salary - min_salary
   const fillPercent =
@@ -87,7 +93,7 @@ function GradeCard({ grade, onView, onEdit, onDelete }: GradeCardProps) {
             {grade.grade_name}
           </h3>
           <p className="text-content-tertiary text-sm leading-5">
-            Level {grade.grade_level} · {grade.grade_code}
+            {t("levelAndCode", { level: grade.grade_level, code: grade.grade_code })}
           </p>
         </div>
         <div className="flex items-center gap-1">
@@ -98,7 +104,7 @@ function GradeCard({ grade, onView, onEdit, onDelete }: GradeCardProps) {
               CATEGORY_BADGE[grade.grade_category],
             )}
           >
-            {grade.grade_category}
+            {tShared(`gradeCategory.${grade.grade_category}`)}
           </Badge>
           <GradeCardActions
             onView={onView}
@@ -120,7 +126,7 @@ function GradeCard({ grade, onView, onEdit, onDelete }: GradeCardProps) {
             {formatK(min_salary)} {currency_code}
           </span>
           <span className="text-content-primary font-semibold">
-            {formatK(mid_salary)} mid
+            {t("midAmount", { amount: formatK(mid_salary) })}
           </span>
           <span className="text-content-tertiary">
             {formatK(max_salary)} {currency_code}
@@ -138,11 +144,11 @@ function GradeCard({ grade, onView, onEdit, onDelete }: GradeCardProps) {
       <footer className="text-content-tertiary flex items-center gap-4 text-xs">
         <span className="inline-flex items-center gap-1.5">
           <Briefcase className="size-3.5" strokeWidth={1.75} />
-          {grade.annual_leave_days}d annual leave
+          {t("annualLeaveShort", { days: grade.annual_leave_days })}
         </span>
-        <span>{grade.overtime_eligible ? "OT eligible" : "No OT"}</span>
+        <span>{grade.overtime_eligible ? t("otEligible") : t("noOt")}</span>
         {grade.employee_count > 0 && (
-          <span>{grade.employee_count} employees</span>
+          <span>{t("employeesCount", { count: grade.employee_count })}</span>
         )}
       </footer>
     </article>
@@ -177,6 +183,8 @@ function GradeCardSkeleton() {
 }
 
 export function JobGradesTab() {
+  const t = useTranslations("HrJobGrades")
+  const tShared = useTranslations("HrShared")
   const [addOpen, setAddOpen] = useState(false)
   const [detailGrade, setDetailGrade] = useState<JobGradeListItem | null>(null)
   const [editGrade, setEditGrade] = useState<JobGradeListItem | null>(null)
@@ -193,13 +201,13 @@ export function JobGradesTab() {
     const name = deleteGrade.grade_name
     deleteJobGrade.mutate(deleteGrade.id, {
       onSuccess: () => {
-        toast.success(`Grade "${name}" deleted`)
+        toast.success(t("gradeDeleted", { name }))
         setDeleteGrade(null)
       },
       onError: (err) => {
-        const blocked = describeBlockingError(err)
-        toast.error(blocked ? "Cannot delete job grade" : "Failed to delete job grade", {
-          description: blocked ?? apiErrorMessage(err),
+        const blocked = describeBlockingError(err, tShared)
+        toast.error(blocked ? t("cannotDelete") : t("deleteFailed"), {
+          description: blocked ?? apiErrorMessage(err, tShared("pleaseTryAgain")),
         })
       },
     })
@@ -214,7 +222,7 @@ export function JobGradesTab() {
           onClick={() => setAddOpen(true)}
         >
           <Plus />
-          Add Grade
+          {t("addGrade")}
         </Button>
       </div>
 
@@ -236,7 +244,7 @@ export function JobGradesTab() {
 
       {!isLoading && grades.length === 0 && (
         <p className="text-content-tertiary py-12 text-center text-sm">
-          No job grades found. Add your first grade to get started.
+          {t("empty")}
         </p>
       )}
 
@@ -255,8 +263,8 @@ export function JobGradesTab() {
       <ConfirmDeleteDialog
         open={!!deleteGrade}
         onOpenChange={(open) => !open && setDeleteGrade(null)}
-        title="Delete Job Grade"
-        description="Are you sure you want to remove this Job Grade?"
+        title={t("deleteTitle")}
+        description={t("deleteDescription")}
         isPending={deleteJobGrade.isPending}
         onConfirm={confirmDelete}
       />

@@ -2,6 +2,7 @@
 
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import type { ApiError } from "@/src/shared/lib/types/api"
@@ -49,6 +50,24 @@ type LeaveTypeOption = {
   is_active?: boolean
 }
 
+/** The shared schema carries English messages; map the known ones to keys for display. */
+const SCHEMA_ERROR_KEYS = {
+  "Date must be YYYY-MM-DD": "errorDateFormat",
+  "Leave type is required": "errorLeaveTypeRequired",
+  "Start date is required": "errorStartDateRequired",
+  "End date is required": "errorEndDateRequired",
+  "Reason is too long": "errorReasonTooLong",
+  "End date must be on or after the start date": "errorEndBeforeStart",
+  "Half-day leave must start and end on the same date": "errorHalfDaySameDate",
+  "Select which half of the day": "errorHalfDayPeriod",
+} as const
+
+function isSchemaErrorMessage(
+  message: string,
+): message is keyof typeof SCHEMA_ERROR_KEYS {
+  return message in SCHEMA_ERROR_KEYS
+}
+
 function uniqueLeaveTypeOptions(options: LeaveTypeOption[]) {
   const seen = new Set<string>()
   return options.filter((option) => {
@@ -64,6 +83,8 @@ export function ApplyLeaveDialog({
   fallbackLeaveTypeIds = [],
   fallbackLeaveTypes = [],
 }: ApplyLeaveDialogProps) {
+  const t = useTranslations("HrLeaves")
+  const tCommon = useTranslations("Common")
   const submitRequest = useSubmitLeaveRequest()
   const {
     data: typesData,
@@ -83,7 +104,7 @@ export function ApplyLeaveDialog({
   }))
   const fallbackIdOptions = fallbackLeaveTypeIds.map((id) => ({
     id,
-    name: `Leave type ${id.slice(0, 8)}`,
+    name: t("leaveTypeFallback", { id: id.slice(0, 8) }),
     is_active: true,
   }))
   const leaveTypes = uniqueLeaveTypeOptions(
@@ -117,6 +138,11 @@ export function ApplyLeaveDialog({
   const selectedStartDate = useWatch({ control, name: "start_date" })
   const halfDayPeriod = useWatch({ control, name: "half_day_period" })
 
+  const errorText = (message?: string) =>
+    message && isSchemaErrorMessage(message)
+      ? t(SCHEMA_ERROR_KEYS[message])
+      : message
+
   const handleOpenChange = (next: boolean) => {
     onOpenChange(next)
     if (!next) reset()
@@ -136,15 +162,15 @@ export function ApplyLeaveDialog({
       },
       {
         onSuccess: () => {
-          toast.success("Leave request submitted", {
-            description: "Your request has been sent for approval.",
+          toast.success(t("requestSubmitted"), {
+            description: t("requestSubmittedDescription"),
           })
           handleOpenChange(false)
         },
         onError: (err) => {
           const apiError = err as unknown as ApiError
-          toast.error("Couldn't submit leave request", {
-            description: apiError.message ?? "Please review the details and try again.",
+          toast.error(t("requestSubmitFailed"), {
+            description: apiError.message ?? t("reviewDetailsRetry"),
           })
         },
       }
@@ -160,15 +186,15 @@ export function ApplyLeaveDialog({
           noValidate
         >
           <div className="flex flex-col gap-1 pe-8">
-            <DialogTitle>Apply for Leave</DialogTitle>
+            <DialogTitle>{t("applyForLeave")}</DialogTitle>
             <DialogDescription>
-              Submit a new leave request for approval.
+              {t("applyForLeaveDescription")}
             </DialogDescription>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label className="text-sm font-semibold text-content-primary">
-              Leave Type <span className="text-brand-danger">*</span>
+              {t("leaveType")} <span className="text-brand-danger">*</span>
             </Label>
             <Select
               value={leaveTypeId || undefined}
@@ -180,7 +206,7 @@ export function ApplyLeaveDialog({
               <SelectTrigger className="rounded-[10px]">
                 <SelectValue
                   placeholder={
-                    typesLoading ? "Loading types…" : "Select leave type"
+                    typesLoading ? t("loadingTypes") : t("selectLeaveType")
                   }
                 />
               </SelectTrigger>
@@ -188,10 +214,10 @@ export function ApplyLeaveDialog({
                 {leaveTypes.length === 0 ? (
                   <div className="px-2 py-1.5 text-sm text-content-tertiary">
                     {typesLoading
-                      ? "Loading types…"
+                      ? t("loadingTypes")
                       : typesError
-                        ? "Couldn't load leave types"
-                        : "No leave types available"}
+                        ? t("leaveTypesLoadError")
+                        : t("noLeaveTypes")}
                   </div>
                 ) : (
                   leaveTypes.map((type) => (
@@ -204,7 +230,7 @@ export function ApplyLeaveDialog({
             </Select>
             {errors.leave_type_id && (
               <p className="text-xs text-brand-danger">
-                {errors.leave_type_id.message}
+                {errorText(errors.leave_type_id.message)}
               </p>
             )}
           </div>
@@ -212,7 +238,7 @@ export function ApplyLeaveDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Start Date <span className="text-brand-danger">*</span>
+                {t("startDate")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 type="date"
@@ -221,13 +247,13 @@ export function ApplyLeaveDialog({
               />
               {errors.start_date && (
                 <p className="text-xs text-brand-danger">
-                  {errors.start_date.message}
+                  {errorText(errors.start_date.message)}
                 </p>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                End Date <span className="text-brand-danger">*</span>
+                {t("endDate")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 type="date"
@@ -237,7 +263,7 @@ export function ApplyLeaveDialog({
               />
               {errors.end_date && (
                 <p className="text-xs text-brand-danger">
-                  {errors.end_date.message}
+                  {errorText(errors.end_date.message)}
                 </p>
               )}
             </div>
@@ -257,7 +283,7 @@ export function ApplyLeaveDialog({
                   }
                 }}
               />
-              Half-day leave
+              {t("halfDayLeave")}
             </label>
 
             {isHalfDay ? (
@@ -274,34 +300,34 @@ export function ApplyLeaveDialog({
               >
                 <label className="flex items-center gap-2 rounded-lg border border-stroke-default px-3 py-2 text-sm text-content-secondary">
                   <RadioGroupItem value="first_half" />
-                  First half
+                  {t("firstHalf")}
                 </label>
                 <label className="flex items-center gap-2 rounded-lg border border-stroke-default px-3 py-2 text-sm text-content-secondary">
                   <RadioGroupItem value="second_half" />
-                  Second half
+                  {t("secondHalf")}
                 </label>
               </RadioGroup>
             ) : null}
             {errors.half_day_period && (
               <p className="text-xs text-brand-danger">
-                {errors.half_day_period.message}
+                {errorText(errors.half_day_period.message)}
               </p>
             )}
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label className="text-sm font-semibold text-content-primary">
-              Reason
+              {t("reason")}
             </Label>
             <Textarea
-              placeholder="Provide reason for leave…"
+              placeholder={t("reasonPlaceholder")}
               rows={3}
               maxLength={500}
               {...register("reason")}
             />
             {errors.reason && (
               <p className="text-xs text-brand-danger">
-                {errors.reason.message}
+                {errorText(errors.reason.message)}
               </p>
             )}
           </div>
@@ -313,7 +339,7 @@ export function ApplyLeaveDialog({
               className="rounded-[10px]"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -321,7 +347,7 @@ export function ApplyLeaveDialog({
               className="rounded-[10px]"
               disabled={submitRequest.isPending}
             >
-              {submitRequest.isPending ? "Submitting…" : "Submit Request"}
+              {submitRequest.isPending ? t("submitting") : t("submitRequest")}
             </Button>
           </div>
         </form>

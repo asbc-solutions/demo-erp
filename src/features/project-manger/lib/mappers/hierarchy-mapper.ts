@@ -12,6 +12,7 @@ import type {
   TaskStatus,
   TaskPriority,
 } from "../types"
+import type { ProjectsSharedT } from "../utils/translator"
 import { formatApiDate } from "./project-mapper"
 
 /* ------------------------------------------------------------------ */
@@ -44,9 +45,18 @@ const PRIORITY_LABEL: Record<TaskPriority, ViewTaskPriority> = {
   low: "Low",
 }
 
-function schedule(start: string | null, end: string | null): string {
+type ScheduleFormat = { t: ProjectsSharedT; locale?: string }
+
+function schedule(
+  start: string | null,
+  end: string | null,
+  { t, locale }: ScheduleFormat,
+): string {
   if (!start && !end) return "—"
-  return `${formatApiDate(start)} → ${formatApiDate(end)}`
+  return t("dateRange", {
+    start: formatApiDate(start, locale),
+    end: formatApiDate(end, locale),
+  })
 }
 
 const UNKNOWN_OWNER = { initials: "?", color: "neutral" as const }
@@ -55,7 +65,10 @@ const UNKNOWN_OWNER = { initials: "?", color: "neutral" as const }
 /* WBS tree (Timeline → Phase → Task → Subtask)                        */
 /* ------------------------------------------------------------------ */
 
-export function toWbsNodes(timelines: Timeline[]): WbsNode[] {
+export function toWbsNodes(
+  timelines: Timeline[],
+  format: ScheduleFormat,
+): WbsNode[] {
   return timelines.map((timeline, ti) => {
     const tCode = `${ti + 1}.0`
     return {
@@ -66,7 +79,7 @@ export function toWbsNodes(timelines: Timeline[]): WbsNode[] {
       name: timeline.name,
       owner: UNKNOWN_OWNER,
       status: toWbsStatus(timeline.status),
-      schedule: schedule(timeline.start_date, timeline.end_date),
+      schedule: schedule(timeline.start_date, timeline.end_date, format),
       budget: "—",
       children: (timeline.phases ?? []).map((phase, pi) => {
         const pCode = `${ti + 1}.${pi + 1}`
@@ -78,7 +91,7 @@ export function toWbsNodes(timelines: Timeline[]): WbsNode[] {
           name: phase.name,
           owner: UNKNOWN_OWNER,
           status: toWbsStatus(phase.status),
-          schedule: schedule(phase.start_date, phase.end_date),
+          schedule: schedule(phase.start_date, phase.end_date, format),
           budget: "—",
           children: (phase.tasks ?? []).map((task, ki) => {
             const kCode = `${pCode}.${ki + 1}`
@@ -90,7 +103,7 @@ export function toWbsNodes(timelines: Timeline[]): WbsNode[] {
               name: task.title,
               owner: UNKNOWN_OWNER,
               status: toWbsStatus(task.status),
-              schedule: schedule(task.start_date, task.due_date),
+              schedule: schedule(task.start_date, task.due_date, format),
               budget: "—",
               children: (task.subtasks ?? []).map((sub, si) => ({
                 id: sub.id,

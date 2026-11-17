@@ -16,6 +16,21 @@ export function formatMoney(value: number | null | undefined): string {
   return `${sign}$${Math.round(abs)}`
 }
 
+/** Cost types the UI has a translated label for (`ProjectsShared.costType`). */
+export const COST_TYPES = [
+  "labor",
+  "material",
+  "equipment",
+  "overhead",
+  "other",
+] as const
+
+export type KnownCostType = (typeof COST_TYPES)[number]
+
+export function isKnownCostType(value: string): value is KnownCostType {
+  return (COST_TYPES as readonly string[]).includes(value)
+}
+
 export const COST_TYPE_LABEL: Record<string, string> = {
   labor: "Labor",
   material: "Materials",
@@ -33,14 +48,26 @@ export const COST_TYPE_COLOR: Record<string, string> = {
 }
 
 export type CostMixSlice = {
+  /** Backend `cost_type` — translate known ones via `isKnownCostType`. */
+  key: string
   label: string
   value: string
   raw: number
   color: string
 }
 
+/**
+ * Optional label override for a cost type, e.g.
+ * `(key) => isKnownCostType(key) ? t(\`costType.${key}\`) : undefined`.
+ * Falls back to the API label / English `COST_TYPE_LABEL`.
+ */
+export type CostTypeLabeler = (costType: string) => string | undefined
+
 /** Group cost-plan line items by cost type for the donut chart. */
-export function buildCostMix(plans: CostPlan[]): {
+export function buildCostMix(
+  plans: CostPlan[],
+  labelFor?: CostTypeLabeler,
+): {
   slices: CostMixSlice[]
   total: number
 } {
@@ -52,7 +79,8 @@ export function buildCostMix(plans: CostPlan[]): {
     )
   }
   const slices = [...totals.entries()].map(([type, raw]) => ({
-    label: COST_TYPE_LABEL[type] ?? type,
+    key: type,
+    label: labelFor?.(type) ?? COST_TYPE_LABEL[type] ?? type,
     value: formatMoney(raw),
     raw,
     color: COST_TYPE_COLOR[type] ?? "var(--content-tertiary)",
@@ -60,8 +88,10 @@ export function buildCostMix(plans: CostPlan[]): {
   return { slices, total: slices.reduce((a, s) => a + s.raw, 0) }
 }
 
+export type EvmMetricId = "pv" | "ev" | "ac" | "cpi" | "spi" | "eac" | "etc"
+
 export type EvmMetricCard = {
-  id: string
+  id: EvmMetricId
   label: string
   value: string
   sub: string
@@ -86,7 +116,10 @@ export function humanizeLabel(value: string | null | undefined): string {
 }
 
 /** Cost mix from the `/cost-mix` endpoint items (already grouped by type). */
-export function buildCostMixSlices(items: CostMixItem[] | undefined): {
+export function buildCostMixSlices(
+  items: CostMixItem[] | undefined,
+  labelFor?: CostTypeLabeler,
+): {
   slices: CostMixSlice[]
   total: number
 } {
@@ -94,7 +127,12 @@ export function buildCostMixSlices(items: CostMixItem[] | undefined): {
   const slices = items
     .filter((i) => Number(i.amount) > 0)
     .map((i) => ({
-      label: i.cost_type_label ?? COST_TYPE_LABEL[i.cost_type] ?? i.cost_type,
+      key: i.cost_type,
+      label:
+        labelFor?.(i.cost_type) ??
+        i.cost_type_label ??
+        COST_TYPE_LABEL[i.cost_type] ??
+        i.cost_type,
       value: formatMoney(Number(i.amount)),
       raw: Number(i.amount),
       color: COST_TYPE_COLOR[i.cost_type] ?? "var(--content-tertiary)",

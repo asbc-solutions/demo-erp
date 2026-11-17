@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronDown, Filter, X } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -17,11 +18,11 @@ export type AvailabilityBand = "available" | "booked" | "over"
 
 type FilterOption = { value: string; label: string }
 
-export const AVAILABILITY_OPTIONS: readonly FilterOption[] = [
-  { value: "available", label: "Available (< 80%)" },
-  { value: "booked", label: "Fully booked (80–100%)" },
-  { value: "over", label: "Over-allocated (> 100%)" },
-]
+export const AVAILABILITY_OPTIONS = [
+  "available",
+  "booked",
+  "over",
+] as const satisfies readonly AvailabilityBand[]
 
 /** A resource with no allocation data can't be placed in a band, so it drops out. */
 export function matchesAvailability(
@@ -55,12 +56,20 @@ const ALL_VALUE = "__all__"
 
 type FilterMenuProps = Readonly<{
   label: string
+  allLabel: string
   value: string | null
   options: readonly FilterOption[]
   onChange: (value: string | null) => void
 }>
 
-function FilterMenu({ label, value, options, onChange }: FilterMenuProps) {
+function FilterMenu({
+  label,
+  allLabel,
+  value,
+  options,
+  onChange,
+}: FilterMenuProps) {
+  const t = useTranslations("ProjectsResourcePlanner")
   const selected = options.find((option) => option.value === value) ?? null
 
   return (
@@ -69,14 +78,16 @@ function FilterMenu({ label, value, options, onChange }: FilterMenuProps) {
         <Button
           variant="outline"
           disabled={options.length === 0}
-          aria-label={`Filter by ${label.toLowerCase()}`}
+          aria-label={t("filterBy", { label })}
           className={cn(
             "h-9 gap-2 px-3 text-[13px]",
             selected && "border-brand-primary text-brand-primary",
           )}
         >
           <Filter className="size-3.5" aria-hidden />
-          {selected ? `${label}: ${selected.label}` : label}
+          {selected
+            ? t("filterSelected", { label, value: selected.label })
+            : label}
           <ChevronDown className="size-3.5" aria-hidden />
         </Button>
       </DropdownMenuTrigger>
@@ -89,7 +100,7 @@ function FilterMenu({ label, value, options, onChange }: FilterMenuProps) {
           onValueChange={(next) => onChange(next === ALL_VALUE ? null : next)}
         >
           <DropdownMenuRadioItem value={ALL_VALUE}>
-            All {label.toLowerCase()}
+            {allLabel}
           </DropdownMenuRadioItem>
           {options.map((option) => (
             <DropdownMenuRadioItem key={option.value} value={option.value}>
@@ -115,21 +126,28 @@ export function ResourceDirectoryFilters({
   departments,
   skills,
 }: ResourceDirectoryFiltersProps) {
+  const t = useTranslations("ProjectsResourcePlanner")
+  const tCommon = useTranslations("Common")
   const toOptions = (items: readonly string[]): FilterOption[] =>
     items.map((item) => ({ value: item, label: item }))
 
   return (
     <>
       <FilterMenu
-        label="Department"
+        label={t("filterDepartment")}
+        allLabel={t("allDepartments")}
         value={values.department}
         options={toOptions(departments)}
         onChange={(department) => onChange({ ...values, department })}
       />
       <FilterMenu
-        label="Availability"
+        label={t("filterAvailability")}
+        allLabel={t("allAvailability")}
         value={values.availability}
-        options={AVAILABILITY_OPTIONS}
+        options={AVAILABILITY_OPTIONS.map((band) => ({
+          value: band,
+          label: t(`availability.${band}`),
+        }))}
         onChange={(availability) =>
           onChange({
             ...values,
@@ -138,7 +156,8 @@ export function ResourceDirectoryFilters({
         }
       />
       <FilterMenu
-        label="Skills"
+        label={t("filterSkills")}
+        allLabel={t("allSkills")}
         value={values.skill}
         options={toOptions(skills)}
         onChange={(skill) => onChange({ ...values, skill })}
@@ -150,7 +169,7 @@ export function ResourceDirectoryFilters({
           onClick={() => onChange(EMPTY_RESOURCE_FILTERS)}
         >
           <X className="size-3.5" aria-hidden />
-          Clear
+          {tCommon("clear")}
         </Button>
       )}
     </>

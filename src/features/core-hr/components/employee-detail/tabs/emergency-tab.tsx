@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Pencil, Star } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Button } from "@/src/shared/components/ui/button"
@@ -33,6 +34,7 @@ type EmergencyTabProps = Readonly<{
 }>
 
 export function EmergencyTab({ employeeId }: EmergencyTabProps) {
+  const t = useTranslations("HrEmployeeDetail")
   const { data: contacts = [], isLoading } =
     useEmployeeEmergencyContacts(employeeId)
   const [editContact, setEditContact] = useState<EmergencyContact | null>(
@@ -41,14 +43,14 @@ export function EmergencyTab({ employeeId }: EmergencyTabProps) {
 
   return (
     <SectionCard
-      title="Emergency Contacts"
-      description="People to contact in case of emergency"
+      title={t("emergencyTitle")}
+      description={t("emergencyDescription")}
       bodyClassName="px-6 pb-6 pt-1 flex flex-col gap-3"
     >
       {isLoading && <HrSectionSpinner />}
       {!isLoading && contacts.length === 0 && (
         <p className="text-content-tertiary py-8 text-center text-sm">
-          No emergency contacts added yet.
+          {t("emergencyEmpty")}
         </p>
       )}
       {contacts.map((contact) => (
@@ -70,7 +72,7 @@ export function EmergencyTab({ employeeId }: EmergencyTabProps) {
               {contact.is_primary && (
                 <span className="bg-brand-warning/10 text-brand-warning inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-4 font-medium">
                   <Star className="size-3" strokeWidth={2} />
-                  Primary
+                  {t("primary")}
                 </span>
               )}
             </div>
@@ -92,7 +94,7 @@ export function EmergencyTab({ employeeId }: EmergencyTabProps) {
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Edit ${contact.full_name}`}
+            aria-label={t("editContact", { name: contact.full_name })}
             className="text-content-tertiary hover:text-content-primary shrink-0"
             onClick={() => setEditContact(contact)}
           >

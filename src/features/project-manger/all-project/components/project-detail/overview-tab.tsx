@@ -1,7 +1,9 @@
 "use client"
 
 import { Diamond, Receipt } from "lucide-react"
+import { useTranslations } from "next-intl"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Card } from "@/src/shared/components/ui/card"
 import { Progress } from "@/src/shared/components/ui/progress"
@@ -19,7 +21,10 @@ import { useProjectHierarchy } from "../../../lib/queries/hierarchy"
 import { useProject } from "../../../lib/queries/projects"
 import { useProjectUtilization } from "../../../lib/queries/resources"
 import { useMilestones } from "../../../lib/queries/scheduling"
-import type { PhaseState } from "../../data/project-detail-data"
+import {
+  HEALTH_STATE_KEY,
+  type PhaseState,
+} from "../../data/project-detail-data"
 
 const PHASE_STYLE: Record<PhaseState, { chip: string; dot: string }> = {
   done: { chip: "bg-brand-success/12 text-content-primary", dot: "bg-brand-success" },
@@ -42,6 +47,9 @@ const HEALTH_TEXT: Record<string, string> = {
 const MILESTONE_ICON = { billing: Receipt, internal: Diamond }
 
 export function OverviewTab({ projectId }: { projectId: string }) {
+  const t = useTranslations("ProjectsProjectDetail")
+  const tShared = useTranslations("ProjectsShared")
+  const locale = useIntlLocale()
   const nodeId = projectId
 
   const projectQ = useProject(projectId)
@@ -53,14 +61,21 @@ export function OverviewTab({ projectId }: { projectId: string }) {
 
   const timelines = hierarchyQ.data ?? []
   const progress = buildOverviewProgress(timelines, projectQ.data?.end_date)
-  const stats = buildOverviewStats({
-    nodeCost: nodeCostQ.data,
-    evm: evmQ.data,
-    progress,
-  })
-  const health = buildHealthSummary(evmQ.data, nodeCostQ.data)
-  const milestones = buildUpcomingMilestones(milestonesQ.data ?? [])
-  const team = buildTeam(utilizationQ.data ?? [])
+  const stats = buildOverviewStats(
+    {
+      nodeCost: nodeCostQ.data,
+      evm: evmQ.data,
+      progress,
+    },
+    tShared,
+  )
+  const health = buildHealthSummary(evmQ.data, nodeCostQ.data, tShared)
+  const milestones = buildUpcomingMilestones(
+    milestonesQ.data ?? [],
+    tShared,
+    locale,
+  )
+  const team = buildTeam(utilizationQ.data ?? [], tShared)
 
   if (hierarchyQ.isLoading) {
     return (
@@ -78,16 +93,25 @@ export function OverviewTab({ projectId }: { projectId: string }) {
         <Card className="gap-4 p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-content-primary text-sm font-semibold">
-              Project Progress
+              {t("projectProgress")}
             </h2>
             <p className="text-content-tertiary text-xs">
-              <span className="text-content-primary font-bold">
-                {progress.percent}%
-              </span>{" "}
-              Complete · {progress.tasksDone} of {progress.tasksTotal} Tasks Done
-              {progress.daysRemaining != null
-                ? ` · ${progress.daysRemaining} days remaining`
-                : ""}
+              {t.rich(
+                progress.daysRemaining != null
+                  ? "progressSummaryWithDays"
+                  : "progressSummary",
+                {
+                  percent: progress.percent,
+                  done: progress.tasksDone,
+                  total: progress.tasksTotal,
+                  days: progress.daysRemaining ?? 0,
+                  strong: (chunks) => (
+                    <span className="text-content-primary font-bold">
+                      {chunks}
+                    </span>
+                  ),
+                },
+              )}
             </p>
           </div>
           <Progress
@@ -98,7 +122,7 @@ export function OverviewTab({ projectId }: { projectId: string }) {
           {progress.phases.length > 0 && (
             <div className="flex flex-col gap-2">
               <span className="text-content-tertiary text-[11px] font-semibold tracking-wide uppercase">
-                Phase Timeline
+                {t("phaseTimeline")}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {progress.phases.map((phase, i) => {
@@ -145,7 +169,7 @@ export function OverviewTab({ projectId }: { projectId: string }) {
         {health.length > 0 && (
           <Card className="gap-3 p-5">
             <h2 className="text-content-primary text-sm font-semibold">
-              Health Summary
+              {t("healthSummary")}
             </h2>
             <div className="flex flex-col gap-3">
               {health.map((item) => (
@@ -163,7 +187,7 @@ export function OverviewTab({ projectId }: { projectId: string }) {
                     <span
                       className={cn("text-xs font-medium", HEALTH_TEXT[item.state])}
                     >
-                      {item.state}
+                      {tShared(`health.${HEALTH_STATE_KEY[item.state]}`)}
                     </span>
                   </div>
                   <Progress
@@ -179,13 +203,13 @@ export function OverviewTab({ projectId }: { projectId: string }) {
 
         <Card className="gap-3 p-5">
           <h2 className="text-content-primary text-sm font-semibold">
-            Upcoming Milestones
+            {t("upcomingMilestones")}
           </h2>
           {milestonesQ.isLoading ? (
             <div className="bg-surface-muted h-24 animate-pulse rounded-lg" />
           ) : milestones.length === 0 ? (
             <p className="text-content-tertiary text-sm">
-              No upcoming milestones.
+              {t("noUpcomingMilestones")}
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
@@ -221,12 +245,14 @@ export function OverviewTab({ projectId }: { projectId: string }) {
         </Card>
 
         <Card className="gap-3 p-5">
-          <h2 className="text-content-primary text-sm font-semibold">Team</h2>
+          <h2 className="text-content-primary text-sm font-semibold">
+            {t("team")}
+          </h2>
           {utilizationQ.isLoading ? (
             <div className="bg-surface-muted h-20 animate-pulse rounded-lg" />
           ) : team.length === 0 ? (
             <p className="text-content-tertiary text-sm">
-              No resources assigned yet.
+              {t("noResourcesAssigned")}
             </p>
           ) : (
             <>

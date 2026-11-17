@@ -1,4 +1,5 @@
 import { Briefcase, Building2, CalendarDays, Users, type LucideIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -35,32 +36,38 @@ export function HrStatsOverview({
   departmentCount = 0,
   isLoading = false,
 }: HrStatsOverviewProps) {
+  const t = useTranslations("HrEmployees")
   const stats: StatItem[] = [
     {
       id: "headcount",
-      label: "Total Headcount",
+      label: t("statTotalHeadcount"),
       value: isLoading ? "—" : totalHeadcount,
       icon: Users,
       tone: "indigo",
     },
     {
       id: "open",
-      label: "Open Positions",
+      label: t("statOpenPositions"),
       value: isLoading ? "—" : openPositions,
       icon: Briefcase,
       tone: "amber",
     },
     {
       id: "tenure",
-      label: "Avg. Tenure",
+      label: t("statAvgTenure"),
       value: isLoading ? (
         "—"
       ) : (
         <span className="flex items-baseline gap-1">
-          <span>{avgTenureYears.toFixed(1)}</span>
-          <span className="text-content-quaternary text-[11px] leading-[15.4px] font-normal">
-            years
-          </span>
+          {t.rich("tenureYears", {
+            value: avgTenureYears.toFixed(1),
+            num: (chunks) => <span>{chunks}</span>,
+            unit: (chunks) => (
+              <span className="text-content-quaternary text-[11px] leading-[15.4px] font-normal">
+                {chunks}
+              </span>
+            ),
+          })}
         </span>
       ),
       icon: CalendarDays,
@@ -68,7 +75,7 @@ export function HrStatsOverview({
     },
     {
       id: "departments",
-      label: "Departments",
+      label: t("statDepartments"),
       value: isLoading ? "—" : departmentCount,
       icon: Building2,
       tone: "violet",

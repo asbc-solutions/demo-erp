@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/src/shared/lib/utils/utils";
 
@@ -21,6 +22,8 @@ export function IndustryStep({
   onBack,
   onSubmit,
 }: IndustryStepProps) {
+  const t = useTranslations("OnboardingIndustry");
+  const tOnboarding = useTranslations("Onboarding");
   const [industry, setIndustry] = React.useState<IndustryId | undefined>(
     defaultIndustry,
   );
@@ -40,16 +43,16 @@ export function IndustryStep({
 
       <div className="flex flex-col gap-2">
         <h2 className="font-heading text-content-primary text-[31px] leading-[37.2px] font-bold">
-          Tell us about your company.
+          {t("title")}
         </h2>
         <p className="text-content-tertiary text-base leading-6 font-normal">
-          We&apos;ll customize your experience.
+          {t("subtitle")}
         </p>
       </div>
 
       <fieldset className="flex flex-col gap-3">
         <legend className="text-content-primary text-xs leading-[18px] font-medium">
-          Industry
+          {t("industryLegend")}
         </legend>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {INDUSTRIES.map((opt) => {
@@ -73,7 +76,7 @@ export function IndustryStep({
                   {opt.emoji}
                 </span>
                 <span className="text-content-primary text-[11px] leading-[15.4px] font-medium">
-                  {opt.label}
+                  {t(`industries.${opt.id}`)}
                 </span>
               </button>
             );
@@ -83,7 +86,7 @@ export function IndustryStep({
 
       <fieldset className="flex flex-col gap-3">
         <legend className="text-content-primary text-xs leading-[18px] font-medium">
-          Current stage
+          {t("stageLegend")}
         </legend>
         <div className="flex flex-col gap-2">
           {STAGES.map((opt) => {
@@ -105,10 +108,10 @@ export function IndustryStep({
               >
                 <div className="flex flex-col">
                   <span className="text-content-primary text-base leading-6 font-medium">
-                    {opt.title}
+                    {t(`stages.${opt.id}`)}
                   </span>
                   <span className="text-content-tertiary text-[11px] leading-[15.4px] font-normal">
-                    {opt.description}
+                    {t(`stageDescriptions.${opt.id}`)}
                   </span>
                 </div>
                 <span
@@ -127,7 +130,7 @@ export function IndustryStep({
       </fieldset>
 
       <OnboardingButton type="submit" disabled={!isValid}>
-        Continue
+        {tOnboarding("continue")}
       </OnboardingButton>
     </form>
   );

@@ -1,4 +1,14 @@
+import type { Messages, useTranslations } from "next-intl"
+
 import type { CurrencyCode } from "../../../lib/types/common"
+
+export type TaxTranslator = ReturnType<typeof useTranslations<"FinanceTax">>
+
+type TaxMessages = Messages["FinanceTax"]
+/** A flat (non-enum-map) key of the `FinanceTax` namespace. */
+export type TaxMessageKey = {
+  [K in keyof TaxMessages]: TaxMessages[K] extends string ? K : never
+}[keyof TaxMessages]
 
 export type VatReturnStatus = "draft" | "filed" | "settled"
 

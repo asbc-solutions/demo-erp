@@ -149,7 +149,7 @@ export const SALES_DEALS: SalesDeal[] = [
 export type SalesKpiAccent = "indigo" | "emerald" | "amber" | "rose"
 
 export type SalesKpi = {
-  label: string
+  labelKey: "pipelineValue" | "openDeals" | "wonDeals" | "avgDealSize"
   value: string
   icon: "target" | "briefcase" | "trending-up" | "dollar"
   accent: SalesKpiAccent
@@ -157,25 +157,25 @@ export type SalesKpi = {
 
 export const SALES_KPIS: SalesKpi[] = [
   {
-    label: "Pipeline Value",
+    labelKey: "pipelineValue",
     value: "$295,000",
     icon: "target",
     accent: "indigo",
   },
   {
-    label: "Open Deals",
+    labelKey: "openDeals",
     value: "5",
     icon: "briefcase",
     accent: "emerald",
   },
   {
-    label: "Won Deals",
+    labelKey: "wonDeals",
     value: "1",
     icon: "trending-up",
     accent: "amber",
   },
   {
-    label: "Avg Deal Size",
+    labelKey: "avgDealSize",
     value: "$60,333",
     icon: "dollar",
     accent: "rose",

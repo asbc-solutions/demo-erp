@@ -13,6 +13,7 @@ import {
   User,
   X,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -26,6 +27,7 @@ import {
   SheetTitle,
 } from "@/src/shared/components/ui/sheet"
 import { cn } from "@/src/shared/lib/utils/utils"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import type {
   ApprovalRequest,
@@ -33,27 +35,9 @@ import type {
   ApprovalWorkflowStep,
   ApprovalWorkflowStepVariant,
 } from "../../types/approval"
+
+type ApprovalsTranslator = ReturnType<typeof useTranslations<"HrApprovals">>
 import { AVATAR_TONE_CLASSES } from "../shared/avatar-tone"
-
-const TYPE_LABEL: Record<ApprovalRequestType, string> = {
-  TRANSFER: "Transfer",
-  PROMOTION: "Promotion",
-  LEAVE: "Leave",
-  SALARY_CHANGE: "Salary Change",
-  CONTRACT: "Contract",
-  TERMINATION: "Termination",
-  GENERAL: "General",
-}
-
-const TYPE_REQUEST_LABEL: Record<ApprovalRequestType, string> = {
-  TRANSFER: "Transfer Request",
-  PROMOTION: "Promotion Request",
-  LEAVE: "Leave Request",
-  SALARY_CHANGE: "Salary Change Request",
-  CONTRACT: "Contract Request",
-  TERMINATION: "Termination Request",
-  GENERAL: "General Request",
-}
 
 const TYPE_BADGE_CLASS: Record<ApprovalRequestType, string> = {
   TRANSFER:
@@ -74,26 +58,21 @@ const STATUS_BADGE_CLASS = {
   RETURNED: "border-transparent bg-brand-info/15 text-brand-info",
 } as const
 
-const STATUS_LABEL = {
-  DRAFT: "Draft",
-  PENDING: "Pending",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
-  RETURNED: "Returned",
-} as const
-
-function formatDate(iso: string | null | undefined) {
+function formatDate(iso: string | null | undefined, intlLocale: string) {
   if (!iso) return "—"
   const date = new Date(iso.includes("T") ? iso : `${iso}T12:00:00`)
   if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(intlLocale, {
     month: "short",
     day: "numeric",
     year: "numeric",
   })
 }
 
-function fallbackWorkflow(request: ApprovalRequest): ApprovalWorkflowStep[] {
+function fallbackWorkflow(
+  request: ApprovalRequest,
+  t: ApprovalsTranslator
+): ApprovalWorkflowStep[] {
   const submittedAt = (time: string) =>
     request.dateSubmitted ? `${request.dateSubmitted} ${time}` : undefined
 
@@ -103,7 +82,7 @@ function fallbackWorkflow(request: ApprovalRequest): ApprovalWorkflowStep[] {
     return [
       {
         id: "r1",
-        title: "Submitted",
+        title: t("stepSubmitted"),
         assignee: request.requestedBy,
         completedAt: submittedAt("10:00"),
         variant: "complete",
@@ -112,22 +91,22 @@ function fallbackWorkflow(request: ApprovalRequest): ApprovalWorkflowStep[] {
         id: "r2",
         title:
           request.status === "RETURNED"
-            ? "Returned for changes"
-            : "HR Manager Review",
+            ? t("stepReturnedForChanges")
+            : t("stepHrManagerReview"),
         assignee: request.requestedBy,
         completedAt: submittedAt("14:00"),
         variant: decisionVariant,
       },
       {
         id: "r3",
-        title: "Department Head Approval",
+        title: t("stepDepartmentHeadApproval"),
         assignee: "Hassan Mohamed",
         variant: "pending",
       },
       {
         id: "r4",
-        title: "Final Confirmation",
-        assignee: "System",
+        title: t("stepFinalConfirmation"),
+        assignee: t("system"),
         variant: "pending",
       },
     ]
@@ -137,22 +116,22 @@ function fallbackWorkflow(request: ApprovalRequest): ApprovalWorkflowStep[] {
   return [
     {
       id: "f1",
-      title: "Submitted",
+      title: t("stepSubmitted"),
       assignee: request.requestedBy,
       completedAt: submittedAt("09:00"),
       variant: "complete",
     },
     {
       id: "f2",
-      title: "In review",
+      title: t("stepInReview"),
       assignee: request.requestedBy,
       variant: pending ? "current" : "complete",
       completedAt: pending ? undefined : submittedAt("14:00"),
     },
     {
       id: "f3",
-      title: "Final Confirmation",
-      assignee: "System",
+      title: t("stepFinalConfirmation"),
+      assignee: t("system"),
       variant: pending ? "pending" : "complete",
       completedAt: pending ? undefined : submittedAt("16:00"),
     },
@@ -192,10 +171,10 @@ const TIMELINE_TITLE_CLASS: Record<ApprovalWorkflowStepVariant, string> = {
   delegated: "text-content-primary font-medium",
 }
 
-const DEFAULT_REJECTED_IMPACT_LINES = [
-  "This request was rejected. No payroll or employee record changes apply.",
-  "You may open a new request if policy allows.",
-]
+const DEFAULT_REJECTED_IMPACT_KEYS = [
+  "impactRejectedNoChanges",
+  "impactRejectedNewRequest",
+] as const
 
 function TimelineStepIcon({ step }: Readonly<{ step: ApprovalWorkflowStep }>) {
   if (step.variant === "rejected") {
@@ -307,12 +286,13 @@ type ApprovalRequestDetailSheetProps = Readonly<{
 }>
 
 function resolveWorkflowSteps(
-  request: ApprovalRequest
+  request: ApprovalRequest,
+  t: ApprovalsTranslator
 ): ApprovalWorkflowStep[] {
   if (request.workflowSteps?.length) {
     return request.workflowSteps
   }
-  return fallbackWorkflow(request)
+  return fallbackWorkflow(request, t)
 }
 
 export function ApprovalRequestDetailSheet({
@@ -322,9 +302,12 @@ export function ApprovalRequestDetailSheet({
   onApprove,
   onReject,
 }: ApprovalRequestDetailSheetProps) {
+  const t = useTranslations("HrApprovals")
+  const tCommon = useTranslations("Common")
+  const intlLocale = useIntlLocale()
   const steps = useMemo(
-    () => (request ? resolveWorkflowSteps(request) : []),
-    [request]
+    () => (request ? resolveWorkflowSteps(request, t) : []),
+    [request, t]
   )
 
   const headline = request?.detailHeadline ?? request?.detailsSummary ?? ""
@@ -349,20 +332,20 @@ export function ApprovalRequestDetailSheet({
           <SheetHeader className="shrink-0 space-y-0 border-b border-stroke-default px-6 py-5 text-start">
             <nav
               className="mb-3 flex flex-wrap items-center gap-1 text-xs text-content-tertiary"
-              aria-label="Breadcrumb"
+              aria-label={t("breadcrumb")}
             >
               <button
                 type="button"
                 className="font-medium text-brand-primary hover:text-brand-primary-hover"
                 onClick={() => onOpenChange(false)}
               >
-                Approvals
+                {t("breadcrumbApprovals")}
               </button>
-              <ChevronRight className="size-3.5 opacity-50" aria-hidden />
+              <ChevronRight className="size-3.5 opacity-50 rtl:rotate-180" aria-hidden />
               <span className="text-content-secondary">
-                {TYPE_REQUEST_LABEL[request.type]}
+                {t(`typeRequest.${request.type}`)}
               </span>
-              <ChevronRight className="size-3.5 opacity-50" aria-hidden />
+              <ChevronRight className="size-3.5 opacity-50 rtl:rotate-180" aria-hidden />
               <span className="font-medium text-content-primary">
                 {request.requestNumber}
               </span>
@@ -380,7 +363,7 @@ export function ApprovalRequestDetailSheet({
                       TYPE_BADGE_CLASS[request.type]
                     )}
                   >
-                    {TYPE_LABEL[request.type]}
+                    {t(`type.${request.type}`)}
                   </Badge>
                 </div>
                 <SheetDescription className="text-sm leading-5 text-content-tertiary">
@@ -394,7 +377,7 @@ export function ApprovalRequestDetailSheet({
                   STATUS_BADGE_CLASS[request.status]
                 )}
               >
-                {STATUS_LABEL[request.status]}
+                {t(`status.${request.status}`)}
               </Badge>
             </div>
           </SheetHeader>
@@ -407,7 +390,7 @@ export function ApprovalRequestDetailSheet({
                     className="size-5 text-content-quaternary"
                     strokeWidth={1.75}
                   />
-                  Request Details
+                  {t("requestDetails")}
                 </header>
                 <div className="flex flex-col gap-5 px-5 py-5">
                   <div className="flex items-start gap-3">
@@ -438,26 +421,26 @@ export function ApprovalRequestDetailSheet({
                   <div className="grid gap-4 sm:grid-cols-2">
                     <MetaItem
                       icon={User}
-                      label="Requested by"
+                      label={t("requestedBy")}
                       value={request.requestedBy}
                     />
                     <MetaItem
                       icon={Calendar}
-                      label="Submitted date"
-                      value={formatDate(request.dateSubmitted)}
+                      label={t("submittedDate")}
+                      value={formatDate(request.dateSubmitted, intlLocale)}
                     />
                     <MetaItem
                       icon={Calendar}
-                      label="Effective date"
+                      label={t("effectiveDate")}
                       value={
                         request.effectiveDate
-                          ? formatDate(request.effectiveDate)
+                          ? formatDate(request.effectiveDate, intlLocale)
                           : "—"
                       }
                     />
                     <MetaItem
                       icon={FileText}
-                      label="Reason"
+                      label={t("reason")}
                       value={request.reason ?? "—"}
                     />
                   </div>
@@ -471,12 +454,12 @@ export function ApprovalRequestDetailSheet({
                       className="size-5 text-content-quaternary"
                       strokeWidth={1.75}
                     />
-                    Transfer Details
+                    {t("transferDetails")}
                   </header>
                   <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-content-tertiary">
-                        From branch
+                        {t("fromBranch")}
                       </span>
                       <span className="text-sm font-medium text-content-primary">
                         {request.transferFromBranch ?? "—"}
@@ -484,7 +467,7 @@ export function ApprovalRequestDetailSheet({
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-content-tertiary">
-                        To branch
+                        {t("toBranch")}
                       </span>
                       <span className="text-sm font-medium text-content-primary">
                         {request.transferToBranch ?? "—"}
@@ -492,7 +475,7 @@ export function ApprovalRequestDetailSheet({
                     </div>
                     <div className="flex flex-col gap-1 sm:col-span-2">
                       <span className="text-xs text-content-tertiary">
-                        Department
+                        {t("department")}
                       </span>
                       <span className="text-sm font-medium text-content-primary">
                         {request.transferToDepartment ?? "—"}
@@ -509,12 +492,12 @@ export function ApprovalRequestDetailSheet({
                       className="size-5 text-content-quaternary"
                       strokeWidth={1.75}
                     />
-                    Promotion Details
+                    {t("promotionDetails")}
                   </header>
                   <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-content-tertiary">
-                        Current title
+                        {t("currentTitle")}
                       </span>
                       <span className="text-sm font-medium text-content-primary">
                         {request.promotionFromTitle ?? "—"}
@@ -522,7 +505,7 @@ export function ApprovalRequestDetailSheet({
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-xs text-content-tertiary">
-                        New title
+                        {t("newTitle")}
                       </span>
                       <span className="text-sm font-medium text-content-primary">
                         {request.promotionToTitle ?? "—"}
@@ -539,12 +522,12 @@ export function ApprovalRequestDetailSheet({
                       className="size-5 text-content-quaternary"
                       strokeWidth={1.75}
                     />
-                    Impact Summary
+                    {t("impactSummary")}
                   </header>
                   <ul className="list-disc space-y-2 px-5 py-5 ps-9 text-sm leading-5 text-content-secondary">
                     {(
                       request.impactSummaryLines ??
-                      DEFAULT_REJECTED_IMPACT_LINES
+                      DEFAULT_REJECTED_IMPACT_KEYS.map((key) => t(key))
                     ).map((line) => (
                       <li key={line}>{line}</li>
                     ))}
@@ -559,7 +542,7 @@ export function ApprovalRequestDetailSheet({
                   className="size-5 text-content-quaternary"
                   strokeWidth={1.75}
                 />
-                Approval Progress
+                {t("approvalProgress")}
               </header>
               <ol className="px-5 py-5">
                 {steps.map((step, index) => (
@@ -581,7 +564,7 @@ export function ApprovalRequestDetailSheet({
                 className="rounded-[10px] border-brand-danger text-brand-danger hover:bg-brand-danger/5"
                 onClick={() => onReject(request)}
               >
-                Reject
+                {tCommon("reject")}
               </Button>
               <Button
                 variant="primary"
@@ -589,7 +572,7 @@ export function ApprovalRequestDetailSheet({
                 className="rounded-[10px]"
                 onClick={() => onApprove(request)}
               >
-                Approve
+                {tCommon("approve")}
               </Button>
             </SheetFooter>
           )}

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Link, useRouter } from "@/src/i18n/navigation"
 import { CircleCheck, Link2, Sparkles } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -39,9 +40,9 @@ import {
 } from "../../../components/shared/page-header"
 import { useFinanceTreasuries } from "../../../lib/queries/master-data"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount, round2 } from "../../../lib/utils/money"
-import { ACCEPT_ALL_FROM, CAUSE_COPY } from "../../lib/constants/reconciliation"
+import { ACCEPT_ALL_FROM } from "../../lib/constants/reconciliation"
 import { useReconciliationActions } from "../../lib/mutations/banking"
 import { useReconciliation } from "../../lib/queries/banking"
 import type { MatchSuggestion, ReconciliationWorkspace, StatementLine } from "../../lib/types/banking"
@@ -52,11 +53,12 @@ import { ReconciliationLists, SuggestionPill } from "./reconciliation-lists"
 const MATCH_TOLERANCE = 1
 
 function SuggestionToggle({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
+  const t = useTranslations("FinanceBanking")
   return (
-    <div role="group" aria-label="Show suggestions" className="bg-surface-hover flex rounded-md p-0.5">
+    <div role="group" aria-label={t("showSuggestions")} className="bg-surface-hover flex rounded-md p-0.5">
       {[
-        { value: true, label: "Suggestions" },
-        { value: false, label: "None" },
+        { value: true, label: t("suggestions") },
+        { value: false, label: t("none") },
       ].map((option) => (
         <button
           key={option.label}
@@ -76,13 +78,11 @@ function SuggestionToggle({ on, onChange }: { on: boolean; onChange: (on: boolea
 }
 
 function Causes({ data }: { data: ReconciliationWorkspace }) {
+  const t = useTranslations("FinanceBanking")
   const references = new Map(data.statement.items.map((line) => [line.id, line.reference]))
   if (data.causes.length === 0) return null
   return (
-    <FinanceSection
-      title="Why these have not matched"
-      description="Grouped by cause, so a batch is dealt with once rather than line by line."
-    >
+    <FinanceSection title={t("causesTitle")} description={t("causesDescription")}>
       <ul className="flex flex-col gap-2">
         {data.causes.map((cause) => (
           <li
@@ -91,9 +91,9 @@ function Causes({ data }: { data: ReconciliationWorkspace }) {
           >
             <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="text-content-primary text-[13px] leading-5 font-semibold tabular-nums">
-                {cause.line_ids.length} {cause.line_ids.length === 1 ? "line" : "lines"}
+                {t("linesCount", { count: cause.line_ids.length })}
               </span>
-              <span className="text-content-secondary text-[13px] leading-5">{CAUSE_COPY[cause.id]}</span>
+              <span className="text-content-secondary text-[13px] leading-5">{t(`cause.${cause.id}`)}</span>
             </span>
             <span className="text-content-tertiary font-mono text-xs leading-4">
               {cause.line_ids.map((id) => references.get(id) ?? id).join(" · ")}
@@ -106,9 +106,10 @@ function Causes({ data }: { data: ReconciliationWorkspace }) {
 }
 
 function Matched({ data, onUnmatch, busy }: { data: ReconciliationWorkspace; onUnmatch: (lineId: string) => void; busy: boolean }) {
+  const t = useTranslations("FinanceBanking")
   if (data.matched.length === 0) return null
   return (
-    <FinanceSection title={`Matched (${data.matched_count})`}>
+    <FinanceSection title={t("matchedCount", { count: data.matched_count })}>
       <ul className="border-stroke-default bg-surface-white divide-stroke-light divide-y overflow-hidden rounded-xl border">
         {data.matched.map((pair) => (
           <li key={pair.line.id} className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5 text-[13px] leading-5">
@@ -123,14 +124,16 @@ function Matched({ data, onUnmatch, busy }: { data: ReconciliationWorkspace; onU
             <span className="flex flex-col items-end">
               <Amount value={pair.line.amount} signed />
               {Math.abs(pair.difference) > 0.004 ? (
-                <span className="text-content-tertiary text-xs">Difference {formatAmount(pair.difference)}</span>
+                <span className="text-content-tertiary text-xs">
+                  {t("differenceAmount", { amount: formatAmount(pair.difference) })}
+                </span>
               ) : null}
             </span>
             {pair.auto ? (
-              <span className="text-content-tertiary w-20 text-end text-xs">Bank feed</span>
+              <span className="text-content-tertiary w-20 text-end text-xs">{t("bankFeed")}</span>
             ) : (
               <Button variant="ghost" size="sm" className="w-20" disabled={busy} onClick={() => onUnmatch(pair.line.id)}>
-                Unmatch
+                {t("unmatch")}
               </Button>
             )}
           </li>
@@ -145,6 +148,9 @@ function Matched({ data, onUnmatch, busy }: { data: ReconciliationWorkspace; onU
  * entry, accept suggestions, or create the entry the ledger is missing.
  */
 function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
+  const { formatDate } = useFinanceDateFormat()
   const router = useRouter()
   const { data, isError, isPending, refetch } = useReconciliation(treasuryId)
   const actions = useReconciliationActions(treasuryId)
@@ -177,7 +183,7 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
   const accept = (suggestion: MatchSuggestion) =>
     actions.match.mutate(
       { lineId: suggestion.line_id, entryId: suggestion.entry_id },
-      { onError: fail("The pair could not be matched. Try again.") },
+      { onError: fail(t("matchFailed")) },
     )
 
   const matchSelected = () => {
@@ -186,10 +192,10 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
       { lineId: line.id, entryId: entry.id },
       {
         onSuccess: () => {
-          toast.success(`${line.reference} is matched to ${entry.entry}.`)
+          toast.success(t("pairMatched", { reference: line.reference, entry: entry.entry }))
           setSelection({ line: null, entry: null })
         },
-        onError: fail("The pair could not be matched. Try again."),
+        onError: fail(t("matchFailed")),
       },
     )
   }
@@ -197,7 +203,7 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
   if (isError) {
     return (
       <>
-        <FinancePageHeader title="Bank reconciliation" />
+        <FinancePageHeader title={t("reconciliationTitle")} />
         <FinancePageBody>
           <FinanceErrorState onRetry={() => refetch()} />
         </FinancePageBody>
@@ -208,15 +214,15 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
   if (!isPending && !data) {
     return (
       <>
-        <FinancePageHeader title="Bank reconciliation" />
+        <FinancePageHeader title={t("reconciliationTitle")} />
         <FinancePageBody>
           <EmptyState
             variant="card"
-            title="Only bank accounts are reconciled here."
-            description="Cash treasuries are counted, not reconciled against a statement. Pick a bank account."
+            title={t("onlyBanksTitle")}
+            description={t("onlyBanksDescription")}
             actions={
               <Button variant="secondary" size="sm" asChild>
-                <Link href="/finance/reconciliation">Open Bank reconciliation</Link>
+                <Link href="/finance/reconciliation">{t("openReconciliation")}</Link>
               </Button>
             }
           />
@@ -228,11 +234,11 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
   return (
     <>
       <FinancePageHeader
-        title="Bank reconciliation"
+        title={t("reconciliationTitle")}
         figure={
           data ? (
             <HeaderFigure size="lg" label={data.treasury.name}>
-              {data.matched_count}/{data.total_count} matched
+              {t("matchedOfTotal", { matched: data.matched_count, total: data.total_count })}
             </HeaderFigure>
           ) : null
         }
@@ -240,7 +246,7 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
           data ? (
             <>
               <Select value={treasuryId} onValueChange={(id) => router.push(`/finance/reconciliation/${id}`)}>
-                <SelectTrigger aria-label="Bank account" className="h-9 w-64">
+                <SelectTrigger aria-label={t("bankAccount")} className="h-9 w-64">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -259,13 +265,17 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
                   actions.finish.mutate(undefined, {
                     onSuccess: (result) =>
                       toast.success(
-                        `${data.treasury.name} is reconciled to ${formatDate(result.last_reconciled)} (${result.reconciled_lines} lines).`,
+                        t("reconciliationFinished", {
+                          name: data.treasury.name,
+                          date: formatDate(result.last_reconciled),
+                          count: result.reconciled_lines,
+                        }),
                       ),
-                    onError: fail("The reconciliation could not be finished. Try again."),
+                    onError: fail(t("finishFailed")),
                   })
                 }
               >
-                Finish reconciliation
+                {t("finishReconciliation")}
               </Button>
             </>
           ) : null
@@ -273,7 +283,7 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
       />
       <FinancePageBody>
         {!data ? (
-          <div aria-busy aria-label="Loading reconciliation" className="flex flex-col gap-6">
+          <div aria-busy aria-label={t("loadingReconciliation")} className="flex flex-col gap-6">
             <FinanceTilesSkeleton />
             <Skeleton className="h-96 rounded-xl" />
           </div>
@@ -281,15 +291,15 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
           <EmptyState
             variant="card"
             icon={<CircleCheck />}
-            title={`${data.treasury.name} has nothing to reconcile.`}
+            title={t("nothingToReconcile", { name: data.treasury.name })}
             description={
               data.treasury.last_reconciled
-                ? `It was last reconciled on ${formatDate(data.treasury.last_reconciled)}. Import a statement to start the next one.`
-                : "Import a statement to start reconciling."
+                ? t("lastReconciledImport", { date: formatDate(data.treasury.last_reconciled) })
+                : t("importToStart")
             }
             actions={
               <Button variant="secondary" size="sm" asChild>
-                <Link href="/finance/reconciliation/import">Import a statement</Link>
+                <Link href="/finance/reconciliation/import">{t("importAStatement")}</Link>
               </Button>
             }
           />
@@ -299,23 +309,23 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
               <KpiCard
                 layout="bar"
                 accent="indigo"
-                label={`Statement outstanding (${data.treasury.currency})`}
+                label={t("statementOutstanding", { currency: data.treasury.currency })}
                 value={<Amount value={data.statement.total} align="start" signed />}
                 caption={String(data.statement.count)}
               />
               <KpiCard
                 layout="bar"
                 accent="teal"
-                label={`Book outstanding (${data.treasury.currency})`}
+                label={t("bookOutstanding", { currency: data.treasury.currency })}
                 value={<Amount value={data.book.total} align="start" signed />}
                 caption={String(data.book.count)}
               />
               <KpiCard
                 layout="bar"
                 accent="amber"
-                label={`Difference (${data.treasury.currency})`}
+                label={t("differenceIn", { currency: data.treasury.currency })}
                 value={<Amount value={data.difference} align="start" signed />}
-                caption={data.statement.count > 0 ? "Match remaining lines" : "Every statement line is matched"}
+                caption={data.statement.count > 0 ? t("matchRemaining") : t("everyLineMatched")}
               />
             </div>
 
@@ -324,8 +334,8 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
               <SuggestionToggle on={showSuggestions} onChange={setShowSuggestions} />
               <span className="text-content-secondary text-[13px] leading-5">
                 {showSuggestions
-                  ? `${data.suggestions.length} suggested ${data.suggestions.length === 1 ? "match" : "matches"}`
-                  : "Suggestions hidden — match by hand"}
+                  ? t("suggestedMatches", { count: data.suggestions.length })
+                  : t("suggestionsHidden")}
               </span>
               <Button
                 variant="outline"
@@ -334,12 +344,12 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
                 disabled={!showSuggestions || bulk === 0 || busy}
                 onClick={() =>
                   actions.acceptAll.mutate(ACCEPT_ALL_FROM, {
-                    onSuccess: (result) => toast.success(`${result.accepted} suggested pairs were matched.`),
-                    onError: fail("The suggestions could not be accepted. Try again."),
+                    onSuccess: (result) => toast.success(t("suggestionsAccepted", { count: result.accepted })),
+                    onError: fail(t("acceptAllFailed")),
                   })
                 }
               >
-                Accept all above {ACCEPT_ALL_FROM}%
+                {t("acceptAllAbove", { percent: ACCEPT_ALL_FROM })}
               </Button>
             </div>
 
@@ -351,7 +361,7 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
                     <div className="flex gap-2">
                       <Button variant="primary" size="sm" disabled={busy} onClick={() => accept(top)}>
                         <CircleCheck aria-hidden />
-                        Accept
+                        {t("accept")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -360,11 +370,11 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
                         onClick={() =>
                           actions.dismiss.mutate(
                             { lineId: top.line_id, entryId: top.entry_id },
-                            { onError: fail("The suggestion could not be dismissed. Try again.") },
+                            { onError: fail(t("dismissFailed")) },
                           )
                         }
                       >
-                        Dismiss
+                        {t("dismiss")}
                       </Button>
                     </div>
                   }
@@ -375,26 +385,21 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
                   </span>
                 </FinanceAlert>
               ) : (
-                <FinanceAlert tone="info">
-                  No confident suggestion for the lines left. Match them by hand, or create an entry for a
-                  statement line the ledger has never seen.
-                </FinanceAlert>
+                <FinanceAlert tone="info">{t("noConfidentSuggestion")}</FinanceAlert>
               )
             ) : null}
 
             <div className="bg-surface-hover border-stroke-default flex flex-wrap items-center gap-3 rounded-xl border px-4 py-2.5">
-              <span className="text-content-secondary text-[13px] leading-5">Selected pair difference</span>
+              <span className="text-content-secondary text-[13px] leading-5">{t("selectedPairDifference")}</span>
               <span className="text-content-primary text-[13px] leading-5 font-medium tabular-nums">
                 {pairDifference === null ? "—" : formatAmount(pairDifference)}
               </span>
               {pairDifference !== null && !canMatch ? (
-                <span className="text-status-danger-fg text-xs leading-4">
-                  Too far apart to match. Create an entry for the difference, or pick another pair.
-                </span>
+                <span className="text-status-danger-fg text-xs leading-4">{t("tooFarApart")}</span>
               ) : null}
               <Button variant="primary" size="sm" className="ms-auto" disabled={!canMatch || busy} onClick={() => setConfirmPair(true)}>
                 <Link2 aria-hidden />
-                Match pair
+                {t("matchPair")}
               </Button>
             </div>
 
@@ -415,7 +420,7 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
               data={data}
               busy={busy}
               onUnmatch={(lineId) =>
-                actions.unmatch.mutate(lineId, { onError: fail("The pair could not be unmatched. Try again.") })
+                actions.unmatch.mutate(lineId, { onError: fail(t("unmatchFailed")) })
               }
             />
           </>
@@ -425,16 +430,13 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
       <AlertDialog open={confirmPair} onOpenChange={setConfirmPair}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Match these two lines?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Matching marks the statement line and the book entry as reconciled against each other. It changes
-              no ledger figure. You can unmatch them again until the reconciliation is finished.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("matchConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("matchConfirmDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction className={buttonVariants({ variant: "primary" })} onClick={matchSelected}>
-              Match pair
+              {t("matchPair")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -450,6 +452,7 @@ function ReconciliationWorkspaceView({ treasuryId }: { treasuryId: string }) {
  * lines; `/finance/reconciliation/[accountId]` opens that account.
  */
 function ReconciliationPage({ treasuryId }: { treasuryId?: string }) {
+  const t = useTranslations("FinanceBanking")
   const { data: treasuries, isError, refetch } = useFinanceTreasuries()
   const fallback = React.useMemo(() => {
     const banks = (treasuries ?? []).filter((row) => row.kind === "bank")
@@ -460,12 +463,12 @@ function ReconciliationPage({ treasuryId }: { treasuryId?: string }) {
   if (!id) {
     return (
       <>
-        <FinancePageHeader title="Bank reconciliation" />
+        <FinancePageHeader title={t("reconciliationTitle")} />
         <FinancePageBody>
           {isError ? (
             <FinanceErrorState onRetry={() => refetch()} />
           ) : (
-            <div aria-busy aria-label="Loading reconciliation" className="flex flex-col gap-6">
+            <div aria-busy aria-label={t("loadingReconciliation")} className="flex flex-col gap-6">
               <FinanceTilesSkeleton />
               <Skeleton className="h-96 rounded-xl" />
             </div>

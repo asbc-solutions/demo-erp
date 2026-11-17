@@ -1,6 +1,7 @@
 "use client"
 
 import { Diamond } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -8,6 +9,7 @@ import { cn } from "@/src/shared/lib/utils/utils"
 import { useMyMilestones } from "../../lib/queries/my-work"
 
 export function UpcomingMilestonesCard() {
+  const t = useTranslations("ProjectsMyProjects")
   const { data, isLoading, isError } = useMyMilestones({
     horizon_days: 90,
     limit: 10,
@@ -18,10 +20,10 @@ export function UpcomingMilestonesCard() {
     <Card className="overflow-hidden p-0">
       <div className="border-stroke-default flex flex-col gap-0.5 border-b px-5 py-3.5">
         <h2 className="text-content-primary text-base leading-6 font-semibold">
-          Upcoming Milestones
+          {t("upcomingMilestones")}
         </h2>
         <p className="text-content-tertiary text-[12px] leading-[17px]">
-          Next 90 days across my projects
+          {t("upcomingMilestonesSubtitle", { days: 90 })}
         </p>
       </div>
 
@@ -36,11 +38,11 @@ export function UpcomingMilestonesCard() {
         </div>
       ) : isError ? (
         <p className="text-content-tertiary px-5 py-8 text-center text-sm">
-          Couldn&apos;t load milestones.
+          {t("milestonesLoadFailed")}
         </p>
       ) : milestones.length === 0 ? (
         <p className="text-content-tertiary px-5 py-8 text-center text-sm">
-          No upcoming milestones.
+          {t("noUpcomingMilestones")}
         </p>
       ) : (
         <ul className="flex flex-col">

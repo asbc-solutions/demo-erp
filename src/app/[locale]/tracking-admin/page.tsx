@@ -1,7 +1,21 @@
-import { MarketingTrackingDashboard } from "@/src/features/marketing-tracking/components/marketing-tracking-dashboard"
+import type { Metadata } from "next"
+import { hasLocale } from "next-intl"
+import { getTranslations } from "next-intl/server"
 
-export const metadata = {
-  title: "Demo Insights",
+import { MarketingTrackingDashboard } from "@/src/features/marketing-tracking/components/marketing-tracking-dashboard"
+import { routing } from "@/src/i18n/routing"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({
+    locale: hasLocale(routing.locales, locale) ? locale : routing.defaultLocale,
+    namespace: "MarketingTrackingDashboard",
+  })
+  return { title: t("title") }
 }
 
 /**

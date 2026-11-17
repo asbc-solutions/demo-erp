@@ -1,9 +1,11 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { useTranslations } from "next-intl"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import {
+  FINANCE_STATUSES,
   getStatusMeta,
   type StatusFamily,
   type StatusKey,
@@ -62,8 +64,17 @@ type StatusPillProps = Omit<React.ComponentProps<"span">, "children"> &
     label?: React.ReactNode
   }
 
+/** Translates a finance status key; unknown backend statuses read with spaces for underscores. */
+function useStatusLabel(): (status: string) => string {
+  const t = useTranslations("FinanceShared")
+  return (status) =>
+    status in FINANCE_STATUSES ? t(`status.${status as StatusKey}`) : getStatusMeta(status).label
+}
+
 function StatusPill({ className, status, label, family, tone, ...props }: StatusPillProps) {
+  const statusLabel = useStatusLabel()
   const meta = getStatusMeta(status)
+  const vocabularyLabel = statusLabel(status)
   const resolvedFamily: StatusFamily = family ?? meta.family
   const resolvedTone: StatusTone = tone ?? meta.tone
   const Marker = resolvedFamily === "external" || resolvedFamily === "failed" ? meta.icon : undefined
@@ -78,9 +89,9 @@ function StatusPill({ className, status, label, family, tone, ...props }: Status
       {...props}
     >
       {Marker ? <Marker aria-hidden strokeWidth={2} /> : null}
-      {label ?? meta.label}
+      {label ?? vocabularyLabel}
     </span>
   )
 }
 
-export { StatusPill, statusPillVariants }
+export { StatusPill, statusPillVariants, useStatusLabel }

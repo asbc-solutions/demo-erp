@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button } from "@/src/shared/components/ui/button"
 import {
   Dialog,
@@ -31,25 +33,33 @@ import { FinanceTable, type FinanceColumn } from "../../../components/shared/fin
 import { FinancePageBody, FinancePageHeader } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { useSaveFiscalCalendar } from "../../lib/mutations/configuration"
 import { useFiscalCalendar } from "../../lib/queries/configuration"
-import type { FiscalCalendar } from "../../lib/types/configuration"
+import type { ConfigTranslator, FiscalCalendar } from "../../lib/types/configuration"
+import { MONTH_NUMBERS, monthName } from "../../lib/utils/months"
 
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+const PERIOD_STATUSES = ["open", "closing", "adjusting", "closed", "locked", "future"] as const
+type PeriodStatusKey = (typeof PERIOD_STATUSES)[number]
+const isPeriodStatus = (status: string): status is PeriodStatusKey => (PERIOD_STATUSES as readonly string[]).includes(status)
 const STATUS_TONE: Record<string, "success" | "info" | "neutral" | "warning"> = { open: "success", closing: "warning", adjusting: "warning", closed: "info", locked: "neutral", future: "neutral" }
 
 type Period = FiscalCalendar["periods"][number]
 
-const COLUMNS: FinanceColumn<Period>[] = [
-  { id: "period", header: "Period", cell: (row) => <span className="text-content-primary font-medium">{row.label}</span> },
-  { id: "start", header: "Opens", cell: (row) => formatDate(row.start_date) },
-  { id: "end", header: "Ends", cell: (row) => formatDate(row.end_date) },
-  { id: "adjusting", header: "Adjusting until", cell: (row) => formatDate(row.adjusting_until) },
-  { id: "status", header: "Status", cell: (row) => <StatusPill status={`period-${row.status}`} label={row.status === "future" ? "not open" : row.status} tone={STATUS_TONE[row.status] ?? "neutral"} /> },
-]
+function buildColumns(t: ConfigTranslator, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<Period>[] {
+  return [
+    { id: "period", header: t("period"), cell: (row) => <span className="text-content-primary font-medium">{row.label}</span> },
+    { id: "start", header: t("opens"), cell: (row) => formatDate(row.start_date) },
+    { id: "end", header: t("ends"), cell: (row) => formatDate(row.end_date) },
+    { id: "adjusting", header: t("adjustingUntil"), cell: (row) => formatDate(row.adjusting_until) },
+    { id: "status", header: t("status"), cell: (row) => <StatusPill status={`period-${row.status}`} label={isPeriodStatus(row.status) ? t(`periodStatus.${row.status}`) : row.status} tone={STATUS_TONE[row.status] ?? "neutral"} /> },
+  ]
+}
 
 function EditDialog({ calendar, open, onOpenChange }: { calendar: FiscalCalendar; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations("FinanceConfiguration")
+  const locale = useIntlLocale()
   const save = useSaveFiscalCalendar()
   const [month, setMonth] = React.useState(String(calendar.year_start_month))
   const [days, setDays] = React.useState(String(calendar.adjusting_days))
@@ -58,34 +68,34 @@ function EditDialog({ calendar, open, onOpenChange }: { calendar: FiscalCalendar
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit the fiscal calendar</DialogTitle>
-          <DialogDescription>A new year start applies from the next financial year; this year&apos;s periods stay as they are.</DialogDescription>
+          <DialogTitle>{t("editCalendarTitle")}</DialogTitle>
+          <DialogDescription>{t("editCalendarDescription")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
           <Field>
-            <FieldLabel htmlFor="calendar-start">Fiscal year starts</FieldLabel>
+            <FieldLabel htmlFor="calendar-start">{t("fiscalYearStarts")}</FieldLabel>
             <Select value={month} onValueChange={setMonth}>
               <SelectTrigger id="calendar-start">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {MONTHS.map((name, index) => (
-                  <SelectItem key={name} value={String(index + 1)}>
-                    1 {name}
+                {MONTH_NUMBERS.map((monthNumber) => (
+                  <SelectItem key={monthNumber} value={String(monthNumber)}>
+                    {t("firstOfMonth", { month: monthName(monthNumber, locale) })}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
           <Field>
-            <FieldLabel htmlFor="calendar-days">Adjusting window (days)</FieldLabel>
+            <FieldLabel htmlFor="calendar-days">{t("adjustingWindowDays")}</FieldLabel>
             <Input id="calendar-days" inputMode="numeric" className="w-28 tabular-nums" value={days} aria-invalid={invalid} onChange={(event) => setDays(event.target.value)} />
-            <FieldDescription>Days after period end when the close team can still book late entries. Between 0 and 30.</FieldDescription>
+            <FieldDescription>{t("adjustingWindowHint")}</FieldDescription>
           </Field>
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             variant="primary"
@@ -95,15 +105,15 @@ function EditDialog({ calendar, open, onOpenChange }: { calendar: FiscalCalendar
                 { year_start_month: Number(month), adjusting_days: Number(days) },
                 {
                   onSuccess: () => {
-                    toast.success("Fiscal calendar saved.")
+                    toast.success(t("toastCalendarSaved"))
                     onOpenChange(false)
                   },
-                  onError: (error) => toast.error(errorMessage(error, "The calendar could not be saved. Try again.")),
+                  onError: (error) => toast.error(errorMessage(error, t("errorSaveCalendar"))),
                 },
               )
             }
           >
-            Save
+            {t("save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -113,16 +123,19 @@ function EditDialog({ calendar, open, onOpenChange }: { calendar: FiscalCalendar
 
 /** 11.05 · Fiscal calendar — when the year starts, how it is split, and the adjusting window after month-end. */
 function FiscalCalendarPage() {
+  const t = useTranslations("FinanceConfiguration")
+  const { formatDate } = useFinanceDateFormat()
+  const columns = React.useMemo(() => buildColumns(t, formatDate), [t, formatDate])
   const { data, isError, refetch } = useFiscalCalendar()
   const [editing, setEditing] = React.useState(false)
 
   return (
     <>
       <FinancePageHeader
-        title="Fiscal calendar"
+        title={t("fiscalCalendar")}
         actions={
           <Button variant="secondary" disabled={!data} onClick={() => setEditing(true)}>
-            Edit
+            {t("edit")}
           </Button>
         }
       />
@@ -134,22 +147,20 @@ function FiscalCalendarPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Fiscal year start" value={data.year_start_label} />
-              <KpiCard layout="bar" accent="teal" label="Period length" value="Monthly" caption={`${data.periods_per_year} periods`} />
-              <KpiCard layout="bar" accent="amber" label="Adjusting window" value={`${data.adjusting_days} days`} caption="After period end" />
+              <KpiCard layout="bar" accent="indigo" label={t("fiscalYearStart")} value={data.year_start_label} />
+              <KpiCard layout="bar" accent="teal" label={t("periodLength")} value={t("monthly")} caption={t("periodsCount", { count: data.periods_per_year })} />
+              <KpiCard layout="bar" accent="amber" label={t("adjustingWindow")} value={t("daysCount", { count: data.adjusting_days })} caption={t("afterPeriodEnd")} />
             </div>
             {data.pending_change ? (
               <FinanceAlert tone="warning">
-                The financial year is set to start on {data.year_start_label}. This year&apos;s periods were created from 1 January, so the
-                new start applies from the next financial year.
+                {t("pendingYearStart", { date: data.year_start_label })}
               </FinanceAlert>
             ) : null}
             <p className="text-content-secondary max-w-3xl text-[13px] leading-5">
-              The fiscal calendar defines when periods open and close. The adjusting window lets the close team book late entries
-              into a period after month-end without reopening it for everyone.
+              {t("calendarInfo")}
             </p>
-            <FinanceSection title="This year's periods">
-              <FinanceTable caption="Financial periods this year" columns={COLUMNS} rows={data.periods} getRowId={(row) => row.id} />
+            <FinanceSection title={t("thisYearsPeriods")}>
+              <FinanceTable caption={t("periodsCaption")} columns={columns} rows={data.periods} getRowId={(row) => row.id} />
             </FinanceSection>
             <EditDialog key={`${data.year_start_month}-${data.adjusting_days}-${String(editing)}`} calendar={data} open={editing} onOpenChange={setEditing} />
           </>

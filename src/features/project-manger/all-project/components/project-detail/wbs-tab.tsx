@@ -13,7 +13,9 @@ import {
   SquareCheck,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
@@ -21,7 +23,7 @@ import { cn } from "@/src/shared/lib/utils/utils"
 
 import { toWbsNodes } from "../../../lib/mappers/hierarchy-mapper"
 import { useProjectHierarchy } from "../../../lib/queries/hierarchy"
-import { type WbsNode } from "../../data/project-detail-data"
+import { WBS_STATUS_KEY, type WbsNode } from "../../data/project-detail-data"
 
 import { StatusPill } from "./status-pill"
 
@@ -32,7 +34,14 @@ const KIND_ICON: Record<WbsNode["kind"], LucideIcon> = {
   Task: SquareCheck,
 }
 
-const VIEW_MODES = ["Tree", "Table", "Chart"] as const
+const KIND_KEY = {
+  Project: "project",
+  Phase: "phase",
+  Workstream: "workstream",
+  Task: "task",
+} as const satisfies Record<WbsNode["kind"], string>
+
+const VIEW_MODES = ["tree", "table", "chart"] as const
 
 function collectParentIds(nodes: WbsNode[], acc: string[] = []): string[] {
   for (const node of nodes) {
@@ -59,13 +68,20 @@ function flatten(
 }
 
 export function WbsTab({ projectId }: { projectId: string }) {
+  const t = useTranslations("ProjectsProjectDetail")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const { data, isLoading } = useProjectHierarchy(projectId)
-  const tree = useMemo(() => toWbsNodes(data ?? []), [data])
+  const tree = useMemo(
+    () => toWbsNodes(data ?? [], { t: tShared, locale }),
+    [data, tShared, locale],
+  )
   const parentIds = useMemo(() => collectParentIds(tree), [tree])
 
   // Default fully-expanded by tracking the *collapsed* set instead.
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
-  const [view, setView] = useState<(typeof VIEW_MODES)[number]>("Tree")
+  const [view, setView] = useState<(typeof VIEW_MODES)[number]>("tree")
 
   const rows = useMemo(() => flatten(tree, collapsed), [tree, collapsed])
 
@@ -82,25 +98,22 @@ export function WbsTab({ projectId }: { projectId: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-content-primary text-xl leading-7 font-bold tracking-tight">
-            Work Breakdown Structure
+            {t("wbsTitle")}
           </h2>
-          <p className="text-content-tertiary text-sm">
-            Decompose project deliverables into a hierarchy of phases, tasks, and
-            subtasks
-          </p>
+          <p className="text-content-tertiary text-sm">{t("wbsSubtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" className="h-9 gap-2 px-3 text-[12px]">
             <GitBranch className="size-3.5" aria-hidden />
-            Baseline Mode
+            {t("baselineMode")}
           </Button>
           <Button variant="outline" className="h-9 gap-2 px-3 text-[12px]">
             <Download className="size-3.5" aria-hidden />
-            Export
+            {tCommon("export")}
           </Button>
           <Button variant="primary" className="h-9 gap-2 px-3 text-[12px]">
             <Plus className="size-4" aria-hidden />
-            Add Phase
+            {t("addPhase")}
           </Button>
         </div>
       </div>
@@ -114,15 +127,15 @@ export function WbsTab({ projectId }: { projectId: string }) {
               className="text-content-secondary hover:text-content-primary flex items-center gap-1 font-medium"
             >
               <ChevronDown className="size-3.5" aria-hidden />
-              Expand all
+              {t("expandAll")}
             </button>
             <button
               type="button"
               onClick={() => setCollapsed(new Set(parentIds))}
               className="text-content-secondary hover:text-content-primary flex items-center gap-1 font-medium"
             >
-              <ChevronRight className="size-3.5" aria-hidden />
-              Collapse all
+              <ChevronRight className="size-3.5 rtl:rotate-180" aria-hidden />
+              {t("collapseAll")}
             </button>
           </div>
           <div className="bg-surface-muted flex items-center gap-0.5 rounded-lg p-0.5">
@@ -138,7 +151,7 @@ export function WbsTab({ projectId }: { projectId: string }) {
                     : "text-content-tertiary hover:text-content-primary",
                 )}
               >
-                {mode}
+                {t(`wbsView.${mode}`)}
               </button>
             ))}
           </div>
@@ -146,11 +159,11 @@ export function WbsTab({ projectId }: { projectId: string }) {
 
         {/* column header */}
         <div className="bg-surface-page text-content-tertiary border-stroke-default grid grid-cols-[minmax(0,1fr)_44px_150px_150px_90px] items-center gap-2 border-b px-4 py-2.5 text-[10px] font-semibold tracking-wide uppercase">
-          <span>Element</span>
+          <span>{t("colElement")}</span>
           <span />
-          <span>Status</span>
-          <span>Schedule</span>
-          <span className="text-end">Budget</span>
+          <span>{tCommon("status")}</span>
+          <span>{t("colSchedule")}</span>
+          <span className="text-end">{t("colBudget")}</span>
         </div>
 
         {isLoading ? (
@@ -164,7 +177,7 @@ export function WbsTab({ projectId }: { projectId: string }) {
           </div>
         ) : rows.length === 0 ? (
           <p className="text-content-tertiary px-4 py-12 text-center text-sm">
-            No work breakdown defined yet.
+            {t("wbsEmpty")}
           </p>
         ) : (
           <div>
@@ -183,19 +196,22 @@ export function WbsTab({ projectId }: { projectId: string }) {
                 >
                   <div
                     className="flex min-w-0 items-center gap-1.5"
-                    style={{ paddingLeft: `${(node.level - 1) * 20}px` }}
+                    style={{ paddingInlineStart: `${(node.level - 1) * 20}px` }}
                   >
                     {hasChildren ? (
                       <button
                         type="button"
                         onClick={() => toggle(node.id)}
-                        aria-label={isOpen ? "Collapse" : "Expand"}
+                        aria-label={isOpen ? t("collapse") : t("expand")}
                         className="text-content-tertiary hover:text-content-primary shrink-0"
                       >
                         {isOpen ? (
                           <ChevronDown className="size-3.5" aria-hidden />
                         ) : (
-                          <ChevronRight className="size-3.5" aria-hidden />
+                          <ChevronRight
+                            className="size-3.5 rtl:rotate-180"
+                            aria-hidden
+                          />
                         )}
                       </button>
                     ) : (
@@ -209,7 +225,10 @@ export function WbsTab({ projectId }: { projectId: string }) {
                           : "text-brand-primary",
                       )}
                     >
-                      L{node.level} {node.kind}
+                      {t("wbsLevel", {
+                        level: node.level,
+                        kind: tShared(`wbsKind.${KIND_KEY[node.kind]}`),
+                      })}
                     </span>
                     <Icon
                       className="text-content-quaternary size-3.5 shrink-0"
@@ -239,7 +258,10 @@ export function WbsTab({ projectId }: { projectId: string }) {
                       {node.owner.initials}
                     </Avatar>
                   </div>
-                  <StatusPill status={node.status} />
+                  <StatusPill
+                    status={node.status}
+                    label={tShared(`status.${WBS_STATUS_KEY[node.status]}`)}
+                  />
                   <span className="text-content-secondary text-xs">
                     {node.schedule}
                   </span>

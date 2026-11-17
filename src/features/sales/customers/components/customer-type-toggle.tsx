@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl"
+
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import type { CustomerType } from "../../lib/types"
@@ -7,6 +9,8 @@ export function CustomerTypeToggle({
   value,
   onChange,
 }: Readonly<{ value: CustomerType; onChange: (value: CustomerType) => void }>) {
+  const t = useTranslations("SalesShared")
+
   return (
     <div className="border-stroke-default bg-surface-white flex rounded-lg border p-1">
       {(["company", "individual"] as const).map((option) => (
@@ -22,7 +26,7 @@ export function CustomerTypeToggle({
               : "text-content-secondary hover:text-content-primary"
           )}
         >
-          {option}
+          {t(`customerType.${option}`)}
         </button>
       ))}
     </div>

@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -21,6 +23,13 @@ const STATUS_STYLE: Record<string, { badge: string; dot: string }> = {
   },
 }
 
+/** API priority status → `ProjectsShared.status` message key. */
+const STATUS_KEY: Record<string, "pendingApproval" | "inProgress" | "inReview"> = {
+  "Pending Approval": "pendingApproval",
+  "In Progress": "inProgress",
+  "In Review": "inReview",
+}
+
 const FALLBACK_STATUS_STYLE = {
   badge: "bg-surface-muted text-content-tertiary",
   dot: "bg-content-tertiary",
@@ -33,6 +42,8 @@ const ACCENT_DOT: Record<MyPriority["priority"], string> = {
 }
 
 export function TodaysPrioritiesCard() {
+  const t = useTranslations("ProjectsOverview")
+  const tShared = useTranslations("ProjectsShared")
   const { data, isLoading, isError } = useMyPriorities()
   const priorities = data ?? []
 
@@ -41,10 +52,10 @@ export function TodaysPrioritiesCard() {
       <div className="border-stroke-default flex items-center justify-between border-b px-5 py-3.5">
         <div className="flex flex-col gap-0.5">
           <h2 className="text-content-primary text-base leading-6 font-semibold">
-            Today&apos;s Priorities
+            {t("todaysPriorities")}
           </h2>
           <p className="text-content-tertiary text-[12px] leading-[17px]">
-            Tasks and approvals scheduled for today
+            {t("todaysPrioritiesSubtitle")}
           </p>
         </div>
       </div>
@@ -60,16 +71,17 @@ export function TodaysPrioritiesCard() {
         </div>
       ) : isError ? (
         <p className="text-content-tertiary px-5 py-10 text-center text-sm">
-          Couldn&apos;t load today&apos;s priorities.
+          {t("prioritiesLoadFailed")}
         </p>
       ) : priorities.length === 0 ? (
         <p className="text-content-tertiary px-5 py-10 text-center text-sm">
-          Nothing due today — you&apos;re all caught up.
+          {t("prioritiesEmpty")}
         </p>
       ) : (
         <ul className="flex flex-col">
           {priorities.map((item) => {
             const status = STATUS_STYLE[item.status] ?? FALLBACK_STATUS_STYLE
+            const statusKey = STATUS_KEY[item.status]
             return (
               <li
                 key={item.id}
@@ -105,7 +117,7 @@ export function TodaysPrioritiesCard() {
                     className={cn("size-1.5 rounded-full", status.dot)}
                     aria-hidden
                   />
-                  {item.status}
+                  {statusKey ? tShared(`status.${statusKey}`) : item.status}
                 </span>
               </li>
             )

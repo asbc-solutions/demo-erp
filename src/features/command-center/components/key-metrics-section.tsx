@@ -8,8 +8,11 @@ import {
   Target,
   Users,
 } from "lucide-react"
+import { useLocale } from "next-intl"
 
 import { KpiCard, type KpiTrendDirection } from "@/src/shared/components/ui/kpi-card"
+
+import type { Locale } from "@/src/i18n/routing"
 
 import type { CommandCenterKeyMetric } from "../lib/types/summary"
 import { formatCurrency, formatNumber, formatTrendPct } from "../lib/utils/format"
@@ -41,10 +44,14 @@ function metricIcon(key: string) {
   }
 }
 
-function formatMetricValue(metric: CommandCenterKeyMetric, currencyCode: string) {
-  if (metric.unit === "currency") return formatCurrency(metric.value, currencyCode)
+function formatMetricValue(
+  metric: CommandCenterKeyMetric,
+  currencyCode: string,
+  locale: Locale,
+) {
+  if (metric.unit === "currency") return formatCurrency(metric.value, currencyCode, locale)
   if (metric.unit === "percentage") return `${metric.value}%`
-  return formatNumber(metric.value)
+  return formatNumber(metric.value, locale)
 }
 
 /** Maps the wire `trend_direction` (`up`/`down`/`flat`) to KpiCard's accent set, forcing "neutral" whenever there's no `trend_pct` to show. */
@@ -59,6 +66,8 @@ export function KeyMetricsSection({
   metrics,
   currencyCode,
 }: Readonly<{ metrics: CommandCenterKeyMetric[]; currencyCode: string }>) {
+  const locale = useLocale()
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {metrics.map((metric) => (
@@ -74,7 +83,7 @@ export function KeyMetricsSection({
           <KpiCard
             icon={metricIcon(metric.key)}
             accent="emerald"
-            value={formatMetricValue(metric, currencyCode)}
+            value={formatMetricValue(metric, currencyCode, locale)}
             label={metric.label}
             trend={kpiTrend(metric)}
             trendValue={formatTrendPct(metric.trend_pct)}

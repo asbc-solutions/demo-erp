@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -37,55 +38,69 @@ import { StatusPill } from "../../../components/shared/status-pill"
 import { errorMessage } from "../../../lib/utils/api"
 import { useCreateTaxCode } from "../../lib/mutations/tax"
 import { useTaxCodes } from "../../lib/queries/tax"
-import type { TaxCode } from "../../lib/types/tax"
+import type { TaxCode, TaxMessageKey, TaxTranslator } from "../../lib/types/tax"
 
-const KINDS = [
-  { value: "vat", label: "VAT codes" },
-  { value: "withholding", label: "Withholding" },
-  { value: "table", label: "Table tax" },
-  { value: "stamp", label: "Stamp tax" },
-  { value: "excise", label: "Excise" },
+const KINDS: { value: string; labelKey: TaxMessageKey }[] = [
+  { value: "vat", labelKey: "kindVatCodes" },
+  { value: "withholding", labelKey: "kindWithholding" },
+  { value: "table", labelKey: "kindTable" },
+  { value: "stamp", labelKey: "kindStamp" },
+  { value: "excise", labelKey: "kindExcise" },
 ]
 
+const KIND_LABEL_KEY: Record<string, TaxMessageKey> = {
+  vat: "kindVat",
+  withholding: "kindWithholding",
+  table: "kindTable",
+  stamp: "kindStamp",
+  excise: "kindExcise",
+}
+
+/** Messages are `FinanceTax` keys, translated where the error is rendered. */
+const msg = (key: TaxMessageKey) => key
+
 const codeSchema = z.object({
-  code: z.string().trim().min(1, "Enter the code.").regex(/^[A-Za-z0-9-]+$/, "Letters, digits and dashes only."),
-  name: z.string().trim().min(1, "Name the code."),
-  kind: z.string().min(1, "Choose the type."),
+  code: z.string().trim().min(1, msg("errCode")).regex(/^[A-Za-z0-9-]+$/, msg("errCodeChars")),
+  name: z.string().trim().min(1, msg("errCodeName")),
+  kind: z.string().min(1, msg("errType")),
   rate: z
     .string()
     .trim()
-    .min(1, "Enter the rate.")
-    .refine((value) => Number(value) >= 0 && Number(value) <= 100, "Between 0 and 100."),
-  account_code: z.string().min(1, "Route the code to an account."),
+    .min(1, msg("errRate"))
+    .refine((value) => Number(value) >= 0 && Number(value) <= 100, msg("errRateRange")),
+  account_code: z.string().min(1, msg("errRouteAccount")),
   jurisdiction: z.enum(["EG", "SA"]),
 })
 type CodeValues = z.infer<typeof codeSchema>
 
 const EMPTY: CodeValues = { code: "", name: "", kind: "vat", rate: "", account_code: "", jurisdiction: "EG" }
 
-const COLUMNS: FinanceColumn<TaxCode>[] = [
-  { id: "code", header: "Code", cell: (row) => <span className="font-mono text-xs">{row.code}</span> },
-  { id: "name", header: "Name", cell: (row) => row.name },
-  { id: "kind", header: "Type", cell: (row) => row.kind },
-  { id: "rate", header: "Rate", align: "end", cell: (row) => `${row.rate}%` },
-  { id: "basis", header: "Basis", cell: () => "Exclusive" },
-  {
-    id: "account",
-    header: "Account",
-    cell: (row) =>
-      row.account_code ? (
-        <span className="font-mono text-xs" title={row.account_name ?? undefined}>
-          {row.account_code}
-        </span>
-      ) : (
-        <StatusPill status="blocked" label="No routing" />
-      ),
-  },
-  { id: "jurisdiction", header: "Jurisdiction", cell: (row) => row.jurisdiction },
-  { id: "status", header: "Status", cell: () => <StatusPill status="ready" label="Active" /> },
-]
+function buildColumns(t: TaxTranslator): FinanceColumn<TaxCode>[] {
+  return [
+    { id: "code", header: t("code"), cell: (row) => <span className="font-mono text-xs">{row.code}</span> },
+    { id: "name", header: t("name"), cell: (row) => row.name },
+    { id: "kind", header: t("type"), cell: (row) => (KIND_LABEL_KEY[row.kind] ? t(KIND_LABEL_KEY[row.kind]) : row.kind) },
+    { id: "rate", header: t("rate"), align: "end", cell: (row) => `${row.rate}%` },
+    { id: "basis", header: t("basis"), cell: () => t("exclusive") },
+    {
+      id: "account",
+      header: t("account"),
+      cell: (row) =>
+        row.account_code ? (
+          <span className="font-mono text-xs" title={row.account_name ?? undefined}>
+            {row.account_code}
+          </span>
+        ) : (
+          <StatusPill status="blocked" label={t("noRouting")} />
+        ),
+    },
+    { id: "jurisdiction", header: t("jurisdiction"), cell: (row) => row.jurisdiction },
+    { id: "status", header: t("status"), cell: () => <StatusPill status="ready" label={t("active")} /> },
+  ]
+}
 
 function NewCodeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations("FinanceTax")
   const create = useCreateTaxCode()
   const {
     control,
@@ -107,41 +122,39 @@ function NewCodeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
               { ...values, rate: Number(values.rate) },
               {
                 onSuccess: (code) => {
-                  toast.success(`${code.code} routes to ${code.account_code}.`)
+                  toast.success(t("toastCodeRoutes", { code: code.code, account: code.account_code ?? "" }))
                   onOpenChange(false)
                 },
-                onError: (error) => toast.error(errorMessage(error, "The tax code could not be saved. Try again.")),
+                onError: (error) => toast.error(errorMessage(error, t("errorSaveCode"))),
               },
             ),
           )}
         >
           <DialogHeader>
-            <DialogTitle>New tax code</DialogTitle>
-            <DialogDescription>
-              A tax code routes tax to a control account. Saving adds it to the code list; it does not apply it to any existing document.
-            </DialogDescription>
+            <DialogTitle>{t("newTaxCode")}</DialogTitle>
+            <DialogDescription>{t("newTaxCodeDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="code-code">Code *</FieldLabel>
+                <FieldLabel htmlFor="code-code">{t("codeRequired")}</FieldLabel>
                 <Input id="code-code" className="font-mono uppercase" aria-invalid={Boolean(errors.code)} {...register("code")} />
-                {errors.code ? <FieldError>{errors.code.message}</FieldError> : null}
+                {errors.code ? <FieldError>{t(errors.code.message as TaxMessageKey)}</FieldError> : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="code-rate">Rate *</FieldLabel>
+                <FieldLabel htmlFor="code-rate">{t("rateRequired")}</FieldLabel>
                 <Input id="code-rate" inputMode="decimal" className="tabular-nums" aria-invalid={Boolean(errors.rate)} {...register("rate")} />
-                {errors.rate ? <FieldError>{errors.rate.message}</FieldError> : <FieldDescription>Percentage, not a fraction — 14 means 14%.</FieldDescription>}
+                {errors.rate ? <FieldError>{t(errors.rate.message as TaxMessageKey)}</FieldError> : <FieldDescription>{t("rateHint")}</FieldDescription>}
               </Field>
             </div>
             <Field>
-              <FieldLabel htmlFor="code-name">Name *</FieldLabel>
+              <FieldLabel htmlFor="code-name">{t("nameRequired")}</FieldLabel>
               <Input id="code-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-              {errors.name ? <FieldError>{errors.name.message}</FieldError> : null}
+              {errors.name ? <FieldError>{t(errors.name.message as TaxMessageKey)}</FieldError> : null}
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="code-kind">Type *</FieldLabel>
+                <FieldLabel htmlFor="code-kind">{t("typeRequired")}</FieldLabel>
                 <Controller
                   control={control}
                   name="kind"
@@ -153,7 +166,7 @@ function NewCodeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
                       <SelectContent>
                         {KINDS.map((kind) => (
                           <SelectItem key={kind.value} value={kind.value}>
-                            {kind.label}
+                            {t(kind.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -162,7 +175,7 @@ function NewCodeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="code-jurisdiction">Jurisdiction *</FieldLabel>
+                <FieldLabel htmlFor="code-jurisdiction">{t("jurisdictionRequired")}</FieldLabel>
                 <Controller
                   control={control}
                   name="jurisdiction"
@@ -172,8 +185,8 @@ function NewCodeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="EG">EG — Egypt</SelectItem>
-                        <SelectItem value="SA">SA — Saudi Arabia</SelectItem>
+                        <SelectItem value="EG">{t("jurisdictionEg")}</SelectItem>
+                        <SelectItem value="SA">{t("jurisdictionSa")}</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -181,24 +194,24 @@ function NewCodeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
               </Field>
             </div>
             <Field>
-              <FieldLabel htmlFor="code-account">Account *</FieldLabel>
+              <FieldLabel htmlFor="code-account">{t("accountRequired")}</FieldLabel>
               <Controller
                 control={control}
                 name="account_code"
                 render={({ field }) => <AccountSelect id="code-account" value={field.value} onValueChange={field.onChange} invalid={Boolean(errors.account_code)} />}
               />
-              {errors.account_code ? <FieldError>{errors.account_code.message}</FieldError> : null}
+              {errors.account_code ? <FieldError>{t(errors.account_code.message as TaxMessageKey)}</FieldError> : null}
             </Field>
             <p className="text-content-tertiary text-[13px] leading-5">
-              Saved records live in this session only. The seeded data is never modified, so a reload returns the prototype to its known state.
+              {t("sessionNote")}
             </p>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={create.isPending}>
-              Save
+              {t("save")}
             </Button>
           </DialogFooter>
         </form>
@@ -209,6 +222,8 @@ function NewCodeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
 
 /** 07.08 · Tax codes — every code, its rate and the control account it routes to. */
 function TaxCodesPage() {
+  const t = useTranslations("FinanceTax")
+  const columns = React.useMemo(() => buildColumns(t), [t])
   const { data, isError, refetch } = useTaxCodes()
   const [jurisdiction, setJurisdiction] = React.useState("all")
   const [dialogOpen, setDialogOpen] = React.useState(false)
@@ -217,12 +232,12 @@ function TaxCodesPage() {
   return (
     <>
       <FinancePageHeader
-        title="Tax codes"
-        figure={data ? <HeaderFigure label="Configured codes">{data.items.length}</HeaderFigure> : null}
+        title={t("taxCodes")}
+        figure={data ? <HeaderFigure label={t("configuredCodes")}>{data.items.length}</HeaderFigure> : null}
         actions={
           <Button variant="primary" onClick={() => setDialogOpen(true)}>
             <Plus aria-hidden />
-            New tax code
+            {t("newTaxCode")}
           </Button>
         }
       />
@@ -234,19 +249,19 @@ function TaxCodesPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="VAT codes" value={data.vat} />
-              <KpiCard layout="bar" accent="teal" label="Withholding codes" value={data.withholding} />
-              <KpiCard layout="bar" accent="amber" label="Other levies" value={data.other} caption="Table, stamp, excise" />
+              <KpiCard layout="bar" accent="indigo" label={t("kindVatCodes")} value={data.vat} />
+              <KpiCard layout="bar" accent="teal" label={t("withholdingCodes")} value={data.withholding} />
+              <KpiCard layout="bar" accent="amber" label={t("otherLevies")} value={data.other} caption={t("otherLeviesCaption")} />
             </div>
             <FilterBar>
               <FilterChip
-                label="Jurisdiction"
+                label={t("jurisdiction")}
                 value={jurisdiction}
-                options={[{ value: "all", label: "All jurisdictions" }, ...data.jurisdictions.map((value) => ({ value, label: value }))]}
+                options={[{ value: "all", label: t("allJurisdictions") }, ...data.jurisdictions.map((value) => ({ value, label: value }))]}
                 onValueChange={setJurisdiction}
               />
             </FilterBar>
-            <FinanceTable caption="Tax codes" columns={COLUMNS} rows={rows} getRowId={(row) => row.id} />
+            <FinanceTable caption={t("taxCodes")} columns={columns} rows={rows} getRowId={(row) => row.id} />
           </>
         )}
       </FinancePageBody>

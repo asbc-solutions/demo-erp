@@ -1,1 +1,83 @@
-{}
+{
+  "CommandCenter": {
+    "accessDeniedDescription": "اطلب من المسؤول منح دورك صلاحية الوصول إلى مركز القيادة.",
+    "accessDeniedTitle": "ليست لديك صلاحية الوصول",
+    "loadFailed": "تعذّر التحميل.",
+    "sectionKeyMetrics": "المؤشرات الرئيسية",
+    "sectionRevenueActivity": "اتجاه الإيرادات والنشاط الأخير",
+    "summaryLoadFailed": "تعذّر تحميل ملخص مركز القيادة."
+  },
+  "CommandCenterSummary": {
+    "burnRate": "معدل الحرق",
+    "headcount": "عدد الموظفين",
+    "mrr": "الإيراد الشهري المتكرر",
+    "pipeline": "خط الصفقات",
+    "runway": "مدة السيولة",
+    "runwayDays": "{count, plural, zero {{value} يوم} one {يوم واحد} two {يومان} few {{value} أيام} many {{value} يومًا} other {{value} يوم}}"
+  },
+  "CommandCenterQuickActions": {
+    "addMember": "إضافة عضو",
+    "newDeal": "صفقة جديدة",
+    "newInvoice": "فاتورة جديدة",
+    "runReport": "تشغيل تقرير",
+    "welcomeBack": "مرحبًا بعودتك، {org}"
+  },
+  "CommandCenterRevenue": {
+    "cashIn": "التدفق الداخل",
+    "cashOut": "التدفق الخارج",
+    "loadFailed": "تعذّر تحميل اتجاه الإيرادات.",
+    "ranges": {
+      "12m": "12 شهرًا",
+      "6m": "6 أشهر",
+      "all": "الكل",
+      "ytd": "منذ بداية العام"
+    },
+    "rangePills": {
+      "12m": "12 شهرًا",
+      "6m": "6 أشهر",
+      "all": "كل الفترات",
+      "ytd": "منذ بداية العام"
+    },
+    "subtitle": "التدفق النقدي الداخل مقابل الخارج، بيانات تاريخية فقط",
+    "thousandsTick": "{value} ألف",
+    "title": "نظرة عامة على الإيرادات"
+  },
+  "CommandCenterActivity": {
+    "categories": {
+      "finance": "المالية",
+      "people": "الموظفون",
+      "sales": "المبيعات",
+      "system": "النظام"
+    },
+    "empty": "لا يوجد نشاط بعد.",
+    "live": "مباشر",
+    "loadFailed": "تعذّر تحميل النشاط.",
+    "title": "سجل النشاط",
+    "viewAll": "عرض كل النشاط ←"
+  },
+  "CommandCenterInvoices": {
+    "amount": "المبلغ",
+    "client": "العميل",
+    "empty": "لا توجد فواتير بعد.",
+    "invoiceNumber": "رقم الفاتورة",
+    "loadFailed": "تعذّر تحميل أحدث الفواتير.",
+    "status": {
+      "draft": "مسودة",
+      "overdue": "متأخرة",
+      "paid": "مدفوعة",
+      "partial": "مدفوعة جزئيًا",
+      "sent": "مُرسلة",
+      "void": "ملغاة"
+    },
+    "statusHeader": "الحالة",
+    "title": "أحدث الفواتير"
+  },
+  "CommandCenterInsights": {
+    "briefing": "صباح الخير، {org}. امتدت مدة السيولة لديك <success>4 أيام</success> بفضل دفعة بقيمة <strong>$12,000</strong> من Acme Corporation. وتقترب صفقتان في مرحلة التفاوض من موعد إغلاقهما بقيمة إجمالية قدرها <primary>$113,000</primary>.",
+    "dailyBriefing": "الموجز اليومي",
+    "demo": "تجريبي",
+    "followUp": "ننصح بمتابعة TechStart Inc بشأن ردّهم على العرض.",
+    "footer": "Nucleus · موجز تجريبي — اربط الذكاء الاصطناعي للحصول على رؤى مباشرة",
+    "title": "رؤى الذكاء الاصطناعي"
+  }
+}

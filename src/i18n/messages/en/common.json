@@ -59,6 +59,7 @@
     "yesterday": "Yesterday"
   },
   "Ui": {
+    "accessDeniedTitle": "You don't have access",
     "breadcrumb": "Breadcrumb",
     "dismiss": "Dismiss",
     "hidePassword": "Hide password",

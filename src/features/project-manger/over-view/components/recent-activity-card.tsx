@@ -8,6 +8,7 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -39,6 +40,7 @@ const KIND_STYLE: Record<MyActivityKind, { icon: LucideIcon; tile: string }> = {
 }
 
 export function RecentActivityCard() {
+  const t = useTranslations("ProjectsOverview")
   const { data, isLoading, isError } = useMyActivity()
   const activity = data ?? []
 
@@ -46,7 +48,7 @@ export function RecentActivityCard() {
     <Card className="overflow-hidden p-0">
       <div className="border-stroke-default border-b px-5 py-3.5">
         <h2 className="text-content-primary text-base leading-6 font-semibold">
-          Recent Activity
+          {t("recentActivity")}
         </h2>
       </div>
 
@@ -61,11 +63,11 @@ export function RecentActivityCard() {
         </div>
       ) : isError ? (
         <p className="text-content-tertiary px-5 py-10 text-center text-sm">
-          Couldn&apos;t load recent activity.
+          {t("activityLoadFailed")}
         </p>
       ) : activity.length === 0 ? (
         <p className="text-content-tertiary px-5 py-10 text-center text-sm">
-          No recent activity.
+          {t("noRecentActivity")}
         </p>
       ) : (
         <ul className="flex flex-col gap-1 p-3">

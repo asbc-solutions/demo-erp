@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Download, Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -15,10 +16,10 @@ import { SalesTable } from "./sales-table"
 
 type SalesView = "kanban" | "table"
 
-const VIEW_LABEL: Record<SalesView, string> = {
-  kanban: "Kanban",
-  table: "Table",
-}
+const VIEW_LABEL_KEY = {
+  kanban: "viewKanban",
+  table: "viewTable",
+} as const satisfies Record<SalesView, string>
 
 function ViewToggle({
   value,
@@ -27,9 +28,11 @@ function ViewToggle({
   value: SalesView
   onChange: (view: SalesView) => void
 }) {
+  const t = useTranslations("SalesShared")
+
   return (
     <div className="bg-surface-white border-stroke-default flex h-9 items-center gap-0.5 rounded-xl border p-1">
-      {(Object.keys(VIEW_LABEL) as SalesView[]).map((view) => {
+      {(Object.keys(VIEW_LABEL_KEY) as SalesView[]).map((view) => {
         const isActive = view === value
         return (
           <button
@@ -43,7 +46,7 @@ function ViewToggle({
                 : "text-content-tertiary hover:text-content-primary",
             )}
           >
-            {VIEW_LABEL[view]}
+            {t(VIEW_LABEL_KEY[view])}
           </button>
         )
       })}
@@ -52,6 +55,8 @@ function ViewToggle({
 }
 
 export function SalesPipelineView() {
+  const t = useTranslations("SalesShared")
+  const tCommon = useTranslations("Common")
   const [view, setView] = useState<SalesView>("kanban")
   const [newDealOpen, setNewDealOpen] = useState(false)
 
@@ -59,16 +64,16 @@ export function SalesPipelineView() {
     <div className="flex flex-col gap-6 p-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-content-primary text-2xl leading-8 font-semibold tracking-tight">
-          Sales Pipeline
+          {t("pipelineTitle")}
         </h1>
         <p className="text-content-tertiary text-sm leading-5">
-          Track deals across every stage from prospecting to close.
+          {t("pipelineDescription")}
         </p>
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {SALES_KPIS.map((kpi) => (
-          <SalesKpiCard key={kpi.label} kpi={kpi} />
+          <SalesKpiCard key={kpi.labelKey} kpi={kpi} />
         ))}
       </section>
 
@@ -80,11 +85,11 @@ export function SalesPipelineView() {
             onClick={() => setNewDealOpen(true)}
           >
             <Plus className="size-4" aria-hidden />
-            New Deal
+            {t("newDeal")}
           </Button>
           <Button variant="secondary" className="h-9 gap-2 px-3 text-[12px]">
             <Download className="size-4" aria-hidden />
-            Export
+            {tCommon("export")}
           </Button>
         </div>
         <ViewToggle value={view} onChange={setView} />

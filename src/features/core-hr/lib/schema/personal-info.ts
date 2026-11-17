@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { vk } from "./validation-key"
+
 /**
  * Phone number: an optional leading "+", then digits and common separators
  * (spaces, hyphens, parentheses), with 7–15 actual digits. Rejects letters
@@ -10,12 +12,12 @@ export const phoneSchema = z
   .trim()
   .regex(
     /^\+?[\d\s()-]+$/,
-    "Phone can only contain digits, spaces, and + - ( ).",
+    vk("phoneChars"),
   )
   .refine((value) => {
     const digits = value.replace(/\D/g, "").length
     return digits >= 7 && digits <= 15
-  }, "Enter a valid phone number (7–15 digits).")
+  }, vk("phoneDigits"))
 
 /** Minimum legal working age an employee's date of birth must satisfy. */
 export const MINIMUM_EMPLOYEE_AGE = 18
@@ -60,12 +62,12 @@ export function ageFromDateOfBirth(dob: string): number | null {
 export const dateOfBirthSchema = z
   .string()
   .trim()
-  .refine((v) => ageFromDateOfBirth(v) !== null, "Enter a valid date of birth.")
+  .refine((v) => ageFromDateOfBirth(v) !== null, vk("dobInvalid"))
   .refine((v) => {
     const age = ageFromDateOfBirth(v)
     return age !== null && age >= 0
-  }, "Date of birth must be in the past.")
+  }, vk("dobPast"))
   .refine((v) => {
     const age = ageFromDateOfBirth(v)
     return age !== null && age >= MINIMUM_EMPLOYEE_AGE
-  }, `Employee must be at least ${MINIMUM_EMPLOYEE_AGE} years old.`)
+  }, vk("employeeMinAge"))

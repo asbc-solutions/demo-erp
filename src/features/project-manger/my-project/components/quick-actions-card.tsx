@@ -5,6 +5,7 @@ import {
   Receipt,
   RefreshCw,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 
@@ -16,15 +17,19 @@ export type QuickActionId =
 
 type QuickAction = {
   id: QuickActionId
-  label: string
+  labelKey:
+    | "actionLogTime"
+    | "actionSubmitReport"
+    | "actionUpdateStatus"
+    | "actionFileExpense"
   icon: "clock" | "file" | "refresh" | "receipt"
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { id: "log-time", label: "Log time", icon: "clock" },
-  { id: "submit-report", label: "Submit report", icon: "file" },
-  { id: "update-status", label: "Update status", icon: "refresh" },
-  { id: "file-expense", label: "File expense", icon: "receipt" },
+  { id: "log-time", labelKey: "actionLogTime", icon: "clock" },
+  { id: "submit-report", labelKey: "actionSubmitReport", icon: "file" },
+  { id: "update-status", labelKey: "actionUpdateStatus", icon: "refresh" },
+  { id: "file-expense", labelKey: "actionFileExpense", icon: "receipt" },
 ]
 
 const ICON_MAP: Record<QuickAction["icon"], LucideIcon> = {
@@ -39,11 +44,12 @@ export function QuickActionsCard({
 }: {
   onAction: (id: QuickActionId) => void
 }) {
+  const t = useTranslations("ProjectsMyProjects")
   return (
     <Card className="overflow-hidden p-0">
       <div className="border-stroke-default border-b px-5 py-3.5">
         <h2 className="text-content-primary text-base leading-6 font-semibold">
-          Quick Actions
+          {t("quickActions")}
         </h2>
       </div>
 
@@ -59,7 +65,7 @@ export function QuickActionsCard({
             >
               <Icon className="text-content-tertiary size-4 shrink-0" aria-hidden />
               <span className="text-content-primary text-[13px] leading-5 font-medium">
-                {action.label}
+                {t(action.labelKey)}
               </span>
             </button>
           )

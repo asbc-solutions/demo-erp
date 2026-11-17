@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Check, CheckCircle2, RotateCcw } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Button } from "@/src/shared/components/ui/button"
@@ -98,12 +99,13 @@ export function ComparisonTable({
   rows,
   accent = "primary",
 }: Readonly<{ nextLabel: string; rows: ComparisonRow[]; accent?: Accent }>) {
+  const t = useTranslations("HrEmployeeOperations")
   const nextColor = accent === "danger" ? "text-brand-danger" : "text-brand-primary"
   return (
     <div className="border-stroke-default overflow-hidden rounded-[12px] border">
       <div className="bg-surface-page text-content-tertiary grid grid-cols-[120px_1fr_1fr] gap-3 px-4 py-2.5 text-[11px] font-semibold tracking-[0.4px] uppercase">
         <span />
-        <span>Current</span>
+        <span>{t("current")}</span>
         <span className={nextColor}>{nextLabel}</span>
       </div>
       <div className="divide-stroke-default/60 divide-y">
@@ -130,7 +132,7 @@ export function OperationResult({
   children,
   onViewProfile,
   onUndo,
-  undoLabel = "Undo (24h window)",
+  undoLabel,
   undoing = false,
   onDone,
   extra,
@@ -144,6 +146,8 @@ export function OperationResult({
   onDone: () => void
   extra?: React.ReactNode
 }>) {
+  const t = useTranslations("HrEmployeeOperations")
+
   return (
     <div className="flex flex-col items-center gap-3 py-6 text-center">
       <span className="bg-brand-success/10 text-brand-success flex size-14 items-center justify-center rounded-full">
@@ -163,7 +167,7 @@ export function OperationResult({
             onClick={onViewProfile}
             className="text-brand-primary text-sm font-semibold hover:underline"
           >
-            View employee profile
+            {t("viewEmployeeProfile")}
           </button>
         )}
         {onUndo && (
@@ -174,7 +178,7 @@ export function OperationResult({
             className="text-content-tertiary inline-flex items-center gap-1.5 text-sm hover:underline disabled:pointer-events-none disabled:opacity-50"
           >
             <RotateCcw className="size-3.5" />
-            {undoing ? "Undoing…" : undoLabel}
+            {undoing ? t("undoing") : (undoLabel ?? t("undo24h"))}
           </button>
         )}
       </div>
@@ -183,7 +187,7 @@ export function OperationResult({
         className="mt-4 rounded-[10px] px-6"
         onClick={onDone}
       >
-        Done
+        {t("done")}
       </Button>
     </div>
   )

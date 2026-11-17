@@ -1,3 +1,13 @@
+import type { Messages, useTranslations } from "next-intl"
+
+export type PlanningTranslator = ReturnType<typeof useTranslations<"FinancePlanning">>
+
+type PlanningMessages = Messages["FinancePlanning"]
+/** A flat (non-enum-map) key of the `FinancePlanning` namespace. */
+export type PlanningMessageKey = {
+  [K in keyof PlanningMessages]: PlanningMessages[K] extends string ? K : never
+}[keyof PlanningMessages]
+
 export type BudgetStatus = "draft" | "approved" | "locked"
 
 export type BudgetLine = {

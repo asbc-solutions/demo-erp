@@ -11,6 +11,7 @@ import {
   UserRound,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -39,17 +40,17 @@ type EmployeeDetailViewProps = Readonly<{
 
 type DetailTab = Readonly<{
   id: EmployeeDetailTabId
-  label: string
   icon: LucideIcon
 }>
 
+// Tab labels live in `HrEmployeeDetail.tab.<id>`.
 const TABS: DetailTab[] = [
-  { id: "personal", label: "Personal Info", icon: UserRound },
-  { id: "employment", label: "Employment", icon: Briefcase },
-  { id: "salary", label: "Salary", icon: DollarSign },
-  { id: "documents", label: "Documents", icon: FileText },
-  { id: "emergency", label: "Emergency", icon: ShieldAlert },
-  { id: "history", label: "History", icon: History },
+  { id: "personal", icon: UserRound },
+  { id: "employment", icon: Briefcase },
+  { id: "salary", icon: DollarSign },
+  { id: "documents", icon: FileText },
+  { id: "emergency", icon: ShieldAlert },
+  { id: "history", icon: History },
 ]
 
 export function EmployeeDetailView({
@@ -57,6 +58,7 @@ export function EmployeeDetailView({
   onBack,
   initialTab = "personal",
 }: EmployeeDetailViewProps) {
+  const t = useTranslations("HrEmployeeDetail")
   const [activeTab, setActiveTab] = useState<EmployeeDetailTabId>(initialTab)
 
   return (
@@ -66,14 +68,14 @@ export function EmployeeDetailView({
         onClick={onBack}
         className="text-content-tertiary hover:text-content-primary inline-flex h-8 w-fit items-center gap-2 rounded-lg px-2 text-sm font-medium transition-colors"
       >
-        <ArrowLeft className="size-4" strokeWidth={1.75} />
-        Back to Employees
+        <ArrowLeft className="size-4 rtl:rotate-180" strokeWidth={1.75} />
+        {t("backToEmployees")}
       </button>
 
       <EmployeeSummaryCard employee={employee} />
 
       <nav
-        aria-label="Employee sections"
+        aria-label={t("sectionsLabel")}
         className="border-stroke-default bg-surface-hover/40 flex flex-wrap items-center gap-1 rounded-[12px] border p-1"
       >
         {TABS.map((tab) => {
@@ -94,13 +96,13 @@ export function EmployeeDetailView({
               )}
             >
               <Icon strokeWidth={1.75} />
-              {tab.label}
+              {t(`tab.${tab.id}`)}
             </button>
           )
         })}
       </nav>
 
-      <div role="tabpanel" aria-label={`${activeTab} panel`}>
+      <div role="tabpanel" aria-label={t("panelLabel", { tab: t(`tab.${activeTab}`) })}>
         {activeTab === "personal" && <PersonalInfoTab employee={employee} />}
         {activeTab === "employment" && <EmploymentTab employee={employee} />}
         {activeTab === "salary" && <SalaryTab employeeId={employee.id} />}

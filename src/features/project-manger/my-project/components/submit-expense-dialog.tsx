@@ -1,8 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button } from "@/src/shared/components/ui/button"
 import {
   Dialog,
@@ -57,6 +59,10 @@ export function SubmitExpenseDialog({
   open,
   onOpenChange,
 }: SubmitExpenseDialogProps) {
+  const t = useTranslations("ProjectsMyProjects")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const [employeeId, setEmployeeId] = useState("")
   const [projectId, setProjectId] = useState("")
   const [date, setDate] = useState(todayIso)
@@ -94,8 +100,8 @@ export function SubmitExpenseDialog({
 
   const handleSubmit = () => {
     if (!projectId || !category || !amount || !employeeId) {
-      toast.error("Missing required fields", {
-        description: "Employee, project, category and amount are required.",
+      toast.error(t("missingFields"), {
+        description: t("expenseMissingDescription"),
       })
       return
     }
@@ -111,13 +117,15 @@ export function SubmitExpenseDialog({
       },
       {
         onSuccess: () => {
-          toast.success("Expense submitted", {
-            description: `$${Number(amount).toLocaleString("en-US")} sent for approval.`,
+          toast.success(t("expenseSubmitted"), {
+            description: t("expenseSubmittedDescription", {
+              amount: `$${Number(amount).toLocaleString(locale)}`,
+            }),
           })
           close()
         },
         onError: (err) =>
-          toast.error("Couldn't submit expense", {
+          toast.error(t("expenseSubmitFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
@@ -129,22 +137,24 @@ export function SubmitExpenseDialog({
       <DialogContent className="max-w-[640px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-lg leading-7 font-semibold">
-            Submit Expense
+            {t("expenseTitle")}
           </DialogTitle>
           <DialogDescription className="text-content-tertiary text-[13px] leading-5">
-            Submit an expense for project reimbursement
+            {t("expenseDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <DialogBody className="gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <FieldLabel required>Employee</FieldLabel>
+              <FieldLabel required>{t("fieldEmployee")}</FieldLabel>
               <Select value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger className="h-10 text-[13px]">
                   <SelectValue
                     placeholder={
-                      resourcesQ.isLoading ? "Loading…" : "Select an employee"
+                      resourcesQ.isLoading
+                        ? tCommon("loading")
+                        : t("selectEmployee")
                     }
                   />
                 </SelectTrigger>
@@ -158,12 +168,14 @@ export function SubmitExpenseDialog({
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <FieldLabel required>Project</FieldLabel>
+              <FieldLabel required>{tShared("projectLabel")}</FieldLabel>
               <Select value={projectId} onValueChange={setProjectId}>
                 <SelectTrigger className="h-10 text-[13px]">
                   <SelectValue
                     placeholder={
-                      projectsQ.isLoading ? "Loading…" : "Select a project"
+                      projectsQ.isLoading
+                        ? tCommon("loading")
+                        : tShared("selectProject")
                     }
                   />
                 </SelectTrigger>
@@ -180,7 +192,7 @@ export function SubmitExpenseDialog({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <FieldLabel>Date</FieldLabel>
+              <FieldLabel>{tCommon("date")}</FieldLabel>
               <Input
                 type="date"
                 value={date}
@@ -189,12 +201,14 @@ export function SubmitExpenseDialog({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <FieldLabel required>Category</FieldLabel>
+              <FieldLabel required>{t("fieldCategory")}</FieldLabel>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="h-10 text-[13px]">
                   <SelectValue
                     placeholder={
-                      categoriesQ.isLoading ? "Loading…" : "Select a category"
+                      categoriesQ.isLoading
+                        ? tCommon("loading")
+                        : t("selectCategory")
                     }
                   />
                 </SelectTrigger>
@@ -210,7 +224,7 @@ export function SubmitExpenseDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <FieldLabel required>Amount</FieldLabel>
+            <FieldLabel required>{tCommon("amount")}</FieldLabel>
             <Input
               type="number"
               inputMode="decimal"
@@ -224,9 +238,9 @@ export function SubmitExpenseDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <FieldLabel>Description</FieldLabel>
+            <FieldLabel>{tCommon("description")}</FieldLabel>
             <Textarea
-              placeholder="What is this expense for?"
+              placeholder={t("expenseNotePlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[88px] text-[13px]"
@@ -236,7 +250,7 @@ export function SubmitExpenseDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={close} className="text-[13px]">
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             variant="primary"
@@ -244,7 +258,7 @@ export function SubmitExpenseDialog({
             disabled={createExpense.isPending}
             className="text-[13px]"
           >
-            {createExpense.isPending ? "Submitting…" : "Submit Expense"}
+            {createExpense.isPending ? t("submitting") : t("expenseTitle")}
           </Button>
         </DialogFooter>
       </DialogContent>

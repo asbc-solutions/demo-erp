@@ -1,6 +1,12 @@
-/** Formats a summary/key-metric amount as e.g. `"EGP 184,000"`, using the response's own `currency_code`. */
-export function formatCurrency(amount: number, currencyCode: string): string {
-  return new Intl.NumberFormat("en-EG", {
+import { toIntlLocale } from "@/src/i18n/intl-locale"
+import type { Locale } from "@/src/i18n/routing"
+
+/**
+ * Formats a summary/key-metric amount as e.g. `"EGP 184,000"`, using the response's own `currency_code`.
+ * English keeps the `en-EG` shape; other locales use their own `Intl` tag.
+ */
+export function formatCurrency(amount: number, currencyCode: string, locale: Locale): string {
+  return new Intl.NumberFormat(locale === "en" ? "en-EG" : toIntlLocale(locale), {
     style: "currency",
     currency: currencyCode,
     minimumFractionDigits: 0,
@@ -9,8 +15,8 @@ export function formatCurrency(amount: number, currencyCode: string): string {
 }
 
 /** Plain thousands-grouped integer, e.g. for headcount. */
-export function formatNumber(value: number): string {
-  return new Intl.NumberFormat("en-US").format(value)
+export function formatNumber(value: number, locale: Locale): string {
+  return new Intl.NumberFormat(toIntlLocale(locale)).format(value)
 }
 
 /**

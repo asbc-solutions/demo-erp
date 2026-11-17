@@ -1,1 +1,140 @@
-{}
+{
+  "Compliance": {
+    "accessDeniedDescription": "اطلب من المسؤول منح دورك صلاحية الوصول إلى هذا القسم من الامتثال.",
+    "accessDeniedTitle": "ليست لديك صلاحية الوصول",
+    "checkDetails": "يُرجى مراجعة البيانات والمحاولة مرة أخرى.",
+    "loadFailed": "تعذّر التحميل.",
+    "overdue": "متأخر",
+    "ownerDue": "{owner} · الاستحقاق {date}",
+    "ruleStatus": {
+      "compliant": "ممتثل",
+      "in_progress": "قيد التنفيذ",
+      "non_compliant": "غير ممتثل"
+    },
+    "showingEvents": "عرض <b>{from}</b>–<b>{to}</b> من <b>{total}</b> حدث",
+    "showingMembers": "عرض <b>{from}</b>–<b>{to}</b> من <b>{total}</b> عضو",
+    "showingPolicies": "عرض <b>{from}</b>–<b>{to}</b> من <b>{total}</b> سياسة",
+    "tabs": {
+      "access": "الوصول",
+      "audit": "التدقيق",
+      "overview": "نظرة عامة",
+      "policies": "السياسات",
+      "rules": "القواعد"
+    },
+    "unassigned": "غير مُسنَد",
+    "validationFailed": "فشل التحقق من البيانات"
+  },
+  "ComplianceOverview": {
+    "basedOnRules": "{count, plural, zero {بناءً على {value} قاعدة مطبّقة} one {بناءً على قاعدة مطبّقة واحدة} two {بناءً على قاعدتين مطبّقتين} few {بناءً على {value} قواعد مطبّقة} many {بناءً على {value} قاعدة مطبّقة} other {بناءً على {value} قاعدة مطبّقة}}",
+    "criticalAlerts": "التنبيهات الحرجة ({count})",
+    "loadFailed": "تعذّر تحميل نظرة الامتثال العامة.",
+    "noAlerts": "لا توجد تنبيهات حرجة حاليًا.",
+    "scoreStatus": {
+      "adequate": "مقبول",
+      "at_risk": "معرّض للخطر",
+      "critical": "حرج",
+      "not_assessed": "لم يُقيَّم",
+      "strong": "قوي"
+    },
+    "title": "مؤشر الامتثال"
+  },
+  "ComplianceAccess": {
+    "active": "نشط",
+    "assignedRoles": "الأدوار المُسندة",
+    "backToRoles": "العودة إلى الأدوار",
+    "inactive": "غير نشط",
+    "matrixLevel": {
+      "approval_required": "يتطلب موافقة",
+      "none": "لا شيء",
+      "read": "قراءة",
+      "write": "كتابة"
+    },
+    "matrixLoadFailed": "تعذّر تحميل مصفوفة الصلاحيات.",
+    "matrixSubtitle": "مستوى الوصول إلى الموارد حسب الدور (للقراءة فقط)",
+    "matrixTitle": "مصفوفة الصلاحيات",
+    "members": "الأعضاء",
+    "membersLoadFailed": "تعذّر تحميل أعضاء الفريق.",
+    "noMembers": "لم يُعثر على أعضاء.",
+    "noRolesAssigned": "لا توجد أدوار مُسندة.",
+    "noUserSelected": "لم يتم اختيار مستخدم",
+    "predefined": "مُعرَّف مسبقًا",
+    "readOnlyNote": "هذا عرض للقراءة فقط. تُدار صلاحيات الأدوار مركزيًا من خلال التحكم في الوصول المستند إلى الأدوار (RBAC).",
+    "resource": "المورد",
+    "resourcesGranted": "الموارد الممنوحة",
+    "roles": "الأدوار",
+    "rolesLoadFailed": "تعذّر تحميل الأدوار.",
+    "rolesSubtitle": "أدوار RBAC المتاحة لهذه المؤسسة (للقراءة فقط)",
+    "searchLabel": "البحث في أعضاء الفريق",
+    "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني…",
+    "selectMemberHint": "اختر عضوًا من القائمة لعرض أدواره.",
+    "subTabs": {
+      "roles": "الأدوار",
+      "team": "أعضاء الفريق"
+    },
+    "teamMembers": "أعضاء الفريق",
+    "teamMembersCount": "أعضاء الفريق ({total})",
+    "viewMatrix": "عرض مصفوفة الصلاحيات"
+  },
+  "CompliancePolicies": {
+    "acknowledge": "إقرار",
+    "acknowledgeFailed": "تعذّر الإقرار بالسياسة",
+    "acknowledged": "تم الإقرار",
+    "acknowledgedToast": "تم الإقرار بالسياسة.",
+    "acknowledgements": "الإقرارات {ratio}",
+    "addPolicy": "إضافة السياسة",
+    "allAcknowledged": "أقرّ جميع أعضاء الفريق",
+    "category": "الفئة",
+    "categoryPlaceholder": "مثال: الأمن",
+    "createFailed": "تعذّر إنشاء السياسة",
+    "createdToast": "تم إنشاء السياسة.",
+    "dialogDescription": "أضف سياسة امتثال مع عنوانها وفئتها وتفاصيل مراجعتها.",
+    "dialogTitle": "سياسة جديدة",
+    "empty": "لا توجد سياسات مطابقة لهذا الفلتر.",
+    "loadFailed": "تعذّر تحميل السياسات.",
+    "newPolicy": "سياسة جديدة",
+    "outstanding": "{count, plural, zero {لم يُقرّ {value} عضو في الفريق} one {لم يُقرّ عضو واحد في الفريق} two {لم يُقرّ عضوان في الفريق} few {لم يُقرّ {value} أعضاء في الفريق} many {لم يُقرّ {value} عضوًا في الفريق} other {لم يُقرّ {value} عضو في الفريق}}",
+    "ownerReview": "{owner} · المراجعة {date}",
+    "policyTitle": "عنوان السياسة",
+    "policyTitlePlaceholder": "مثال: سياسة تصنيف البيانات",
+    "requiredAcknowledgements": "الإقرارات المطلوبة",
+    "reviewDate": "تاريخ المراجعة",
+    "reviewOverdue": "المراجعة متأخرة",
+    "status": {
+      "active": "نشطة",
+      "archived": "مؤرشفة",
+      "draft": "مسودة",
+      "under_review": "قيد المراجعة"
+    },
+    "summary": "الملخص",
+    "summaryPlaceholder": "صف الغرض من السياسة ونطاقها...",
+    "version": "الإصدار"
+  },
+  "ComplianceAudit": {
+    "empty": "لا توجد أحداث تدقيق لهذا الفلتر.",
+    "loadFailed": "تعذّر تحميل سجل التدقيق.",
+    "modules": {
+      "all": "كل الوحدات",
+      "compliance": "الامتثال",
+      "finance": "المالية",
+      "hr": "الموارد البشرية",
+      "sales": "المبيعات",
+      "settings": "الإعدادات"
+    }
+  },
+  "ComplianceRules": {
+    "allFrameworks": "كل الأطر",
+    "allStatuses": "كل الحالات",
+    "empty": "لا توجد قواعد مطابقة لهذا الفلتر.",
+    "evidence": "الدليل",
+    "evidencePlaceholder": "صف الدليل الداعم لهذه الحالة...",
+    "loadFailed": "تعذّر تحميل قواعد الامتثال.",
+    "statusCount": {
+      "compliant": "{count} ممتثل",
+      "in_progress": "{count} قيد التنفيذ",
+      "non_compliant": "{count} غير ممتثل"
+    },
+    "updateFailed": "تعذّر تحديث القاعدة",
+    "updateTitle": "تحديث {code}",
+    "updatedToast": "تم تحديث القاعدة."
+  }
+}

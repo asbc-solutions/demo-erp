@@ -2,24 +2,43 @@
 
 import { useMemo, useState } from "react"
 import { Folder, FolderOpen, MoreHorizontal } from "lucide-react"
+import { useTranslations } from "next-intl"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import { StatusPill } from "../../all-project/components/project-detail/status-pill"
-import { buildDocumentLibraryView } from "../../lib/mappers/documents-mapper"
+import {
+  buildDocumentLibraryView,
+  isDocumentCategory,
+  isDocumentStatus,
+} from "../../lib/mappers/documents-mapper"
 import { useDocumentLibrary } from "../../lib/queries/documents"
 import type { DocumentCategory } from "../../lib/types"
 
 export function DocumentsLibraryModule() {
+  const t = useTranslations("ProjectsDocuments")
+  const tShared = useTranslations("ProjectsShared")
+  const locale = useIntlLocale()
   // No project_id → portfolio-wide library across every project.
   const { data, isLoading, isError } = useDocumentLibrary()
   const view = useMemo(() => buildDocumentLibraryView(data), [data])
 
   const [activeFolder, setActiveFolder] = useState<DocumentCategory | null>(null)
 
-  const activeLabel =
-    view.folders.find((f) => f.key === activeFolder)?.label ?? "All Documents"
+  const folderLabel = (key: DocumentCategory | null, fallback: string) =>
+    key === null
+      ? t("allDocuments")
+      : isDocumentCategory(key)
+        ? tShared(`documentCategory.${key}`)
+        : fallback
+
+  const activeLabel = folderLabel(
+    activeFolder,
+    view.folders.find((f) => f.key === activeFolder)?.label ?? "",
+  )
 
   const items = useMemo(
     () =>
@@ -34,7 +53,7 @@ export function DocumentsLibraryModule() {
       <Card className="h-fit shrink-0 gap-4 p-4 lg:w-56">
         <div className="flex flex-col gap-1">
           <span className="text-content-tertiary mb-1 text-[10px] font-semibold tracking-wide uppercase">
-            Library
+            {t("library")}
           </span>
           {isLoading ? (
             <div className="flex flex-col gap-1.5">
@@ -63,7 +82,9 @@ export function DocumentsLibraryModule() {
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     <Icon className="size-4 shrink-0" aria-hidden />
-                    <span className="truncate">{folder.label}</span>
+                    <span className="truncate">
+                      {folderLabel(folder.key, folder.label)}
+                    </span>
                   </span>
                   <span className="text-content-tertiary shrink-0 text-[11px] tabular-nums">
                     {folder.count}
@@ -76,7 +97,7 @@ export function DocumentsLibraryModule() {
         {view.tags.length > 0 ? (
           <div className="flex flex-col gap-2">
             <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-              Tags
+              {t("tags")}
             </span>
             <div className="flex flex-wrap gap-1.5">
               {view.tags.map((tag) => (
@@ -99,7 +120,7 @@ export function DocumentsLibraryModule() {
               {activeLabel}
             </h1>
             <p className="text-content-tertiary text-sm">
-              Documents, versions, and approvals across all projects
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -116,13 +137,15 @@ export function DocumentsLibraryModule() {
         ) : isError ? (
           <Card className="flex h-48 items-center justify-center p-6">
             <p className="text-content-tertiary text-sm">
-              Couldn&apos;t load documents.
+              {t("loadFailed")}
             </p>
           </Card>
         ) : items.length === 0 ? (
           <Card className="flex h-48 items-center justify-center p-6">
             <p className="text-content-tertiary text-sm">
-              No documents in {activeLabel.toLowerCase()} yet.
+              {t("emptyInFolder", {
+                folder: activeLabel.toLocaleLowerCase(locale),
+              })}
             </p>
           </Card>
         ) : (
@@ -140,7 +163,7 @@ export function DocumentsLibraryModule() {
                     <Icon className="size-7" aria-hidden />
                     <button
                       type="button"
-                      aria-label="Document options"
+                      aria-label={t("documentOptions")}
                       className="text-content-tertiary hover:text-content-primary absolute top-2 inset-e-2"
                     >
                       <MoreHorizontal className="size-4" aria-hidden />
@@ -151,10 +174,22 @@ export function DocumentsLibraryModule() {
                       {doc.title}
                     </span>
                     <span className="text-content-tertiary text-[11px]">
-                      {doc.categoryLabel} · {doc.author}
+                      {t("docMeta", {
+                        category: isDocumentCategory(doc.category)
+                          ? tShared(`documentCategory.${doc.category}`)
+                          : doc.categoryLabel,
+                        author: doc.author,
+                      })}
                     </span>
                   </div>
-                  <StatusPill status={doc.statusLabel} />
+                  <StatusPill
+                    status={doc.status}
+                    label={
+                      isDocumentStatus(doc.status)
+                        ? tShared(`documentStatus.${doc.status}`)
+                        : doc.statusLabel
+                    }
+                  />
                 </Card>
               )
             })}

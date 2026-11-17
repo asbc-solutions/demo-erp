@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react"
 import { CalendarDays, ListFilter, MoreHorizontal } from "lucide-react"
+import { useTranslations } from "next-intl"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { toast } from "sonner"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
@@ -28,6 +30,21 @@ const PRIORITY_STYLE: Record<TaskPriority, string> = {
   Medium: "text-brand-info",
   Low: "text-content-tertiary",
 }
+
+const PRIORITY_KEY = {
+  Critical: "critical",
+  High: "high",
+  Medium: "medium",
+  Low: "low",
+} as const satisfies Record<TaskPriority, string>
+
+const COLUMN_KEY = {
+  "not-started": "notStarted",
+  "in-progress": "inProgress",
+  blocked: "blocked",
+  "in-review": "inReview",
+  done: "done",
+} as const satisfies Record<KanbanColumnId, string>
 
 type DragState = { taskId: string; from: KanbanColumnId } | null
 
@@ -57,10 +74,13 @@ function applyOverrides(
 }
 
 export function TasksAssignmentsModule() {
+  const t = useTranslations("ProjectsTasks")
+  const locale = useIntlLocale()
+  const tCommon = useTranslations("Common")
   const { data, isLoading, isError } = useTasks({ per_page: 100 })
   const updateStatus = useUpdateTaskStatus()
 
-  const serverColumns = useMemo(() => tasksToBoard(data ?? []), [data])
+  const serverColumns = useMemo(() => tasksToBoard(data ?? [], locale), [data, locale])
 
   // Optimistic moves (taskId → target column) applied on top of server data,
   // so drag feels instant without mirroring server state in an effect.
@@ -96,7 +116,7 @@ export function TasksAssignmentsModule() {
         onSuccess: () => clearOverride(taskId),
         onError: (err) => {
           clearOverride(taskId) // revert
-          toast.error("Couldn't move task", {
+          toast.error(t("moveError"), {
             description: (err as unknown as ApiError).message,
           })
         },
@@ -109,11 +129,9 @@ export function TasksAssignmentsModule() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-content-primary text-2xl leading-8 font-bold tracking-tight">
-            Tasks &amp; Assignments
+            {t("title")}
           </h1>
-          <p className="text-content-tertiary text-sm">
-            Kanban of all open work across every project — drag to update status
-          </p>
+          <p className="text-content-tertiary text-sm">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -121,7 +139,7 @@ export function TasksAssignmentsModule() {
             className="border-stroke-default text-content-secondary hover:text-content-primary flex h-9 items-center gap-2 rounded-lg border px-3 text-[13px]"
           >
             <ListFilter className="size-3.5" aria-hidden />
-            Filter
+            {tCommon("filter")}
           </button>
         </div>
       </header>
@@ -137,7 +155,7 @@ export function TasksAssignmentsModule() {
         </div>
       ) : isError ? (
         <p className="text-content-tertiary py-16 text-center text-sm">
-          Couldn&apos;t load tasks.
+          {t("loadError")}
         </p>
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-2">
@@ -163,7 +181,7 @@ export function TasksAssignmentsModule() {
                 <div className="flex items-center gap-2">
                   <span className={cn("size-2 rounded-full", column.dot)} />
                   <span className="text-content-primary text-[13px] font-semibold">
-                    {column.title}
+                    {t(`column.${COLUMN_KEY[column.id]}`)}
                   </span>
                   <span className="bg-surface-muted text-content-tertiary rounded-full px-1.5 text-[11px] font-medium">
                     {column.count}
@@ -171,7 +189,7 @@ export function TasksAssignmentsModule() {
                 </div>
                 <button
                   type="button"
-                  aria-label="Column options"
+                  aria-label={t("columnOptions")}
                   className="text-content-quaternary hover:text-content-primary"
                 >
                   <MoreHorizontal className="size-4" aria-hidden />
@@ -205,7 +223,7 @@ export function TasksAssignmentsModule() {
                           PRIORITY_STYLE[task.priority],
                         )}
                       >
-                        {task.priority}
+                        {t(`priority.${PRIORITY_KEY[task.priority]}`)}
                       </span>
                     </div>
                     <p className="text-content-primary text-[13px] leading-[18px] font-medium">

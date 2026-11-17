@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-import type { NavChild, NavItem } from '@/src/shared/lib/types'
+import type { NavChild, NavItem, NavLabelKey } from '@/src/shared/lib/types'
 import { FINANCE_NAV_GROUPS } from './finance-nav'
 import { HR_NAV } from './hr-nav'
 
@@ -236,7 +236,10 @@ export type ModuleId =
 
 export type TrackedModule = {
   id: ModuleId
+  /** English name, kept for the tracking API payload (server-side, locale-less). */
   label: string
+  /** `Nav` message key the dashboard renders: `useTranslations("Nav")(module.labelKey)`. */
+  labelKey: NavLabelKey
   icon: LucideIcon
   /** Token suffix used for charts and accents: `var(--brand-<accent>)`. */
   accent: 'primary' | 'success' | 'warning' | 'danger' | 'info'
@@ -247,15 +250,15 @@ export type TrackedModule = {
  * even though it is not in `NAV_ITEMS` — it is reached from the sidebar footer.
  */
 export const TRACKED_MODULES: readonly TrackedModule[] = [
-  { id: 'command-center', label: 'Command Center', icon: LayoutGrid, accent: 'primary' },
-  { id: 'finance', label: 'Finance', icon: DollarSign, accent: 'success' },
-  { id: 'hr', label: 'HR & People', icon: Users, accent: 'info' },
-  { id: 'sales', label: 'Sales', icon: ShoppingCart, accent: 'warning' },
-  { id: 'project-manager', label: 'Project Manager', icon: FolderKanban, accent: 'primary' },
-  { id: 'operations', label: 'Operations', icon: Package, accent: 'danger' },
-  { id: 'compliance', label: 'Compliance', icon: FileText, accent: 'info' },
-  { id: 'integrations', label: 'Integrations', icon: Link2, accent: 'success' },
-  { id: 'settings', label: 'Settings', icon: Settings, accent: 'warning' },
+  { id: 'command-center', label: 'Command Center', labelKey: 'commandCenter', icon: LayoutGrid, accent: 'primary' },
+  { id: 'finance', label: 'Finance', labelKey: 'finance', icon: DollarSign, accent: 'success' },
+  { id: 'hr', label: 'HR & People', labelKey: 'hr', icon: Users, accent: 'info' },
+  { id: 'sales', label: 'Sales', labelKey: 'sales', icon: ShoppingCart, accent: 'warning' },
+  { id: 'project-manager', label: 'Project Manager', labelKey: 'projectManager', icon: FolderKanban, accent: 'primary' },
+  { id: 'operations', label: 'Operations', labelKey: 'operations', icon: Package, accent: 'danger' },
+  { id: 'compliance', label: 'Compliance', labelKey: 'compliance', icon: FileText, accent: 'info' },
+  { id: 'integrations', label: 'Integrations', labelKey: 'integrations', icon: Link2, accent: 'success' },
+  { id: 'settings', label: 'Settings', labelKey: 'settings', icon: Settings, accent: 'warning' },
 ]
 
 export const MODULE_IDS: readonly ModuleId[] = TRACKED_MODULES.map((m) => m.id)
@@ -266,6 +269,15 @@ const MODULE_LABEL_BY_ID = new Map<ModuleId, string>(
 
 export function getModuleLabel(id: ModuleId): string {
   return MODULE_LABEL_BY_ID.get(id) ?? id
+}
+
+const MODULE_LABEL_KEY_BY_ID = new Map<ModuleId, NavLabelKey>(
+  TRACKED_MODULES.map((m) => [m.id, m.labelKey]),
+)
+
+/** `Nav` message key for a module, for translating module ids from the tracking API. */
+export function getModuleLabelKey(id: ModuleId): NavLabelKey {
+  return MODULE_LABEL_KEY_BY_ID.get(id) ?? 'commandCenter'
 }
 
 /** Routes that belong to a module but are not reachable from `NAV_ITEMS`. */

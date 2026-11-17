@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Plus, UserMinus, Users } from "lucide-react"
 import { useSession } from "next-auth/react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -37,6 +38,8 @@ function MemberRow({
   isSelf: boolean
   onDeactivate: (member: TeamMember) => void
 }>) {
+  const t = useTranslations("SettingsTeam")
+  const tShared = useTranslations("SettingsShared")
   const { data: roles } = useAssignableRoles()
   const updateRoles = useUpdateMemberRoles()
   const currentRoleId = member.roles[0]?.id ?? ""
@@ -45,8 +48,8 @@ function MemberRow({
     updateRoles.mutate(
       { id: member.id, payload: { role_ids: [roleId] } },
       {
-        onSuccess: () => toast.success(`${member.name}'s role updated`),
-        onError: (err) => toastMutationError(err, "Failed to update member role"),
+        onSuccess: () => toast.success(t("roleUpdated", { name: member.name })),
+        onError: (err) => toastMutationError(err, t("roleUpdateFailed"), tShared),
       },
     )
   }
@@ -64,7 +67,7 @@ function MemberRow({
           {member.name}
           {!member.is_active ? (
             <span className="text-content-quaternary ms-2 text-[11px] font-normal">
-              (inactive)
+              {t("inactive")}
             </span>
           ) : null}
         </span>
@@ -79,7 +82,7 @@ function MemberRow({
           disabled={updateRoles.isPending}
         >
           <SelectTrigger className="bg-surface-white h-9 w-[160px] text-[12px]">
-            <SelectValue placeholder="No role" />
+            <SelectValue placeholder={t("noRole")} />
           </SelectTrigger>
           <SelectContent>
             {(roles ?? []).map((role) => (
@@ -91,7 +94,7 @@ function MemberRow({
         </Select>
       ) : (
         <span className="bg-surface-white border-stroke-default inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] leading-[16.5px] font-medium">
-          {member.roles.map((role) => role.name).join(", ") || "No role"}
+          {member.roles.map((role) => role.name).join(", ") || t("noRole")}
         </span>
       )}
       {canManage ? (
@@ -101,8 +104,8 @@ function MemberRow({
           size="icon-sm"
           className="text-content-tertiary hover:text-brand-danger disabled:opacity-40"
           disabled={isSelf}
-          title={isSelf ? "You can't deactivate your own account" : "Deactivate member"}
-          aria-label={`Deactivate ${member.name}`}
+          title={isSelf ? t("cannotDeactivateSelf") : t("deactivateMember")}
+          aria-label={t("deactivateNamed", { name: member.name })}
           onClick={() => onDeactivate(member)}
         >
           <UserMinus className="size-4" aria-hidden />
@@ -113,6 +116,7 @@ function MemberRow({
 }
 
 function TeamTabContent() {
+  const t = useTranslations("SettingsTeam")
   const { data, isLoading, isError, refetch } = useTeamMembers()
   const { can } = usePermissions()
   const { data: session } = useSession()
@@ -129,7 +133,7 @@ function TeamTabContent() {
         <div className="flex items-center gap-2">
           <Users className="text-content-secondary size-5" aria-hidden />
           <h3 className="text-content-primary text-[14px] leading-[22.4px] font-semibold">
-            Team Members
+            {t("title")}
           </h3>
         </div>
         {canManage ? (
@@ -140,18 +144,18 @@ function TeamTabContent() {
             onClick={() => setInviteOpen(true)}
           >
             <Plus className="size-4" aria-hidden />
-            Invite Member
+            {t("invite")}
           </Button>
         ) : null}
       </div>
       <p className="text-content-tertiary -mt-2 text-[12px] leading-[18px]">
-        Manage access and roles
+        {t("description")}
       </p>
 
       {isLoading ? (
         <SettingsPageSpinner />
       ) : isError ? (
-        <SettingsErrorState message="Failed to load team members." onRetry={() => void refetch()} />
+        <SettingsErrorState message={t("loadError")} onRetry={() => void refetch()} />
       ) : (
         <div className="flex flex-col gap-2">
           {members.map((member) => (

@@ -1,1 +1,132 @@
-{}
+{
+  "OperationsModule": {
+    "accessDenied": "اطلب من المسؤول منح دورك صلاحية الوصول إلى هذا القسم من العمليات.",
+    "description": "أدِر المشاريع والمهام وعلاقات الموردين في مكان واحد.",
+    "newProject": "مشروع جديد",
+    "newTask": "مهمة جديدة",
+    "newVendor": "مورد جديد",
+    "tabProjects": "المشاريع",
+    "tabTasks": "المهام",
+    "tabVendors": "الموردون",
+    "title": "العمليات"
+  },
+  "OperationsShared": {
+    "checkDetails": "يرجى مراجعة البيانات والمحاولة مرة أخرى.",
+    "loadFailed": "تعذّر التحميل.",
+    "validationFailed": "فشل التحقق من البيانات"
+  },
+  "OperationsProjects": {
+    "empty": "لا توجد مشاريع بعد.",
+    "kpiActiveProjects": "المشاريع النشطة",
+    "kpiOverdueTasks": "المهام المتأخرة",
+    "kpiTotalBudget": "إجمالي الميزانية",
+    "kpiTotalSpent": "إجمالي المصروف",
+    "loadError": "تعذّر تحميل المشاريع.",
+    "noDescription": "لا يوجد وصف.",
+    "progress": "التقدّم",
+    "spentOfBudget": "{spent} / {budget}",
+    "status": {
+      "active": "نشط",
+      "completed": "مكتمل",
+      "on_hold": "معلّق",
+      "planning": "قيد التخطيط"
+    },
+    "unassigned": "غير مُسنَد"
+  },
+  "OperationsTasks": {
+    "empty": "لا توجد مهام تطابق عوامل التصفية الحالية.",
+    "loadError": "تعذّر تحميل المهام.",
+    "noDueDate": "بدون تاريخ استحقاق",
+    "noProject": "بدون مشروع",
+    "priority": {
+      "critical": "حرجة",
+      "high": "عالية",
+      "low": "منخفضة",
+      "medium": "متوسطة"
+    },
+    "searchPlaceholder": "ابحث في المهام بالعنوان أو المسؤول...",
+    "status": {
+      "blocked": "متوقفة",
+      "done": "منجزة",
+      "in_progress": "قيد التنفيذ",
+      "review": "قيد المراجعة",
+      "to_do": "للتنفيذ"
+    },
+    "unassigned": "غير مُسنَدة",
+    "updateFailed": "تعذّر تحديث المهمة"
+  },
+  "OperationsVendors": {
+    "activate": "تفعيل",
+    "activateFailed": "تعذّر تفعيل المورد",
+    "activated": "تم تفعيل {name}.",
+    "contractEnd": "نهاية العقد",
+    "contractEndFuture": "يجب أن يكون تاريخ نهاية العقد في المستقبل.",
+    "empty": "لا يوجد موردون يطابقون عوامل التصفية الحالية.",
+    "kpiActiveVendors": "الموردون النشطون",
+    "kpiExpiringSoon": "عقود تنتهي قريبًا",
+    "kpiMonthlySpend": "الإنفاق الشهري على الموردين",
+    "loadError": "تعذّر تحميل الموردين.",
+    "manage": "إدارة",
+    "monthlySpend": "الإنفاق الشهري",
+    "newContractEnd": "تاريخ نهاية العقد الجديد",
+    "noContact": "لا توجد جهة اتصال مسجّلة",
+    "renew": "تجديد",
+    "renewContract": "تجديد العقد",
+    "renewFailed": "تعذّر تجديد عقد المورد",
+    "renewTitle": "تجديد عقد {name}",
+    "renewed": "تم تجديد عقد {name}.",
+    "searchPlaceholder": "ابحث في الموردين...",
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "pending": "قيد الانتظار"
+    },
+    "viewContract": "عرض العقد"
+  },
+  "OperationsNewProject": {
+    "budget": "الميزانية",
+    "createFailed": "تعذّر إنشاء المشروع",
+    "created": "تم إنشاء المشروع.",
+    "description": "الوصف",
+    "descriptionPlaceholder": "وصف موجز للمشروع...",
+    "endDate": "تاريخ الانتهاء",
+    "lead": "قائد المشروع",
+    "leadPlaceholder": "اختر قائد المشروع",
+    "name": "اسم المشروع",
+    "namePlaceholder": "مثال: إعادة تصميم الموقع الإلكتروني",
+    "startDate": "تاريخ البدء",
+    "submit": "إضافة المشروع",
+    "title": "مشروع جديد"
+  },
+  "OperationsNewTask": {
+    "assignee": "المسؤول",
+    "assigneePlaceholder": "اختر المسؤول",
+    "createFailed": "تعذّر إنشاء المهمة",
+    "created": "تم إنشاء المهمة.",
+    "dueDate": "تاريخ الاستحقاق",
+    "priority": "الأولوية",
+    "project": "المشروع",
+    "projectPlaceholder": "اختر مشروعًا",
+    "submit": "إضافة المهمة",
+    "taskTitle": "عنوان المهمة",
+    "taskTitlePlaceholder": "مثال: تسوية أرصدة المخزون الافتتاحية",
+    "title": "مهمة جديدة"
+  },
+  "OperationsNewVendor": {
+    "category": "الفئة",
+    "categoryPlaceholder": "مثال: البنية التحتية، التصميم، المدفوعات",
+    "contactEmail": "البريد الإلكتروني لجهة الاتصال",
+    "contactName": "اسم جهة الاتصال",
+    "contactNamePlaceholder": "اسم مدير الحساب",
+    "contractEnd": "تاريخ نهاية العقد",
+    "createFailed": "تعذّرت إضافة المورد",
+    "created": "تمت إضافة المورد.",
+    "monthlySpend": "الإنفاق الشهري",
+    "name": "اسم المورد",
+    "namePlaceholder": "مثال: Vercel",
+    "submit": "إضافة المورد",
+    "tags": "الوسوم",
+    "tagsPlaceholder": "مفصولة بفواصل، مثال: حرج, سحابي",
+    "title": "مورد جديد"
+  }
+}

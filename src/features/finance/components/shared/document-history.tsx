@@ -4,7 +4,7 @@ import { Avatar, avatarToneFor } from "@/src/shared/components/ui/avatar"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import type { HistoryEvent } from "../../lib/types/common"
-import { formatDateTime } from "../../lib/utils/date"
+import { useFinanceDateFormat } from "../../lib/hooks/use-finance-date-format"
 
 type DocumentHistoryProps = React.ComponentProps<"ol"> & {
   events: HistoryEvent[]
@@ -12,6 +12,7 @@ type DocumentHistoryProps = React.ComponentProps<"ol"> & {
 
 /** Who did what to a document, newest first, joined by a hairline. */
 function DocumentHistory({ className, events, ...props }: DocumentHistoryProps) {
+  const { formatDateTime } = useFinanceDateFormat()
   return (
     <ol data-slot="document-history" className={cn("flex flex-col", className)} {...props}>
       {events.map((event, index) => {

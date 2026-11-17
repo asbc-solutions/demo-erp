@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { History, Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -11,7 +12,7 @@ import { FinancePageBody, FinancePageHeader } from "../../../components/shared/p
 import { StatusPill } from "../../../components/shared/status-pill"
 import { useFinanceScope } from "../../../lib/context/finance-scope"
 import { useFinanceEntities, useFinancePeriods } from "../../../lib/queries/shell"
-import { formatPeriodRange } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import type { AssistantTurn } from "../../lib/constants/assistant"
 import { useAskAssistant } from "../../lib/mutations/overview"
 import { useAssistantSettings } from "../../lib/queries/overview"
@@ -32,6 +33,8 @@ type AssistantTab = "ask" | "briefing" | "drafts" | "settings"
  * (Briefing and Drafts keep working because they need no model).
  */
 function AssistantPage() {
+  const t = useTranslations("FinanceAssistant")
+  const { formatPeriodRange } = useFinanceDateFormat()
   const { scope: financeScope } = useFinanceScope()
   const { data: entities = [] } = useFinanceEntities()
   const { data: periods = [] } = useFinancePeriods()
@@ -56,7 +59,8 @@ function AssistantPage() {
     ? settings.groups.filter((group) => group.available && settings.data_groups[group.id]).length
     : null
 
-  const submit = (question: string) => {
+  /** `apiQuestion` is sent instead of the shown text, e.g. a starter question's English original. */
+  const submit = (question: string, apiQuestion: string = question) => {
     setTab("ask")
     const id = `turn-${Date.now()}`
     if (offline) {
@@ -65,7 +69,7 @@ function AssistantPage() {
     }
     setTurns((current) => [...current, { id, question, scopeLabel, status: "pending" }])
     ask.mutate(
-      { question, scope_label: scopeLabel },
+      { question: apiQuestion, scope_label: scopeLabel },
       {
         onSuccess: (answer) =>
           setTurns((current) =>
@@ -82,15 +86,15 @@ function AssistantPage() {
   return (
     <>
       <FinancePageHeader
-        title="Assistant"
+        title={t("title")}
         actions={
           <>
             <Button variant="ghost" onClick={() => setOffline((value) => !value)}>
-              {offline ? "Restore" : "Simulate outage"}
+              {offline ? t("restore") : t("simulateOutage")}
             </Button>
             <Button variant="secondary" onClick={() => setHistoryOpen(true)}>
               <History aria-hidden />
-              History
+              {t("history")}
             </Button>
             <Button
               variant="primary"
@@ -100,7 +104,7 @@ function AssistantPage() {
               }}
             >
               <Plus aria-hidden />
-              New conversation
+              {t("newConversation")}
             </Button>
           </>
         }
@@ -108,25 +112,23 @@ function AssistantPage() {
       <FinancePageBody>
         <Tabs value={tab} onValueChange={(value) => setTab(value as AssistantTab)} className="gap-6">
           <TabsList>
-            <TabsTrigger value="ask">Ask</TabsTrigger>
-            <TabsTrigger value="briefing">Briefing</TabsTrigger>
-            <TabsTrigger value="drafts">Drafts</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="ask">{t("tabAsk")}</TabsTrigger>
+            <TabsTrigger value="briefing">{t("tabBriefing")}</TabsTrigger>
+            <TabsTrigger value="drafts">{t("tabDrafts")}</TabsTrigger>
+            <TabsTrigger value="settings">{t("tabSettings")}</TabsTrigger>
           </TabsList>
 
           <div className="flex flex-wrap items-center gap-2">
             {offline ? (
-              <StatusPill status="failed" label="Assistant offline" />
+              <StatusPill status="failed" label={t("assistantOffline")} />
             ) : (
-              <StatusPill status="posted" label="Finance Core connected" />
+              <StatusPill status="posted" label={t("coreConnected")} />
             )}
             {enabledGroups !== null ? (
-              <StatusPill status="pending" label={`${enabledGroups} data groups`} />
+              <StatusPill status="pending" label={t("dataGroupsCount", { count: enabledGroups })} />
             ) : null}
-            <StatusPill status="prepared" label="Read only" />
-            <p className="text-content-tertiary ms-auto text-[13px] leading-5">
-              Ask about the ledger, cash, tax or the close. Every answer says where it came from.
-            </p>
+            <StatusPill status="prepared" label={t("readOnly")} />
+            <p className="text-content-tertiary ms-auto text-[13px] leading-5">{t("intro")}</p>
           </div>
 
           <TabsContent value="ask">
@@ -145,9 +147,7 @@ function AssistantPage() {
               scopeLabel={scopeLabel}
               periodLabel={periodLabel}
               onAsk={submit}
-              onRetry={() =>
-                toast.info("The assistant is still unavailable. Briefing and Drafts keep working.")
-              }
+              onRetry={() => toast.info(t("stillUnavailable"))}
             />
           </TabsContent>
           <TabsContent value="briefing">

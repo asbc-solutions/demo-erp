@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { ListFilter, MessageSquare, MoreHorizontal, Paperclip, Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
@@ -14,11 +15,21 @@ import { useProjectHierarchy } from "../../../lib/queries/hierarchy"
 import { useUpdateTaskStatus } from "../../../lib/mutations/tasks"
 import type { TaskStatus, Timeline } from "../../../lib/types"
 import {
+  TASK_PRIORITY_KEY,
   type KanbanColumn,
   type KanbanColumnId,
   type KanbanTask,
   type TaskPriority,
 } from "../../data/project-detail-data"
+
+/** Kanban column → `ProjectsShared.status` message key. */
+const COLUMN_TITLE_KEY = {
+  "not-started": "notStarted",
+  "in-progress": "inProgress",
+  blocked: "blocked",
+  "in-review": "inReview",
+  done: "done",
+} as const satisfies Record<KanbanColumnId, string>
 
 /** Reverse of `COLUMN_FOR_STATUS` in hierarchy-mapper — column → backend status. */
 const STATUS_FOR_COLUMN: Record<KanbanColumnId, TaskStatus> = {
@@ -39,6 +50,9 @@ const PRIORITY_STYLE: Record<TaskPriority, string> = {
 type DragState = { taskId: string; from: KanbanColumnId } | null
 
 export function TasksTab({ projectId }: { projectId: string }) {
+  const t = useTranslations("ProjectsProjectDetail")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
   const { data, isLoading } = useProjectHierarchy(projectId)
   const updateStatus = useUpdateTaskStatus(projectId)
   const mapped = useMemo(() => toKanbanColumns(data ?? []), [data])
@@ -66,10 +80,10 @@ export function TasksTab({ projectId }: { projectId: string }) {
       let moved: KanbanTask | undefined
       const stripped = prev.map((col) => {
         if (col.id !== drag.from) return col
-        moved = col.tasks.find((t) => t.id === taskId)
+        moved = col.tasks.find((task) => task.id === taskId)
         return {
           ...col,
-          tasks: col.tasks.filter((t) => t.id !== taskId),
+          tasks: col.tasks.filter((task) => task.id !== taskId),
           count: col.count - 1,
         }
       })
@@ -87,7 +101,7 @@ export function TasksTab({ projectId }: { projectId: string }) {
       { taskId, payload: { status: STATUS_FOR_COLUMN[targetId] } },
       {
         onError: (err) => {
-          toast.error("Couldn't move task", {
+          toast.error(t("moveTaskFailed"), {
             description: (err as unknown as ApiError).message,
           })
           setColumns(mapped)
@@ -101,20 +115,18 @@ export function TasksTab({ projectId }: { projectId: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-content-primary text-xl leading-7 font-bold tracking-tight">
-            Tasks &amp; Assignments
+            {t("tasksTitle")}
           </h2>
-          <p className="text-content-tertiary text-sm">
-            Kanban view of all open work for the active project
-          </p>
+          <p className="text-content-tertiary text-sm">{t("tasksSubtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" className="h-9 gap-2 px-3 text-[12px]">
             <ListFilter className="size-3.5" aria-hidden />
-            Filter
+            {tCommon("filter")}
           </Button>
           <Button variant="primary" className="h-9 gap-2 px-3 text-[12px]">
             <Plus className="size-4" aria-hidden />
-            New Task
+            {t("newTask")}
           </Button>
         </div>
       </div>
@@ -151,7 +163,7 @@ export function TasksTab({ projectId }: { projectId: string }) {
               <div className="flex items-center gap-2">
                 <span className={cn("size-2 rounded-full", column.dot)} />
                 <span className="text-content-primary text-[13px] font-semibold">
-                  {column.title}
+                  {tShared(`status.${COLUMN_TITLE_KEY[column.id]}`)}
                 </span>
                 <span className="bg-surface-muted text-content-tertiary rounded-full px-1.5 text-[11px] font-medium">
                   {column.count}
@@ -159,7 +171,7 @@ export function TasksTab({ projectId }: { projectId: string }) {
               </div>
               <button
                 type="button"
-                aria-label="Column options"
+                aria-label={t("columnOptions")}
                 className="text-content-quaternary hover:text-content-primary"
               >
                 <MoreHorizontal className="size-4" aria-hidden />
@@ -193,7 +205,7 @@ export function TasksTab({ projectId }: { projectId: string }) {
                         PRIORITY_STYLE[task.priority],
                       )}
                     >
-                      {task.priority}
+                      {tShared(`priority.${TASK_PRIORITY_KEY[task.priority]}`)}
                     </span>
                   </div>
                   <p className="text-content-primary text-[13px] leading-[18px] font-medium">
@@ -223,7 +235,7 @@ export function TasksTab({ projectId }: { projectId: string }) {
               className="border-stroke-default text-content-tertiary hover:border-brand-primary hover:text-brand-primary flex items-center justify-center gap-1 rounded-lg border border-dashed py-2 text-xs font-medium transition-colors"
             >
               <Plus className="size-3.5" aria-hidden />
-              Add Task
+              {t("addTask")}
             </button>
           </div>
         ))}

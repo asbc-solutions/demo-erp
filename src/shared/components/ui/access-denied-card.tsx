@@ -1,4 +1,5 @@
 import { Lock } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -10,10 +11,11 @@ type AccessDeniedCardProps = {
 }
 
 function AccessDeniedCard({
-  title = "You don't have access",
+  title,
   description,
   className,
 }: Readonly<AccessDeniedCardProps>) {
+  const t = useTranslations("Ui")
   return (
     <Card
       data-slot="access-denied-card"
@@ -30,7 +32,7 @@ function AccessDeniedCard({
         <Lock className="text-content-tertiary size-5" strokeWidth={1.75} />
       </div>
       <h3 className="text-content-primary text-[14px] leading-[22.4px] font-semibold">
-        {title}
+        {title ?? t("accessDeniedTitle")}
       </h3>
       <p className="text-content-tertiary max-w-sm text-[12px] leading-[18px]">
         {description}

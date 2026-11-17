@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Check, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -32,6 +33,9 @@ export function InviteMemberDialog({
   open,
   onOpenChange,
 }: Readonly<{ open: boolean; onOpenChange: (open: boolean) => void }>) {
+  const t = useTranslations("SettingsInviteMember")
+  const tShared = useTranslations("SettingsShared")
+  const tCommon = useTranslations("Common")
   const { data: roles, isLoading: rolesLoading } = useAssignableRoles({ enabled: open })
   const inviteMember = useInviteMember()
   const [roleId, setRoleId] = React.useState("")
@@ -46,7 +50,7 @@ export function InviteMemberDialog({
     const form = event.currentTarget
     const formData = new FormData(form)
     if (!roleId) {
-      toast.error("Select a role for this member")
+      toast.error(t("roleRequired"))
       return
     }
 
@@ -58,13 +62,13 @@ export function InviteMemberDialog({
       },
       {
         onSuccess: () => {
-          toast.success("Invitation sent.", {
-            description: "The new member will receive an email to set their password.",
+          toast.success(t("success"), {
+            description: t("successDescription"),
           })
           form.reset()
           handleOpenChange(false)
         },
-        onError: (err) => toastMutationError(err, "Failed to invite member"),
+        onError: (err) => toastMutationError(err, t("failed"), tShared),
       },
     )
   }
@@ -74,22 +78,19 @@ export function InviteMemberDialog({
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Invite Team Member</DialogTitle>
-            <DialogDescription>
-              They&apos;ll get an email to set their own password — no password is generated or
-              shown here.
-            </DialogDescription>
+            <DialogTitle>{t("title")}</DialogTitle>
+            <DialogDescription>{t("description")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="invite-name" className="text-content-secondary text-xs font-medium">
-                Name
+                {tCommon("name")}
               </Label>
               <Input id="invite-name" name="name" required placeholder="Mona Fahmy" />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="invite-email" className="text-content-secondary text-xs font-medium">
-                Email
+                {tCommon("email")}
               </Label>
               <Input
                 id="invite-email"
@@ -100,10 +101,12 @@ export function InviteMemberDialog({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label className="text-content-secondary text-xs font-medium">Role</Label>
+              <Label className="text-content-secondary text-xs font-medium">{t("role")}</Label>
               <Select value={roleId} onValueChange={setRoleId} disabled={rolesLoading}>
                 <SelectTrigger>
-                  <SelectValue placeholder={rolesLoading ? "Loading roles…" : "Select a role"} />
+                  <SelectValue
+                    placeholder={rolesLoading ? t("rolesLoading") : t("rolePlaceholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {(roles ?? []).map((role) => (
@@ -114,14 +117,13 @@ export function InviteMemberDialog({
                 </SelectContent>
               </Select>
               <p className="text-content-tertiary text-[11px] leading-[15.4px]">
-                A role appearing here doesn&apos;t guarantee you can grant it — the server still
-                enforces your own permission ceiling.
+                {t("roleHint")}
               </p>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={inviteMember.isPending}>
               {inviteMember.isPending ? (
@@ -129,7 +131,7 @@ export function InviteMemberDialog({
               ) : (
                 <Check aria-hidden />
               )}
-              Send Invite
+              {t("submit")}
             </Button>
           </DialogFooter>
         </form>

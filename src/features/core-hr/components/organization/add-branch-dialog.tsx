@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -27,21 +28,18 @@ import {
   branchTypeValues,
   type BranchFormValues,
 } from "../../lib/schema/branch"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
 type AddBranchDialogProps = Readonly<{
   open: boolean
   onOpenChange: (open: boolean) => void
 }>
 
-const BRANCH_TYPE_LABEL: Record<typeof branchTypeValues[number], string> = {
-  head_office: "Head Office",
-  regional_office: "Regional Office",
-  branch: "Branch",
-  warehouse: "Warehouse",
-  site: "Site",
-}
-
 export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
+  const t = useTranslations("HrOrganization")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const createBranch = useCreateBranch()
 
   const form = useForm<BranchFormValues>({
@@ -66,7 +64,7 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
   const onSubmit = (values: BranchFormValues) => {
     createBranch.mutate(values, {
       onSuccess: (branch) => {
-        toast.success(`Branch "${branch.branch_name}" created`)
+        toast.success(t("branchCreated", { name: branch.branch_name }))
         handleOpenChange(false)
       },
       onError: (err, variables) => {
@@ -76,13 +74,13 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
         const description =
           apiErr.message ??
           (isCodeConflict
-            ? `Code "${variables.branch_code}" is already in use. Please enter a unique code.`
-            : "Please check your details and try again.")
+            ? t("codeInUse", { code: variables.branch_code })
+            : t("checkDetails"))
         // Pin a conflict to the offending Code field so it's clear what to fix.
         if (isCodeConflict) {
           setError("branch_code", { type: "server", message: description })
         }
-        toast.error("Failed to create branch", { description })
+        toast.error(t("createBranchFailed"), { description })
       },
     })
   }
@@ -107,10 +105,10 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
         >
           <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
-              Add Branch
+              {t("addBranch")}
             </DialogTitle>
             <p className="text-content-quaternary text-sm leading-5">
-              Create a new branch location
+              {t("addBranchSubtitle")}
             </p>
           </div>
 
@@ -118,22 +116,22 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Name <span className="text-brand-danger">*</span>
+                  {t("fieldName")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("branch_name")}
-                  placeholder="Branch name"
+                  placeholder={t("phBranchName")}
                   className="h-9 rounded-md border-stroke-default bg-surface-white text-sm placeholder:text-content-quaternary"
                 />
                 {errors.branch_name && (
                   <p className="text-brand-danger text-xs">
-                    {errors.branch_name.message}
+                    {fieldError(errors.branch_name.message)}
                   </p>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Code <span className="text-brand-danger">*</span>
+                  {t("fieldCode")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("branch_code")}
@@ -146,7 +144,7 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
                 />
                 {errors.branch_code && (
                   <p className="text-brand-danger text-xs">
-                    {errors.branch_code.message}
+                    {fieldError(errors.branch_code.message)}
                   </p>
                 )}
               </div>
@@ -154,7 +152,7 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Type <span className="text-brand-danger">*</span>
+                {t("fieldType")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={watch("branch_type")}
@@ -167,35 +165,35 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
                 }
               >
                 <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
-                  <SelectValue placeholder="Select type…" />
+                  <SelectValue placeholder={t("phSelectType")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {branchTypeValues.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {BRANCH_TYPE_LABEL[t]}
+                  {branchTypeValues.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {tShared(`branchType.${type}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {errors.branch_type && (
                 <p className="text-brand-danger text-xs">
-                  {errors.branch_type.message}
+                  {fieldError(errors.branch_type.message)}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Address <span className="text-brand-danger">*</span>
+                {t("fieldAddress")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("address_line1")}
-                placeholder="Street address"
+                placeholder={t("phStreetAddress")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white text-sm placeholder:text-content-quaternary"
               />
               {errors.address_line1 && (
                 <p className="text-brand-danger text-xs">
-                  {errors.address_line1.message}
+                  {fieldError(errors.address_line1.message)}
                 </p>
               )}
             </div>
@@ -203,22 +201,22 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  City <span className="text-brand-danger">*</span>
+                  {t("fieldCity")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("city")}
-                  placeholder="City"
+                  placeholder={t("phCity")}
                   className="h-9 rounded-md border-stroke-default bg-surface-white text-sm placeholder:text-content-quaternary"
                 />
                 {errors.city && (
                   <p className="text-brand-danger text-xs">
-                    {errors.city.message}
+                    {fieldError(errors.city.message)}
                   </p>
                 )}
               </div>
               <div className="flex flex-col gap-1.5 sm:col-span-2">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Country Code <span className="text-brand-danger">*</span>
+                  {t("fieldCountryCode")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("country_code")}
@@ -234,7 +232,7 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
                 />
                 {errors.country_code && (
                   <p className="text-brand-danger text-xs">
-                    {errors.country_code.message}
+                    {fieldError(errors.country_code.message)}
                   </p>
                 )}
               </div>
@@ -249,7 +247,7 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
               className="h-9 rounded-md border-stroke-default bg-surface-white px-4 text-sm font-semibold text-content-primary"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -258,7 +256,7 @@ export function AddBranchDialog({ open, onOpenChange }: AddBranchDialogProps) {
               disabled={createBranch.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {createBranch.isPending ? "Saving…" : "Save"}
+              {createBranch.isPending ? tShared("saving") : tCommon("save")}
             </Button>
           </div>
         </form>

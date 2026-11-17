@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ArrowLeft, Download, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -35,7 +36,7 @@ import {
 import { Textarea } from "@/src/shared/components/ui/textarea"
 import { cn } from "@/src/shared/lib/utils/utils"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesPageSpinner } from "../../components/shared/sales-loading"
 import { formatCurrency } from "../../lib/utils/currency"
 import {
@@ -60,10 +61,12 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
   cancelled: "bg-red-50 text-red-600 dark:bg-red-950/45 dark:text-red-300",
 }
 
-function StatusBadge({ status, label }: Readonly<{ status: OrderStatus; label: string }>) {
+function StatusBadge({ status }: Readonly<{ status: OrderStatus }>) {
+  const tShared = useTranslations("SalesShared")
+
   return (
     <Badge variant="neutral" className={cn("rounded-full px-3 font-normal", STATUS_STYLE[status])}>
-      {label}
+      {tShared(`orderStatus.${status}`)}
     </Badge>
   )
 }
@@ -93,6 +96,8 @@ function EditableLinesTable({
   lines,
   onChange,
 }: Readonly<{ lines: EditableLine[]; onChange: (lines: EditableLine[]) => void }>) {
+  const t = useTranslations("SalesOrders")
+  const tCommon = useTranslations("Common")
   const updateLine = (key: string, patch: Partial<EditableLine>) => {
     onChange(lines.map((line) => (line.key === key ? { ...line, ...patch } : line)))
   }
@@ -109,11 +114,11 @@ function EditableLinesTable({
         <Table className="min-w-[720px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead>Description</TableHead>
-              <TableHead className="w-[90px]">Qty</TableHead>
-              <TableHead className="w-[120px]">Unit Price</TableHead>
-              <TableHead className="w-[100px]">Disc. %</TableHead>
-              <TableHead className="w-[90px]">Tax %</TableHead>
+              <TableHead>{tCommon("description")}</TableHead>
+              <TableHead className="w-[90px]">{t("qty")}</TableHead>
+              <TableHead className="w-[120px]">{t("unitPrice")}</TableHead>
+              <TableHead className="w-[100px]">{t("discountPercentShort")}</TableHead>
+              <TableHead className="w-[90px]">{t("taxPercent")}</TableHead>
               <TableHead className="w-[48px]" />
             </TableRow>
           </TableHeader>
@@ -178,7 +183,7 @@ function EditableLinesTable({
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Remove row"
+                    aria-label={t("removeRow")}
                     className="text-brand-danger"
                     onClick={() => removeLine(line.key)}
                   >
@@ -192,13 +197,16 @@ function EditableLinesTable({
       </div>
       <Button type="button" variant="secondary" size="sm" className="w-fit" onClick={addLine}>
         <Plus aria-hidden />
-        Add Row
+        {t("addRow")}
       </Button>
     </div>
   )
 }
 
 function EditLinesFlow({ order }: Readonly<{ order: Order }>) {
+  const t = useTranslations("SalesOrders")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [reasonDialogOpen, setReasonDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<{ editReasonId: string; note: string; lines: EditableLine[] } | null>(
     null,
@@ -220,8 +228,8 @@ function EditLinesFlow({ order }: Readonly<{ order: Order }>) {
 
     const savedLines = editing.lines.filter((line) => line.description.trim())
     if (savedLines.some((line) => !Number.isInteger(line.quantity) || line.quantity < 1)) {
-      toast.error("Invalid quantity", {
-        description: "Every line quantity must be a whole number of 1 or more.",
+      toast.error(t("invalidQuantity"), {
+        description: t("invalidQuantityDescription"),
       })
       return
     }
@@ -245,10 +253,10 @@ function EditLinesFlow({ order }: Readonly<{ order: Order }>) {
       },
       {
         onSuccess: () => {
-          toast.success("Order lines updated")
+          toast.success(t("linesUpdated"))
           setEditing(null)
         },
-        onError: (err) => toastMutationError(err, "Failed to update order lines"),
+        onError: (err) => toastMutationError(err, t("updateLinesFailed")),
       },
     )
   }
@@ -259,11 +267,11 @@ function EditLinesFlow({ order }: Readonly<{ order: Order }>) {
         <EditableLinesTable lines={editing.lines} onChange={(lines) => setEditing({ ...editing, lines })} />
         <div className="flex items-center gap-2">
           <Button type="button" variant="secondary" onClick={() => setEditing(null)}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button type="button" variant="primary" disabled={updateOrderLines.isPending} onClick={handleSave}>
             {updateOrderLines.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Save lines
+            {t("saveLines")}
           </Button>
         </div>
       </div>
@@ -274,7 +282,7 @@ function EditLinesFlow({ order }: Readonly<{ order: Order }>) {
     <>
       <Button type="button" variant="secondary" size="sm" onClick={() => setReasonDialogOpen(true)}>
         <Pencil aria-hidden />
-        Edit Lines
+        {t("editLines")}
       </Button>
       <Dialog
         open={reasonDialogOpen}
@@ -286,26 +294,26 @@ function EditLinesFlow({ order }: Readonly<{ order: Order }>) {
         <DialogContent className="max-w-sm">
           <form onSubmit={handleStartEdit}>
             <DialogHeader>
-              <DialogTitle>Edit order lines</DialogTitle>
+              <DialogTitle>{t("editLinesTitle")}</DialogTitle>
             </DialogHeader>
             <DialogBody className="flex flex-col gap-4">
               <MasterDataSelect
                 field="edit_reasons"
                 name="editReason"
-                label="Reason"
+                label={t("reason")}
                 value={editReasonId}
                 onValueChange={setEditReasonId}
-                placeholder="Select a reason…"
-                emptyMessage="No edit reasons are configured yet, so order lines can’t be edited. Ask an administrator to add them to the sales master data."
+                placeholder={t("selectReason")}
+                emptyMessage={t("noEditReasons")}
               />
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-content-secondary">
                   {selectedEditReason?.requires_note ? (
                     <>
-                      Note <span className="text-brand-danger">*</span>
+                      {t("note")} <span className="text-brand-danger">*</span>
                     </>
                   ) : (
-                    "Note (optional)"
+                    t("noteOptional")
                   )}
                 </span>
                 <Textarea name="note" required={selectedEditReason?.requires_note ?? false} />
@@ -313,10 +321,10 @@ function EditLinesFlow({ order }: Readonly<{ order: Order }>) {
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setReasonDialogOpen(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={!editReasonId}>
-                Continue
+                {t("continue")}
               </Button>
             </DialogFooter>
           </form>
@@ -327,17 +335,20 @@ function EditLinesFlow({ order }: Readonly<{ order: Order }>) {
 }
 
 function ReadOnlyLinesTable({ order }: Readonly<{ order: Order }>) {
+  const t = useTranslations("SalesOrders")
+  const tCommon = useTranslations("Common")
+
   return (
     <div className="overflow-hidden rounded-2xl border border-stroke-default bg-surface-white shadow-sm">
       <Table className="min-w-[900px] table-fixed">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="px-5">Description</TableHead>
-            <TableHead className="w-[90px] text-end">Qty</TableHead>
-            <TableHead className="w-[120px] text-end">Unit Price</TableHead>
-            <TableHead className="w-[100px] text-end">Discount</TableHead>
-            <TableHead className="w-[90px] text-end">Tax</TableHead>
-            <TableHead className="w-[130px] px-5 text-end">Line Total</TableHead>
+            <TableHead className="px-5">{tCommon("description")}</TableHead>
+            <TableHead className="w-[90px] text-end">{t("qty")}</TableHead>
+            <TableHead className="w-[120px] text-end">{t("unitPrice")}</TableHead>
+            <TableHead className="w-[100px] text-end">{t("discount")}</TableHead>
+            <TableHead className="w-[90px] text-end">{t("tax")}</TableHead>
+            <TableHead className="w-[130px] px-5 text-end">{t("lineTotal")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -357,7 +368,7 @@ function ReadOnlyLinesTable({ order }: Readonly<{ order: Order }>) {
           ) : (
             <TableRow>
               <TableCell colSpan={6} className="h-24 text-center text-content-tertiary">
-                No line items.
+                {t("noLines")}
               </TableCell>
             </TableRow>
           )}
@@ -365,19 +376,19 @@ function ReadOnlyLinesTable({ order }: Readonly<{ order: Order }>) {
       </Table>
       <div className="flex flex-col items-end gap-1 border-t border-stroke-light px-5 py-4 text-sm">
         <div className="flex w-56 justify-between text-content-tertiary">
-          <span>Subtotal</span>
+          <span>{t("subtotal")}</span>
           <span>{formatCurrency(order.subtotal)}</span>
         </div>
         <div className="flex w-56 justify-between text-content-tertiary">
-          <span>Discount</span>
+          <span>{t("discount")}</span>
           <span>-{formatCurrency(order.discount_total)}</span>
         </div>
         <div className="flex w-56 justify-between text-content-tertiary">
-          <span>Tax</span>
+          <span>{t("tax")}</span>
           <span>{formatCurrency(order.tax_total)}</span>
         </div>
         <div className="flex w-56 justify-between text-base font-bold text-content-primary">
-          <span>Grand Total</span>
+          <span>{t("grandTotal")}</span>
           <span>{formatCurrency(order.grand_total)}</span>
         </div>
       </div>
@@ -386,6 +397,9 @@ function ReadOnlyLinesTable({ order }: Readonly<{ order: Order }>) {
 }
 
 function ConfirmOrderButton({ order }: Readonly<{ order: Order }>) {
+  const t = useTranslations("SalesOrders")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [lowStockConfirm, setLowStockConfirm] = React.useState(false)
   const confirmOrder = useConfirmOrder()
 
@@ -394,7 +408,7 @@ function ConfirmOrderButton({ order }: Readonly<{ order: Order }>) {
       { id: order.id, payload: { acknowledge_low_stock: acknowledgeLowStock } },
       {
         onSuccess: () => {
-          toast.success("Order confirmed")
+          toast.success(t("confirmedToast"))
           setLowStockConfirm(false)
         },
         onError: (err) => {
@@ -403,7 +417,7 @@ function ConfirmOrderButton({ order }: Readonly<{ order: Order }>) {
             setLowStockConfirm(true)
             return
           }
-          toastMutationError(err, "Failed to confirm order")
+          toastMutationError(err, t("confirmFailed"))
         },
       },
     )
@@ -413,16 +427,16 @@ function ConfirmOrderButton({ order }: Readonly<{ order: Order }>) {
     <>
       <Button type="button" variant="primary" disabled={confirmOrder.isPending} onClick={() => attemptConfirm(false)}>
         {confirmOrder.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-        Confirm
+        {tCommon("confirm")}
       </Button>
       <AlertDialog open={lowStockConfirm} onOpenChange={setLowStockConfirm}>
         <AlertDialogContent className="max-w-md">
-          <AlertDialogTitle>Some items are low or out of stock</AlertDialogTitle>
+          <AlertDialogTitle>{t("lowStockTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Confirming will proceed anyway. Review stock levels first if you&apos;re unsure.
+            {t("lowStockDescription")}
           </AlertDialogDescription>
           <div className="mt-4 flex items-center justify-end gap-2">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={confirmOrder.isPending}
               onClick={(event) => {
@@ -430,7 +444,7 @@ function ConfirmOrderButton({ order }: Readonly<{ order: Order }>) {
                 attemptConfirm(true)
               }}
             >
-              Confirm anyway
+              {t("confirmAnyway")}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
@@ -440,6 +454,9 @@ function ConfirmOrderButton({ order }: Readonly<{ order: Order }>) {
 }
 
 function ActionBar({ order, onBack }: Readonly<{ order: Order; onBack: () => void }>) {
+  const t = useTranslations("SalesOrders")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [cancelOpen, setCancelOpen] = React.useState(false)
   const [invoiceOpen, setInvoiceOpen] = React.useState(false)
   const cancelOrder = useCancelOrder()
@@ -456,7 +473,7 @@ function ActionBar({ order, onBack }: Readonly<{ order: Order; onBack: () => voi
       { id: order.id },
       {
         onSuccess: (url) => window.open(url, "_blank"),
-        onError: (err) => toastMutationError(err, "Failed to generate PDF"),
+        onError: (err) => toastMutationError(err, t("pdfFailed")),
       },
     )
   }
@@ -464,24 +481,24 @@ function ActionBar({ order, onBack }: Readonly<{ order: Order; onBack: () => voi
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button type="button" variant="ghost" onClick={onBack}>
-        <ArrowLeft aria-hidden />
-        Back
+        <ArrowLeft className="rtl:rotate-180" aria-hidden />
+        {tCommon("back")}
       </Button>
       <div className="ms-auto flex flex-wrap items-center gap-2">
         {order.status === "draft" ? <ConfirmOrderButton order={order} /> : null}
         {order.status === "confirmed" ? (
           <Button type="button" variant="primary" onClick={() => setInvoiceOpen(true)}>
-            Generate Invoice
+            {t("generateInvoice")}
           </Button>
         ) : null}
         {canCancel ? (
           <Button type="button" variant="secondary" onClick={() => setCancelOpen(true)}>
-            Cancel Order
+            {t("cancelOrder")}
           </Button>
         ) : null}
         <Button type="button" variant="secondary" disabled={getPdf.isPending} onClick={handlePdf}>
           {getPdf.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Download aria-hidden />}
-          PDF
+          {t("pdf")}
         </Button>
       </div>
 
@@ -495,31 +512,33 @@ function ActionBar({ order, onBack }: Readonly<{ order: Order; onBack: () => voi
                 { id: order.id, payload: dueDate ? { due_date: dueDate } : {} },
                 {
                   onSuccess: (invoice) => {
-                    toast.success(`Invoice ${invoice.status === "draft" ? "created" : ""} — draft ready to post`)
+                    toast.success(
+                      invoice.status === "draft" ? t("invoiceCreatedToast") : t("invoiceGeneratedToast"),
+                    )
                     setInvoiceOpen(false)
                   },
-                  onError: (err) => toastMutationError(err, "Failed to generate invoice"),
+                  onError: (err) => toastMutationError(err, t("generateInvoiceFailed")),
                 },
               )
             }}
           >
             <DialogHeader>
-              <DialogTitle>Generate invoice</DialogTitle>
+              <DialogTitle>{t("generateInvoiceTitle")}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-content-secondary">
-                  Due date (optional — defaults from settings)
+                  {t("dueDateOptional")}
                 </span>
                 <Input name="dueDate" type="date" />
               </label>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setInvoiceOpen(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={generateInvoice.isPending}>
-                Generate
+                {t("generate")}
               </Button>
             </DialogFooter>
           </form>
@@ -548,37 +567,37 @@ function ActionBar({ order, onBack }: Readonly<{ order: Order; onBack: () => voi
                 },
                 {
                   onSuccess: () => {
-                    toast.success("Order cancelled")
+                    toast.success(t("cancelledToast"))
                     setCancelOpen(false)
                     setCancelReasonId("")
                   },
-                  onError: (err) => toastMutationError(err, "Failed to cancel order"),
+                  onError: (err) => toastMutationError(err, t("cancelFailed")),
                 },
               )
             }}
           >
             <DialogHeader>
-              <DialogTitle>Cancel order</DialogTitle>
+              <DialogTitle>{t("cancelOrderTitle")}</DialogTitle>
             </DialogHeader>
             <DialogBody className="flex flex-col gap-4">
-              <p className="text-xs text-content-tertiary">This is final and cannot be undone.</p>
+              <p className="text-xs text-content-tertiary">{t("cancelFinal")}</p>
               <MasterDataSelect
                 field="cancellation_reasons"
                 name="reason"
-                label="Reason"
+                label={t("reason")}
                 value={cancelReasonId}
                 onValueChange={setCancelReasonId}
-                placeholder="Select a reason…"
-                emptyMessage="No cancellation reasons are configured yet, so this order can’t be cancelled. Ask an administrator to add them to the sales master data."
+                placeholder={t("selectReason")}
+                emptyMessage={t("noCancellationReasons")}
               />
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-content-secondary">
                   {selectedCancelReason?.requires_note ? (
                     <>
-                      Note <span className="text-brand-danger">*</span>
+                      {t("note")} <span className="text-brand-danger">*</span>
                     </>
                   ) : (
-                    "Note (optional)"
+                    t("noteOptional")
                   )}
                 </span>
                 <Textarea name="note" required={selectedCancelReason?.requires_note ?? false} />
@@ -586,7 +605,7 @@ function ActionBar({ order, onBack }: Readonly<{ order: Order; onBack: () => voi
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setCancelOpen(false)}>
-                Keep order
+                {t("keepOrder")}
               </Button>
               <Button
                 type="submit"
@@ -596,7 +615,7 @@ function ActionBar({ order, onBack }: Readonly<{ order: Order; onBack: () => voi
                 {cancelOrder.isPending ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                 ) : null}
-                Cancel order
+                {t("cancelOrderTitle")}
               </Button>
             </DialogFooter>
           </form>
@@ -610,11 +629,12 @@ export function OrderDetailView({
   orderId,
   onBack,
 }: Readonly<{ orderId: string; onBack: () => void }>) {
+  const t = useTranslations("SalesOrders")
   const { data: order, isLoading, isError, refetch } = useOrder(orderId)
 
   if (isLoading) return <SalesPageSpinner />
   if (isError || !order) {
-    return <SalesErrorState message="Failed to load order." onRetry={() => void refetch()} />
+    return <SalesErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
   }
 
   return (
@@ -626,7 +646,7 @@ export function OrderDetailView({
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <h1 className="font-mono text-lg font-semibold text-content-primary">{order.number}</h1>
-              <StatusBadge status={order.status} label={order.status_label} />
+              <StatusBadge status={order.status} />
             </div>
             <p className="text-sm text-content-secondary">{order.customer_name}</p>
           </div>
@@ -634,11 +654,11 @@ export function OrderDetailView({
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
           <div>
-            <p className="text-xs text-content-quaternary">Salesperson</p>
+            <p className="text-xs text-content-quaternary">{t("salesperson")}</p>
             <p className="font-medium text-content-primary">{order.salesperson_name}</p>
           </div>
           <div>
-            <p className="text-xs text-content-quaternary">Delivery Date</p>
+            <p className="text-xs text-content-quaternary">{t("deliveryDate")}</p>
             <p className="font-mono font-medium text-content-primary">
               <DeliveryDate value={order.delivery_date} />
             </p>
@@ -646,17 +666,17 @@ export function OrderDetailView({
         </div>
       </Card>
 
-      <h2 className="text-sm font-semibold text-content-primary">Line Items</h2>
+      <h2 className="text-sm font-semibold text-content-primary">{t("lineItems")}</h2>
       <ReadOnlyLinesTable order={order} />
 
       {order.revisions.length > 0 ? (
         <>
-          <h2 className="text-sm font-semibold text-content-primary">Revision History</h2>
+          <h2 className="text-sm font-semibold text-content-primary">{t("revisionHistory")}</h2>
           <div className="flex flex-col divide-y divide-stroke-light rounded-2xl border border-stroke-default bg-surface-white">
             {order.revisions.map((revision) => (
               <div key={revision.id} className="flex flex-col gap-0.5 px-5 py-3 text-sm">
                 <span className="font-medium text-content-primary">
-                  {revision.edit_reason_label ?? "Lines edited"}
+                  {revision.edit_reason_label ?? t("linesEdited")}
                 </span>
                 {revision.note ? <span className="text-xs text-content-tertiary">{revision.note}</span> : null}
                 <span className="text-xs text-content-quaternary">{revision.created_at}</span>

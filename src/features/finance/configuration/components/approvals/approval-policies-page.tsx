@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronRight, Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -34,18 +35,18 @@ import { errorMessage } from "../../../lib/utils/api"
 import { formatAmount } from "../../../lib/utils/money"
 import { useCreatePolicy } from "../../lib/mutations/configuration"
 import { useApprovalPolicies } from "../../lib/queries/configuration"
-import type { ApprovalPolicy } from "../../lib/types/configuration"
+import type { ApprovalPolicy, ConfigMessageKey } from "../../lib/types/configuration"
 
-const SESSION_NOTE =
-  "Saved records live in this session only. The seeded data is never modified, so a reload returns the prototype to its known state."
+/** Messages are `FinanceConfiguration` keys, translated where the error is rendered. */
+const msg = (key: ConfigMessageKey) => key
 
 const policySchema = z.object({
-  name: z.string().trim().min(1, "Name the policy."),
-  type: z.string().min(1, "Choose what the policy applies to."),
+  name: z.string().trim().min(1, msg("errPolicyName")),
+  type: z.string().min(1, msg("errPolicyType")),
   threshold: z
     .string()
     .trim()
-    .refine((value) => value !== "" && Number(value) >= 0, "Enter an amount, or 0 for any amount."),
+    .refine((value) => value !== "" && Number(value) >= 0, msg("errPolicyThreshold")),
   approvers: z.enum(["1", "2", "3"]),
 })
 type PolicyValues = z.infer<typeof policySchema>
@@ -53,6 +54,7 @@ type PolicyValues = z.infer<typeof policySchema>
 const EMPTY: PolicyValues = { name: "", type: "bill", threshold: "50000", approvers: "2" }
 
 function NewPolicyDialog({ open, onOpenChange, types }: { open: boolean; onOpenChange: (open: boolean) => void; types: { value: string; label: string }[] }) {
+  const t = useTranslations("FinanceConfiguration")
   const create = useCreatePolicy()
   const {
     control,
@@ -75,30 +77,27 @@ function NewPolicyDialog({ open, onOpenChange, types }: { open: boolean; onOpenC
               { name: values.name, type: values.type, threshold: Number(values.threshold), approvers: Number(values.approvers) },
               {
                 onSuccess: (policy) => {
-                  toast.success(`${policy.name} is active: ${policy.approvers.join(" → ")}.`)
+                  toast.success(t("toastPolicyActive", { name: policy.name, approvers: policy.approvers.join(" → ") }))
                   onOpenChange(false)
                 },
-                onError: (error) => toast.error(errorMessage(error, "The policy could not be saved. Try again.")),
+                onError: (error) => toast.error(errorMessage(error, t("errorSavePolicy"))),
               },
             ),
           )}
         >
           <DialogHeader>
-            <DialogTitle>New policy</DialogTitle>
-            <DialogDescription>
-              An approval policy decides how many approvers a document needs. Saving adds the policy; documents already in flight
-              keep the policy they started under.
-            </DialogDescription>
+            <DialogTitle>{t("newPolicy")}</DialogTitle>
+            <DialogDescription>{t("newPolicyDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Field>
-              <FieldLabel htmlFor="policy-name">Name *</FieldLabel>
-              <Input id="policy-name" placeholder="e.g. Supplier bills over EGP 50k" aria-invalid={Boolean(errors.name)} {...register("name")} />
-              {errors.name ? <FieldError>{errors.name.message}</FieldError> : null}
+              <FieldLabel htmlFor="policy-name">{t("nameRequired")}</FieldLabel>
+              <Input id="policy-name" placeholder={t("policyNamePlaceholder")} aria-invalid={Boolean(errors.name)} {...register("name")} />
+              {errors.name ? <FieldError>{t(errors.name.message as ConfigMessageKey)}</FieldError> : null}
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="policy-type">Type *</FieldLabel>
+                <FieldLabel htmlFor="policy-type">{t("typeRequired")}</FieldLabel>
                 <Controller
                   control={control}
                   name="type"
@@ -119,7 +118,7 @@ function NewPolicyDialog({ open, onOpenChange, types }: { open: boolean; onOpenC
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="policy-approvers">Approvers required *</FieldLabel>
+                <FieldLabel htmlFor="policy-approvers">{t("approversRequired")}</FieldLabel>
                 <Controller
                   control={control}
                   name="approvers"
@@ -141,18 +140,18 @@ function NewPolicyDialog({ open, onOpenChange, types }: { open: boolean; onOpenC
               </Field>
             </div>
             <Field>
-              <FieldLabel htmlFor="policy-threshold">Threshold (EGP) *</FieldLabel>
+              <FieldLabel htmlFor="policy-threshold">{t("thresholdEgpRequired")}</FieldLabel>
               <Input id="policy-threshold" inputMode="decimal" className="tabular-nums" aria-invalid={Boolean(errors.threshold)} {...register("threshold")} />
-              {errors.threshold ? <FieldError>{errors.threshold.message}</FieldError> : <FieldDescription>Documents above this amount need the approvers. 0 means any amount.</FieldDescription>}
+              {errors.threshold ? <FieldError>{t(errors.threshold.message as ConfigMessageKey)}</FieldError> : <FieldDescription>{t("thresholdHint")}</FieldDescription>}
             </Field>
-            <p className="text-content-tertiary text-[13px] leading-5">{SESSION_NOTE}</p>
+            <p className="text-content-tertiary text-[13px] leading-5">{t("sessionNote")}</p>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={create.isPending}>
-              Save
+              {t("save")}
             </Button>
           </DialogFooter>
         </form>
@@ -162,26 +161,27 @@ function NewPolicyDialog({ open, onOpenChange, types }: { open: boolean; onOpenC
 }
 
 function PolicyCard({ policy }: { policy: ApprovalPolicy }) {
+  const t = useTranslations("FinanceConfiguration")
   return (
     <article data-slot="approval-policy" className="border-stroke-default bg-surface-white flex flex-col gap-3 rounded-xl border px-5 py-4">
       <header className="flex flex-wrap items-center gap-2">
         <h3 className="text-content-primary text-sm leading-5 font-semibold">{policy.name}</h3>
         <StatusPill status="prepared" label={policy.type_label} />
         <span className="text-content-secondary ms-auto text-[13px] tabular-nums">
-          Threshold {policy.threshold === null ? "Any" : formatAmount(policy.threshold).replace(/\.00$/, "")}
+          {t("thresholdValue", { amount: policy.threshold === null ? t("any") : formatAmount(policy.threshold).replace(/\.00$/, "") })}
         </span>
       </header>
-      <ol className="flex flex-wrap items-center gap-1.5" aria-label="Approvers in order">
+      <ol className="flex flex-wrap items-center gap-1.5" aria-label={t("approversInOrder")}>
         {policy.approvers.map((approver, index) => (
           <li key={approver} className="flex items-center gap-1.5">
-            {index ? <ChevronRight className="text-content-tertiary size-3.5" aria-hidden /> : null}
+            {index ? <ChevronRight className="text-content-tertiary size-3.5 rtl:rotate-180" aria-hidden /> : null}
             <span className="border-stroke-default bg-surface-hover text-content-primary rounded-md border px-2.5 py-1 text-[13px] leading-5">{approver}</span>
           </li>
         ))}
       </ol>
       {policy.waiting !== null ? (
         <p className="text-content-tertiary text-xs leading-4">
-          {policy.waiting ? `${policy.waiting} ${policy.waiting === 1 ? "document is" : "documents are"} waiting under this policy.` : "Nothing is waiting under this policy."}
+          {policy.waiting ? t("documentsWaiting", { count: policy.waiting }) : t("nothingWaiting")}
         </p>
       ) : null}
     </article>
@@ -190,17 +190,18 @@ function PolicyCard({ policy }: { policy: ApprovalPolicy }) {
 
 /** 11.08 · Approval policies — who has to approve what, above which amount. */
 function ApprovalPoliciesPage() {
+  const t = useTranslations("FinanceConfiguration")
   const { data, isError, refetch } = useApprovalPolicies()
   const [dialogOpen, setDialogOpen] = React.useState(false)
   return (
     <>
       <FinancePageHeader
-        title="Approval policies"
-        figure={data ? <HeaderFigure label="Active policies">{data.active}</HeaderFigure> : null}
+        title={t("approvalPolicies")}
+        figure={data ? <HeaderFigure label={t("activePolicies")}>{data.active}</HeaderFigure> : null}
         actions={
           <Button variant="primary" onClick={() => setDialogOpen(true)}>
             <Plus aria-hidden />
-            New policy
+            {t("newPolicy")}
           </Button>
         }
       />

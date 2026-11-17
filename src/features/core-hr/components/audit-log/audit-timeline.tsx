@@ -9,6 +9,7 @@ import {
   XCircle,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -66,9 +67,31 @@ function getActionConfig(badge: string) {
   return ACTION_CONFIG[badge as AuditAction] ?? ACTION_CONFIG.UPDATE
 }
 
+function isAuditAction(badge: string): badge is AuditAction {
+  return badge in ACTION_CONFIG
+}
+
+const KNOWN_MODULES = [
+  "hr",
+  "payroll",
+  "recruitment",
+  "performance",
+  "leave",
+  "training",
+  "benefits",
+  "system",
+] as const
+
+type KnownModule = (typeof KNOWN_MODULES)[number]
+
+function isKnownModule(value: string): value is KnownModule {
+  return (KNOWN_MODULES as readonly string[]).includes(value)
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ActionBadge({ badge }: Readonly<{ badge: string }>) {
+  const t = useTranslations("HrAuditLog")
   const config = getActionConfig(badge)
   const Icon = config.icon
   return (
@@ -80,32 +103,42 @@ function ActionBadge({ badge }: Readonly<{ badge: string }>) {
       )}
     >
       <Icon className="size-3" strokeWidth={2} />
-      {badge}
+      {isAuditAction(badge) ? t(`action.${badge}`) : badge}
     </span>
   )
 }
 
 function ModuleBadge({ badge }: Readonly<{ badge: string }>) {
+  const t = useTranslations("HrAuditLog")
+  const moduleKey = badge.toLowerCase()
+
   return (
     <span className="border-stroke-default bg-surface-hover text-content-secondary inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] tracking-[0.4px] uppercase">
-      {badge}
+      {isKnownModule(moduleKey) ? t(`module.${moduleKey}`) : badge}
     </span>
   )
 }
 
 function ChangeText({ entry }: Readonly<{ entry: AuditEntry }>) {
+  const t = useTranslations("HrAuditLog")
+
   if (entry.field_changed && entry.old_value != null && entry.new_value != null) {
     return (
       <p className="text-content-primary text-sm leading-5">
-        <span className="font-semibold">{entry.field_changed}</span>
-        <span> changed from </span>
-        <span className="text-brand-danger font-medium line-through">
-          {entry.old_value}
-        </span>
-        <span> to </span>
-        <span className="text-brand-success font-semibold">
-          {entry.new_value}
-        </span>
+        {t.rich("fieldChanged", {
+          field: entry.field_changed,
+          oldValue: entry.old_value,
+          newValue: entry.new_value,
+          fieldTag: (chunks) => <span className="font-semibold">{chunks}</span>,
+          oldTag: (chunks) => (
+            <span className="text-brand-danger font-medium line-through">
+              {chunks}
+            </span>
+          ),
+          newTag: (chunks) => (
+            <span className="text-brand-success font-semibold">{chunks}</span>
+          ),
+        })}
       </p>
     )
   }
@@ -117,27 +150,30 @@ function ChangeText({ entry }: Readonly<{ entry: AuditEntry }>) {
 }
 
 function AuditMetaLine({ entry }: Readonly<{ entry: AuditEntry }>) {
+  const t = useTranslations("HrAuditLog")
+
   if (!entry.employee_name && !entry.changed_by_name) return null
+
+  const strong = (chunks: React.ReactNode) => (
+    <span className="text-content-primary font-medium">{chunks}</span>
+  )
 
   return (
     <p className="text-content-tertiary text-xs leading-4">
       {entry.employee_name && (
         <>
-          Employee:{" "}
-          <span className="text-content-primary font-medium">
-            {entry.employee_name}
-            {entry.employee_number && ` (${entry.employee_number})`}
-          </span>
+          {entry.employee_number
+            ? t.rich("employeeWithNumber", {
+                name: entry.employee_name,
+                number: entry.employee_number,
+                strong,
+              })
+            : t.rich("employeeLine", { name: entry.employee_name, strong })}
         </>
       )}
       {entry.employee_name && entry.changed_by_name && " · "}
       {entry.changed_by_name && (
-        <>
-          By:{" "}
-          <span className="text-content-primary font-medium">
-            {entry.changed_by_name}
-          </span>
-        </>
+        <>{t.rich("changedBy", { name: entry.changed_by_name, strong })}</>
       )}
     </p>
   )

@@ -63,17 +63,32 @@ export type BillingMilestoneRow = {
   code: string
   name: string
   due: string
+  /** Raw `due_date` (ISO) for callers that format the date themselves. */
+  dueDate: string | null
   amount: string
   pctOfTotal: string
   statusLabel: string
 }
 
+/** Milestone row mapper bound to an `Intl` locale (`useIntlLocale()`), usable in `.map()`. */
+export function billingMilestoneMapper(locale?: string) {
+  return (m: BillingMilestone) => toBillingMilestoneRow(m, locale)
+}
+
 export function mapBillingMilestone(m: BillingMilestone): BillingMilestoneRow {
+  return toBillingMilestoneRow(m)
+}
+
+function toBillingMilestoneRow(
+  m: BillingMilestone,
+  locale?: string,
+): BillingMilestoneRow {
   return {
     id: m.billing_milestone_id,
     code: m.code,
     name: m.name,
-    due: formatApiDate(m.due_date),
+    due: formatApiDate(m.due_date, locale),
+    dueDate: m.due_date ?? null,
     amount: formatMoney(Number(m.amount)),
     pctOfTotal: `${Math.round(Number(m.pct_of_total))}%`,
     statusLabel: m.status_label,

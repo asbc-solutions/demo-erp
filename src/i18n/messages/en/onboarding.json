@@ -1,1 +1,106 @@
-{}
+{
+  "Onboarding": {
+    "back": "Back",
+    "continue": "Continue",
+    "heroSubtitle": "Built for founders who move fast.",
+    "heroTitle": "Your company's operating<br></br>system.",
+    "passwordLabel": "Password",
+    "emailLabel": "E-mail",
+    "poweredBy": "Powered by <brand>Nucleus</brand>",
+    "settingUpWorkspace": "Setting up your workspace…",
+    "stepProgress": "Step {current} of {total}"
+  },
+  "OnboardingCompany": {
+    "companyNameLabel": "What's your company name?",
+    "companyNamePlaceholder": "Enter your company name",
+    "invalidPhone": "Enter a valid phone number.",
+    "phoneLabel": "What's your phone number?"
+  },
+  "OnboardingIndustry": {
+    "industries": {
+      "ai_ml": "AI/ML",
+      "e_commerce": "E-commerce",
+      "edtech": "Edtech",
+      "fintech": "Fintech",
+      "healthtech": "Healthtech",
+      "marketplace": "Marketplace",
+      "other": "Other",
+      "saas": "SaaS"
+    },
+    "industryLegend": "Industry",
+    "stageDescriptions": {
+      "established": "Mature company",
+      "growth": "Expanding",
+      "idea": "Just starting out",
+      "pre_seed": "Early stage",
+      "seed": "Funding secured",
+      "series_a": "Growing fast",
+      "series_b": "Scaling up"
+    },
+    "stageLegend": "Current stage",
+    "stages": {
+      "established": "Established",
+      "growth": "Growth",
+      "idea": "Idea",
+      "pre_seed": "Pre-Seed",
+      "seed": "Seed",
+      "series_a": "Series A",
+      "series_b": "Series B"
+    },
+    "subtitle": "We'll customize your experience.",
+    "title": "Tell us about your company."
+  },
+  "OnboardingTeamSize": {
+    "sizes": {
+      "established": "Established",
+      "growing": "Growing team",
+      "scaling": "Scaling",
+      "small": "Small team",
+      "solo": "Solo founder"
+    },
+    "subtitle": "We'll tailor the People module for your team size.",
+    "title": "How big is your team?"
+  },
+  "OnboardingTools": {
+    "descriptions": {
+      "github": "Repository sync",
+      "gusto": "Payroll & HR",
+      "notion": "Documentation",
+      "quickbooks": "Accounting",
+      "slack": "Team notifications",
+      "stripe": "Payment processing"
+    },
+    "launch": "Launch Nucleus",
+    "subtitle": "You can always add more later.",
+    "title": "Connect your tools."
+  },
+  "OnboardingSignup": {
+    "accountReady": "Your account is ready — please sign in to continue.",
+    "alreadyHaveAccount": "Already have an account? <signIn>Sign in</signIn>",
+    "confirmPasswordLabel": "Confirm password",
+    "createAccount": "Create account",
+    "creatingAccount": "Creating your account…",
+    "createFailed": "We couldn't create your account.",
+    "fullNameLabel": "Full name",
+    "namePlaceholder": "Islam Walied",
+    "passwordHint": "12+ chars, mixed case, a symbol",
+    "serverUnreachable": "Unable to reach the server. Please try again.",
+    "subtitle": "One last step before your workspace is ready.",
+    "title": "Create your account.",
+    "validation": {
+      "confirmPassword": "Please confirm your password",
+      "invalidEmail": "Invalid email address",
+      "nameRequired": "Name is required",
+      "passwordLowercase": "Password must contain a lowercase letter",
+      "passwordMinLength": "Password must be at least 12 characters",
+      "passwordSymbol": "Password must contain a symbol",
+      "passwordUppercase": "Password must contain an uppercase letter",
+      "passwordsMismatch": "Passwords do not match"
+    }
+  },
+  "OnboardingLogin": {
+    "invalidCredentials": "Invalid email or password. Please try again.",
+    "signingIn": "Signing in…",
+    "signInUnavailable": "Unable to sign in right now. Please try again."
+  }
+}

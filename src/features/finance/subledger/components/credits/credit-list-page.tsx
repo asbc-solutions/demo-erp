@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { KpiCard } from "@/src/shared/components/ui/kpi-card"
@@ -18,49 +19,56 @@ import {
   HeaderFigure,
 } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount } from "../../../lib/utils/money"
-import { SUBLEDGER_SIDES } from "../../lib/constants/sides"
 import { useSubledgerAdvances, useSubledgerNotes } from "../../lib/queries/subledger"
 import type { CreditDocument, Side } from "../../lib/types/subledger"
 import { NewNoteDialog } from "./new-note-dialog"
 
 type CreditKind = "note" | "advance"
 
-function columns(side: Side, kind: CreditKind, totals: { gross: number; unapplied: number }) {
-  const config = SUBLEDGER_SIDES[side]
+type SubledgerT = ReturnType<typeof useTranslations<"FinanceSubledger">>
+
+function columns(
+  side: Side,
+  kind: CreditKind,
+  totals: { gross: number; unapplied: number },
+  t: SubledgerT,
+  formatDate: FinanceDateFormat["formatDate"],
+) {
   const foreign = (row: CreditDocument, base: number) =>
     row.currency === "EGP" ? undefined : { value: base, currency: "EGP" }
   const list: FinanceColumn<CreditDocument>[] = [
     {
       id: "number",
-      header: kind === "note" ? "Note no." : "Reference",
+      header: kind === "note" ? t("colNoteNo") : t("colReference"),
       cell: (row) => <DocNumber>{row.number}</DocNumber>,
-      footer: "Total",
+      footer: t("total"),
     },
-    { id: "contact", header: config.contact.singular, cell: (row) => row.contact_name },
+    { id: "contact", header: t(`contactSingular.${side}`), cell: (row) => row.contact_name },
     {
       id: "date",
-      header: kind === "note" ? "Date" : config.advances.date,
+      header: kind === "note" ? t("colDate") : t(`advancesDate.${side}`),
       cell: (row) => formatDate(row.date),
     },
     {
       id: "amount",
-      header: kind === "note" ? "Amount" : "Advance",
+      header: kind === "note" ? t("colAmount") : t("colAdvance"),
       align: "end",
       cell: (row) => <Amount value={row.gross} currency={row.currency} base={foreign(row, row.gross_base)} />,
       footer: <Amount value={totals.gross} currency="EGP" />,
     },
     {
       id: "unapplied",
-      header: "Unapplied",
+      header: t("colUnapplied"),
       align: "end",
       cell: (row) => (
         <Amount value={row.outstanding} currency={row.currency} base={foreign(row, row.unapplied_base)} />
       ),
       footer: <Amount value={totals.unapplied} currency="EGP" emphasis="strong" />,
     },
-    { id: "status", header: "Status", cell: (row) => <StatusPill status={row.status} /> },
+    { id: "status", header: t("colStatus"), cell: (row) => <StatusPill status={row.status} /> },
   ]
   return list
 }
@@ -71,15 +79,26 @@ function columns(side: Side, kind: CreditKind, totals: { gross: number; unapplie
  * contact's account that waits to be applied.
  */
 function CreditListPage({ side, kind }: { side: Side; kind: CreditKind }) {
-  const config = SUBLEDGER_SIDES[side]
+  const t = useTranslations("FinanceSubledger")
+  const { formatDate } = useFinanceDateFormat()
   const notes = useSubledgerNotes(side, kind === "note")
   const advances = useSubledgerAdvances(side, kind === "advance")
   const { data, isError, refetch } = kind === "note" ? notes : advances
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const copy =
     kind === "note"
-      ? { title: config.notes.title, figure: "Unapplied (EGP)", explainer: config.notes.explainer }
-      : { title: config.advances.title, figure: config.advances.figure, explainer: config.advances.explainer }
+      ? {
+          title: t(`notesTitle.${side}`),
+          loading: t(`notesLoading.${side}`),
+          figure: t("unappliedEgp"),
+          explainer: t(`notesExplainer.${side}`),
+        }
+      : {
+          title: t(`advancesTitle.${side}`),
+          loading: t(`advancesLoading.${side}`),
+          figure: t("unappliedAdvancesEgp"),
+          explainer: t(`advancesExplainer.${side}`),
+        }
 
   return (
     <>
@@ -92,7 +111,7 @@ function CreditListPage({ side, kind }: { side: Side; kind: CreditKind }) {
           kind === "note" ? (
             <Button variant="primary" onClick={() => setDialogOpen(true)}>
               <Plus aria-hidden />
-              {config.notes.newLabel}
+              {t(`notesNew.${side}`)}
             </Button>
           ) : null
         }
@@ -101,7 +120,7 @@ function CreditListPage({ side, kind }: { side: Side; kind: CreditKind }) {
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : !data ? (
-          <div aria-busy aria-label={`Loading ${copy.title.toLowerCase()}`} className="flex flex-col gap-6">
+          <div aria-busy aria-label={copy.loading} className="flex flex-col gap-6">
             <FinanceTilesSkeleton />
             <Skeleton className="h-80 rounded-lg" />
           </div>
@@ -111,27 +130,27 @@ function CreditListPage({ side, kind }: { side: Side; kind: CreditKind }) {
               <KpiCard
                 layout="bar"
                 accent="indigo"
-                label={kind === "note" ? config.notes.count : "Open advances"}
+                label={kind === "note" ? t("notesIssued") : t("openAdvances")}
                 value={kind === "note" ? data.count : data.open_count}
               />
               {kind === "note" ? (
-                <KpiCard layout="bar" accent="teal" label="Total value (EGP)" value={formatAmount(data.total_base)} />
+                <KpiCard layout="bar" accent="teal" label={t("totalValueEgp")} value={formatAmount(data.total_base)} />
               ) : null}
-              <KpiCard layout="bar" accent="amber" label="Unapplied (EGP)" value={formatAmount(data.unapplied_base)} />
+              <KpiCard layout="bar" accent="amber" label={t("unappliedEgp")} value={formatAmount(data.unapplied_base)} />
               {kind === "advance" && data.advances_account ? (
                 <KpiCard
                   layout="bar"
                   accent="blue"
-                  label={config.advances.heldAs}
+                  label={t(`advancesHeldAs.${side}`)}
                   value={<span className="font-mono">{data.advances_account}</span>}
-                  caption={config.advances.title}
+                  caption={t(`advancesTitle.${side}`)}
                 />
               ) : null}
             </div>
             <FinanceAlert tone="info">{copy.explainer}</FinanceAlert>
             <FinanceTable
               caption={copy.title}
-              columns={columns(side, kind, { gross: data.total_base, unapplied: data.unapplied_base })}
+              columns={columns(side, kind, { gross: data.total_base, unapplied: data.unapplied_base }, t, formatDate)}
               rows={data.items}
               getRowId={(row) => row.id}
             />

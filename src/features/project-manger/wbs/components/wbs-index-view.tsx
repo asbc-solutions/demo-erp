@@ -2,6 +2,7 @@
 
 import { Link } from "@/src/i18n/navigation"
 import { ChevronRight, Layers } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
@@ -17,6 +18,7 @@ import {
 import { useWbsIndex } from "../../lib/queries/hierarchy"
 
 export function WbsIndexView() {
+  const t = useTranslations("ProjectsWbs")
   const { data: rows, isLoading, isError } = useWbsIndex()
 
   if (isLoading) {
@@ -36,7 +38,7 @@ export function WbsIndexView() {
     return (
       <Card className="p-8 text-center">
         <p className="text-brand-danger text-sm leading-5">
-          Failed to load the WBS summary. Try again later.
+          {t("loadFailed")}
         </p>
       </Card>
     )
@@ -47,22 +49,22 @@ export function WbsIndexView() {
       <div className="border-stroke-default flex items-center gap-2.5 border-b px-5 py-3.5">
         <Layers className="text-content-tertiary size-4" aria-hidden />
         <h2 className="text-content-primary text-base leading-6 font-semibold">
-          Work Breakdown by Project
+          {t("title")}
         </h2>
       </div>
 
       {!rows?.length ? (
         <p className="text-content-tertiary p-8 text-center text-sm leading-5">
-          No projects with a work breakdown structure yet.
+          {t("empty")}
         </p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Project</TableHead>
-              <TableHead className="text-end">Phases</TableHead>
-              <TableHead className="text-end">Tasks</TableHead>
-              <TableHead className="text-end">Levels</TableHead>
+              <TableHead>{t("colProject")}</TableHead>
+              <TableHead className="text-end">{t("colPhases")}</TableHead>
+              <TableHead className="text-end">{t("colTasks")}</TableHead>
+              <TableHead className="text-end">{t("colLevels")}</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -89,10 +91,10 @@ export function WbsIndexView() {
                 <TableCell>
                   <Link
                     href={`/all-project/${row.project_id}`}
-                    aria-label={`Open ${row.project_name}`}
+                    aria-label={t("openProject", { name: row.project_name })}
                     className="text-content-tertiary hover:text-brand-primary inline-flex"
                   >
-                    <ChevronRight className="size-4" aria-hidden />
+                    <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
                   </Link>
                 </TableCell>
               </TableRow>

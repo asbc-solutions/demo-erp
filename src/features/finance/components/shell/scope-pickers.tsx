@@ -1,6 +1,7 @@
 "use client"
 
 import { cva } from "class-variance-authority"
+import { useTranslations } from "next-intl"
 
 import {
   Select,
@@ -15,14 +16,6 @@ import { useFinanceScope } from "../../lib/context/finance-scope"
 import { useFinanceEntities, useFinancePeriods } from "../../lib/queries/shell"
 import type { PeriodStatus } from "../../lib/types/common"
 
-const PERIOD_STATUS_LABEL: Record<PeriodStatus, string> = {
-  open: "open",
-  closing: "closing",
-  adjusting: "adjusting",
-  closed: "closed",
-  locked: "locked",
-  future: "not open",
-}
 
 const periodDotVariants = cva("size-2 shrink-0 rounded-full", {
   variants: {
@@ -38,13 +31,14 @@ const periodDotVariants = cva("size-2 shrink-0 rounded-full", {
 })
 
 function EntityPicker({ className }: { className?: string }) {
+  const t = useTranslations("FinanceShared")
   const { scope, setEntityId } = useFinanceScope()
   const { data: entities = [] } = useFinanceEntities()
 
   return (
     <Select value={scope.entityId} onValueChange={setEntityId}>
-      <SelectTrigger aria-label="Entity" className={cn("h-9 w-72", className)}>
-        <SelectValue placeholder="Entity" />
+      <SelectTrigger aria-label={t("entity")} className={cn("h-9 w-72", className)}>
+        <SelectValue placeholder={t("entity")} />
       </SelectTrigger>
       <SelectContent>
         {entities.map((entity) => (
@@ -59,6 +53,7 @@ function EntityPicker({ className }: { className?: string }) {
 
 /** Period select plus a status dot, e.g. `Apr 2026 · open ●`. */
 function PeriodPicker({ className }: { className?: string }) {
+  const t = useTranslations("FinanceShared")
   const { scope, setPeriod } = useFinanceScope()
   const { data: periods = [] } = useFinancePeriods()
   const current = periods.find((period) => period.id === scope.period)
@@ -66,20 +61,20 @@ function PeriodPicker({ className }: { className?: string }) {
   return (
     <div data-slot="period-picker" className={cn("flex items-center gap-2.5", className)}>
       <Select value={scope.period} onValueChange={setPeriod}>
-        <SelectTrigger aria-label="Period" className="h-9 w-48">
-          <SelectValue placeholder="Period" />
+        <SelectTrigger aria-label={t("period")} className="h-9 w-48">
+          <SelectValue placeholder={t("period")} />
         </SelectTrigger>
         <SelectContent>
           {periods.map((period) => (
             <SelectItem key={period.id} value={period.id}>
-              {period.label} · {PERIOD_STATUS_LABEL[period.status]}
+              {period.label} · {t(`periodStatus.${period.status}`)}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
       {current ? (
         <span className={periodDotVariants({ status: current.status })}>
-          <span className="sr-only">Period is {PERIOD_STATUS_LABEL[current.status]}</span>
+          <span className="sr-only">{t("periodIs", { status: t(`periodStatus.${current.status}`) })}</span>
         </span>
       ) : null}
     </div>

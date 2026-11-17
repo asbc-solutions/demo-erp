@@ -1,16 +1,18 @@
 "use client"
 
 import { MessagesSquare } from "lucide-react"
+import { useTranslations } from "next-intl"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Card } from "@/src/shared/components/ui/card"
 
 import { usePortfolioActivity } from "../../lib/queries/collaboration"
 
-function formatTime(value: string): string {
+function formatTime(value: string, locale: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ""
-  return date.toLocaleString("en-US", {
+  return date.toLocaleString(locale, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -20,6 +22,8 @@ function formatTime(value: string): string {
 
 /** "All projects" scope of Team Chat — the cross-project team feed. */
 export function PortfolioActivityView() {
+  const t = useTranslations("ProjectsTeamChat")
+  const locale = useIntlLocale()
   const { data, isLoading, isError } = usePortfolioActivity(50)
   const items = data ?? []
 
@@ -28,11 +32,9 @@ export function PortfolioActivityView() {
       <div className="border-stroke-default flex items-center gap-2 border-b px-5 py-3">
         <MessagesSquare className="text-content-tertiary size-4" aria-hidden />
         <span className="text-content-primary text-sm font-semibold">
-          Team Activity
+          {t("title")}
         </span>
-        <span className="text-content-tertiary text-xs">
-          Latest messages across every project — pick a project to reply
-        </span>
+        <span className="text-content-tertiary text-xs">{t("subtitle")}</span>
       </div>
 
       {isLoading ? (
@@ -44,14 +46,14 @@ export function PortfolioActivityView() {
       ) : isError ? (
         <div className="flex flex-1 items-center justify-center">
           <p className="text-content-tertiary text-sm">
-            Couldn&apos;t load the team feed.
+            {t("loadFailed")}
           </p>
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-16 text-center">
           <MessagesSquare className="text-content-quaternary size-8" aria-hidden />
           <p className="text-content-tertiary text-sm">
-            No team activity yet.
+            {t("empty")}
           </p>
         </div>
       ) : (
@@ -73,7 +75,7 @@ export function PortfolioActivityView() {
                     {item.project_name}
                   </span>
                   <span className="text-content-quaternary text-[11px]">
-                    {formatTime(item.occurred_at)}
+                    {formatTime(item.occurred_at, locale)}
                   </span>
                 </div>
                 <p className="text-content-secondary text-[13px] leading-[20px] whitespace-pre-wrap">

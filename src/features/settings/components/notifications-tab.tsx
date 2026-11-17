@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -22,6 +23,9 @@ import { SettingsPageSpinner } from "./shared/settings-loading"
 function NotificationsTabForm({
   initialPreferences,
 }: Readonly<{ initialPreferences: NotificationPreference[] }>) {
+  const t = useTranslations("SettingsNotifications")
+  const tShared = useTranslations("SettingsShared")
+  const tCommon = useTranslations("Common")
   const savePreferences = useSaveNotificationPreferences()
   const [preferences, setPreferences] = useState(initialPreferences)
 
@@ -47,9 +51,9 @@ function NotificationsTabForm({
       {
         onSuccess: (saved) => {
           setPreferences(saved)
-          toast.success("Notification preferences saved")
+          toast.success(t("saved"))
         },
-        onError: (err) => toastMutationError(err, "Failed to save preferences"),
+        onError: (err) => toastMutationError(err, t("saveFailed"), tShared),
       },
     )
   }
@@ -58,10 +62,10 @@ function NotificationsTabForm({
     <Card variant="elevated" className="gap-6 p-6">
       <div className="flex flex-col gap-1.5">
         <h3 className="text-content-primary text-[14px] leading-[22.4px] font-semibold">
-          Notification Preferences
+          {t("title")}
         </h3>
         <p className="text-content-tertiary text-[12px] leading-[18px]">
-          Choose what you want to be notified about
+          {t("description")}
         </p>
       </div>
 
@@ -97,7 +101,7 @@ function NotificationsTabForm({
           onClick={handleCancel}
           disabled={savePreferences.isPending}
         >
-          Cancel
+          {tCommon("cancel")}
         </Button>
         <Button
           type="button"
@@ -109,7 +113,7 @@ function NotificationsTabForm({
           {savePreferences.isPending ? (
             <Loader2 className="size-4 animate-spin" aria-hidden />
           ) : null}
-          Save Preferences
+          {t("save")}
         </Button>
       </div>
     </Card>
@@ -117,6 +121,7 @@ function NotificationsTabForm({
 }
 
 export function NotificationsTab() {
+  const t = useTranslations("SettingsNotifications")
   const { data, isLoading, isError, refetch } = useNotificationPreferences()
 
   if (isLoading) {
@@ -126,7 +131,7 @@ export function NotificationsTab() {
   if (isError || !data) {
     return (
       <SettingsErrorState
-        message="Failed to load notification preferences."
+        message={t("loadError")}
         onRetry={() => void refetch()}
       />
     )

@@ -1,19 +1,20 @@
 import { Briefcase, Check, DollarSign, UserRound, type LucideIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
 export type AddEmployeeStepId = "personal" | "employment" | "compensation"
 
+// Step labels live in `HrAddEmployee.step.<id>`.
 type Step = Readonly<{
   id: AddEmployeeStepId
-  label: string
   icon: LucideIcon
 }>
 
 const STEPS: Step[] = [
-  { id: "personal", label: "Personal Info", icon: UserRound },
-  { id: "employment", label: "Employment", icon: Briefcase },
-  { id: "compensation", label: "Compensation", icon: DollarSign },
+  { id: "personal", icon: UserRound },
+  { id: "employment", icon: Briefcase },
+  { id: "compensation", icon: DollarSign },
 ]
 
 export const ADD_EMPLOYEE_STEPS = STEPS
@@ -27,6 +28,7 @@ export function AddEmployeeStepper({
   current,
   steps = STEPS,
 }: AddEmployeeStepperProps) {
+  const t = useTranslations("HrAddEmployee")
   const currentIndex = steps.findIndex((step) => step.id === current)
 
   return (
@@ -69,7 +71,7 @@ export function AddEmployeeStepper({
                   !isCurrent && !isComplete && "text-content-tertiary",
                 )}
               >
-                {step.label}
+                {t(`step.${step.id}`)}
               </span>
             </div>
 

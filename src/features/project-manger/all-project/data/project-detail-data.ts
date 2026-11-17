@@ -5,15 +5,15 @@ import type { AvatarColor, ProgressColor } from "./all-projects-data"
 /* ================================================================== */
 
 export const PROJECT_TABS = [
-  "Overview",
-  "WBS",
-  "Schedule",
-  "Resources",
-  "Budget",
-  "Tasks",
-  "Documents",
-  "Chat",
-  "Reports",
+  "overview",
+  "wbs",
+  "schedule",
+  "resources",
+  "budget",
+  "tasks",
+  "documents",
+  "chat",
+  "reports",
 ] as const
 
 export type ProjectTab = (typeof PROJECT_TABS)[number]
@@ -25,6 +25,13 @@ export type ProjectTab = (typeof PROJECT_TABS)[number]
 export type PhaseState = "done" | "active" | "todo"
 
 export type HealthState = "On Track" | "At Risk" | "Critical"
+
+/** Health state → `ProjectsShared.health` message key. */
+export const HEALTH_STATE_KEY = {
+  "On Track": "onTrack",
+  "At Risk": "atRisk",
+  Critical: "critical",
+} as const satisfies Record<HealthState, string>
 
 export type MilestoneKind = "billing" | "internal"
 
@@ -39,6 +46,16 @@ export type WbsStatus =
   | "At Risk"
   | "Blocked"
   | "Planned"
+
+/** WBS / status-pill vocabulary → `ProjectsShared.status` message key. */
+export const WBS_STATUS_KEY = {
+  "On Track": "onTrack",
+  Completed: "completed",
+  "In Progress": "inProgress",
+  "At Risk": "atRisk",
+  Blocked: "blocked",
+  Planned: "planned",
+} as const satisfies Record<WbsStatus, string>
 
 export type WbsNode = {
   id: string
@@ -74,12 +91,21 @@ export type GanttRow = {
   critical?: boolean
 }
 
-export const GANTT_LEGEND: { label: string; color: ProgressColor; milestone?: boolean }[] = [
-  { label: "Phase", color: "indigo" },
-  { label: "Task", color: "emerald" },
-  { label: "Critical Path", color: "red" },
-  { label: "Milestone", color: "violet", milestone: true },
-  { label: "Billing milestone", color: "amber", milestone: true },
+export const GANTT_LEGEND: {
+  labelKey:
+    | "legendPhase"
+    | "legendTask"
+    | "legendCriticalPath"
+    | "legendMilestone"
+    | "legendBillingMilestone"
+  color: ProgressColor
+  milestone?: boolean
+}[] = [
+  { labelKey: "legendPhase", color: "indigo" },
+  { labelKey: "legendTask", color: "emerald" },
+  { labelKey: "legendCriticalPath", color: "red" },
+  { labelKey: "legendMilestone", color: "violet", milestone: true },
+  { labelKey: "legendBillingMilestone", color: "amber", milestone: true },
 ]
 
 /* ================================================================== */
@@ -87,6 +113,14 @@ export const GANTT_LEGEND: { label: string; color: ProgressColor; milestone?: bo
 /* ================================================================== */
 
 export type TaskPriority = "Critical" | "High" | "Medium" | "Low"
+
+/** Priority → `ProjectsShared.priority` message key. */
+export const TASK_PRIORITY_KEY = {
+  Critical: "critical",
+  High: "high",
+  Medium: "medium",
+  Low: "low",
+} as const satisfies Record<TaskPriority, string>
 
 export type KanbanTask = {
   id: string
@@ -117,12 +151,15 @@ export type KanbanColumn = {
 /* Documents                                                          */
 /* ================================================================== */
 
+/** Library folders; each is a `ProjectsProjectDetail.docFolder` message key. */
 export const DOC_FOLDERS = [
-  "All Documents",
-  "Contracts",
-  "Drawings",
-  "Specifications",
-  "Approvals",
-  "Reports",
-]
+  "all",
+  "contracts",
+  "drawings",
+  "specifications",
+  "approvals",
+  "reports",
+] as const
+
+export type DocFolderKey = (typeof DOC_FOLDERS)[number]
 export const DOC_TAGS = ["#Contract", "#BMS", "#Energy", "#Approval", "#Risk"]

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -29,6 +30,7 @@ type NewDealDialogProps = {
 }
 
 export function NewDealDialog({ open, onOpenChange }: NewDealDialogProps) {
+  const t = useTranslations("SalesShared")
   const [name, setName] = useState("")
   const [company, setCompany] = useState("")
   const [amount, setAmount] = useState("")
@@ -63,18 +65,18 @@ export function NewDealDialog({ open, onOpenChange }: NewDealDialogProps) {
       <DialogContent className="max-w-[440px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-[18px] leading-7 font-semibold">
-            New Deal
+            {t("newDeal")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <DialogBody className="gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nd_name" className="text-content-tertiary text-xs">
-                Deal Name *
+                {t("dealNameRequired")}
               </Label>
               <Input
                 id="nd_name"
-                placeholder="Enterprise License"
+                placeholder={t("dealNamePlaceholder")}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="bg-surface-page h-10 text-[13px]"
@@ -83,11 +85,11 @@ export function NewDealDialog({ open, onOpenChange }: NewDealDialogProps) {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nd_company" className="text-content-tertiary text-xs">
-                Company *
+                {t("companyRequired")}
               </Label>
               <Input
                 id="nd_company"
-                placeholder="Acme Corp"
+                placeholder={t("companyPlaceholder")}
                 value={company}
                 onChange={(event) => setCompany(event.target.value)}
                 className="bg-surface-page h-10 text-[13px]"
@@ -96,7 +98,7 @@ export function NewDealDialog({ open, onOpenChange }: NewDealDialogProps) {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nd_amount" className="text-content-tertiary text-xs">
-                Amount
+                {t("amount")}
               </Label>
               <Input
                 id="nd_amount"
@@ -110,15 +112,15 @@ export function NewDealDialog({ open, onOpenChange }: NewDealDialogProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-content-tertiary text-xs">Stage</Label>
+              <Label className="text-content-tertiary text-xs">{t("stage")}</Label>
               <Select value={stage} onValueChange={setStage}>
                 <SelectTrigger className="bg-surface-page h-10 text-[13px]">
-                  <SelectValue placeholder="Select stage" />
+                  <SelectValue placeholder={t("selectStage")} />
                 </SelectTrigger>
                 <SelectContent>
                   {SALES_STAGES.map((value) => (
                     <SelectItem key={value} value={value}>
-                      {value}
+                      {t(`stageName.${value}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -127,7 +129,7 @@ export function NewDealDialog({ open, onOpenChange }: NewDealDialogProps) {
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="nd_date" className="text-content-tertiary text-xs">
-                Close Date
+                {t("closeDate")}
               </Label>
               <Input
                 id="nd_date"
@@ -139,10 +141,10 @@ export function NewDealDialog({ open, onOpenChange }: NewDealDialogProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-content-tertiary text-xs">Owner</Label>
+              <Label className="text-content-tertiary text-xs">{t("owner")}</Label>
               <Select value={owner} onValueChange={setOwner}>
                 <SelectTrigger className="bg-surface-page h-10 text-[13px]">
-                  <SelectValue placeholder="Assign owner" />
+                  <SelectValue placeholder={t("assignOwner")} />
                 </SelectTrigger>
                 <SelectContent>
                   {SALES_OWNERS.map((value) => (
@@ -161,7 +163,7 @@ export function NewDealDialog({ open, onOpenChange }: NewDealDialogProps) {
               className="w-full text-[12px]"
               disabled={!isValid}
             >
-              Add Deal
+              {t("addDeal")}
             </Button>
           </DialogFooter>
         </form>

@@ -1,6 +1,7 @@
 "use client"
 
 import { Building2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -87,6 +88,7 @@ const HEAD_CLASS =
 // ─── Department card ────────────────────────────────────────────────────────────
 
 function DeptCard({ summary }: Readonly<{ summary: DeptSummary }>) {
+  const t = useTranslations("HrTraining")
   return (
     <Card variant="elevated" className="gap-3 p-6">
       <div className="flex items-center justify-between gap-2">
@@ -100,7 +102,7 @@ function DeptCard({ summary }: Readonly<{ summary: DeptSummary }>) {
       </div>
       <Progress value={summary.rate} color={rateColor(summary.rate)} />
       <span className="text-xs leading-4 text-content-tertiary">
-        {summary.passed} of {summary.total} courses passed
+        {t("coursesPassed", { passed: summary.passed, total: summary.total })}
       </span>
     </Card>
   )
@@ -109,6 +111,7 @@ function DeptCard({ summary }: Readonly<{ summary: DeptSummary }>) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function CompletionsTab() {
+  const t = useTranslations("HrTraining")
   const summaries = buildDeptSummaries(RECORDS)
 
   return (
@@ -124,10 +127,10 @@ export function CompletionsTab() {
       <Card variant="elevated" className="gap-0">
         <div className="flex flex-col gap-1 p-6">
           <h3 className="text-lg leading-7 font-semibold text-content-primary">
-            Training Completions
+            {t("trainingCompletions")}
           </h3>
           <p className="text-sm leading-5 text-content-tertiary">
-            Track individual course completions and scores.
+            {t("trainingCompletionsSubtitle")}
           </p>
         </div>
 
@@ -135,11 +138,11 @@ export function CompletionsTab() {
           <Table>
             <TableHeader className="bg-transparent">
               <TableRow className="hover:bg-transparent">
-                <TableHead className={HEAD_CLASS}>Employee</TableHead>
-                <TableHead className={HEAD_CLASS}>Department</TableHead>
-                <TableHead className={HEAD_CLASS}>Course</TableHead>
-                <TableHead className={HEAD_CLASS}>Completed</TableHead>
-                <TableHead className={HEAD_CLASS}>Status</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colEmployee")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colDepartment")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colCourse")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colCompleted")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colStatus")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -169,7 +172,7 @@ export function CompletionsTab() {
                     </TableCell>
                     <TableCell>
                       {inProgress ? (
-                        <Badge variant="warning">In Progress</Badge>
+                        <Badge variant="warning">{t("inProgress")}</Badge>
                       ) : (
                         <Badge variant={passed ? "success" : "danger"}>
                           {rec.score}%

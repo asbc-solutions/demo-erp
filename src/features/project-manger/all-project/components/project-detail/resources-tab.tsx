@@ -2,7 +2,9 @@
 
 import { useMemo } from "react"
 import { AlertCircle, Clock, Users, Zap, type LucideIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
@@ -42,6 +44,9 @@ type StatTile = {
 }
 
 export function ResourcesTab({ projectId }: { projectId: string }) {
+  const t = useTranslations("ProjectsProjectDetail")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const { data, isLoading, isError } = useProjectUtilization(projectId)
   const rows = useMemo(() => data ?? [], [data])
   const summary = useMemo(() => summarizeUtilization(rows), [rows])
@@ -49,36 +54,39 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
   const stats: StatTile[] = [
     {
       id: "total",
-      label: "Assigned Resources",
+      label: t("resStatAssigned"),
       value: String(summary.total),
-      caption: "On this project",
+      caption: t("resStatAssignedCaption"),
       icon: Users,
       border: "border-s-brand-primary",
       tile: "bg-brand-primary/10 text-brand-primary",
     },
     {
       id: "util",
-      label: "Avg Allocation",
+      label: t("resStatAvgAllocation"),
       value: `${summary.avgAllocation}%`,
-      caption: summary.avgAllocation > 100 ? "Over capacity" : "Across assignees",
+      caption:
+        summary.avgAllocation > 100
+          ? t("resStatOverCapacity")
+          : t("resStatAcrossAssignees"),
       icon: Zap,
       border: "border-s-brand-success",
       tile: "bg-brand-success/10 text-brand-success",
     },
     {
       id: "over",
-      label: "Overloaded",
+      label: t("resStatOverloaded"),
       value: String(summary.overloaded),
-      caption: ">100% allocated",
+      caption: t("resStatOverloadedCaption"),
       icon: AlertCircle,
       border: "border-s-brand-danger",
       tile: "bg-brand-danger/10 text-brand-danger",
     },
     {
       id: "hours",
-      label: "Planned Hours",
-      value: summary.totalPlannedHours.toLocaleString(),
-      caption: "Total committed",
+      label: t("resStatPlannedHours"),
+      value: summary.totalPlannedHours.toLocaleString(locale),
+      caption: t("resStatPlannedHoursCaption"),
       icon: Clock,
       border: "border-s-violet-500",
       tile: "bg-violet-500/10 text-violet-500",
@@ -90,15 +98,13 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-content-primary text-xl leading-7 font-bold tracking-tight">
-            Resource Planner
+            {t("resourcesTitle")}
           </h2>
-          <p className="text-content-tertiary text-sm">
-            Allocation and committed hours across this project&apos;s assignees
-          </p>
+          <p className="text-content-tertiary text-sm">{t("resourcesSubtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="primary" className="h-9 gap-2 px-3 text-[12px]">
-            + Assign Resource
+            {t("assignResource")}
           </Button>
         </div>
       </div>
@@ -137,12 +143,12 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead>Resource</TableHead>
-              <TableHead>Employee #</TableHead>
-              <TableHead>Allocation</TableHead>
-              <TableHead>Planned Hours</TableHead>
-              <TableHead>Assignments</TableHead>
-              <TableHead className="text-end">Status</TableHead>
+              <TableHead>{t("colResource")}</TableHead>
+              <TableHead>{t("colEmployeeNumber")}</TableHead>
+              <TableHead>{t("colAllocation")}</TableHead>
+              <TableHead>{t("colPlannedHours")}</TableHead>
+              <TableHead>{t("colAssignments")}</TableHead>
+              <TableHead className="text-end">{tCommon("status")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -161,7 +167,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
                   colSpan={6}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  Couldn&apos;t load resource utilization.
+                  {t("utilizationLoadFailed")}
                 </TableCell>
               </TableRow>
             )}
@@ -172,7 +178,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
                   colSpan={6}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  No resources assigned to this project yet.
+                  {t("noResourcesOnProject")}
                 </TableCell>
               </TableRow>
             )}
@@ -217,7 +223,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
                       </div>
                     </TableCell>
                     <TableCell className="text-content-secondary text-[13px] tabular-nums">
-                      {row.total_planned_hours}h
+                      {t("hoursShort", { hours: row.total_planned_hours })}
                     </TableCell>
                     <TableCell className="text-content-secondary text-[13px] tabular-nums">
                       {row.assignment_count}
@@ -231,7 +237,7 @@ export function ResourcesTab({ projectId }: { projectId: string }) {
                             : "bg-brand-success/10 text-brand-success",
                         )}
                       >
-                        {over ? "Overloaded" : "Healthy"}
+                        {over ? t("overloaded") : t("healthy")}
                       </span>
                     </TableCell>
                   </TableRow>

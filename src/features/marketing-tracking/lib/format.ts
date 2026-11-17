@@ -1,23 +1,27 @@
+import type { useTranslations } from "next-intl"
+
 import type { ModuleId } from "@/src/shared/lib/constants/modules"
 
 import type { VisitorRecord } from "./types"
 
-export function formatDuration(ms: number): string {
-  if (!ms || ms < 1_000) return "0s"
+export type FormatTranslator = ReturnType<typeof useTranslations<"MarketingTrackingFormat">>
+
+export function formatDuration(ms: number, t: FormatTranslator): string {
+  if (!ms || ms < 1_000) return t("seconds", { seconds: 0 })
   const totalSeconds = Math.round(ms / 1_000)
   const hours = Math.floor(totalSeconds / 3_600)
   const minutes = Math.floor((totalSeconds % 3_600) / 60)
   const seconds = totalSeconds % 60
-  if (hours > 0) return `${hours}h ${minutes}m`
-  if (minutes > 0) return `${minutes}m ${seconds}s`
-  return `${seconds}s`
+  if (hours > 0) return t("hoursMinutes", { hours, minutes })
+  if (minutes > 0) return t("minutesSeconds", { minutes, seconds })
+  return t("seconds", { seconds })
 }
 
-export function formatDateTime(iso: string | null): string {
+export function formatDateTime(iso: string | null, locale: string): string {
   if (!iso) return "—"
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return "—"
-  return date.toLocaleString(undefined, {
+  return date.toLocaleString(locale, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -25,18 +29,18 @@ export function formatDateTime(iso: string | null): string {
   })
 }
 
-export function formatRelative(iso: string | null): string {
+export function formatRelative(iso: string | null, t: FormatTranslator): string {
   if (!iso) return "—"
   const then = new Date(iso).getTime()
   if (Number.isNaN(then)) return "—"
   const diff = Date.now() - then
-  if (diff < 60_000) return "just now"
+  if (diff < 60_000) return t("justNow")
   const minutes = Math.floor(diff / 60_000)
-  if (minutes < 60) return `${minutes}m ago`
+  if (minutes < 60) return t("minutesAgo", { count: minutes })
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return t("hoursAgo", { count: hours })
   const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  return t("daysAgo", { count: days })
 }
 
 export function initialsFor(visitor: VisitorRecord): string {
@@ -47,8 +51,8 @@ export function initialsFor(visitor: VisitorRecord): string {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
 }
 
-export function displayName(visitor: VisitorRecord): string {
-  return visitor.name ?? visitor.email ?? "Anonymous visitor"
+export function displayName(visitor: VisitorRecord, t: FormatTranslator): string {
+  return visitor.name ?? visitor.email ?? t("anonymousVisitor")
 }
 
 export function modulesExplored(visitor: VisitorRecord): number {

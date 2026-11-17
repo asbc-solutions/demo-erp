@@ -8,6 +8,7 @@ import {
   Package,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Card } from "@/src/shared/components/ui/card"
@@ -65,35 +66,75 @@ const STAT_ACCENT: Record<
   },
 }
 
-const TABS: { id: MaterialTab; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "reserved", label: "Reserved" },
-  { id: "issued", label: "Issued" },
-  { id: "pending_procurement", label: "Pending Procurement" },
-]
+type InventoryStatId = "total" | "reserved-value" | "issued-value" | "pending"
+
+const TABS = [
+  "all",
+  "reserved",
+  "issued",
+  "pending_procurement",
+] as const satisfies readonly MaterialTab[]
 
 export function MaterialsInventoryModule() {
+  const t = useTranslations("ProjectsInventory")
+  const tCommon = useTranslations("Common")
+
   // Summary cards are portfolio-wide; the detail table is scoped to a project.
   const summaryQuery = useInventorySummary()
   const stats = buildInventoryStats(summaryQuery.data)
+  const summary = summaryQuery.data
+
+  const statCaption = (id: InventoryStatId): string => {
+    switch (id) {
+      case "total":
+        return summary
+          ? t("statCaption.total", {
+              reserved: summary.reserved_count,
+              issued: summary.issued_count,
+            })
+          : ""
+      case "reserved-value":
+        return t("statCaption.reservedValue")
+      case "issued-value":
+        return t("statCaption.issuedValue")
+      case "pending":
+        return summary
+          ? t("statCaption.pending", { count: summary.late_sku_count })
+          : ""
+    }
+  }
+
+  const statLabel = (id: InventoryStatId): string => {
+    switch (id) {
+      case "total":
+        return t("statLabel.total")
+      case "reserved-value":
+        return t("statLabel.reservedValue")
+      case "issued-value":
+        return t("statLabel.issuedValue")
+      case "pending":
+        return t("statLabel.pending")
+    }
+  }
 
   const { projects, projectId, setProjectId, isLoading: projectsLoading } =
     useProjectScope()
   const [tab, setTab] = useState<MaterialTab>("all")
 
   const materialsQuery = useProjectMaterials(projectId ?? "", tab)
-  const rows = (materialsQuery.data ?? []).map(mapMaterialRow)
+  const rows = (materialsQuery.data ?? []).map((item) => ({
+    ...mapMaterialRow(item),
+    status: item.status,
+  }))
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-content-primary text-2xl leading-8 font-bold tracking-tight">
-            Materials &amp; Inventory
+            {t("title")}
           </h1>
-          <p className="text-content-tertiary text-sm">
-            Portfolio stock, reservations, goods issues, and procurement
-          </p>
+          <p className="text-content-tertiary text-sm">{t("subtitle")}</p>
         </div>
         <ProjectScopeBar
           projects={projects}
@@ -108,6 +149,7 @@ export function MaterialsInventoryModule() {
         {stats.map((stat) => {
           const Icon = STAT_ICON[stat.icon]
           const accent = STAT_ACCENT[stat.accent]
+          const statId = stat.id as InventoryStatId
           return (
             <Card
               key={stat.id}
@@ -127,13 +169,13 @@ export function MaterialsInventoryModule() {
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-content-tertiary text-[11px] font-medium tracking-wide uppercase">
-                  {stat.label}
+                  {statLabel(statId)}
                 </span>
                 <span className="text-content-primary text-xl leading-[25px] font-bold">
                   {summaryQuery.isLoading ? "…" : stat.value}
                 </span>
                 <span className="text-content-tertiary text-[12px]">
-                  {stat.caption}
+                  {statCaption(statId)}
                 </span>
               </div>
             </Card>
@@ -146,17 +188,17 @@ export function MaterialsInventoryModule() {
         <div className="border-stroke-default flex flex-wrap items-center gap-1 border-b px-4">
           {TABS.map((item) => (
             <button
-              key={item.id}
+              key={item}
               type="button"
-              onClick={() => setTab(item.id)}
+              onClick={() => setTab(item)}
               className={cn(
                 "-mb-px border-b-2 px-3 py-3 text-[13px] font-medium transition-colors",
-                tab === item.id
+                tab === item
                   ? "border-brand-primary text-brand-primary"
                   : "text-content-tertiary hover:text-content-primary border-transparent",
               )}
             >
-              {item.label}
+              {t(`tab.${item}`)}
             </button>
           ))}
         </div>
@@ -164,15 +206,15 @@ export function MaterialsInventoryModule() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead>Code</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>WBS</TableHead>
-              <TableHead>Reserved</TableHead>
-              <TableHead>Issued</TableHead>
-              <TableHead>Stock Type</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Unit Cost</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{t("colCode")}</TableHead>
+              <TableHead>{tCommon("description")}</TableHead>
+              <TableHead>{t("colWbs")}</TableHead>
+              <TableHead>{t("colReserved")}</TableHead>
+              <TableHead>{t("colIssued")}</TableHead>
+              <TableHead>{t("colStockType")}</TableHead>
+              <TableHead>{t("colLocation")}</TableHead>
+              <TableHead>{t("colUnitCost")}</TableHead>
+              <TableHead>{tCommon("status")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -182,7 +224,7 @@ export function MaterialsInventoryModule() {
                   colSpan={9}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  Select a project to view its material reservations.
+                  {t("selectProject")}
                 </TableCell>
               </TableRow>
             ) : materialsQuery.isLoading ? (
@@ -191,7 +233,7 @@ export function MaterialsInventoryModule() {
                   colSpan={9}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  Loading materials…
+                  {t("loading")}
                 </TableCell>
               </TableRow>
             ) : materialsQuery.isError ? (
@@ -200,7 +242,7 @@ export function MaterialsInventoryModule() {
                   colSpan={9}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  Couldn&apos;t load materials.
+                  {t("loadError")}
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
@@ -209,7 +251,7 @@ export function MaterialsInventoryModule() {
                   colSpan={9}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  No materials in this view.
+                  {t("empty")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -242,7 +284,9 @@ export function MaterialsInventoryModule() {
                     {m.unitCost}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={m.statusTone}>{m.statusLabel}</Badge>
+                    <Badge variant={m.statusTone}>
+                      {t(`reservationStatus.${m.status}`)}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))

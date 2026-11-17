@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "@/src/i18n/navigation"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -22,47 +23,53 @@ import {
 import { ColumnChooser, GroupBySelect } from "../../../components/shared/filter-bar"
 import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../components/shared/page-header"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount } from "../../../lib/utils/money"
 import { useMapItems, useRenewSeal, useResubmitGroup, useSubmitBatch } from "../../lib/mutations/tax"
 import { useEInvoicing } from "../../lib/queries/tax"
-import type { EDocument, EDocumentStatus } from "../../lib/types/tax"
-import { EDocumentStatusPill } from "./e-document-status"
+import type { EDocument, EDocumentStatus, TaxMessageKey, TaxTranslator } from "../../lib/types/tax"
+import { EDocumentStatusPill, eDocumentStatusLabelKey } from "./e-document-status"
 
-const FILTERS: { value: "all" | EDocumentStatus; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "not_sent", label: "Not sent" },
-  { value: "submitted", label: "Submitted" },
-  { value: "valid", label: "Valid" },
-  { value: "rejected", label: "Rejected" },
-  { value: "cancel_requested", label: "Cancellation requested" },
-  { value: "cancelled", label: "Cancelled" },
+const FILTERS: { value: "all" | EDocumentStatus; labelKey: TaxMessageKey }[] = [
+  { value: "all", labelKey: "all" },
+  { value: "not_sent", labelKey: "eStatusNotSent" },
+  { value: "submitted", labelKey: "eStatusSubmitted" },
+  { value: "valid", labelKey: "eStatusValid" },
+  { value: "rejected", labelKey: "eStatusRejected" },
+  { value: "cancel_requested", labelKey: "eStatusCancelRequested" },
+  { value: "cancelled", labelKey: "eStatusCancelled" },
 ]
 
-const GROUP_OPTIONS = [
-  { value: "none", label: "No grouping" },
-  { value: "status", label: "Status" },
-  { value: "buyer", label: "Buyer" },
+const GROUP_OPTIONS: { value: string; labelKey: TaxMessageKey }[] = [
+  { value: "none", labelKey: "noGrouping" },
+  { value: "status", labelKey: "status" },
+  { value: "buyer", labelKey: "buyer" },
 ]
 
-const COLUMNS: FinanceColumn<EDocument>[] = [
-  { id: "number", header: "Document", cell: (row) => <DocNumber>{row.number}</DocNumber> },
-  { id: "type", header: "Type", hideable: true, cell: (row) => (row.type === "credit_note" ? "credit note" : "invoice") },
-  { id: "buyer", header: "Buyer", cell: (row) => row.buyer_name },
-  { id: "issued", header: "Issued", hideable: true, cell: (row) => formatDate(row.issued) },
-  { id: "total", header: "Total", align: "end", cell: (row) => <Amount value={row.total} currency={row.currency} /> },
-  {
-    id: "uuid",
-    header: "Submission UUID",
-    hideable: true,
-    cell: (row) => <span className="text-content-secondary font-mono text-xs">{row.submission_uuid ? `${row.submission_uuid.slice(0, 12)}…` : "—"}</span>,
-  },
-  { id: "attempts", header: "Attempts", align: "end", hideable: true, cell: (row) => row.attempts },
-  { id: "status", header: "Status", cell: (row) => <EDocumentStatusPill status={row.status} /> },
-]
+function buildColumns(t: TaxTranslator, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<EDocument>[] {
+  return [
+    { id: "number", header: t("document"), cell: (row) => <DocNumber>{row.number}</DocNumber> },
+    { id: "type", header: t("type"), hideable: true, cell: (row) => (row.type === "credit_note" ? t("creditNote") : t("invoice")) },
+    { id: "buyer", header: t("buyer"), cell: (row) => row.buyer_name },
+    { id: "issued", header: t("issued"), hideable: true, cell: (row) => formatDate(row.issued) },
+    { id: "total", header: t("total"), align: "end", cell: (row) => <Amount value={row.total} currency={row.currency} /> },
+    {
+      id: "uuid",
+      header: t("submissionUuid"),
+      hideable: true,
+      cell: (row) => <span className="text-content-secondary font-mono text-xs">{row.submission_uuid ? `${row.submission_uuid.slice(0, 12)}…` : "—"}</span>,
+    },
+    { id: "attempts", header: t("attempts"), align: "end", hideable: true, cell: (row) => row.attempts },
+    { id: "status", header: t("status"), cell: (row) => <EDocumentStatusPill status={row.status} /> },
+  ]
+}
 
 /** 07.03 · E-invoicing console — what the authority accepted, what it held up, and why. */
 function EInvoicingPage() {
+  const t = useTranslations("FinanceTax")
+  const { formatDate } = useFinanceDateFormat()
+  const columns = React.useMemo(() => buildColumns(t, formatDate), [t, formatDate])
   const router = useRouter()
   const [authority, setAuthority] = React.useState<"ETA" | "ZATCA">("ETA")
   const { data, isError, refetch } = useEInvoicing(authority)
@@ -80,8 +87,8 @@ function EInvoicingPage() {
   const groups: FinanceTableGroup<EDocument>[] | undefined = React.useMemo(() => {
     if (groupBy === "none") return undefined
     const keyOf = (row: EDocument) => (groupBy === "status" ? row.status : row.buyer_name)
-    return Array.from(new Set(items.map(keyOf))).map((key) => ({ id: key, label: key.replace(/_/g, " "), rows: items.filter((row) => keyOf(row) === key) }))
-  }, [items, groupBy])
+    return Array.from(new Set(items.map(keyOf))).map((key) => ({ id: key, label: groupBy === "status" ? t(eDocumentStatusLabelKey(key as EDocumentStatus)) : key, rows: items.filter((row) => keyOf(row) === key) }))
+  }, [items, groupBy, t])
 
   const state = data?.state
   const count = (value: string) => (value === "all" ? (data?.items.length ?? 0) : (data?.items.filter((row) => row.status === value).length ?? 0))
@@ -89,8 +96,8 @@ function EInvoicingPage() {
   return (
     <>
       <FinancePageHeader
-        title="E-invoicing console"
-        figure={state ? <HeaderFigure label="Cleared this month · ETA">{state.valid}</HeaderFigure> : null}
+        title={t("eInvoicingConsole")}
+        figure={state ? <HeaderFigure label={t("clearedThisMonthEta")}>{state.valid}</HeaderFigure> : null}
         actions={
           <>
             <Button
@@ -98,45 +105,45 @@ function EInvoicingPage() {
               disabled={busy || !state?.not_sent}
               onClick={() =>
                 submitBatch.mutate(undefined, {
-                  onSuccess: (result) => toast.success(`${result.sent} documents sent; ${result.cleared} cleared.`),
-                  onError: fail("The batch could not be sent. Try again."),
+                  onSuccess: (result) => toast.success(t("toastBatchSent", { sent: result.sent, cleared: result.cleared })),
+                  onError: fail(t("errorSendBatch")),
                 })
               }
             >
-              Submit not-sent batch
+              {t("submitNotSentBatch")}
             </Button>
             <Button
               variant="secondary"
               disabled={busy || !state?.items_unmapped}
               onClick={() =>
                 mapItems.mutate(undefined, {
-                  onSuccess: () => toast.success("Every item is mapped to an authority code. Resubmit the documents it held up."),
-                  onError: fail("The item codes could not be mapped. Try again."),
+                  onSuccess: () => toast.success(t("toastItemsMapped")),
+                  onError: fail(t("errorMapItems")),
                 })
               }
             >
-              Map item codes
+              {t("mapItemCodes")}
             </Button>
             <Button
               variant="secondary"
               disabled={busy}
               onClick={() =>
                 renewSeal.mutate(undefined, {
-                  onSuccess: (result) => toast.success(`The seal is renewed until ${formatDate(result.seal_expires)}.`),
-                  onError: fail("The seal could not be renewed. Try again."),
+                  onSuccess: (result) => toast.success(t("toastSealRenewed", { date: formatDate(result.seal_expires) })),
+                  onError: fail(t("errorRenewSeal")),
                 })
               }
             >
-              Renew seal
+              {t("renewSeal")}
             </Button>
             <Button variant="primary" disabled={!state?.rejected} onClick={() => setFilter("rejected")}>
-              Review {state?.rejected ?? 0} failed
+              {t("reviewFailed", { count: state?.rejected ?? 0 })}
             </Button>
           </>
         }
       />
       <FinancePageBody>
-        <div role="group" aria-label="Authority" className="border-stroke-default flex gap-6 border-b">
+        <div role="group" aria-label={t("authority")} className="border-stroke-default flex gap-6 border-b">
           {(["ETA", "ZATCA"] as const).map((value) => (
             <button
               key={value}
@@ -151,7 +158,7 @@ function EInvoicingPage() {
                 authority === value && "border-brand-primary text-content-primary font-medium",
               )}
             >
-              {value === "ETA" ? "ETA — Egypt" : "ZATCA — Saudi Arabia"}
+              {value === "ETA" ? t("authorityEta") : t("authorityZatca")}
               <span className="text-content-tertiary text-xs tabular-nums">{data?.authorities[value] ?? "—"}</span>
             </button>
           ))}
@@ -160,11 +167,11 @@ function EInvoicingPage() {
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : !data || !state ? (
-          <Skeleton aria-busy aria-label="Loading documents" className="h-96 rounded-xl" />
+          <Skeleton aria-busy aria-label={t("loadingDocuments")} className="h-96 rounded-xl" />
         ) : (
           <>
             {authority === "ETA" && data.groups.length > 0 ? (
-              <FinanceSection title="What is holding documents up" description="Grouped by what the authority objected to, not by document. Fix the cause once where you can.">
+              <FinanceSection title={t("holdingUpTitle")} description={t("holdingUpDescription")}>
                 <div className="flex flex-col gap-3">
                   {data.groups.map((group) => {
                     const fixable = group.bulk && !data.unregistered_codes.length
@@ -175,25 +182,25 @@ function EInvoicingPage() {
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <h3 className="text-content-primary text-sm leading-5 font-semibold">
-                            {group.bulk ? "One fix clears all of these" : "Each document needs its own correction"}
+                            {group.bulk ? t("oneFixClearsAll") : t("eachNeedsCorrection")}
                           </h3>
                           <span className="text-content-secondary text-[13px] leading-5">
-                            {group.ids.length} documents · Value held up: {formatAmount(group.value)}
+                            {t("groupSummary", { count: group.ids.length, value: formatAmount(group.value) })}
                           </span>
                         </div>
                         <p className="text-content-primary text-[13px] leading-5">{group.message}</p>
                         <p className="text-content-secondary text-[13px] leading-5">
                           {group.bulk
-                            ? "Correct this centrally — register the item, renew the certificate — then resubmit the batch."
-                            : "There is no bulk fix for this. Open each document and correct it."}
+                            ? t("bulkFixHint")
+                            : t("noBulkFixHint")}
                         </p>
                         <dl className="grid grid-cols-2 gap-4 text-[13px] leading-5">
                           <div>
-                            <dt className="text-content-secondary">Authority code</dt>
+                            <dt className="text-content-secondary">{t("authorityCode")}</dt>
                             <dd className="font-mono text-xs">{group.code}</dd>
                           </div>
                           <div>
-                            <dt className="text-content-secondary">Where</dt>
+                            <dt className="text-content-secondary">{t("where")}</dt>
                             <dd className="font-mono text-xs">{group.path}</dd>
                           </div>
                         </dl>
@@ -207,23 +214,23 @@ function EInvoicingPage() {
                                 resubmitGroup.mutate(group.code, {
                                   onSuccess: (result) =>
                                     result.cleared === result.sent
-                                      ? toast.success(`${result.cleared} documents cleared.`)
-                                      : toast.error(`${result.sent - result.cleared} documents failed the same way. Map the item code first.`),
-                                  onError: fail("The documents could not be resubmitted. Try again."),
+                                      ? toast.success(t("toastDocumentsCleared", { count: result.cleared }))
+                                      : toast.error(t("toastDocumentsFailedSame", { count: result.sent - result.cleared })),
+                                  onError: fail(t("errorResubmit")),
                                 })
                               }
                             >
-                              Resubmit these {group.ids.length}
+                              {t("resubmitThese", { count: group.ids.length })}
                             </Button>
                             {!fixable ? (
-                              <span className="text-content-tertiary text-xs leading-4">Resubmitting without correcting the cause will fail the same way.</span>
+                              <span className="text-content-tertiary text-xs leading-4">{t("resubmitWillFail")}</span>
                             ) : null}
                           </div>
                         ) : (
                           <div className="flex flex-wrap gap-2">
                             {group.ids.map((id) => (
                               <Button key={id} variant="ghost" size="sm" onClick={() => router.push(`/finance/tax/e-invoicing/${id}`)}>
-                                Open {id}
+                                {t("openId", { id })}
                               </Button>
                             ))}
                           </div>
@@ -240,13 +247,12 @@ function EInvoicingPage() {
                 tone="warning"
                 className="text-status-warning-fg"
                 action={
-                  <Button variant="secondary" size="sm" disabled={busy} onClick={() => renewSeal.mutate(undefined, { onError: fail("The seal could not be renewed. Try again.") })}>
-                    Renew seal
+                  <Button variant="secondary" size="sm" disabled={busy} onClick={() => renewSeal.mutate(undefined, { onError: fail(t("errorRenewSeal")) })}>
+                    {t("renewSeal")}
                   </Button>
                 }
               >
-                The signing seal expires in {state.seal_days} days, on {formatDate(state.seal_expires)}. Documents cannot be signed after
-                that. Renew the seal with the authority before the deadline.
+                {t("sealExpiresWarning", { days: state.seal_days, date: formatDate(state.seal_expires) })}
               </FinanceAlert>
             ) : null}
             {authority === "ETA" && state.items_unmapped > 0 ? (
@@ -254,23 +260,22 @@ function EInvoicingPage() {
                 tone="warning"
                 className="text-status-warning-fg"
                 action={
-                  <Button variant="secondary" size="sm" disabled={busy} onClick={() => mapItems.mutate(undefined, { onError: fail("The item codes could not be mapped. Try again.") })}>
-                    Map item codes
+                  <Button variant="secondary" size="sm" disabled={busy} onClick={() => mapItems.mutate(undefined, { onError: fail(t("errorMapItems")) })}>
+                    {t("mapItemCodes")}
                   </Button>
                 }
               >
-                {state.items_unmapped} of {state.items_total} item codes are not mapped to authority codes. Documents that use them will be
-                rejected. Map the remaining codes before the next submission.
+                {t("itemsUnmappedWarning", { unmapped: state.items_unmapped, total: state.items_total })}
               </FinanceAlert>
             ) : null}
 
             {authority === "ETA" ? (
               <dl className="flex flex-wrap gap-8 text-[13px] leading-5">
                 {[
-                  ["Cleared", state.valid],
-                  ["Failed", state.rejected],
-                  ["Awaiting response", state.submitted],
-                  ["Not sent", state.not_sent],
+                  [t("cleared"), state.valid],
+                  [t("failed"), state.rejected],
+                  [t("awaitingResponse"), state.submitted],
+                  [t("eStatusNotSent"), state.not_sent],
                 ].map(([label, value]) => (
                   <div key={label} className="flex flex-col">
                     <dt className="text-content-secondary">{label}</dt>
@@ -280,7 +285,7 @@ function EInvoicingPage() {
               </dl>
             ) : null}
 
-            <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-1.5">
+            <div role="group" aria-label={t("filterByStatus")} className="flex flex-wrap gap-1.5">
               {FILTERS.map((option) => (
                 <button
                   key={option.value}
@@ -292,29 +297,29 @@ function EInvoicingPage() {
                     filter === option.value && "border-brand-primary bg-brand-primary/10 text-content-primary font-medium",
                   )}
                 >
-                  {option.label} <span className="tabular-nums">{count(option.value)}</span>
+                  {t(option.labelKey)} <span className="tabular-nums">{count(option.value)}</span>
                 </button>
               ))}
             </div>
 
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <GroupBySelect value={groupBy} onValueChange={setGroupBy} options={GROUP_OPTIONS} />
+                <GroupBySelect value={groupBy} onValueChange={setGroupBy} options={GROUP_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }))} />
                 <ColumnChooser
-                  columns={COLUMNS.filter((column) => column.hideable).map((column) => ({ id: column.id, label: columnLabel(column) }))}
+                  columns={columns.filter((column) => column.hideable).map((column) => ({ id: column.id, label: columnLabel(column) }))}
                   hiddenIds={hiddenIds}
                   onHiddenIdsChange={setHiddenIds}
                 />
               </div>
               <FinanceTable
-                caption="Electronic documents"
-                columns={COLUMNS}
+                caption={t("electronicDocuments")}
+                columns={columns}
                 rows={items}
                 groups={groups}
                 getRowId={(row) => row.id}
                 hiddenColumnIds={hiddenIds}
                 onRowClick={(row) => router.push(`/finance/tax/e-invoicing/${row.id}`)}
-                empty={<p className="text-content-tertiary py-8 text-center text-sm">No document has this status.</p>}
+                empty={<p className="text-content-tertiary py-8 text-center text-sm">{t("noDocumentWithStatus")}</p>}
               />
             </div>
           </>

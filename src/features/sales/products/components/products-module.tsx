@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Check, ListFilter, Loader2, Package, Plus, Search, Settings2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -35,7 +36,7 @@ import {
 } from "@/src/shared/components/ui/table"
 import { cn } from "@/src/shared/lib/utils/utils"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesPageSpinner } from "../../components/shared/sales-loading"
 import { SalesTablePagination } from "../../components/shared/sales-table-pagination"
 import { formatCurrency } from "../../lib/utils/currency"
@@ -56,17 +57,17 @@ const SEARCH_DEBOUNCE_MS = 300
 const SELECT_CLASS_NAME =
   "border-stroke-default bg-surface-white text-content-primary focus-visible:border-brand-primary focus-visible:ring-brand-primary/15 h-10 w-full rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px]"
 
-const TYPE_FILTERS: { value: ProductType | "all"; label: string }[] = [
-  { value: "all", label: "All types" },
-  { value: "product", label: "Product" },
-  { value: "service", label: "Service" },
-]
+const TYPE_FILTERS = [
+  { value: "all", labelKey: "allTypes" },
+  { value: "product", labelKey: "typeProduct" },
+  { value: "service", labelKey: "typeService" },
+] as const satisfies readonly { value: ProductType | "all"; labelKey: string }[]
 
-const ACTIVE_FILTERS: { value: "all" | "active" | "inactive"; label: string }[] = [
-  { value: "all", label: "All statuses" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-]
+const ACTIVE_FILTERS = [
+  { value: "all", labelKey: "allStatuses" },
+  { value: "active", labelKey: "active" },
+  { value: "inactive", labelKey: "inactive" },
+] as const satisfies readonly { value: "all" | "active" | "inactive"; labelKey: string }[]
 
 function useDebouncedValue<T>(value: T, delayMs: number) {
   const [debounced, setDebounced] = React.useState(value)
@@ -77,7 +78,10 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
   return debounced
 }
 
-function StockStatusBadge({ status, label }: Readonly<{ status: StockStatus; label: string }>) {
+function StockStatusBadge({ status }: Readonly<{ status: StockStatus }>) {
+  const tShared = useTranslations("SalesShared")
+  const label = tShared(`stockStatus.${status}`)
+
   if (status === "out_of_stock") {
     return (
       <Badge variant="danger" className="rounded-full bg-red-100 px-3 font-normal text-red-600">
@@ -108,6 +112,9 @@ function AdjustStockDialog({
   onOpenChange: (open: boolean) => void
   product: ProductListItem | null
 }>) {
+  const t = useTranslations("SalesProducts")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [delta, setDelta] = React.useState("")
   const [reason, setReason] = React.useState("")
   const [deltaError, setDeltaError] = React.useState<string | null>(null)
@@ -128,7 +135,7 @@ function AdjustStockDialog({
     const deltaValue = Number.parseFloat(delta)
     if (!deltaValue) return
     if (product.stock_on_hand + deltaValue < 0) {
-      setDeltaError("Stock on hand cannot be less than 0.")
+      setDeltaError(t("stockNegative"))
       return
     }
 
@@ -138,10 +145,10 @@ function AdjustStockDialog({
       { id: product.id, payload: { delta: deltaValue, reason } },
       {
         onSuccess: (result) => {
-          toast.success(`Stock updated — now ${result.stock_on_hand} on hand`)
+          toast.success(t("stockUpdatedToast", { stock: result.stock_on_hand }))
           handleOpenChange(false)
         },
-        onError: (err) => toastMutationError(err, "Failed to adjust stock"),
+        onError: (err) => toastMutationError(err, t("adjustStockFailed")),
       },
     )
   }
@@ -151,15 +158,14 @@ function AdjustStockDialog({
       <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Adjust stock — {product?.name}</DialogTitle>
+            <DialogTitle>{t("adjustStockTitle", { name: product?.name ?? "" })}</DialogTitle>
             <DialogDescription>
-              Currently {product?.stock_on_hand} on hand. Enter a positive number to add
-              stock or a negative number to subtract.
+              {t("adjustStockDescription", { stock: product?.stock_on_hand ?? 0 })}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Delta</span>
+              <span className="text-xs font-medium text-content-secondary">{t("delta")}</span>
               <Input
                 type="number"
                 value={delta}
@@ -167,7 +173,7 @@ function AdjustStockDialog({
                   setDelta(event.target.value)
                   setDeltaError(null)
                 }}
-                placeholder="e.g. -3 or 25"
+                placeholder={t("deltaPlaceholder")}
                 required
                 autoFocus
                 aria-invalid={!!deltaError}
@@ -180,18 +186,18 @@ function AdjustStockDialog({
               ) : null}
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Reason</span>
+              <span className="text-xs font-medium text-content-secondary">{t("reason")}</span>
               <Input
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                placeholder="e.g. Damaged in warehouse"
+                placeholder={t("reasonPlaceholder")}
                 required
               />
             </label>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -203,7 +209,7 @@ function AdjustStockDialog({
               ) : (
                 <Settings2 aria-hidden />
               )}
-              Adjust stock
+              {t("adjustStock")}
             </Button>
           </DialogFooter>
         </form>
@@ -219,6 +225,9 @@ function NewProductDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }>) {
+  const t = useTranslations("SalesProducts")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const createProduct = useCreateProduct()
   const [fieldErrors, setFieldErrors] = React.useState<{
     unitPrice?: string
@@ -246,7 +255,7 @@ function NewProductDialog({
     const nextErrors: typeof fieldErrors = {}
 
     if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
-      nextErrors.unitPrice = "Unit price must be greater than 0."
+      nextErrors.unitPrice = t("unitPricePositive")
     }
     if (trackStock) {
       // A zero threshold makes "Low Stock" unreachable: the status is only raised
@@ -254,14 +263,13 @@ function NewProductDialog({
       // to In Stock at 1, and the alert would never fire.
       const thresholdValid = Number.isFinite(lowStockThreshold) && lowStockThreshold > 0
       if (!thresholdValid) {
-        nextErrors.lowStockThreshold = "Low stock threshold must be greater than zero."
+        nextErrors.lowStockThreshold = t("thresholdPositive")
       }
       if (
         !Number.isFinite(stockOnHand) ||
         (thresholdValid && stockOnHand <= lowStockThreshold)
       ) {
-        nextErrors.stockOnHand =
-          "Initial stock on hand must be greater than the low stock threshold."
+        nextErrors.stockOnHand = t("stockAboveThreshold")
       }
     }
     if (Object.keys(nextErrors).length > 0) {
@@ -283,11 +291,11 @@ function NewProductDialog({
 
     createProduct.mutate(payload, {
       onSuccess: () => {
-        toast.success("Product added")
+        toast.success(t("addedToast"))
         form.reset()
         handleOpenChange(false)
       },
-      onError: (err) => toastMutationError(err, "Failed to create product"),
+      onError: (err) => toastMutationError(err, t("createFailed")),
     })
   }
 
@@ -296,30 +304,30 @@ function NewProductDialog({
       <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New Product</DialogTitle>
+            <DialogTitle>{t("newProduct")}</DialogTitle>
             <DialogDescription>
-              Products are self-owned by Sales — no link to an inventory system.
+              {t("newProductDescription")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-xs font-medium text-content-secondary">Name</span>
-              <Input name="name" placeholder="Product or service name" required autoFocus />
+              <span className="text-xs font-medium text-content-secondary">{tCommon("name")}</span>
+              <Input name="name" placeholder={t("namePlaceholder")} required autoFocus />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">SKU</span>
-              <Input name="sku" placeholder="Optional, must be unique" />
+              <span className="text-xs font-medium text-content-secondary">{t("sku")}</span>
+              <Input name="sku" placeholder={t("skuPlaceholder")} />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Type</span>
+              <span className="text-xs font-medium text-content-secondary">{tCommon("type")}</span>
               <select name="type" className={SELECT_CLASS_NAME} defaultValue="product">
-                <option value="product">Product</option>
-                <option value="service">Service</option>
+                <option value="product">{t("typeProduct")}</option>
+                <option value="service">{t("typeService")}</option>
               </select>
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-content-secondary">
-                Default unit price
+                {t("defaultUnitPrice")}
               </span>
               <Input
                 name="unitPrice"
@@ -341,9 +349,9 @@ function NewProductDialog({
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-content-secondary">
-                Default tax rate (%)
+                {t("defaultTaxRate")}
               </span>
-              <Input name="defaultTaxRate" type="number" min="0" max="100" placeholder="Falls back to sales settings" />
+              <Input name="defaultTaxRate" type="number" min="0" max="100" placeholder={t("taxRatePlaceholder")} />
             </label>
             {/* Spacing and grid placement live on the wrapper, not the label: a
                 full-width label would make its padding and trailing whitespace a
@@ -356,12 +364,12 @@ function NewProductDialog({
                   defaultChecked
                   className="size-4 rounded border-stroke-default accent-brand-primary"
                 />
-                Track stock for this item
+                {t("trackStock")}
               </label>
             </div>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-content-secondary">
-                Initial stock on hand
+                {t("initialStock")}
               </span>
               <Input
                 name="stockOnHand"
@@ -384,7 +392,7 @@ function NewProductDialog({
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-content-secondary">
-                Low stock threshold
+                {t("lowStockThreshold")}
               </span>
               {/* min="0" blocks negatives natively; the "> 0" rule is enforced in
                   handleSubmit so the inline message renders like the other fields
@@ -414,7 +422,7 @@ function NewProductDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={createProduct.isPending}>
               {createProduct.isPending ? (
@@ -422,7 +430,7 @@ function NewProductDialog({
               ) : (
                 <Check aria-hidden />
               )}
-              Add Product
+              {t("addProduct")}
             </Button>
           </DialogFooter>
         </form>
@@ -438,19 +446,23 @@ function ProductsTable({
   products: ProductListItem[]
   onAdjustStock: (product: ProductListItem) => void
 }>) {
+  const t = useTranslations("SalesProducts")
+  const tCommon = useTranslations("Common")
+  const tShared = useTranslations("SalesShared")
+
   return (
     <div className="overflow-hidden rounded-2xl border border-stroke-default bg-surface-white shadow-sm">
       <Table className="min-w-[1200px] table-fixed">
         <TableHeader className="bg-surface-white">
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[320px] px-5">Product</TableHead>
-            <TableHead className="w-[140px]">SKU</TableHead>
-            <TableHead className="w-[110px]">Type</TableHead>
-            <TableHead className="w-[140px]">Unit Price</TableHead>
-            <TableHead className="w-[140px]">Stock on Hand</TableHead>
-            <TableHead className="w-[140px]">Status</TableHead>
-            <TableHead className="w-[110px]">Active</TableHead>
-            <TableHead className="w-[120px] px-5 text-end">Actions</TableHead>
+            <TableHead className="w-[320px] px-5">{t("product")}</TableHead>
+            <TableHead className="w-[140px]">{t("sku")}</TableHead>
+            <TableHead className="w-[110px]">{tCommon("type")}</TableHead>
+            <TableHead className="w-[140px]">{t("unitPrice")}</TableHead>
+            <TableHead className="w-[140px]">{t("stockOnHand")}</TableHead>
+            <TableHead className="w-[140px]">{tCommon("status")}</TableHead>
+            <TableHead className="w-[110px]">{t("active")}</TableHead>
+            <TableHead className="w-[120px] px-5 text-end">{tCommon("actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -470,16 +482,16 @@ function ProductsTable({
                 <TableCell className="py-3 font-mono text-xs text-content-secondary">
                   {product.sku || "—"}
                 </TableCell>
-                <TableCell className="py-3">{product.type_label}</TableCell>
+                <TableCell className="py-3">{tShared(`productType.${product.type}`)}</TableCell>
                 <TableCell className="py-3">{formatCurrency(product.default_unit_price)}</TableCell>
                 <TableCell className="py-3">
                   {product.track_stock ? product.stock_on_hand : "—"}
                 </TableCell>
                 <TableCell className="py-3">
                   {product.track_stock ? (
-                    <StockStatusBadge status={product.stock_status} label={product.stock_status_label} />
+                    <StockStatusBadge status={product.stock_status} />
                   ) : (
-                    <span className="text-xs text-content-quaternary">Not tracked</span>
+                    <span className="text-xs text-content-quaternary">{t("notTracked")}</span>
                   )}
                 </TableCell>
                 <TableCell className="py-3">
@@ -490,7 +502,7 @@ function ProductsTable({
                       product.is_active && "bg-emerald-50 text-emerald-600",
                     )}
                   >
-                    {product.is_active ? "Active" : "Inactive"}
+                    {product.is_active ? t("active") : t("inactive")}
                   </Badge>
                 </TableCell>
                 <TableCell className="px-5 py-3 text-end">
@@ -503,7 +515,7 @@ function ProductsTable({
                     className="whitespace-nowrap"
                   >
                     <Settings2 className="size-3.5" aria-hidden />
-                    Adjust stock
+                    {t("adjustStock")}
                   </Button>
                 </TableCell>
               </TableRow>
@@ -511,7 +523,7 @@ function ProductsTable({
           ) : (
             <TableRow>
               <TableCell colSpan={8} className="h-32 text-center text-content-tertiary">
-                No products match the current filters.
+                {t("noMatches")}
               </TableCell>
             </TableRow>
           )}
@@ -522,6 +534,8 @@ function ProductsTable({
 }
 
 export function ProductsModule() {
+  const t = useTranslations("SalesProducts")
+  const tCommon = useTranslations("Common")
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const [typeFilter, setTypeFilter] = React.useState<ProductType | "all">("all")
@@ -561,8 +575,8 @@ export function ProductsModule() {
             onChange={(event) =>
               handleFilterChange(() => setSearch(event.target.value))
             }
-            placeholder="Search by name or SKU…"
-            aria-label="Search products"
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchLabel")}
             className="h-10 rounded-[10px] ps-10 shadow-none"
           />
         </div>
@@ -571,11 +585,11 @@ export function ProductsModule() {
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" className="h-10 rounded-[10px] px-4">
                 <ListFilter strokeWidth={1.75} aria-hidden />
-                Filter
+                {tCommon("filter")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>Type</DropdownMenuLabel>
+              <DropdownMenuLabel>{tCommon("type")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuRadioGroup
                 value={typeFilter}
@@ -585,12 +599,12 @@ export function ProductsModule() {
               >
                 {TYPE_FILTERS.map((option) => (
                   <DropdownMenuRadioItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Status</DropdownMenuLabel>
+              <DropdownMenuLabel>{tCommon("status")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuRadioGroup
                 value={activeFilter}
@@ -602,7 +616,7 @@ export function ProductsModule() {
               >
                 {ACTIVE_FILTERS.map((option) => (
                   <DropdownMenuRadioItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
@@ -616,7 +630,7 @@ export function ProductsModule() {
               onClick={() => setNewProductOpen(true)}
             >
               <Plus strokeWidth={1.75} aria-hidden />
-              New Product
+              {t("newProduct")}
             </Button>
           ) : null}
         </div>
@@ -625,7 +639,7 @@ export function ProductsModule() {
       {isLoading ? (
         <SalesPageSpinner />
       ) : isError ? (
-        <SalesErrorState message="Failed to load products." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadListFailed")} onRetry={() => void refetch()} />
       ) : (
         <>
           <ProductsTable products={products} onAdjustStock={setAdjustingProduct} />

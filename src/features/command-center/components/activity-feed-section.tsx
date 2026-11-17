@@ -12,6 +12,7 @@ import {
   User,
   UserPlus,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Card } from "@/src/shared/components/ui/card"
@@ -29,11 +30,11 @@ const toneDot: Record<ActivityFeedCategory, string> = {
   system: "bg-violet-500",
 }
 
-const CATEGORY_FILTERS: { label: string; category: ActivityFeedCategory }[] = [
-  { label: "Finance", category: "finance" },
-  { label: "Sales", category: "sales" },
-  { label: "People", category: "people" },
-  { label: "System", category: "system" },
+const CATEGORY_FILTERS: readonly ActivityFeedCategory[] = [
+  "finance",
+  "sales",
+  "people",
+  "system",
 ]
 
 /**
@@ -89,6 +90,8 @@ function ActivityRow({ item }: Readonly<{ item: ActivityFeedItem }>) {
 }
 
 export function ActivityFeedSection() {
+  const t = useTranslations("CommandCenterActivity")
+  const tCommon = useTranslations("Common")
   const [category, setCategory] = React.useState<ActivityFeedCategory | undefined>(
     undefined,
   )
@@ -105,13 +108,13 @@ export function ActivityFeedSection() {
           <span className="flex rounded-lg bg-brand-primary/12 p-1.5 text-brand-primary">
             <Activity className="size-3.5" />
           </span>
-          <p className="text-sm font-semibold text-content-primary">Activity Feed</p>
+          <p className="text-sm font-semibold text-content-primary">{t("title")}</p>
         </div>
         <Badge
           variant="primary"
           className="rounded-lg border border-brand-primary/15 bg-brand-primary/8 px-2 py-0.5 text-[11px] font-medium text-brand-primary shadow-[0px_0px_8px_0px_rgba(99,102,241,0.25),0px_0px_2px_0px_rgba(99,102,241,0.15)]"
         >
-          Live
+          {t("live")}
         </Badge>
       </div>
       <div className="flex flex-col gap-4 px-6 pb-6">
@@ -126,9 +129,9 @@ export function ActivityFeedSection() {
                 : "text-content-quaternary hover:bg-surface-hover",
             )}
           >
-            All
+            {tCommon("all")}
           </button>
-          {CATEGORY_FILTERS.map(({ label, category: filterCategory }) => (
+          {CATEGORY_FILTERS.map((filterCategory) => (
             <button
               key={filterCategory}
               type="button"
@@ -141,7 +144,7 @@ export function ActivityFeedSection() {
               )}
             >
               <span className={cn("size-1.5 rounded-full", toneDot[filterCategory])} />
-              {label}
+              {t(`categories.${filterCategory}`)}
             </button>
           ))}
         </div>
@@ -149,12 +152,12 @@ export function ActivityFeedSection() {
           <CommandCenterSectionSpinner />
         ) : isError ? (
           <CommandCenterErrorState
-            message="Failed to load activity."
+            message={t("loadFailed")}
             onRetry={() => void refetch()}
           />
         ) : items.length === 0 ? (
           <p className="py-6 text-center text-xs text-content-quaternary">
-            No activity yet.
+            {t("empty")}
           </p>
         ) : (
           <div className="flex flex-col gap-4">
@@ -165,7 +168,7 @@ export function ActivityFeedSection() {
               type="button"
               className="text-center text-[11px] text-brand-primary hover:underline"
             >
-              View all activity →
+              {t("viewAll")}
             </button>
           </div>
         )}

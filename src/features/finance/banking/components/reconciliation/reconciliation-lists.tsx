@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button } from "@/src/shared/components/ui/button"
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -11,16 +13,17 @@ import { formatAmount } from "../../../lib/utils/money"
 import { SUGGESTION_TONE } from "../../lib/constants/reconciliation"
 import type { BookEntry, MatchSuggestion, StatementLine } from "../../lib/types/banking"
 
-const dayMonth = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" })
+const dayMonth = (iso: string, locale: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString(locale, { day: "2-digit", month: "short", timeZone: "UTC" })
 
 type Line = { id: string; date: string; description: string; reference: string; amount: number }
 
 function SuggestionPill({ suggestion }: { suggestion: MatchSuggestion }) {
+  const t = useTranslations("FinanceBanking")
   return (
     <StatusPill
       status={`match-${suggestion.label}`}
-      label={`${suggestion.score}% ${suggestion.label}`}
+      label={t("suggestionScore", { score: suggestion.score, label: t(`suggestionLabel.${suggestion.label}`) })}
       tone={SUGGESTION_TONE[suggestion.label]}
     />
   )
@@ -39,6 +42,7 @@ function LineRow({
   onSelect: () => void
   action?: React.ReactNode
 }) {
+  const locale = useIntlLocale()
   return (
     <li
       data-selected={selected || undefined}
@@ -55,7 +59,7 @@ function LineRow({
         onClick={onSelect}
         className="focus-visible:ring-ring flex min-w-0 flex-1 items-center gap-3 rounded-sm text-start outline-none focus-visible:ring-2"
       >
-        <span className="text-content-secondary w-12 shrink-0 text-[13px] leading-5">{dayMonth(line.date)}</span>
+        <span className="text-content-secondary w-12 shrink-0 text-[13px] leading-5">{dayMonth(line.date, locale)}</span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-content-primary truncate text-[13px] leading-5">{line.description}</span>
           <span className="flex flex-wrap items-center gap-2">
@@ -128,9 +132,15 @@ function ReconciliationLists({
   onSelectEntry,
   onCreateEntry,
 }: ListsProps) {
+  const t = useTranslations("FinanceBanking")
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-      <ColumnShell title="Bank statement" count={statement.count} total={statement.total} empty="Every statement line is matched.">
+      <ColumnShell
+        title={t("bankStatement")}
+        count={statement.count}
+        total={statement.total}
+        empty={t("everyLineMatchedPeriod")}
+      >
         {statement.items.map((line) => (
           <LineRow
             key={line.id}
@@ -143,15 +153,15 @@ function ReconciliationLists({
                 variant="outline"
                 size="sm"
                 onClick={() => onCreateEntry(line)}
-                aria-label={`Create an entry from ${line.reference}, ${formatAmount(line.amount)}`}
+                aria-label={t("createEntryFrom", { reference: line.reference, amount: formatAmount(line.amount) })}
               >
-                Create entry
+                {t("createEntry")}
               </Button>
             }
           />
         ))}
       </ColumnShell>
-      <ColumnShell title="Book entries" count={book.count} total={book.total} empty="Every book entry is matched.">
+      <ColumnShell title={t("bookEntries")} count={book.count} total={book.total} empty={t("everyEntryMatched")}>
         {book.items.map((entry) => (
           <LineRow
             key={entry.id}

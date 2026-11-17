@@ -50,12 +50,18 @@ export type TimesheetGrid = {
   periodLabel: string
 }
 
-function fmt(date: Date, opts: Intl.DateTimeFormatOptions): string {
-  return date.toLocaleDateString("en-US", opts)
+function fmt(
+  date: Date,
+  opts: Intl.DateTimeFormatOptions,
+  locale: string,
+): string {
+  return date.toLocaleDateString(locale, opts)
 }
 
 export function buildTimesheetGrid(
   timesheet: Timesheet | undefined,
+  /** `Intl` locale for weekday / period labels (`useIntlLocale()`). */
+  locale = "en-US",
 ): TimesheetGrid {
   if (!timesheet) {
     return { days: [], rows: [], dayTotals: [], weekTotal: 0, periodLabel: "" }
@@ -64,7 +70,10 @@ export function buildTimesheetGrid(
   const start = new Date(timesheet.period_start)
   const days: TimesheetDay[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(start.getTime() + i * DAY_MS)
-    return { label: fmt(d, { weekday: "short" }), date: d.toISOString().slice(0, 10) }
+    return {
+      label: fmt(d, { weekday: "short" }, locale),
+      date: d.toISOString().slice(0, 10),
+    }
   })
 
   const rows: TimesheetGridRow[] = timesheet.rows.map((row) => {
@@ -90,9 +99,10 @@ export function buildTimesheetGrid(
   const weekTotal = dayTotals.reduce((a, b) => a + b, 0)
 
   const end = new Date(timesheet.period_end)
-  const periodLabel = `${fmt(start, { month: "short", day: "numeric" })} – ${fmt(
+  const periodLabel = `${fmt(start, { month: "short", day: "numeric" }, locale)} – ${fmt(
     end,
     { month: "short", day: "numeric", year: "numeric" },
+    locale,
   )}`
 
   return { days, rows, dayTotals, weekTotal, periodLabel }
@@ -111,12 +121,14 @@ export type TimeStat = {
   accent: "indigo" | "emerald" | "amber" | "violet"
 }
 
-function money(amount: number, currency: string): string {
-  return `${Math.round(amount).toLocaleString()} ${currency}`
+function money(amount: number, currency: string, locale: string): string {
+  return `${Math.round(amount).toLocaleString(locale)} ${currency}`
 }
 
 export function buildTimeStats(
   summary: TimesheetSummary | undefined,
+  /** `Intl` locale for the expense amount (`useIntlLocale()`). */
+  locale = "en-US",
 ): TimeStat[] {
   return [
     {
@@ -146,7 +158,9 @@ export function buildTimeStats(
     {
       id: "expenses",
       label: "Expenses",
-      value: summary ? money(summary.expense_amount, summary.currency_code) : "—",
+      value: summary
+        ? money(summary.expense_amount, summary.currency_code, locale)
+        : "—",
       caption: summary ? `${summary.receipt_count} receipts` : "",
       icon: "dollar",
       accent: "violet",

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Check, Lock, Plus, X } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
@@ -35,6 +36,7 @@ import {
   TableRow,
 } from "@/src/shared/components/ui/table"
 import { Textarea } from "@/src/shared/components/ui/textarea"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import type { ApiError } from "@/src/shared/lib/types/api"
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -65,11 +67,15 @@ import type {
   GateDecisionStatus,
 } from "../../lib/types"
 
-const TABS = ["Gates", "Change Requests", "Closure"] as const
-type Tab = (typeof TABS)[number]
+const TABS = [
+  { id: "gates", labelKey: "tabGates" },
+  { id: "changeRequests", labelKey: "tabChangeRequests" },
+  { id: "closure", labelKey: "tabClosure" },
+] as const
+type Tab = (typeof TABS)[number]["id"]
 
-function apiMessage(err: unknown): string {
-  return (err as ApiError).message ?? "Something went wrong"
+function apiMessage(err: unknown, fallback: string): string {
+  return (err as ApiError).message ?? fallback
 }
 
 /* ------------------------------------------------------------------ */
@@ -126,6 +132,8 @@ function GateDecisionDialog({
   onConfirm: (text: string) => void
   pending: boolean
 }) {
+  const t = useTranslations("ProjectsPhaseGate")
+  const tCommon = useTranslations("Common")
   const [text, setText] = useState("")
   const required = input?.action !== "approve"
 
@@ -151,21 +159,21 @@ function GateDecisionDialog({
         <DialogBody className="gap-2">
           <span className="text-content-secondary text-[13px] leading-5 font-semibold">
             {input?.action === "approve"
-              ? "Notes (optional)"
+              ? t("notesOptional")
               : input?.action === "reject"
-                ? "Reason"
-                : "What information is needed?"}
+                ? t("reason")
+                : t("infoNeeded")}
           </span>
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Write a short note…"
+            placeholder={t("notePlaceholder")}
             className="min-h-[88px] text-[13px]"
           />
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose} className="text-[13px]">
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             variant={input?.action === "reject" ? "danger" : "primary"}
@@ -182,6 +190,8 @@ function GateDecisionDialog({
 }
 
 function GatesTab({ projectId }: { projectId: string }) {
+  const t = useTranslations("ProjectsPhaseGate")
+  const locale = useIntlLocale()
   const { data, isLoading, isError } = useProjectGates(projectId)
   const gateAction = useGateAction(projectId)
   const [decision, setDecision] = useState<
@@ -212,8 +222,8 @@ function GatesTab({ projectId }: { projectId: string }) {
         toast.success(successLabel)
         setDecision(null)
       },
-      onError: (err) => toast.error("Gate action failed", {
-        description: apiMessage(err),
+      onError: (err) => toast.error(t("gateActionFailed"), {
+        description: apiMessage(err, t("genericError")),
       }),
     })
 
@@ -224,7 +234,7 @@ function GatesTab({ projectId }: { projectId: string }) {
     return (
       <Card className="flex h-40 items-center justify-center p-6">
         <p className="text-content-tertiary text-sm">
-          Couldn&apos;t load the gate pipeline.
+          {t("gatesLoadError")}
         </p>
       </Card>
     )
@@ -232,15 +242,15 @@ function GatesTab({ projectId }: { projectId: string }) {
   return (
     <Card className="gap-4 p-5">
       <h3 className="text-content-primary text-sm font-semibold">
-        Gate Pipeline
+        {t("gatePipeline")}
       </h3>
       <div className="flex flex-col">
         {gates.map((gate, i) => {
           const isActive = gate.id === activeGateId
           const dateLabel = gate.completed_date
-            ? formatApiDate(gate.completed_date)
+            ? formatApiDate(gate.completed_date, locale)
             : gate.due_date
-              ? `Due ${formatApiDate(gate.due_date)}`
+              ? t("dueDate", { date: formatApiDate(gate.due_date, locale) })
               : null
           return (
             <div key={gate.id} className="flex gap-4">
@@ -274,7 +284,7 @@ function GatesTab({ projectId }: { projectId: string }) {
                   {isActive && gate.approval_chain ? (
                     <div className="border-stroke-light flex flex-col gap-2 border-t pt-3">
                       <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-                        Approval Chain
+                        {t("approvalChain")}
                       </span>
                       <div className="flex flex-wrap gap-3">
                         {gate.approval_chain.map((step) => (
@@ -321,11 +331,11 @@ function GatesTab({ projectId }: { projectId: string }) {
                           onClick={() =>
                             runAction(
                               { action: "submit", gateId: gate.id },
-                              `${gate.code} submitted for review`,
+                              t("gateSubmitted", { code: gate.code }),
                             )
                           }
                         >
-                          Submit for Review
+                          {t("submitForReview")}
                         </Button>
                       ) : (
                         <>
@@ -337,12 +347,12 @@ function GatesTab({ projectId }: { projectId: string }) {
                             onClick={() =>
                               setDecision({
                                 action: "approve",
-                                title: "Approve Gate",
+                                title: t("approveGate"),
                                 gate,
                               })
                             }
                           >
-                            Approve
+                            {t("approve")}
                           </Button>
                           <Button
                             variant="secondary"
@@ -352,12 +362,12 @@ function GatesTab({ projectId }: { projectId: string }) {
                             onClick={() =>
                               setDecision({
                                 action: "request_info",
-                                title: "Request Info",
+                                title: t("requestInfo"),
                                 gate,
                               })
                             }
                           >
-                            Request Info
+                            {t("requestInfo")}
                           </Button>
                           <Button
                             variant="danger"
@@ -367,12 +377,12 @@ function GatesTab({ projectId }: { projectId: string }) {
                             onClick={() =>
                               setDecision({
                                 action: "reject",
-                                title: "Reject Gate",
+                                title: t("rejectGate"),
                                 gate,
                               })
                             }
                           >
-                            Reject
+                            {t("reject")}
                           </Button>
                         </>
                       )}
@@ -396,17 +406,17 @@ function GatesTab({ projectId }: { projectId: string }) {
             if (decision.action === "approve")
               runAction(
                 { action: "approve", gateId, notes: text || undefined },
-                `${decision.gate.code} approved`,
+                t("gateApproved", { code: decision.gate.code }),
               )
             else if (decision.action === "reject")
               runAction(
                 { action: "reject", gateId, reason: text },
-                `${decision.gate.code} rejected`,
+                t("gateRejected", { code: decision.gate.code }),
               )
             else
               runAction(
                 { action: "request_info", gateId, message: text },
-                "Additional info requested",
+                t("infoRequested"),
               )
           }}
         />
@@ -419,13 +429,13 @@ function GatesTab({ projectId }: { projectId: string }) {
 /* Change Requests                                                     */
 /* ------------------------------------------------------------------ */
 
-const CR_TYPES: { id: ChangeRequestType; label: string }[] = [
-  { id: "scope", label: "Scope" },
-  { id: "cost", label: "Cost" },
-  { id: "schedule", label: "Schedule" },
-  { id: "technical", label: "Technical" },
-  { id: "other", label: "Other" },
-]
+const CR_TYPES = [
+  "scope",
+  "cost",
+  "schedule",
+  "technical",
+  "other",
+] as const satisfies readonly ChangeRequestType[]
 
 function NewChangeRequestDialog({
   projectId,
@@ -436,6 +446,8 @@ function NewChangeRequestDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const t = useTranslations("ProjectsPhaseGate")
+  const tCommon = useTranslations("Common")
   const [title, setTitle] = useState("")
   const [type, setType] = useState<ChangeRequestType>("scope")
   const [description, setDescription] = useState("")
@@ -457,7 +469,7 @@ function NewChangeRequestDialog({
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      toast.error("Give the change request a title")
+      toast.error(t("crTitleRequired"))
       return
     }
     createCr.mutate(
@@ -472,14 +484,14 @@ function NewChangeRequestDialog({
       },
       {
         onSuccess: (cr) => {
-          toast.success(`${cr.cr_number} created`, {
-            description: "Submit it for approval when it's ready.",
+          toast.success(t("crCreated", { code: cr.cr_number }), {
+            description: t("crCreatedDescription"),
           })
           close()
         },
         onError: (err) =>
-          toast.error("Couldn't create change request", {
-            description: apiMessage(err),
+          toast.error(t("crCreateError"), {
+            description: apiMessage(err, t("genericError")),
           }),
       },
     )
@@ -490,22 +502,23 @@ function NewChangeRequestDialog({
       <DialogContent className="max-w-[560px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-lg leading-7 font-semibold">
-            New Change Request
+            {t("newChangeRequest")}
           </DialogTitle>
           <DialogDescription className="text-content-tertiary text-[13px] leading-5">
-            Raise a scope, cost, or schedule change against this project
+            {t("newCrDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <DialogBody className="gap-4">
           <div className="flex flex-col gap-1.5">
             <span className="text-content-secondary text-[13px] font-semibold">
-              Title<span className="text-brand-danger">*</span>
+              {t("fieldTitle")}
+              <span className="text-brand-danger">*</span>
             </span>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="What needs to change?"
+              placeholder={t("titlePlaceholder")}
               className="h-10 text-[13px]"
             />
           </div>
@@ -513,7 +526,7 @@ function NewChangeRequestDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">
               <span className="text-content-secondary text-[13px] font-semibold">
-                Type
+                {tCommon("type")}
               </span>
               <Select
                 value={type}
@@ -523,9 +536,9 @@ function NewChangeRequestDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CR_TYPES.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.label}
+                  {CR_TYPES.map((crType) => (
+                    <SelectItem key={crType} value={crType}>
+                      {t(`crType.${crType}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -533,7 +546,7 @@ function NewChangeRequestDialog({
             </div>
             <div className="flex flex-col gap-1.5">
               <span className="text-content-secondary text-[13px] font-semibold">
-                Cost Δ
+                {t("costDelta")}
               </span>
               <Input
                 type="number"
@@ -546,7 +559,7 @@ function NewChangeRequestDialog({
             </div>
             <div className="flex flex-col gap-1.5">
               <span className="text-content-secondary text-[13px] font-semibold">
-                Schedule Δ (days)
+                {t("scheduleDeltaDays")}
               </span>
               <Input
                 type="number"
@@ -561,12 +574,12 @@ function NewChangeRequestDialog({
 
           <div className="flex flex-col gap-1.5">
             <span className="text-content-secondary text-[13px] font-semibold">
-              Description
+              {tCommon("description")}
             </span>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Why is this change needed?"
+              placeholder={t("descriptionPlaceholder")}
               className="min-h-[88px] text-[13px]"
             />
           </div>
@@ -574,7 +587,7 @@ function NewChangeRequestDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={close} className="text-[13px]">
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             variant="primary"
@@ -582,7 +595,7 @@ function NewChangeRequestDialog({
             disabled={createCr.isPending}
             className="text-[13px]"
           >
-            {createCr.isPending ? "Creating…" : "Create Change Request"}
+            {createCr.isPending ? t("creating") : t("createChangeRequest")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -591,6 +604,9 @@ function NewChangeRequestDialog({
 }
 
 function ChangeRequestsTab({ projectId }: { projectId: string }) {
+  const t = useTranslations("ProjectsPhaseGate")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const { data, isLoading, isError } = useProjectChangeRequests(projectId)
   const crAction = useChangeRequestAction(projectId)
   const [newCrOpen, setNewCrOpen] = useState(false)
@@ -604,8 +620,8 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
     crAction.mutate(input, {
       onSuccess: () => toast.success(successLabel),
       onError: (err) =>
-        toast.error("Change request action failed", {
-          description: apiMessage(err),
+        toast.error(t("crActionFailed"), {
+          description: apiMessage(err, t("genericError")),
         }),
     })
 
@@ -614,10 +630,10 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="flex flex-col gap-0.5">
           <h3 className="text-content-primary text-sm font-semibold">
-            Change Request Tracker
+            {t("crTracker")}
           </h3>
           <p className="text-content-tertiary text-xs">
-            All change requests raised against this project
+            {t("crTrackerSubtitle")}
           </p>
         </div>
         <Button
@@ -627,20 +643,20 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
           onClick={() => setNewCrOpen(true)}
         >
           <Plus className="size-3.5" aria-hidden />
-          New Change Request
+          {t("newChangeRequest")}
         </Button>
       </div>
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead>Code</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Raised</TableHead>
-            <TableHead>Cost Δ</TableHead>
-            <TableHead>Schedule Δ</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-end">Actions</TableHead>
+            <TableHead>{t("colCode")}</TableHead>
+            <TableHead>{t("fieldTitle")}</TableHead>
+            <TableHead>{tCommon("type")}</TableHead>
+            <TableHead>{t("colRaised")}</TableHead>
+            <TableHead>{t("costDelta")}</TableHead>
+            <TableHead>{t("scheduleDelta")}</TableHead>
+            <TableHead>{tCommon("status")}</TableHead>
+            <TableHead className="text-end">{tCommon("actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -650,7 +666,7 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                 colSpan={8}
                 className="text-content-tertiary py-10 text-center text-sm"
               >
-                Loading change requests…
+                {t("crLoading")}
               </TableCell>
             </TableRow>
           ) : isError ? (
@@ -659,7 +675,7 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                 colSpan={8}
                 className="text-content-tertiary py-10 text-center text-sm"
               >
-                Couldn&apos;t load change requests.
+                {t("crLoadError")}
               </TableCell>
             </TableRow>
           ) : rows.length === 0 ? (
@@ -668,7 +684,7 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                 colSpan={8}
                 className="text-content-tertiary py-10 text-center text-sm"
               >
-                No change requests raised.
+                {t("crEmpty")}
               </TableCell>
             </TableRow>
           ) : (
@@ -684,10 +700,10 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                     {cr.title}
                   </TableCell>
                   <TableCell className="text-content-secondary text-[13px]">
-                    {cr.type_label}
+                    {t(`crType.${cr.type}`)}
                   </TableCell>
                   <TableCell className="text-content-secondary text-[13px]">
-                    {formatApiDate(cr.raised_date)}
+                    {formatApiDate(cr.raised_date, locale)}
                   </TableCell>
                   <TableCell
                     className={cn(
@@ -713,7 +729,7 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                     )}
                   >
                     {scheduleDelta > 0 ? "+" : ""}
-                    {scheduleDelta}d
+                    {t("daysShort", { days: scheduleDelta })}
                   </TableCell>
                   <TableCell>
                     <StatusPill status={cr.status_label} />
@@ -728,11 +744,11 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                         onClick={() =>
                           act(
                             { action: "submit", crId: cr.id },
-                            `${cr.cr_number} submitted for approval`,
+                            t("crSubmitted", { code: cr.cr_number }),
                           )
                         }
                       >
-                        Submit
+                        {tCommon("submit")}
                       </Button>
                     ) : cr.status === "pending_approval" ? (
                       <div className="flex justify-end gap-1.5">
@@ -744,11 +760,11 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                           onClick={() =>
                             act(
                               { action: "approve", crId: cr.id },
-                              `${cr.cr_number} approved`,
+                              t("crApproved", { code: cr.cr_number }),
                             )
                           }
                         >
-                          Approve
+                          {t("approve")}
                         </Button>
                         <Button
                           variant="danger"
@@ -757,7 +773,7 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                           className="h-7 text-[11px]"
                           onClick={() => {
                             const reason = window.prompt(
-                              `Reject ${cr.cr_number} — reason:`,
+                              t("crRejectPrompt", { code: cr.cr_number }),
                             )
                             if (reason?.trim())
                               act(
@@ -766,11 +782,11 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                                   crId: cr.id,
                                   reason: reason.trim(),
                                 },
-                                `${cr.cr_number} rejected`,
+                                t("crRejected", { code: cr.cr_number }),
                               )
                           }}
                         >
-                          Reject
+                          {t("reject")}
                         </Button>
                       </div>
                     ) : cr.status === "approved" ||
@@ -785,17 +801,23 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
                               crId: cr.id,
                               status: v as "on_track" | "blocked" | "completed",
                             },
-                            `${cr.cr_number} updated`,
+                            t("crUpdated", { code: cr.cr_number }),
                           )
                         }
                       >
                         <SelectTrigger className="ms-auto h-7 w-[120px] text-[11px]">
-                          <SelectValue placeholder="Execution…" />
+                          <SelectValue placeholder={t("executionPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="on_track">On Track</SelectItem>
-                          <SelectItem value="blocked">Blocked</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="on_track">
+                            {t("execution.on_track")}
+                          </SelectItem>
+                          <SelectItem value="blocked">
+                            {t("execution.blocked")}
+                          </SelectItem>
+                          <SelectItem value="completed">
+                            {t("execution.completed")}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (
@@ -825,6 +847,7 @@ function ChangeRequestsTab({ projectId }: { projectId: string }) {
 /* ------------------------------------------------------------------ */
 
 function ClosureTab({ projectId }: { projectId: string }) {
+  const t = useTranslations("ProjectsPhaseGate")
   const { data, isLoading, isError } = useClosureChecklist(projectId)
   const toggleItem = useToggleClosureItem(projectId)
   const technicallyComplete = useSetTechnicallyComplete(projectId)
@@ -850,7 +873,7 @@ function ClosureTab({ projectId }: { projectId: string }) {
     return (
       <Card className="flex h-40 items-center justify-center p-6">
         <p className="text-content-tertiary text-sm">
-          Couldn&apos;t load the closure checklist.
+          {t("closureLoadError")}
         </p>
       </Card>
     )
@@ -864,10 +887,10 @@ function ClosureTab({ projectId }: { projectId: string }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
             <h3 className="text-content-primary text-sm font-semibold">
-              Closure Progress
+              {t("closureProgress")}
             </h3>
             <p className="text-content-tertiary text-xs">
-              {complete} of {total} items complete
+              {t("closureItemsComplete", { complete, total })}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -879,15 +902,15 @@ function ClosureTab({ projectId }: { projectId: string }) {
               onClick={() =>
                 technicallyComplete.mutate(undefined, {
                   onSuccess: () =>
-                    toast.success("Project set technically complete"),
+                    toast.success(t("technicallyCompleteSuccess")),
                   onError: (err) =>
-                    toast.error("Couldn't set technically complete", {
-                      description: apiMessage(err),
+                    toast.error(t("technicallyCompleteError"), {
+                      description: apiMessage(err, t("genericError")),
                     }),
                 })
               }
             >
-              Set Technically Complete
+              {t("setTechnicallyComplete")}
             </Button>
             <Button
               variant="primary"
@@ -897,20 +920,20 @@ function ClosureTab({ projectId }: { projectId: string }) {
               title={
                 allDone
                   ? undefined
-                  : "All checklist items must be complete before locking"
+                  : t("lockDisabledHint")
               }
               onClick={() =>
                 lockProject.mutate(undefined, {
-                  onSuccess: () => toast.success("Project locked"),
+                  onSuccess: () => toast.success(t("projectLocked")),
                   onError: (err) =>
-                    toast.error("Couldn't lock project", {
-                      description: apiMessage(err),
+                    toast.error(t("lockError"), {
+                      description: apiMessage(err, t("genericError")),
                     }),
                 })
               }
             >
               <Lock className="size-3.5" aria-hidden />
-              Lock Project
+              {t("lockProject")}
             </Button>
           </div>
         </div>
@@ -941,8 +964,8 @@ function ClosureTab({ projectId }: { projectId: string }) {
                         { itemId: item.id, isComplete: checked === true },
                         {
                           onError: (err) =>
-                            toast.error("Couldn't update item", {
-                              description: apiMessage(err),
+                            toast.error(t("itemUpdateError"), {
+                              description: apiMessage(err, t("genericError")),
                             }),
                         },
                       )
@@ -978,31 +1001,32 @@ function ClosureTab({ projectId }: { projectId: string }) {
 /* ------------------------------------------------------------------ */
 
 function PhaseGateContent({ projectId }: { projectId: string }) {
-  const [tab, setTab] = useState<Tab>("Gates")
+  const t = useTranslations("ProjectsPhaseGate")
+  const [tab, setTab] = useState<Tab>("gates")
 
   return (
     <div className="flex flex-col gap-6">
       <div className="bg-surface-muted flex w-fit items-center gap-0.5 rounded-lg p-0.5">
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <button
-            key={t}
+            key={item.id}
             type="button"
-            onClick={() => setTab(t)}
+            onClick={() => setTab(item.id)}
             className={cn(
               "rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
-              tab === t
+              tab === item.id
                 ? "bg-surface-white text-brand-primary shadow-sm"
                 : "text-content-tertiary hover:text-content-primary",
             )}
           >
-            {t}
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
 
-      {tab === "Gates" ? (
+      {tab === "gates" ? (
         <GatesTab projectId={projectId} />
-      ) : tab === "Change Requests" ? (
+      ) : tab === "changeRequests" ? (
         <ChangeRequestsTab projectId={projectId} />
       ) : (
         <ClosureTab projectId={projectId} />
@@ -1012,11 +1036,9 @@ function PhaseGateContent({ projectId }: { projectId: string }) {
 }
 
 export function PhaseGateModule() {
+  const t = useTranslations("ProjectsPhaseGate")
   return (
-    <ProjectScopedView
-      title="Phase & Gate Control"
-      subtitle="Stage-gate reviews, change requests, and closure"
-    >
+    <ProjectScopedView title={t("title")} subtitle={t("subtitle")}>
       {(projectId) => <PhaseGateContent projectId={projectId} />}
     </ProjectScopedView>
   )

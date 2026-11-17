@@ -1,6 +1,7 @@
 "use client"
 
 import { History } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { AuditDayGroup } from "../../audit-log/audit-timeline"
 import { useEmployeeHistory } from "../../../lib/queries/audit-log"
@@ -12,12 +13,13 @@ type HistoryTabProps = Readonly<{
 }>
 
 export function HistoryTab({ employeeId }: HistoryTabProps) {
+  const t = useTranslations("HrEmployeeDetail")
   const { data: days = [], isLoading } = useEmployeeHistory(employeeId)
 
   return (
     <SectionCard
-      title="Activity History"
-      description="Changes and actions recorded for this employee"
+      title={t("historyTitle")}
+      description={t("historyDescription")}
       bodyClassName="px-6 pb-6 pt-1 flex flex-col gap-4"
     >
       {isLoading && <HrSectionSpinner />}
@@ -27,7 +29,7 @@ export function HistoryTab({ employeeId }: HistoryTabProps) {
             <History className="size-5" strokeWidth={1.5} />
           </span>
           <p className="text-content-tertiary text-sm leading-5">
-            No changes have been recorded for this employee yet.
+            {t("historyEmpty")}
           </p>
         </div>
       )}

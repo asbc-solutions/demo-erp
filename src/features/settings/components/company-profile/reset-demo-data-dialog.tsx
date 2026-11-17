@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Loader2 } from "lucide-react"
 import { signOut } from "next-auth/react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -27,6 +28,9 @@ export function ResetDemoDataDialog({
   open,
   onOpenChange,
 }: Readonly<{ open: boolean; onOpenChange: (open: boolean) => void }>) {
+  const t = useTranslations("SettingsResetDemo")
+  const tShared = useTranslations("SettingsShared")
+  const tCommon = useTranslations("Common")
   const [confirmText, setConfirmText] = React.useState("")
   const resetDemoData = useResetDemoData()
   const isValid = confirmText.trim() === CONFIRM_PHRASE
@@ -40,13 +44,13 @@ export function ResetDemoDataDialog({
     if (!isValid) return
     resetDemoData.mutate(undefined, {
       onSuccess: () => {
-        toast.success("Demo data reset. Signing you out…", {
-          description: "Every session, including yours, was just invalidated.",
+        toast.success(t("success"), {
+          description: t("successDescription"),
         })
         handleOpenChange(false)
         void signOut({ callbackUrl: "/" })
       },
-      onError: (err) => toastMutationError(err, "Failed to reset demo data"),
+      onError: (err) => toastMutationError(err, t("failed"), tShared),
     })
   }
 
@@ -54,17 +58,19 @@ export function ResetDemoDataDialog({
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Reset all demo data?</AlertDialogTitle>
+          <AlertDialogTitle>{t("title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            This wipes and reseeds the <strong>entire</strong> database — invoices, employees,
-            deals, and company information — for every user. It cannot be undone, and it will
-            immediately end every active session, including your own. You will be signed out.
+            {t.rich("description", { strong: (chunks) => <strong>{chunks}</strong> })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex flex-col gap-1.5 px-6 pb-6 text-start">
           <Label htmlFor="reset-demo-confirm" className="text-content-secondary text-xs font-medium">
-            Type <span className="text-content-primary font-semibold">{CONFIRM_PHRASE}</span> to
-            confirm
+            {t.rich("confirmLabel", {
+              phrase: CONFIRM_PHRASE,
+              highlight: (chunks) => (
+                <span className="text-content-primary font-semibold">{chunks}</span>
+              ),
+            })}
           </Label>
           <Input
             id="reset-demo-confirm"
@@ -76,7 +82,7 @@ export function ResetDemoDataDialog({
           />
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
           <Button
             type="button"
             variant="danger"
@@ -86,7 +92,7 @@ export function ResetDemoDataDialog({
             {resetDemoData.isPending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : null}
-            Reset Everything
+            {t("confirm")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

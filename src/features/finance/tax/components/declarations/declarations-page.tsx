@@ -1,5 +1,7 @@
 "use client"
 
+import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/src/i18n/navigation"
 import { toast } from "sonner"
 
@@ -12,10 +14,11 @@ import { FinanceTable, type FinanceColumn } from "../../../components/shared/fin
 import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { useFileDeclaration } from "../../lib/mutations/tax"
 import { useDeclarations } from "../../lib/queries/tax"
-import type { Declaration } from "../../lib/types/tax"
+import type { Declaration, TaxTranslator } from "../../lib/types/tax"
 
 const STATUS_TONE: Record<Declaration["status"], "success" | "warning" | "danger" | "info"> = {
   filed: "success",
@@ -25,6 +28,7 @@ const STATUS_TONE: Record<Declaration["status"], "success" | "warning" | "danger
 }
 
 function FileButton({ row }: { row: Declaration }) {
+  const t = useTranslations("FinanceTax")
   const file = useFileDeclaration()
   return (
     <Button
@@ -33,44 +37,49 @@ function FileButton({ row }: { row: Declaration }) {
       disabled={file.isPending}
       onClick={() =>
         file.mutate(row.id, {
-          onSuccess: () => toast.success(`${row.name} for ${row.period} is recorded as filed.`),
-          onError: (error) => toast.error(errorMessage(error, "The declaration could not be recorded. Try again.")),
+          onSuccess: () => toast.success(t("toastDeclarationFiled", { name: row.name, period: row.period })),
+          onError: (error) => toast.error(errorMessage(error, t("errorFileDeclaration"))),
         })
       }
     >
-      Mark filed
+      {t("markFiled")}
     </Button>
   )
 }
 
-const COLUMNS: FinanceColumn<Declaration>[] = [
-  { id: "name", header: "Declaration", cell: (row) => <span className="text-content-primary font-medium">{row.name}</span> },
-  { id: "authority", header: "Authority", cell: (row) => row.authority },
-  { id: "period", header: "Period", cell: (row) => row.period },
-  { id: "due", header: "Due", cell: (row) => formatDate(row.due) },
-  { id: "in", header: "In", align: "end", cell: (row) => (row.days === null ? "—" : `${row.days}d`) },
-  { id: "status", header: "Status", cell: (row) => <StatusPill status={`declaration-${row.status}`} label={row.status} tone={STATUS_TONE[row.status]} /> },
-  {
-    id: "action",
-    header: <span className="sr-only">Action</span>,
-    align: "end",
-    cell: (row) =>
-      row.href ? (
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={row.href}>Open</Link>
-        </Button>
-      ) : row.can_file ? (
-        <FileButton row={row} />
-      ) : null,
-  },
-]
+function buildColumns(t: TaxTranslator, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<Declaration>[] {
+  return [
+    { id: "name", header: t("declaration"), cell: (row) => <span className="text-content-primary font-medium">{row.name}</span> },
+    { id: "authority", header: t("authority"), cell: (row) => row.authority },
+    { id: "period", header: t("period"), cell: (row) => row.period },
+    { id: "due", header: t("due"), cell: (row) => formatDate(row.due) },
+    { id: "in", header: t("in"), align: "end", cell: (row) => (row.days === null ? "—" : t("daysShort", { days: row.days })) },
+    { id: "status", header: t("status"), cell: (row) => <StatusPill status={`declaration-${row.status}`} label={t(`declarationStatus.${row.status}`)} tone={STATUS_TONE[row.status]} /> },
+    {
+      id: "action",
+      header: <span className="sr-only">{t("action")}</span>,
+      align: "end",
+      cell: (row) =>
+        row.href ? (
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={row.href}>{t("open")}</Link>
+          </Button>
+        ) : row.can_file ? (
+          <FileButton row={row} />
+        ) : null,
+    },
+  ]
+}
 
 /** 07.07 · Tax declarations — every return the entity owes, by due date. */
 function DeclarationsPage() {
+  const t = useTranslations("FinanceTax")
+  const { formatDate } = useFinanceDateFormat()
+  const columns = React.useMemo(() => buildColumns(t, formatDate), [t, formatDate])
   const { data, isError, refetch } = useDeclarations()
   return (
     <>
-      <FinancePageHeader title="Tax declarations" figure={data ? <HeaderFigure label="Due now">{data.due_now}</HeaderFigure> : null} />
+      <FinancePageHeader title={t("taxDeclarations")} figure={data ? <HeaderFigure label={t("dueNow")}>{data.due_now}</HeaderFigure> : null} />
       <FinancePageBody>
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
@@ -79,15 +88,14 @@ function DeclarationsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="danger" label="Due now" value={data.due_now} />
-              <KpiCard layout="bar" accent="success" label="Filed this quarter" value={data.filed_quarter} />
-              <KpiCard layout="bar" accent="indigo" label="Upcoming" value={data.upcoming} />
+              <KpiCard layout="bar" accent="danger" label={t("dueNow")} value={data.due_now} />
+              <KpiCard layout="bar" accent="success" label={t("filedThisQuarter")} value={data.filed_quarter} />
+              <KpiCard layout="bar" accent="indigo" label={t("upcoming")} value={data.upcoming} />
             </div>
             <FinanceAlert tone="info">
-              Declarations due within the current window are highlighted. Filing a return locks its period figures and records the
-              submission reference for the audit trail, so review the worksheet before you submit.
+              {t("declarationsInfo")}
             </FinanceAlert>
-            <FinanceTable caption="Tax declarations" columns={COLUMNS} rows={data.items} getRowId={(row) => row.id} />
+            <FinanceTable caption={t("taxDeclarations")} columns={columns} rows={data.items} getRowId={(row) => row.id} />
           </>
         )}
       </FinancePageBody>

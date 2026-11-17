@@ -1,3 +1,12 @@
+import type { Messages } from "next-intl"
+
+type NewProjectMessages = Messages["ProjectsNewProject"]
+
+/** A flat (string) message key of the `ProjectsNewProject` namespace. */
+export type NewProjectKey = {
+  [K in keyof NewProjectMessages]: NewProjectMessages[K] extends string ? K : never
+}[keyof NewProjectMessages]
+
 export type ProjectTypeId =
   | "external-client"
   | "internal-initiative"
@@ -8,46 +17,46 @@ export type ProjectTypeId =
 
 export type ProjectTypeOption = {
   id: ProjectTypeId
-  label: string
-  description: string
+  labelKey: NewProjectKey
+  descriptionKey: NewProjectKey
   icon: "briefcase" | "building" | "landmark" | "layers" | "sparkles" | "shield"
 }
 
 export const PROJECT_TYPES: ProjectTypeOption[] = [
   {
     id: "external-client",
-    label: "External Client",
-    description: "Customer-billed engagement",
+    labelKey: "typeExternalClient",
+    descriptionKey: "typeExternalClientDescription",
     icon: "briefcase",
   },
   {
     id: "internal-initiative",
-    label: "Internal Initiative",
-    description: "Cross-team program",
+    labelKey: "typeInternalInitiative",
+    descriptionKey: "typeInternalInitiativeDescription",
     icon: "building",
   },
   {
     id: "capital",
-    label: "Capital (CAPEX)",
-    description: "Asset under construction",
+    labelKey: "typeCapital",
+    descriptionKey: "typeCapitalDescription",
     icon: "landmark",
   },
   {
     id: "overhead",
-    label: "Overhead",
-    description: "Indirect operating cost",
+    labelKey: "typeOverhead",
+    descriptionKey: "typeOverheadDescription",
     icon: "layers",
   },
   {
     id: "rnd",
-    label: "R&D",
-    description: "Discovery / experimentation",
+    labelKey: "typeRnd",
+    descriptionKey: "typeRndDescription",
     icon: "sparkles",
   },
   {
     id: "compliance",
-    label: "Compliance",
-    description: "Regulatory or audit",
+    labelKey: "typeCompliance",
+    descriptionKey: "typeComplianceDescription",
     icon: "shield",
   },
 ]
@@ -59,6 +68,13 @@ export const BILLING_METHODS: BillingMethod[] = [
   "Time & Materials",
   "Milestone",
 ]
+
+/** Billing method → `ProjectsNewProject` message key. */
+export const BILLING_METHOD_KEY = {
+  "Fixed Price": "billingFixedPrice",
+  "Time & Materials": "billingTimeMaterials",
+  Milestone: "billingMilestone",
+} as const satisfies Record<BillingMethod, NewProjectKey>
 
 export type ProjectPriority = "Low" | "Medium" | "High" | "Critical"
 
@@ -80,18 +96,18 @@ export const WBS_LEVEL_STYLE: Record<WbsLevel, string> = {
 export type WbsNode = {
   id: string
   level: WbsLevel
-  label: string
+  labelKey: NewProjectKey
   indent: number
 }
 
 export const WBS_SKELETON: WbsNode[] = [
-  { id: "wbs-1", level: "L1", label: "Project", indent: 0 },
-  { id: "wbs-2", level: "L2", label: "Phase 1 — Discovery", indent: 1 },
-  { id: "wbs-3", level: "L3", label: "Site Survey", indent: 2 },
-  { id: "wbs-4", level: "L3", label: "Stakeholder Workshops", indent: 2 },
-  { id: "wbs-5", level: "L2", label: "Phase 2 — Build", indent: 1 },
-  { id: "wbs-6", level: "L3", label: "Implementation", indent: 2 },
-  { id: "wbs-7", level: "L2", label: "Phase 3 — Handover", indent: 1 },
+  { id: "wbs-1", level: "L1", labelKey: "wbsProject", indent: 0 },
+  { id: "wbs-2", level: "L2", labelKey: "wbsPhaseDiscovery", indent: 1 },
+  { id: "wbs-3", level: "L3", labelKey: "wbsSiteSurvey", indent: 2 },
+  { id: "wbs-4", level: "L3", labelKey: "wbsWorkshops", indent: 2 },
+  { id: "wbs-5", level: "L2", labelKey: "wbsPhaseBuild", indent: 1 },
+  { id: "wbs-6", level: "L3", labelKey: "wbsImplementation", indent: 2 },
+  { id: "wbs-7", level: "L2", labelKey: "wbsPhaseHandover", indent: 1 },
 ]
 
 export type StakeholderAvatarColor =
@@ -111,7 +127,7 @@ export const STAKEHOLDER_AVATAR_STYLE: Record<StakeholderAvatarColor, string> = 
 
 export type StakeholderRole = {
   id: string
-  role: string
+  roleKey: NewProjectKey
   required?: boolean
   name?: string
   initials: string
@@ -122,7 +138,7 @@ export type StakeholderRole = {
 export const STAKEHOLDER_ROLES: StakeholderRole[] = [
   {
     id: "pm",
-    role: "Project Manager",
+    roleKey: "roleProjectManager",
     required: true,
     name: "Anna Mostafa",
     initials: "AM",
@@ -131,7 +147,7 @@ export const STAKEHOLDER_ROLES: StakeholderRole[] = [
   },
   {
     id: "sponsor",
-    role: "Sponsor",
+    roleKey: "roleSponsor",
     name: "Omar Sami",
     initials: "OS",
     color: "amber",
@@ -139,7 +155,7 @@ export const STAKEHOLDER_ROLES: StakeholderRole[] = [
   },
   {
     id: "finance",
-    role: "Finance Controller",
+    roleKey: "roleFinanceController",
     name: "Rana Khalil",
     initials: "RK",
     color: "emerald",
@@ -147,14 +163,14 @@ export const STAKEHOLDER_ROLES: StakeholderRole[] = [
   },
   {
     id: "customer",
-    role: "Customer Contact",
+    roleKey: "roleCustomerContact",
     initials: "?",
     color: "muted",
     notifyDefault: false,
   },
   {
     id: "lead",
-    role: "Team Lead",
+    roleKey: "roleTeamLead",
     name: "Lotfy Hassan",
     initials: "LH",
     color: "violet",
@@ -162,38 +178,37 @@ export const STAKEHOLDER_ROLES: StakeholderRole[] = [
   },
 ]
 
-export type WorkingDay = {
-  id: string
-  label: string
-}
+/** Working-day ids; each is a `ProjectsNewProject.weekday` message key. */
+export const WORKING_DAYS = [
+  "mon",
+  "tue",
+  "wed",
+  "thu",
+  "fri",
+  "sat",
+  "sun",
+] as const
 
-export const WORKING_DAYS: WorkingDay[] = [
-  { id: "mon", label: "Mon" },
-  { id: "tue", label: "Tue" },
-  { id: "wed", label: "Wed" },
-  { id: "thu", label: "Thu" },
-  { id: "fri", label: "Fri" },
-  { id: "sat", label: "Sat" },
-  { id: "sun", label: "Sun" },
-]
+export type WorkingDayId = (typeof WORKING_DAYS)[number]
 
 export const DEFAULT_WORKING_DAYS = ["mon", "tue", "wed", "thu", "fri"]
 
-export const TIMEZONES = [
-  "Egypt Standard (GMT+2)",
-  "Gulf Standard (GMT+4)",
-  "Central European (GMT+1)",
-  "Eastern (GMT-5)",
+/** Form value (kept as-is) → display label key. */
+export const TIMEZONES: { value: string; labelKey: NewProjectKey }[] = [
+  { value: "Egypt Standard (GMT+2)", labelKey: "tzEgypt" },
+  { value: "Gulf Standard (GMT+4)", labelKey: "tzGulf" },
+  { value: "Central European (GMT+1)", labelKey: "tzCentralEurope" },
+  { value: "Eastern (GMT-5)", labelKey: "tzEastern" },
 ]
 
 export const WIZARD_STEPS = [
-  { id: "classification", label: "Classification" },
-  { id: "details", label: "Details" },
-  { id: "hierarchy", label: "Hierarchy" },
-  { id: "stakeholders", label: "Stakeholders" },
-  { id: "calendar", label: "Calendar" },
-  { id: "review", label: "Review" },
-] as const
+  { id: "classification", labelKey: "stepClassification" },
+  { id: "details", labelKey: "stepDetails" },
+  { id: "hierarchy", labelKey: "stepHierarchy" },
+  { id: "stakeholders", labelKey: "stepStakeholders" },
+  { id: "calendar", labelKey: "stepCalendar" },
+  { id: "review", labelKey: "stepReview" },
+] as const satisfies readonly { id: string; labelKey: NewProjectKey }[]
 
 export type WizardStepId = (typeof WIZARD_STEPS)[number]["id"]
 

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Search, SlidersHorizontal } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { Input } from "@/src/shared/components/ui/input"
@@ -29,7 +30,7 @@ export function HrToolbar({
   primary,
   searchValue,
   onSearchChange,
-  searchPlaceholder = "Search by name, email, or employee number...",
+  searchPlaceholder,
   onOpenFilters,
   showSearch = true,
   showFilters = true,
@@ -37,6 +38,9 @@ export function HrToolbar({
   filterValues,
   onFilterChange,
 }: HrToolbarProps) {
+  const t = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-2">{primary}</div>
@@ -53,7 +57,7 @@ export function HrToolbar({
               type="search"
               value={searchValue ?? ""}
               onChange={(event) => onSearchChange?.(event.target.value)}
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder ?? t("searchEmployeesPlaceholder")}
               className="bg-surface-page h-10 rounded-[10px] border-transparent ps-9 shadow-none"
             />
           </div>
@@ -72,7 +76,7 @@ export function HrToolbar({
               onClick={onOpenFilters}
             >
               <SlidersHorizontal />
-              Filters
+              {tCommon("filters")}
             </Button>
           ))}
       </div>

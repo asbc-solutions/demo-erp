@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/src/i18n/navigation"
 import { toast } from "sonner"
 
@@ -39,7 +40,8 @@ import {
 import { useFinanceTreasuries } from "../../../lib/queries/master-data"
 import type { FinanceTreasury } from "../../../lib/types/common"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount, round2 } from "../../../lib/utils/money"
 import { AgingBucketPill } from "../../../subledger/components/shared/aging-bucket-pill"
 import type { SubledgerDocument } from "../../../subledger/lib/types/subledger"
@@ -50,18 +52,22 @@ import type { PaymentRunResult } from "../../lib/types/payables"
 /** The run pays from the main operating account unless another is chosen. */
 const DEFAULT_TREASURY_ID = "bnk-cib-0021"
 
-const COLUMNS: FinanceColumn<SubledgerDocument>[] = [
-  { id: "bill", header: "Bill", cell: (row) => <DocNumber>{row.number}</DocNumber>, footer: "Selected" },
-  { id: "supplier", header: "Supplier", cell: (row) => row.contact_name },
-  { id: "due", header: "Due", cell: (row) => (row.due_date ? formatDate(row.due_date) : "—") },
-  { id: "aging", header: "Aging", cell: (row) => <AgingBucketPill bucket={row.bucket} /> },
-  {
-    id: "outstanding",
-    header: "Outstanding (EGP)",
-    align: "end",
-    cell: (row) => <Amount value={row.outstanding_base} />,
-  },
-]
+type MoneyOutT = ReturnType<typeof useTranslations<"FinanceMoneyOut">>
+
+function runColumns(t: MoneyOutT, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<SubledgerDocument>[] {
+  return [
+    { id: "bill", header: t("colBill"), cell: (row) => <DocNumber>{row.number}</DocNumber>, footer: t("selected") },
+    { id: "supplier", header: t("colSupplier"), cell: (row) => row.contact_name },
+    { id: "due", header: t("colDue"), cell: (row) => (row.due_date ? formatDate(row.due_date) : "—") },
+    { id: "aging", header: t("colAging"), cell: (row) => <AgingBucketPill bucket={row.bucket} /> },
+    {
+      id: "outstanding",
+      header: t("colOutstandingEgp"),
+      align: "end",
+      cell: (row) => <Amount value={row.outstanding_base} />,
+    },
+  ]
+}
 
 function PostingPreview({
   payablesAccount,
@@ -72,14 +78,15 @@ function PostingPreview({
   treasury: FinanceTreasury | undefined
   total: number
 }) {
+  const t = useTranslations("FinanceMoneyOut")
   return (
-    <FinanceSection title="Posting preview">
+    <FinanceSection title={t("postingPreview")}>
       <div className="border-stroke-default bg-surface-white overflow-hidden rounded-lg border">
         <Table density="compact">
           <TableHeader>
             <TableRow>
-              <TableHead>Debit</TableHead>
-              <TableHead>Credit</TableHead>
+              <TableHead>{t("colDebit")}</TableHead>
+              <TableHead>{t("colCredit")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -87,13 +94,13 @@ function PostingPreview({
               <TableCell className="align-top">
                 <span className="flex flex-col">
                   <span className="font-mono">{payablesAccount}</span>
-                  <span className="text-content-secondary">Trade payables</span>
+                  <span className="text-content-secondary">{t("tradePayables")}</span>
                 </span>
               </TableCell>
               <TableCell className="align-top">
                 <span className="flex flex-col">
                   <span className="font-mono">{treasury?.account_code ?? "—"}</span>
-                  <span className="text-content-secondary">{treasury?.name ?? "Choose a treasury"}</span>
+                  <span className="text-content-secondary">{treasury?.name ?? t("chooseTreasury")}</span>
                 </span>
               </TableCell>
             </TableRow>
@@ -110,14 +117,13 @@ function PostingPreview({
           </TableFooter>
         </Table>
       </div>
-      <p className="text-content-tertiary text-xs leading-4">
-        One payment voucher is created per supplier. The entry posts to the open period when you post the run.
-      </p>
+      <p className="text-content-tertiary text-xs leading-4">{t("previewNote")}</p>
     </FinanceSection>
   )
 }
 
 function RunPosted({ result, onAnother }: { result: PaymentRunResult; onAnother: () => void }) {
+  const t = useTranslations("FinanceMoneyOut")
   return (
     <FinanceAlert
       tone="success"
@@ -125,17 +131,19 @@ function RunPosted({ result, onAnother }: { result: PaymentRunResult; onAnother:
       action={
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={onAnother}>
-            Start another run
+            {t("startAnotherRun")}
           </Button>
           <Button variant="primary" size="sm" asChild>
-            <Link href="/finance/journals">View journal</Link>
+            <Link href="/finance/journals">{t("viewJournal")}</Link>
           </Button>
         </div>
       }
     >
-      The payment run posted successfully. It paid {result.bill_count} bill(s) totalling{" "}
-      {formatAmount(result.total_base)} EGP from {result.treasury_name}. The entry is now on the ledger
-      and reduced the treasury balance.
+      {t("runPosted", {
+        count: result.bill_count,
+        amount: formatAmount(result.total_base),
+        treasury: result.treasury_name,
+      })}
     </FinanceAlert>
   )
 }
@@ -145,6 +153,8 @@ function RunPosted({ result, onAnother }: { result: PaymentRunResult; onAnother:
  * `supplierId` (from a supplier card's "Pay") preselects only that supplier.
  */
 function PaymentRunPage({ supplierId }: { supplierId?: string }) {
+  const t = useTranslations("FinanceMoneyOut")
+  const { formatDate } = useFinanceDateFormat()
   const { data, isError, refetch } = usePaymentRunCandidates()
   const { data: treasuries = [] } = useFinanceTreasuries()
   const postRun = usePostPaymentRun()
@@ -174,21 +184,21 @@ function PaymentRunPage({ supplierId }: { supplierId?: string }) {
           setResult(run)
           setSelection(null)
         },
-        onError: (error) => toast.error(errorMessage(error, "The payment run could not be posted. Try again.")),
+        onError: (error) => toast.error(errorMessage(error, t("runPostFailed"))),
       },
     )
 
   return (
     <>
       <FinancePageHeader
-        title="Payment run"
+        title={t("paymentRunTitle")}
         figure={
-          data && !result ? <HeaderFigure label="Selected total (EGP)">{formatAmount(total)}</HeaderFigure> : null
+          data && !result ? <HeaderFigure label={t("selectedTotalEgp")}>{formatAmount(total)}</HeaderFigure> : null
         }
         actions={
           result ? null : (
             <Button variant="primary" disabled={!canPost} onClick={post}>
-              {postRun.isPending ? "Posting…" : "Post payment run"}
+              {postRun.isPending ? t("posting") : t("postPaymentRun")}
             </Button>
           )
         }
@@ -199,7 +209,7 @@ function PaymentRunPage({ supplierId }: { supplierId?: string }) {
         ) : isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : !data ? (
-          <div aria-busy aria-label="Loading bills to pay" className="flex flex-col gap-6">
+          <div aria-busy aria-label={t("loadingBillsToPay")} className="flex flex-col gap-6">
             <FinanceTilesSkeleton />
             <Skeleton className="h-96 rounded-lg" />
           </div>
@@ -210,18 +220,18 @@ function PaymentRunPage({ supplierId }: { supplierId?: string }) {
                 <KpiCard
                   layout="bar"
                   accent="indigo"
-                  label="Bills selected"
+                  label={t("billsSelected")}
                   value={`${selected.length} / ${items.length}`}
                 />
-                <KpiCard layout="bar" accent="teal" label="Run total (EGP)" value={formatAmount(total)} />
-                <KpiCard layout="bar" accent="amber" label="Suppliers" value={suppliers} />
+                <KpiCard layout="bar" accent="teal" label={t("runTotalEgp")} value={formatAmount(total)} />
+                <KpiCard layout="bar" accent="amber" label={t("suppliers")} value={suppliers} />
               </div>
 
               <Field className="max-w-sm">
-                <FieldLabel htmlFor="payment-run-treasury">Pay from treasury</FieldLabel>
+                <FieldLabel htmlFor="payment-run-treasury">{t("payFromTreasury")}</FieldLabel>
                 <Select value={treasuryId} onValueChange={setTreasuryId}>
                   <SelectTrigger id="payment-run-treasury" className="h-9" aria-invalid={short}>
-                    <SelectValue placeholder="Choose a treasury" />
+                    <SelectValue placeholder={t("chooseTreasury")} />
                   </SelectTrigger>
                   <SelectContent>
                     {treasuries.map((row) => (
@@ -233,27 +243,27 @@ function PaymentRunPage({ supplierId }: { supplierId?: string }) {
                 </Select>
                 {treasury ? (
                   <FieldDescription>
-                    Available {formatAmount(treasury.balance)} {treasury.currency}. Bills are in EGP, so the
-                    run pays from EGP accounts only.
+                    {t("availableBalance", { amount: formatAmount(treasury.balance), currency: treasury.currency })}
                   </FieldDescription>
                 ) : null}
               </Field>
 
               {short && treasury ? (
                 <FinanceAlert tone="danger">
-                  {treasury.name} holds {formatAmount(treasury.balance)} EGP, and this run needs{" "}
-                  {formatAmount(total)} EGP. Choose another treasury or clear some bills from the run.
+                  {t("treasuryShort", {
+                    treasury: treasury.name,
+                    balance: formatAmount(treasury.balance),
+                    total: formatAmount(total),
+                  })}
                 </FinanceAlert>
               ) : null}
 
               {items.length === 0 ? (
-                <FinanceAlert tone="info">
-                  No approved bills are waiting to be paid. Bills join the next run once they are approved.
-                </FinanceAlert>
+                <FinanceAlert tone="info">{t("noApprovedBills")}</FinanceAlert>
               ) : (
                 <FinanceTable
-                  caption="Approved bills to pay"
-                  columns={COLUMNS.map((column) =>
+                  caption={t("approvedBillsCaption")}
+                  columns={runColumns(t, formatDate).map((column) =>
                     column.id === "outstanding"
                       ? { ...column, footer: <Amount value={total} emphasis="strong" /> }
                       : column,

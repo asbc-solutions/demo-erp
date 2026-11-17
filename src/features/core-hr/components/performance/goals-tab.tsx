@@ -1,6 +1,7 @@
 "use client"
 
 import { AlertTriangle, Award, CheckCircle2, Target } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Card } from "@/src/shared/components/ui/card"
@@ -23,13 +24,10 @@ import { SummaryStatCard } from "./performance-stats"
 
 type KrStatus = "on_track" | "at_risk" | "completed"
 
-const KR_STATUS: Record<
-  KrStatus,
-  { label: string; variant: "success" | "warning" | "info" }
-> = {
-  on_track: { label: "On Track", variant: "success" },
-  at_risk: { label: "At Risk", variant: "warning" },
-  completed: { label: "Completed", variant: "info" },
+const KR_STATUS_VARIANT: Record<KrStatus, "success" | "warning" | "info"> = {
+  on_track: "success",
+  at_risk: "warning",
+  completed: "info",
 }
 
 /** Map a goal's status + progress onto the design's On Track / At Risk / Completed. */
@@ -55,7 +53,10 @@ interface ObjectiveGroup {
  * `parent_goal_id` (OKRs), each parent becomes an objective and its children the
  * key results. Otherwise goals are grouped by category.
  */
-function buildObjectives(goals: Goal[]): ObjectiveGroup[] {
+function buildObjectives(
+  goals: Goal[],
+  generalLabel: string,
+): ObjectiveGroup[] {
   const hasNesting = goals.some((g) => g.parent_goal_id)
 
   if (hasNesting) {
@@ -81,7 +82,7 @@ function buildObjectives(goals: Goal[]): ObjectiveGroup[] {
 
   const groups = new Map<string, Goal[]>()
   for (const g of goals) {
-    const key = g.category?.trim() || "General"
+    const key = g.category?.trim() || generalLabel
     const arr = groups.get(key) ?? []
     arr.push(g)
     groups.set(key, arr)
@@ -102,6 +103,7 @@ function GoalsKpis({
   goals,
   objectives,
 }: Readonly<{ goals: Goal[]; objectives: ObjectiveGroup[] }>) {
+  const t = useTranslations("HrPerformance")
   const leaves = objectives.flatMap((o) => o.krs)
   const items = leaves.length ? leaves : goals
   const total = items.length || 1
@@ -115,32 +117,32 @@ function GoalsKpis({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <SummaryStatCard
-        label="Company OKRs"
+        label={t("kpiCompanyOkrs")}
         value={goals.length}
-        hint={`${objectives.length} objectives set`}
+        hint={t("objectivesSet", { count: objectives.length })}
         icon={<Target strokeWidth={1.75} />}
         iconClassName="text-violet-600 dark:text-violet-300"
       />
       <SummaryStatCard
-        label="On Track"
+        label={t("krStatus.on_track")}
         value={onTrack}
         valueClassName="text-brand-success"
-        hint={`${pct(onTrack)}% of key results`}
+        hint={t("percentOfKeyResults", { percent: pct(onTrack) })}
         icon={<CheckCircle2 strokeWidth={1.75} />}
         iconClassName="text-brand-success"
       />
       <SummaryStatCard
-        label="At Risk"
+        label={t("krStatus.at_risk")}
         value={atRisk}
         valueClassName="text-brand-warning"
-        hint={`${pct(atRisk)}% need attention`}
+        hint={t("percentNeedAttention", { percent: pct(atRisk) })}
         icon={<AlertTriangle strokeWidth={1.75} />}
         iconClassName="text-brand-warning"
       />
       <SummaryStatCard
-        label="Completed"
+        label={t("krStatus.completed")}
         value={completed}
-        hint={`${pct(completed)}% achieved`}
+        hint={t("percentAchieved", { percent: pct(completed) })}
         icon={<Award strokeWidth={1.75} />}
         iconClassName="text-brand-info"
       />
@@ -154,6 +156,7 @@ const HEAD_CLASS =
   "h-10 text-xs font-medium normal-case tracking-normal text-content-secondary"
 
 function ObjectiveCard({ objective }: Readonly<{ objective: ObjectiveGroup }>) {
+  const t = useTranslations("HrPerformance")
   return (
     <Card variant="elevated" className="gap-0">
       {/* Header */}
@@ -164,14 +167,14 @@ function ObjectiveCard({ objective }: Readonly<{ objective: ObjectiveGroup }>) {
           </h3>
           {objective.owner && (
             <p className="text-sm leading-5 text-content-tertiary">
-              Owner: {objective.owner}
+              {t("owner", { name: objective.owner })}
             </p>
           )}
         </div>
         <div className="flex items-center gap-2">
           <Progress value={objective.progress} color="indigo" className="w-20" />
           <span className="text-sm font-medium tabular-nums text-content-primary">
-            {objective.progress}%
+            {t("percent", { percent: objective.progress })}
           </span>
         </div>
       </div>
@@ -181,9 +184,9 @@ function ObjectiveCard({ objective }: Readonly<{ objective: ObjectiveGroup }>) {
         <Table>
           <TableHeader className="bg-transparent">
             <TableRow className="hover:bg-transparent">
-              <TableHead className={HEAD_CLASS}>Key Result</TableHead>
-              <TableHead className={HEAD_CLASS}>Progress</TableHead>
-              <TableHead className={HEAD_CLASS}>Status</TableHead>
+              <TableHead className={HEAD_CLASS}>{t("colKeyResult")}</TableHead>
+              <TableHead className={HEAD_CLASS}>{t("colProgress")}</TableHead>
+              <TableHead className={HEAD_CLASS}>{t("colStatus")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -193,12 +196,12 @@ function ObjectiveCard({ objective }: Readonly<{ objective: ObjectiveGroup }>) {
                   colSpan={3}
                   className="py-4 text-sm text-content-tertiary"
                 >
-                  No key results linked yet.
+                  {t("noKeyResults")}
                 </TableCell>
               </TableRow>
             )}
             {objective.krs.map((kr) => {
-              const st = KR_STATUS[deriveKrStatus(kr)]
+              const krStatus = deriveKrStatus(kr)
               const progress = Math.round(kr.progress_pct ?? 0)
               return (
                 <TableRow key={kr.goal_id}>
@@ -209,12 +212,14 @@ function ObjectiveCard({ objective }: Readonly<{ objective: ObjectiveGroup }>) {
                     <div className="flex items-center gap-2">
                       <Progress value={progress} color="indigo" className="w-16" />
                       <span className="text-xs tabular-nums text-content-tertiary">
-                        {progress}%
+                        {t("percent", { percent: progress })}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={st.variant}>{st.label}</Badge>
+                    <Badge variant={KR_STATUS_VARIANT[krStatus]}>
+                      {t(`krStatus.${krStatus}`)}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               )
@@ -259,21 +264,22 @@ function EmptyState({ message }: Readonly<{ message: string }>) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function GoalsTab() {
+  const t = useTranslations("HrPerformance")
   const { data, isLoading, isError } = useMyGoals({ per_page: 100 })
 
   if (isLoading) return <GoalsSkeleton />
 
   const goals = data?.data ?? []
-  const objectives = buildObjectives(goals)
+  const objectives = buildObjectives(goals, t("generalCategory"))
 
   return (
     <div className="flex flex-col gap-6">
       <GoalsKpis goals={goals} objectives={objectives} />
 
       {isError ? (
-        <EmptyState message="Couldn't load goals. Please try again." />
+        <EmptyState message={t("goalsLoadError")} />
       ) : objectives.length === 0 ? (
-        <EmptyState message="No goals yet. Goals you create will appear here." />
+        <EmptyState message={t("goalsEmpty")} />
       ) : (
         <div className="flex flex-col gap-4">
           {objectives.map((objective) => (

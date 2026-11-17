@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 // Read-only cross-feature import: project/task "leads" ARE HR employees (bru docs:
@@ -60,6 +61,8 @@ function FieldLabel({
 }
 
 export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) {
+  const t = useTranslations("OperationsNewProject")
+  const tShared = useTranslations("OperationsShared")
   const [name, setName] = React.useState("")
   const [description, setDescription] = React.useState("")
   const [leadEmployeeId, setLeadEmployeeId] = React.useState<string>("")
@@ -102,10 +105,10 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
 
     createProject.mutate(payload, {
       onSuccess: () => {
-        toast.success("Project created.")
+        toast.success(t("created"))
         handleOpenChange(false)
       },
-      onError: (err) => toastMutationError(err, "Failed to create project"),
+      onError: (err) => toastMutationError(err, t("createFailed"), tShared),
     })
   }
 
@@ -114,18 +117,18 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
       <DialogContent className="max-w-[480px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-[18px] leading-7 font-semibold">
-            New Project
+            {t("title")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <DialogBody className="gap-4">
             <div className="flex flex-col gap-1.5">
               <FieldLabel htmlFor="np-name" required>
-                Project Name
+                {t("name")}
               </FieldLabel>
               <Input
                 id="np-name"
-                placeholder="e.g. Website Redesign"
+                placeholder={t("namePlaceholder")}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="bg-surface-page h-9 text-[13px]"
@@ -133,10 +136,10 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel htmlFor="np-desc">Description</FieldLabel>
+              <FieldLabel htmlFor="np-desc">{t("description")}</FieldLabel>
               <Textarea
                 id="np-desc"
-                placeholder="Brief project description..."
+                placeholder={t("descriptionPlaceholder")}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 className="bg-surface-page min-h-[80px] text-[13px]"
@@ -144,10 +147,10 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel>Lead</FieldLabel>
+              <FieldLabel>{t("lead")}</FieldLabel>
               <Select value={leadEmployeeId} onValueChange={setLeadEmployeeId}>
                 <SelectTrigger className="bg-surface-page h-9 text-[13px]">
-                  <SelectValue placeholder="Select a lead" />
+                  <SelectValue placeholder={t("leadPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {employees.map((employee) => (
@@ -161,7 +164,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <FieldLabel htmlFor="np-start">Start Date</FieldLabel>
+                <FieldLabel htmlFor="np-start">{t("startDate")}</FieldLabel>
                 <Input
                   id="np-start"
                   type="date"
@@ -171,7 +174,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <FieldLabel htmlFor="np-end">End Date</FieldLabel>
+                <FieldLabel htmlFor="np-end">{t("endDate")}</FieldLabel>
                 <Input
                   id="np-end"
                   type="date"
@@ -183,7 +186,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel htmlFor="np-budget">Budget</FieldLabel>
+              <FieldLabel htmlFor="np-budget">{t("budget")}</FieldLabel>
               <Input
                 id="np-budget"
                 type="number"
@@ -205,7 +208,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
               {createProject.isPending ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : null}
-              Add Project
+              {t("submit")}
             </Button>
           </DialogFooter>
         </form>

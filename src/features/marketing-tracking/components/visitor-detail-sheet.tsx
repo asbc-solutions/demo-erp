@@ -1,5 +1,8 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Progress } from "@/src/shared/components/ui/progress"
@@ -11,21 +14,16 @@ import {
   SheetTitle,
 } from "@/src/shared/components/ui/sheet"
 import { TRACKED_MODULES } from "@/src/shared/lib/constants/modules"
-import {
-  industryLabel,
-  stageLabel,
-  teamSizeLabel,
-  toolLabel,
-} from "@/src/features/_onboarding/options"
 
 import type { VisitorRecord } from "../lib/types"
-import { ONBOARDING_STEP_LABELS, ONBOARDING_STEP_IDS } from "../lib/types"
+import { ONBOARDING_STEP_IDS, ONBOARDING_STEP_LABEL_KEYS } from "../lib/types"
 import {
   displayName,
   formatDateTime,
   formatDuration,
   initialsFor,
 } from "../lib/format"
+import { useOnboardingLabels } from "../lib/use-onboarding-labels"
 
 type VisitorDetailSheetProps = {
   visitor: VisitorRecord | null
@@ -44,6 +42,13 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheetProps) {
+  const t = useTranslations("MarketingTrackingVisitorDetail")
+  const tStep = useTranslations("MarketingTrackingSteps")
+  const tFormat = useTranslations("MarketingTrackingFormat")
+  const tNav = useTranslations("Nav")
+  const locale = useIntlLocale()
+  const onboardingLabels = useOnboardingLabels()
+
   if (!visitor) return null
 
   const activeModules = TRACKED_MODULES.map((module) => ({
@@ -63,14 +68,14 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
               size="lg"
               color="primary"
               fallback={initialsFor(visitor)}
-              alt={displayName(visitor)}
+              alt={displayName(visitor, tFormat)}
             />
             <div className="flex min-w-0 flex-col">
               <SheetTitle className="truncate text-base leading-6 font-semibold">
-                {displayName(visitor)}
+                {displayName(visitor, tFormat)}
               </SheetTitle>
               <SheetDescription className="truncate text-xs leading-4">
-                {visitor.email ?? visitor.phone ?? "Not signed in"}
+                {visitor.email ?? visitor.phone ?? t("notSignedIn")}
               </SheetDescription>
             </div>
           </div>
@@ -78,58 +83,72 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
 
         <div className="flex flex-col gap-7 px-4 pb-8">
           <section className="grid grid-cols-2 gap-4">
-            <Field label="Company" value={visitor.company ?? "—"} />
-            <Field label="Phone" value={visitor.phone ?? "—"} />
+            <Field label={t("company")} value={visitor.company ?? "—"} />
             <Field
-              label="Industry"
+              label={t("phone")}
+              value={visitor.phone ? <span dir="ltr">{visitor.phone}</span> : "—"}
+            />
+            <Field
+              label={t("industry")}
               value={
                 visitor.onboarding?.industry
-                  ? industryLabel(visitor.onboarding.industry)
+                  ? onboardingLabels.industry(visitor.onboarding.industry)
                   : "—"
               }
             />
             <Field
-              label="Stage"
+              label={t("stage")}
               value={
-                visitor.onboarding?.stage ? stageLabel(visitor.onboarding.stage) : "—"
+                visitor.onboarding?.stage
+                  ? onboardingLabels.stage(visitor.onboarding.stage)
+                  : "—"
               }
             />
             <Field
-              label="Team size"
+              label={t("teamSize")}
               value={
                 visitor.onboarding?.teamSize
-                  ? teamSizeLabel(visitor.onboarding.teamSize)
+                  ? onboardingLabels.teamSize(visitor.onboarding.teamSize)
                   : "—"
               }
             />
-            <Field label="First seen" value={formatDateTime(visitor.firstSeenAt)} />
-            <Field label="Last active" value={formatDateTime(visitor.lastSeenAt)} />
-            <Field label="Sessions" value={visitor.sessions} />
-            <Field label="Time in product" value={formatDuration(visitor.totalMs)} />
+            <Field
+              label={t("firstSeen")}
+              value={formatDateTime(visitor.firstSeenAt, locale)}
+            />
+            <Field
+              label={t("lastActive")}
+              value={formatDateTime(visitor.lastSeenAt, locale)}
+            />
+            <Field label={t("sessions")} value={visitor.sessions} />
+            <Field
+              label={t("timeInProduct")}
+              value={formatDuration(visitor.totalMs, tFormat)}
+            />
           </section>
 
           <section className="flex flex-col gap-3">
             <h3 className="text-content-primary text-xs leading-4 font-semibold tracking-wide uppercase">
-              Tools they want connected
+              {t("toolsTitle")}
             </h3>
             {visitor.onboarding?.tools.length ? (
               <div className="flex flex-wrap gap-1.5">
                 {visitor.onboarding.tools.map((tool) => (
                   <Badge key={tool} variant="primary">
-                    {toolLabel(tool)}
+                    {onboardingLabels.tool(tool)}
                   </Badge>
                 ))}
               </div>
             ) : (
               <p className="text-content-tertiary text-sm leading-5">
-                None selected.
+                {t("noneSelected")}
               </p>
             )}
           </section>
 
           <section className="flex flex-col gap-3">
             <h3 className="text-content-primary text-xs leading-4 font-semibold tracking-wide uppercase">
-              Onboarding progress
+              {t("onboardingProgress")}
             </h3>
             <ol className="flex flex-col gap-2">
               {ONBOARDING_STEP_IDS.map((step) => {
@@ -151,7 +170,7 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
                           : "text-content-quaternary text-sm leading-5"
                       }
                     >
-                      {ONBOARDING_STEP_LABELS[step]}
+                      {tStep(ONBOARDING_STEP_LABEL_KEYS[step])}
                     </span>
                   </li>
                 )
@@ -161,11 +180,11 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
 
           <section className="flex flex-col gap-3">
             <h3 className="text-content-primary text-xs leading-4 font-semibold tracking-wide uppercase">
-              Module engagement
+              {t("moduleEngagement")}
             </h3>
             {activeModules.length === 0 ? (
               <p className="text-content-tertiary text-sm leading-5">
-                This visitor has not opened a module yet.
+                {t("noModules")}
               </p>
             ) : (
               <ul className="flex flex-col gap-4">
@@ -181,10 +200,13 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-content-primary flex items-center gap-2 text-sm leading-5 font-medium">
                             <Icon className="text-content-tertiary size-4" aria-hidden />
-                            {module.label}
+                            {tNav(module.labelKey)}
                           </span>
                           <span className="text-content-tertiary shrink-0 font-mono text-[11px] leading-[15.4px]">
-                            {stat!.views} views · {formatDuration(stat!.msSpent)}
+                            {t("moduleStat", {
+                              count: stat!.views,
+                              duration: formatDuration(stat!.msSpent, tFormat),
+                            })}
                           </span>
                         </div>
                         <Progress
@@ -197,7 +219,9 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
                               key={path}
                               className="text-content-tertiary flex items-baseline justify-between gap-3 text-[11px] leading-[15.4px]"
                             >
-                              <span className="truncate font-mono">{path}</span>
+                              <span dir="ltr" className="truncate font-mono">
+                                {path}
+                              </span>
                               <span className="shrink-0">{count}</span>
                             </li>
                           ))}
@@ -210,7 +234,7 @@ export function VisitorDetailSheet({ visitor, onOpenChange }: VisitorDetailSheet
           </section>
 
           <p className="text-content-quaternary font-mono text-[11px] leading-[15.4px]">
-            visitor id · {visitor.visitorId}
+            {t("visitorId", { id: visitor.visitorId })}
           </p>
         </div>
       </SheetContent>

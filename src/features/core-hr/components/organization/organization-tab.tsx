@@ -11,6 +11,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -45,9 +46,6 @@ import { AddBranchDialog } from "./add-branch-dialog"
 import { AddDepartmentDialog } from "./add-department-dialog"
 import { EditBranchDialog } from "./edit-branch-dialog"
 import { EditDepartmentDialog } from "./edit-department-dialog"
-
-const formatType = (value: string) =>
-  value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
 
 type OrgPanelProps = Readonly<{
   title: string
@@ -123,6 +121,9 @@ type OrgRowActionsProps = Readonly<{
 }>
 
 function OrgRowActions({ editLabel, onEdit, onDelete }: OrgRowActionsProps) {
+  const t = useTranslations("HrOrganization")
+  const tCommon = useTranslations("Common")
+
   return (
     // `modal={false}` so the menu doesn't lock <body> with pointer-events:none —
     // otherwise the Edit/Delete dialog it opens becomes unclickable (Radix gotcha).
@@ -131,7 +132,7 @@ function OrgRowActions({ editLabel, onEdit, onDelete }: OrgRowActionsProps) {
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="More actions"
+          aria-label={t("moreActions")}
           className="text-content-tertiary rounded-[8px]"
         >
           <MoreHorizontal />
@@ -144,7 +145,7 @@ function OrgRowActions({ editLabel, onEdit, onDelete }: OrgRowActionsProps) {
         </DropdownMenuItem>
         <DropdownMenuItem variant="danger" onSelect={() => onDelete()}>
           <Trash2 />
-          Delete
+          {tCommon("delete")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -164,7 +165,7 @@ function OrgRowHeader({ icon, title, meta }: OrgRowHeaderProps) {
       hideChevron
       className="group hover:bg-surface-white rounded-[10px] px-2 pe-12"
     >
-      <ChevronRight className="text-content-quaternary size-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+      <ChevronRight className="text-content-quaternary size-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90 rtl:rotate-180 rtl:group-data-[state=open]:rotate-90" />
       <span
         aria-hidden
         className="bg-brand-primary/10 text-brand-primary flex size-9 shrink-0 items-center justify-center rounded-[10px]"
@@ -189,6 +190,7 @@ const POSITIONS_LOOKUP_PARAMS = { per_page: 200 } as const
 
 /** Positions assigned to a department, shown when its row is expanded. */
 function DepartmentPositions({ deptId }: { deptId: string }) {
+  const t = useTranslations("HrOrganization")
   // Source from the authoritative /positions list (the same one the Positions page
   // uses) filtered by dept_id, rather than /departments/:id/positions — that nested
   // endpoint can be out of sync and report a department as empty when it isn't.
@@ -206,7 +208,7 @@ function DepartmentPositions({ deptId }: { deptId: string }) {
   if (isError || positions.length === 0) {
     return (
       <p className="text-content-tertiary py-3 text-center text-xs">
-        No positions in this department.
+        {t("noPositionsInDept")}
       </p>
     )
   }
@@ -229,7 +231,7 @@ function DepartmentPositions({ deptId }: { deptId: string }) {
               {position.position_title}
             </span>
             <span className="text-content-tertiary truncate text-[11px] leading-4">
-              {position.headcount_vacant} vacant
+              {t("vacantCount", { count: position.headcount_vacant })}
             </span>
           </div>
         </div>
@@ -251,6 +253,8 @@ type BranchRowProps = Readonly<{
  * authoritative source, so prefer it once it loads.
  */
 function BranchRow({ branch, branchDepts, onEdit, onDelete }: BranchRowProps) {
+  const t = useTranslations("HrOrganization")
+  const tShared = useTranslations("HrShared")
   const { data: headcount } = useBranchHeadcount(branch.id)
   const employeeCount = headcount?.headcount_filled ?? branch.employee_count
 
@@ -259,15 +263,19 @@ function BranchRow({ branch, branchDepts, onEdit, onDelete }: BranchRowProps) {
       <OrgRowHeader
         icon={<Building2 className="size-4" strokeWidth={1.75} />}
         title={branch.branch_name}
-        meta={`${branch.branch_code} · ${formatType(branch.branch_type)} · ${employeeCount} employees`}
+        meta={t("branchMeta", {
+          code: branch.branch_code,
+          type: tShared(`branchType.${branch.branch_type}`),
+          count: employeeCount,
+        })}
       />
       <div className="absolute top-2 inset-e-2">
-        <OrgRowActions editLabel="Edit Branch" onEdit={onEdit} onDelete={onDelete} />
+        <OrgRowActions editLabel={t("editBranch")} onEdit={onEdit} onDelete={onDelete} />
       </div>
       <AccordionContent className="pe-2 ps-9">
         {branchDepts.length === 0 ? (
           <p className="text-content-tertiary py-3 text-center text-xs">
-            No departments in this branch.
+            {t("noDeptsInBranch")}
           </p>
         ) : (
           <ul className="flex flex-col gap-1.5">
@@ -285,12 +293,12 @@ function BranchRow({ branch, branchDepts, onEdit, onDelete }: BranchRowProps) {
                       {dept.dept_name}
                     </span>
                     <span className="text-content-tertiary truncate text-xs leading-4">
-                      {dept.dept_code} · {formatType(dept.dept_type)}
+                      {dept.dept_code} · {tShared(`deptType.${dept.dept_type}`)}
                     </span>
                   </div>
                   {typeof filled === "number" && (
                     <span className="text-content-tertiary shrink-0 text-xs">
-                      {filled} people
+                      {t("peopleCount", { count: filled })}
                     </span>
                   )}
                 </li>
@@ -304,6 +312,8 @@ function BranchRow({ branch, branchDepts, onEdit, onDelete }: BranchRowProps) {
 }
 
 export function OrganizationTab() {
+  const t = useTranslations("HrOrganization")
+  const tShared = useTranslations("HrShared")
   const [branchDialogOpen, setBranchDialogOpen] = React.useState(false)
   const [departmentDialogOpen, setDepartmentDialogOpen] = React.useState(false)
   const [editBranch, setEditBranch] = React.useState<BranchListItem | null>(null)
@@ -331,13 +341,13 @@ export function OrganizationTab() {
     const name = deleteBranch.branch_name
     deleteBranchMutation.mutate(deleteBranch.id, {
       onSuccess: () => {
-        toast.success(`Branch "${name}" deleted`)
+        toast.success(t("branchDeleted", { name }))
         setDeleteBranch(null)
       },
       onError: (err) => {
-        const blocked = describeBlockingError(err)
-        toast.error(blocked ? "Cannot delete branch" : "Failed to delete branch", {
-          description: blocked ?? apiErrorMessage(err),
+        const blocked = describeBlockingError(err, tShared)
+        toast.error(blocked ? t("cannotDeleteBranch") : t("deleteBranchFailed"), {
+          description: blocked ?? apiErrorMessage(err, tShared("pleaseTryAgain")),
         })
       },
     })
@@ -348,15 +358,16 @@ export function OrganizationTab() {
     const name = deleteDept.dept_name
     deleteDeptMutation.mutate(deleteDept.id, {
       onSuccess: () => {
-        toast.success(`Department "${name}" deleted`)
+        toast.success(t("deptDeleted", { name }))
         setDeleteDept(null)
       },
       onError: (err) => {
-        const blocked = describeBlockingError(err)
+        const blocked = describeBlockingError(err, tShared)
         toast.error(
-          blocked ? "Cannot delete department" : "Failed to delete department",
+          blocked ? t("cannotDeleteDept") : t("deleteDeptFailed"),
           {
-            description: blocked ?? apiErrorMessage(err),
+            description:
+              blocked ?? apiErrorMessage(err, tShared("pleaseTryAgain")),
           },
         )
       },
@@ -366,14 +377,14 @@ export function OrganizationTab() {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <OrgPanel
-        title="Branches"
-        description="Office locations"
+        title={t("branchesTitle")}
+        description={t("branchesDescription")}
         icon={<Building2 className="size-5" strokeWidth={1.75} />}
-        ctaLabel="Add Branch"
+        ctaLabel={t("addBranch")}
         onCta={() => setBranchDialogOpen(true)}
         isLoading={branchesLoading}
         isEmpty={branches.length === 0}
-        emptyLabel="No branches found."
+        emptyLabel={t("noBranches")}
       >
         <Accordion type="multiple" className="flex flex-col">
           {branches.map((branch) => (
@@ -391,14 +402,14 @@ export function OrganizationTab() {
       </OrgPanel>
 
       <OrgPanel
-        title="Departments"
-        description="Organizational units"
+        title={t("departmentsTitle")}
+        description={t("departmentsDescription")}
         icon={<Users className="size-5" strokeWidth={1.75} />}
-        ctaLabel="Add Department"
+        ctaLabel={t("addDepartment")}
         onCta={() => setDepartmentDialogOpen(true)}
         isLoading={deptsLoading}
         isEmpty={departments.length === 0}
-        emptyLabel="No departments found."
+        emptyLabel={t("noDepartments")}
       >
         <Accordion type="multiple" className="flex flex-col">
           {departments.map((dept) => (
@@ -410,11 +421,11 @@ export function OrganizationTab() {
               <OrgRowHeader
                 icon={<Users className="size-4" strokeWidth={1.75} />}
                 title={dept.dept_name}
-                meta={`${dept.dept_code} · ${formatType(dept.dept_type)}`}
+                meta={`${dept.dept_code} · ${tShared(`deptType.${dept.dept_type}`)}`}
               />
               <div className="absolute top-2 inset-e-2">
                 <OrgRowActions
-                  editLabel="Edit Department"
+                  editLabel={t("editDepartment")}
                   onEdit={() => setEditDept(dept)}
                   onDelete={() => setDeleteDept(dept)}
                 />
@@ -447,16 +458,16 @@ export function OrganizationTab() {
       <ConfirmDeleteDialog
         open={!!deleteBranch}
         onOpenChange={(open) => !open && setDeleteBranch(null)}
-        title="Delete Branch"
-        description="Are you sure you want to remove this Branch?"
+        title={t("deleteBranchTitle")}
+        description={t("deleteBranchDescription")}
         isPending={deleteBranchMutation.isPending}
         onConfirm={confirmDeleteBranch}
       />
       <ConfirmDeleteDialog
         open={!!deleteDept}
         onOpenChange={(open) => !open && setDeleteDept(null)}
-        title="Delete Department"
-        description="Are you sure you want to remove this Department?"
+        title={t("deleteDeptTitle")}
+        description={t("deleteDeptDescription")}
         isPending={deleteDeptMutation.isPending}
         onConfirm={confirmDeleteDept}
       />

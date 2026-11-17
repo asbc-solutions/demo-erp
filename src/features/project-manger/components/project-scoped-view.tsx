@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react"
 import { FolderKanban } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import {
   Select,
@@ -73,10 +74,13 @@ export function ProjectScopeBar({
   allSelected?: boolean
   onSelectAll?: () => void
 }) {
+  const t = useTranslations("ProjectsShared")
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <FolderKanban className="text-content-tertiary size-4" aria-hidden />
-      <span className="text-content-tertiary text-xs font-medium">Project</span>
+      <span className="text-content-tertiary text-xs font-medium">
+        {t("projectLabel")}
+      </span>
       <Select
         value={allSelected ? ALL_PROJECTS : (projectId ?? undefined)}
         onValueChange={(value) => {
@@ -87,12 +91,12 @@ export function ProjectScopeBar({
       >
         <SelectTrigger className="h-9 w-[260px] text-[13px]">
           <SelectValue
-            placeholder={isLoading ? "Loading projects…" : "Select a project"}
+            placeholder={isLoading ? t("loadingProjects") : t("selectProject")}
           />
         </SelectTrigger>
         <SelectContent>
           {allowAll ? (
-            <SelectItem value={ALL_PROJECTS}>All projects</SelectItem>
+            <SelectItem value={ALL_PROJECTS}>{t("allProjects")}</SelectItem>
           ) : null}
           {projects.map((project) => (
             <SelectItem key={project.id} value={project.id}>
@@ -130,6 +134,7 @@ export function ProjectScopedView({
   children: (projectId: string) => ReactNode
   renderAll?: () => ReactNode
 }) {
+  const t = useTranslations("ProjectsShared")
   const { projects, projectId, setProjectId, isLoading, isError } =
     useProjectScope()
 
@@ -171,10 +176,10 @@ export function ProjectScopedView({
       ) : isError ? (
         <div className="border-stroke-default bg-surface-white flex min-h-[40vh] flex-col items-center justify-center gap-2 rounded-[14px] border p-6 text-center">
           <p className="text-content-secondary text-sm font-medium">
-            Couldn&apos;t load projects
+            {t("loadProjectsFailed")}
           </p>
           <p className="text-content-tertiary text-xs">
-            Check your connection and try again.
+            {t("loadProjectsFailedDescription")}
           </p>
         </div>
       ) : isLoading ? (
@@ -182,10 +187,10 @@ export function ProjectScopedView({
       ) : !projectId ? (
         <div className="border-stroke-default bg-surface-white flex min-h-[40vh] flex-col items-center justify-center gap-2 rounded-[14px] border p-6 text-center">
           <p className="text-content-secondary text-sm font-medium">
-            No projects yet
+            {t("noProjectsTitle")}
           </p>
           <p className="text-content-tertiary text-xs">
-            Create a project to see it here.
+            {t("noProjectsDescription")}
           </p>
         </div>
       ) : (

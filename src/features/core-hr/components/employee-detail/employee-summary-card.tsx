@@ -1,58 +1,34 @@
 "use client"
 
 import { Building2, CalendarDays, Star } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
+import { cn } from "@/src/shared/lib/utils/utils"
 
-import type { Employee } from "../../lib/types"
+import type { Employee, EmploymentStatus } from "../../lib/types"
 import { useEmployeeEmploymentLabels } from "./use-employment-labels"
 
 type EmployeeSummaryCardProps = Readonly<{
   employee: Employee
 }>
 
-const STATUS_BADGE: Record<
-  string,
-  { label: string; className: string }
-> = {
-  active: {
-    label: "Active",
-    className:
-      "border-brand-success/30 bg-brand-success/10 text-brand-success",
-  },
-  on_leave: {
-    label: "On Leave",
-    className:
-      "border-brand-warning/30 bg-brand-warning/10 text-brand-warning",
-  },
-  terminated: {
-    label: "Terminated",
-    className: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
-  },
-  resigned: {
-    label: "Resigned",
-    className: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
-  },
-  retired: {
-    label: "Retired",
-    className: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
-  },
-  inactive: {
-    label: "Inactive",
-    className:
-      "border-stroke-default bg-surface-hover text-content-tertiary",
-  },
-  suspended: {
-    label: "Suspended",
-    className:
-      "border-stroke-default bg-surface-hover text-content-tertiary",
-  },
+const STATUS_BADGE: Record<EmploymentStatus, string> = {
+  active: "border-brand-success/30 bg-brand-success/10 text-brand-success",
+  on_leave: "border-brand-warning/30 bg-brand-warning/10 text-brand-warning",
+  terminated: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
+  resigned: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
+  retired: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
+  inactive: "border-stroke-default bg-surface-hover text-content-tertiary",
+  suspended: "border-stroke-default bg-surface-hover text-content-tertiary",
 }
 
 export function EmployeeSummaryCard({ employee }: EmployeeSummaryCardProps) {
-  const badge =
-    STATUS_BADGE[employee.employment.employment_status] ?? STATUS_BADGE.inactive
+  const t = useTranslations("HrEmployeeDetail")
+  const tShared = useTranslations("HrShared")
+  const rawStatus = employee.employment.employment_status
+  const status: EmploymentStatus = rawStatus in STATUS_BADGE ? rawStatus : "inactive"
   const { departmentName, positionName } = useEmployeeEmploymentLabels(
     employee.employment,
     { branch: false, jobGrade: false },
@@ -74,9 +50,12 @@ export function EmployeeSummaryCard({ employee }: EmployeeSummaryCardProps) {
             </h1>
             <Badge
               variant="outline"
-              className={`rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase ${badge.className}`}
+              className={cn(
+                "rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase",
+                STATUS_BADGE[status],
+              )}
             >
-              {badge.label}
+              {tShared(`employmentStatus.${status}`)}
             </Badge>
           </div>
           <p className="text-content-tertiary text-sm leading-5">
@@ -97,7 +76,7 @@ export function EmployeeSummaryCard({ employee }: EmployeeSummaryCardProps) {
             )}
             <span className="inline-flex items-center gap-1.5">
               <CalendarDays className="size-3.5" strokeWidth={1.75} />
-              Joined {employee.employment.hire_date}
+              {t("joined", { date: employee.employment.hire_date })}
             </span>
           </div>
         </div>

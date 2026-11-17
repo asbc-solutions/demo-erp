@@ -1,6 +1,7 @@
 "use client"
 
 import { SlidersHorizontal } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { Checkbox } from "@/src/shared/components/ui/checkbox"
@@ -48,6 +49,8 @@ export function HrFilterPanel({
   onChange,
   className,
 }: HrFilterPanelProps) {
+  const t = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
   const activeCount = countActiveFilters(values)
 
   const toggle = (groupId: string, value: string, checked: boolean) => {
@@ -63,7 +66,7 @@ export function HrFilterPanel({
       <PopoverTrigger asChild>
         <Button variant="secondary" className={cn("rounded-[10px]", className)}>
           <SlidersHorizontal />
-          Filters
+          {tCommon("filters")}
           {activeCount > 0 && (
             <span className="bg-brand-primary ms-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold text-white">
               {activeCount}
@@ -75,7 +78,7 @@ export function HrFilterPanel({
       <PopoverContent align="end" className="w-[248px] p-0">
         <div className="border-stroke-light flex items-center justify-between border-b px-4 py-3">
           <span className="text-content-primary text-sm font-semibold">
-            Filters
+            {tCommon("filters")}
           </span>
           {activeCount > 0 && (
             <button
@@ -83,7 +86,7 @@ export function HrFilterPanel({
               onClick={() => onChange({})}
               className="text-brand-primary text-xs font-medium hover:underline"
             >
-              Clear all
+              {t("clearAll")}
             </button>
           )}
         </div>
@@ -97,7 +100,7 @@ export function HrFilterPanel({
 
               {group.options.length === 0 ? (
                 <p className="text-content-quaternary text-xs leading-4">
-                  No options available
+                  {t("noOptions")}
                 </p>
               ) : (
                 group.options.map((option) => {

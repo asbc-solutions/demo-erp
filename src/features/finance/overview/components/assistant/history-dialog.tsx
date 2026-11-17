@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -17,7 +18,8 @@ import { Label } from "@/src/shared/components/ui/label"
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
 
 import { StatusPill } from "../../../components/shared/status-pill"
-import { formatDate, formatTime } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { useAssistantHistory } from "../../lib/queries/overview"
 import type { AssistantConversation } from "../../lib/types/assistant"
 
@@ -25,10 +27,14 @@ import type { AssistantConversation } from "../../lib/types/assistant"
 const TODAY = "2026-03-31"
 const YESTERDAY = "2026-03-30"
 
-function dayLabel(askedAt: string): string {
+function dayLabel(
+  askedAt: string,
+  tCommon: ReturnType<typeof useTranslations<"Common">>,
+  formatDate: FinanceDateFormat["formatDate"],
+): string {
   const day = askedAt.slice(0, 10)
-  if (day === TODAY) return "Today"
-  if (day === YESTERDAY) return "Yesterday"
+  if (day === TODAY) return tCommon("today")
+  if (day === YESTERDAY) return tCommon("yesterday")
   return formatDate(day)
 }
 
@@ -41,6 +47,9 @@ type HistoryDialogProps = {
 
 /** Past conversations, each with the scope it was asked under. Picking one asks it again. */
 function HistoryDialog({ open, onOpenChange, retentionDays, onPick }: HistoryDialogProps) {
+  const t = useTranslations("FinanceAssistant")
+  const tCommon = useTranslations("Common")
+  const { formatDate, formatTime } = useFinanceDateFormat()
   const [query, setQuery] = React.useState("")
   const { data: conversations } = useAssistantHistory(open)
   const searchId = React.useId()
@@ -50,7 +59,7 @@ function HistoryDialog({ open, onOpenChange, retentionDays, onPick }: HistoryDia
     conversation.question.toLowerCase().includes(term),
   )
   const groups = visible.reduce<Map<string, AssistantConversation[]>>((acc, conversation) => {
-    const label = dayLabel(conversation.asked_at)
+    const label = dayLabel(conversation.asked_at, tCommon, formatDate)
     acc.set(label, [...(acc.get(label) ?? []), conversation])
     return acc
   }, new Map())
@@ -59,30 +68,27 @@ function HistoryDialog({ open, onOpenChange, retentionDays, onPick }: HistoryDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>History</DialogTitle>
-          <DialogDescription>
-            Conversations are kept for {retentionDays} days (Settings). Each one records its scope at
-            the time.
-          </DialogDescription>
+          <DialogTitle>{t("history")}</DialogTitle>
+          <DialogDescription>{t("historyDescription", { days: retentionDays })}</DialogDescription>
         </DialogHeader>
         <DialogBody className="max-h-[60vh] overflow-y-auto">
           <div className="flex flex-col gap-1">
             <Label htmlFor={searchId} className="text-content-secondary text-[13px] font-normal">
-              Search conversations
+              {t("searchConversations")}
             </Label>
             <Input
               id={searchId}
               type="search"
-              placeholder="Search by question, account or screen…"
+              placeholder={t("searchConversationsPlaceholder")}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </div>
           {!conversations ? (
-            <Skeleton aria-busy aria-label="Loading history" className="h-40 rounded-lg" />
+            <Skeleton aria-busy aria-label={t("loadingHistory")} className="h-40 rounded-lg" />
           ) : visible.length === 0 ? (
             <p className="text-content-tertiary py-6 text-center text-sm">
-              No conversation matches “{query.trim()}”.
+              {t("noConversationMatches", { query: query.trim() })}
             </p>
           ) : (
             Array.from(groups.entries()).map(([label, items]) => (
@@ -115,7 +121,7 @@ function HistoryDialog({ open, onOpenChange, retentionDays, onPick }: HistoryDia
         </DialogBody>
         <DialogFooter>
           <Button variant="primary" onClick={() => onOpenChange(false)}>
-            Close
+            {tCommon("close")}
           </Button>
         </DialogFooter>
       </DialogContent>

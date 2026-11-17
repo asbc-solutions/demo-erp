@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react"
 import { AlertTriangle, MessagesSquare, Send, Trash2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
@@ -37,10 +39,10 @@ function colorForId(id: string): AvatarColor {
   return AVATAR_COLORS[sum % AVATAR_COLORS.length]
 }
 
-function formatTime(value: string): string {
+function formatTime(value: string, locale: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ""
-  return date.toLocaleString("en-US", {
+  return date.toLocaleString(locale, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -49,6 +51,8 @@ function formatTime(value: string): string {
 }
 
 export function ChatTab({ projectId }: { projectId?: string }) {
+  const t = useTranslations("ProjectsProjectDetail")
+  const locale = useIntlLocale()
   const [draft, setDraft] = useState("")
   const [sendError, setSendError] = useState<ApiError | null>(null)
 
@@ -76,7 +80,7 @@ export function ChatTab({ projectId }: { projectId?: string }) {
           <MessagesSquare className="size-6" aria-hidden />
         </span>
         <p className="text-content-tertiary max-w-sm text-sm">
-          Open a project to view its discussion.
+          {t("chatOpenProject")}
         </p>
       </Card>
     )
@@ -88,9 +92,7 @@ export function ChatTab({ projectId }: { projectId?: string }) {
     contextQ.data?.can_post === false ||
     sendError?.code === "403" ||
     sendError?.code === "FORBIDDEN"
-  const blockReason =
-    contextQ.data?.block_reason ??
-    "You can't post here — your account isn't linked to an employee record. Ask an administrator to link your user to an employee."
+  const blockReason = contextQ.data?.block_reason ?? t("chatBlockedDefault")
 
   const handleSend = () => {
     const body = draft.trim()
@@ -105,18 +107,18 @@ export function ChatTab({ projectId }: { projectId?: string }) {
         onError: (err) => {
           const apiError = err as unknown as ApiError
           setSendError(apiError)
-          toast.error("Couldn't send message", { description: apiError.message })
+          toast.error(t("chatSendFailed"), { description: apiError.message })
         },
       },
     )
   }
 
   const handleDelete = (id: string) => {
-    if (!window.confirm("Delete this message?")) return
+    if (!window.confirm(t("chatDeleteConfirm"))) return
     deleteMessage.mutate(id, {
-      onSuccess: () => toast.success("Message deleted"),
+      onSuccess: () => toast.success(t("chatDeleted")),
       onError: (err) =>
-        toast.error("Couldn't delete message", {
+        toast.error(t("chatDeleteFailed"), {
           description: (err as unknown as ApiError).message,
         }),
     })
@@ -128,10 +130,10 @@ export function ChatTab({ projectId }: { projectId?: string }) {
       <div className="border-stroke-default flex items-center gap-2 border-b px-5 py-3">
         <MessagesSquare className="text-content-tertiary size-4" aria-hidden />
         <span className="text-content-primary text-sm font-semibold">
-          Project Discussion
+          {t("chatTitle")}
         </span>
         <span className="text-content-tertiary text-xs">
-          Messages and updates for this project
+          {t("chatSubtitle")}
         </span>
       </div>
 
@@ -149,7 +151,7 @@ export function ChatTab({ projectId }: { projectId?: string }) {
         ) : isError ? (
           <div className="flex flex-1 items-center justify-center">
             <p className="text-content-tertiary text-sm">
-              Couldn&apos;t load messages.
+              {t("chatLoadFailed")}
             </p>
           </div>
         ) : messages.length === 0 ? (
@@ -159,7 +161,7 @@ export function ChatTab({ projectId }: { projectId?: string }) {
               aria-hidden
             />
             <p className="text-content-tertiary text-sm">
-              No messages yet. Start the conversation below.
+              {t("chatEmpty")}
             </p>
           </div>
         ) : (
@@ -179,14 +181,14 @@ export function ChatTab({ projectId }: { projectId?: string }) {
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span className="text-content-primary text-[13px] font-semibold">
-                      {name ?? "Team member"}
+                      {name ?? t("chatTeamMember")}
                     </span>
                     <span className="text-content-quaternary text-[11px]">
-                      {formatTime(message.created_at)}
+                      {formatTime(message.created_at, locale)}
                     </span>
                     <button
                       type="button"
-                      aria-label="Delete message"
+                      aria-label={t("chatDeleteMessage")}
                       onClick={() => handleDelete(message.id)}
                       disabled={deleteMessage.isPending}
                       className="text-content-quaternary hover:text-brand-danger ms-auto opacity-0 transition-opacity group-hover:opacity-100"
@@ -228,15 +230,17 @@ export function ChatTab({ projectId }: { projectId?: string }) {
                 handleSend()
               }
             }}
-            placeholder={postingBlocked ? "Posting unavailable" : "Write a message…"}
-            aria-label="Message"
+            placeholder={
+              postingBlocked ? t("chatPostingUnavailable") : t("chatPlaceholder")
+            }
+            aria-label={t("chatMessage")}
             disabled={postingBlocked}
             className="text-content-primary placeholder:text-content-quaternary flex-1 bg-transparent text-[13px] outline-none disabled:cursor-not-allowed"
           />
           <Button
             size="icon-sm"
             variant="primary"
-            aria-label="Send"
+            aria-label={t("chatSend")}
             onClick={handleSend}
             disabled={!draft.trim() || sendMessage.isPending || postingBlocked}
           >

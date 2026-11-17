@@ -60,6 +60,7 @@ function ResultGroup({
 
 /** Toolbar search across finance screens, contacts and accounts. */
 function FinanceSearch({ className }: { className?: string }) {
+  const t = useTranslations("FinanceShared")
   const tNav = useTranslations("Nav")
   const router = useRouter()
   const [query, setQuery] = React.useState("")
@@ -95,7 +96,10 @@ function FinanceSearch({ className }: { className?: string }) {
   const contacts: SearchHit[] = (data?.contacts ?? []).map((contact) => ({
     id: contact.id,
     label: contact.name,
-    sub: `${contact.kind === "supplier" ? "Supplier" : "Customer"} · ${contact.code}`,
+    sub: t("searchContactSub", {
+      kind: contact.kind === "supplier" ? t("searchSupplier") : t("searchCustomer"),
+      code: contact.code,
+    }),
     href: contactHref(contact),
   }))
   const accounts: SearchHit[] = (data?.accounts ?? []).map((account) => ({
@@ -126,9 +130,9 @@ function FinanceSearch({ className }: { className?: string }) {
             type="search"
             role="combobox"
             aria-expanded={open && active}
-            aria-label="Search finance"
+            aria-label={t("searchAriaLabel")}
             aria-keyshortcuts="/"
-            placeholder="Search accounts, documents, contacts…"
+            placeholder={t("searchPlaceholder")}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)
@@ -148,12 +152,12 @@ function FinanceSearch({ className }: { className?: string }) {
         onOpenAutoFocus={(event) => event.preventDefault()}
         className="w-(--radix-popper-anchor-width) p-1"
       >
-        <ResultGroup title="Screens" hits={screens} onSelect={select} />
-        <ResultGroup title="Contacts" hits={contacts} onSelect={select} />
-        <ResultGroup title="Accounts" hits={accounts} onSelect={select} />
+        <ResultGroup title={t("searchScreens")} hits={screens} onSelect={select} />
+        <ResultGroup title={t("searchContacts")} hits={contacts} onSelect={select} />
+        <ResultGroup title={t("searchAccounts")} hits={accounts} onSelect={select} />
         {empty ? (
           <p className="text-content-tertiary px-2 py-3 text-sm leading-5">
-            Nothing in finance matches “{query.trim()}”.
+            {t("searchNoMatch", { query: query.trim() })}
           </p>
         ) : null}
       </PopoverContent>

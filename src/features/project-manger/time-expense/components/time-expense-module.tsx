@@ -10,6 +10,7 @@ import {
   Flag,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
@@ -28,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/shared/components/ui/table"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import {
@@ -39,6 +41,22 @@ import {
 } from "../../lib/mappers/time-expense-mapper"
 import { useCurrentTimesheet } from "../../lib/queries/time-expense"
 import { useResources } from "../../lib/queries/resources"
+
+type TimeStatId = "posted" | "billable" | "pending" | "expenses"
+
+/** "Jun 29 – Jul 5, 2026" in the active locale. */
+function formatPeriod(start: string, end: string, locale: string): string {
+  const from = new Date(start).toLocaleDateString(locale, {
+    month: "short",
+    day: "numeric",
+  })
+  const to = new Date(end).toLocaleDateString(locale, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+  return `${from} – ${to}`
+}
 
 const STAT_ICON: Record<TimeStat["icon"], LucideIcon> = {
   check: CheckCircle2,
@@ -70,6 +88,9 @@ const STAT_ACCENT: Record<
 }
 
 export function TimeExpenseModule() {
+  const t = useTranslations("ProjectsTimeExpense")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const resourcesQuery = useResources({ per_page: 100 })
   const employees = useMemo(
     () => resourcesQuery.data ?? [],
@@ -89,18 +110,44 @@ export function TimeExpenseModule() {
     weekStart,
   )
 
-  const grid = useMemo(() => buildTimesheetGrid(data), [data])
-  const stats = useMemo(() => buildTimeStats(data?.summary), [data])
+  const grid = useMemo(() => buildTimesheetGrid(data, locale), [data, locale])
+  const stats = useMemo(() => buildTimeStats(data?.summary, locale), [data, locale])
+  const summary = data?.summary
+  const periodLabel = data
+    ? formatPeriod(data.period_start, data.period_end, locale)
+    : ""
+
+  const statValue = (id: TimeStatId, value: string): string =>
+    id === "posted" && summary
+      ? t("hoursShort", { hours: summary.hours_posted })
+      : value
+
+  const statCaption = (id: TimeStatId): string => {
+    switch (id) {
+      case "posted":
+        return summary
+          ? t("statCaption.posted", { hours: summary.billable_hours })
+          : ""
+      case "billable":
+        return t("statCaption.billable")
+      case "pending":
+        return t("statCaption.pending")
+      case "expenses":
+        return summary
+          ? t("statCaption.expenses", { count: summary.receipt_count })
+          : ""
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-content-primary text-2xl leading-8 font-bold tracking-tight">
-            Time &amp; Expense
+            {t("title")}
           </h1>
           <p className="text-content-tertiary text-sm">
-            {grid.periodLabel || "Weekly timesheet and expenses"}
+            {periodLabel || t("subtitle")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -110,7 +157,7 @@ export function TimeExpenseModule() {
             disabled={resourcesQuery.isLoading || employees.length === 0}
           >
             <SelectTrigger className="h-9 w-[220px] text-[13px]">
-              <SelectValue placeholder="Select employee" />
+              <SelectValue placeholder={t("selectEmployee")} />
             </SelectTrigger>
             <SelectContent>
               {employees.map((e) => (
@@ -124,18 +171,18 @@ export function TimeExpenseModule() {
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Previous week"
+              aria-label={t("previousWeek")}
               onClick={() => setWeekStart((w) => shiftWeek(w, -1))}
             >
-              <ChevronLeft className="size-4" aria-hidden />
+              <ChevronLeft className="size-4 rtl:rotate-180" aria-hidden />
             </Button>
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Next week"
+              aria-label={t("nextWeek")}
               onClick={() => setWeekStart((w) => shiftWeek(w, 1))}
             >
-              <ChevronRight className="size-4" aria-hidden />
+              <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
             </Button>
           </div>
         </div>
@@ -145,6 +192,7 @@ export function TimeExpenseModule() {
         {stats.map((stat) => {
           const Icon = STAT_ICON[stat.icon]
           const accent = STAT_ACCENT[stat.accent]
+          const statId = stat.id as TimeStatId
           return (
             <Card
               key={stat.id}
@@ -164,13 +212,13 @@ export function TimeExpenseModule() {
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-content-tertiary text-[11px] font-medium tracking-wide uppercase">
-                  {stat.label}
+                  {t(`statLabel.${statId}`)}
                 </span>
                 <span className="text-content-primary text-xl leading-[25px] font-bold">
-                  {isLoading ? "…" : stat.value}
+                  {isLoading ? "…" : statValue(statId, stat.value)}
                 </span>
                 <span className="text-content-tertiary text-[12px]">
-                  {stat.caption}
+                  {statCaption(statId)}
                 </span>
               </div>
             </Card>
@@ -183,23 +231,25 @@ export function TimeExpenseModule() {
           <div className="bg-surface-muted m-4 h-48 animate-pulse rounded-lg" />
         ) : isError ? (
           <p className="text-content-tertiary py-12 text-center text-sm">
-            Couldn&apos;t load timesheet.
+            {t("loadError")}
           </p>
         ) : grid.rows.length === 0 ? (
           <p className="text-content-tertiary py-12 text-center text-sm">
-            No time logged this week.
+            {t("empty")}
           </p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Project / Task</TableHead>
+                <TableHead>{t("colProjectTask")}</TableHead>
                 {grid.days.map((day) => (
                   <TableHead key={day.date} className="text-center">
-                    {day.label.toUpperCase()}
+                    {new Date(day.date)
+                      .toLocaleDateString(locale, { weekday: "short" })
+                      .toUpperCase()}
                   </TableHead>
                 ))}
-                <TableHead className="text-end">Total</TableHead>
+                <TableHead className="text-end">{tCommon("total")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -211,8 +261,9 @@ export function TimeExpenseModule() {
                         {row.task}
                       </span>
                       <span className="text-content-tertiary text-[11px]">
-                        {row.project}
-                        {row.billable ? " · Billable" : ""}
+                        {row.billable
+                          ? t("projectBillable", { project: row.project })
+                          : row.project}
                       </span>
                     </div>
                   </TableCell>
@@ -231,13 +282,13 @@ export function TimeExpenseModule() {
                     </TableCell>
                   ))}
                   <TableCell className="text-content-primary text-end text-[13px] font-bold tabular-nums">
-                    {row.total}h
+                    {t("hoursShort", { hours: row.total })}
                   </TableCell>
                 </TableRow>
               ))}
               <TableRow className="hover:bg-transparent">
                 <TableCell className="text-content-primary text-[13px] font-semibold">
-                  Daily Total
+                  {t("dailyTotal")}
                 </TableCell>
                 {grid.dayTotals.map((total, i) => (
                   <TableCell
@@ -247,11 +298,11 @@ export function TimeExpenseModule() {
                       total > 0 ? "text-brand-success" : "text-content-tertiary",
                     )}
                   >
-                    {total}h
+                    {t("hoursShort", { hours: total })}
                   </TableCell>
                 ))}
                 <TableCell className="text-brand-primary text-end text-[13px] font-bold tabular-nums">
-                  {grid.weekTotal}h
+                  {t("hoursShort", { hours: grid.weekTotal })}
                 </TableCell>
               </TableRow>
             </TableBody>

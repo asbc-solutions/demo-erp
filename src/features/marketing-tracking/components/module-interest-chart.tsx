@@ -1,7 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Bar, BarChart, Cell, LabelList, XAxis, YAxis } from "recharts"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import {
   Card,
@@ -16,6 +19,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/src/shared/components/ui/chart"
+import { getModuleLabelKey } from "@/src/shared/lib/constants/modules"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import type { ModuleTotal } from "../lib/types"
@@ -32,31 +36,40 @@ const BAR_COLORS = [
 
 type Metric = "views" | "msSpent" | "visitors"
 
-const METRICS: { id: Metric; label: string }[] = [
-  { id: "views", label: "Page views" },
-  { id: "msSpent", label: "Time spent" },
-  { id: "visitors", label: "Visitors" },
-]
-
-const chartConfig = {
-  value: { label: "Interest", color: "var(--brand-primary)" },
-} satisfies ChartConfig
+const METRICS = [
+  { id: "views", labelKey: "metricViews" },
+  { id: "msSpent", labelKey: "metricTime" },
+  { id: "visitors", labelKey: "metricVisitors" },
+] as const satisfies readonly { id: Metric; labelKey: string }[]
 
 export function ModuleInterestChart({ totals }: { totals: ModuleTotal[] }) {
+  const t = useTranslations("MarketingTrackingChart")
+  const tNav = useTranslations("Nav")
+  const tFormat = useTranslations("MarketingTrackingFormat")
+  const locale = useIntlLocale()
   const [metric, setMetric] = React.useState<Metric>("views")
+
+  const chartConfig = {
+    value: { label: t("interest"), color: "var(--brand-primary)" },
+  } satisfies ChartConfig
+
+  const formatValue = (value: unknown) =>
+    metric === "msSpent"
+      ? formatDuration(Number(value), tFormat)
+      : Number(value).toLocaleString(locale)
 
   const data = React.useMemo(
     () =>
       [...totals]
         .sort((a, b) => b[metric] - a[metric])
         .map((entry) => ({
-          label: entry.label,
+          label: tNav(getModuleLabelKey(entry.moduleId)),
           value: entry[metric],
           views: entry.views,
           msSpent: entry.msSpent,
           visitors: entry.visitors,
         })),
-    [totals, metric],
+    [totals, metric, tNav],
   )
 
   const hasData = data.some((entry) => entry.value > 0)
@@ -66,10 +79,10 @@ export function ModuleInterestChart({ totals }: { totals: ModuleTotal[] }) {
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 p-0 pb-5">
         <div className="flex flex-col gap-1">
           <CardTitle className="text-base leading-6 font-semibold">
-            Module interest
+            {t("title")}
           </CardTitle>
           <CardDescription className="text-xs leading-4">
-            Which parts of the ERP prospects actually open
+            {t("description")}
           </CardDescription>
         </div>
         <div className="border-stroke-default bg-surface-page flex shrink-0 items-center gap-0.5 rounded-lg border p-0.5">
@@ -86,7 +99,7 @@ export function ModuleInterestChart({ totals }: { totals: ModuleTotal[] }) {
                   : "text-content-tertiary hover:text-content-primary",
               )}
             >
-              {option.label}
+              {t(option.labelKey)}
             </button>
           ))}
         </div>
@@ -121,9 +134,7 @@ export function ModuleInterestChart({ totals }: { totals: ModuleTotal[] }) {
                   <ChartTooltipContent
                     formatter={(value) => (
                       <span className="text-content-primary font-mono text-xs">
-                        {metric === "msSpent"
-                          ? formatDuration(Number(value))
-                          : Number(value).toLocaleString()}
+                        {formatValue(value)}
                       </span>
                     )}
                   />
@@ -142,18 +153,14 @@ export function ModuleInterestChart({ totals }: { totals: ModuleTotal[] }) {
                   position="right"
                   offset={8}
                   className="fill-content-tertiary text-[11px]"
-                  formatter={(value) =>
-                    metric === "msSpent"
-                      ? formatDuration(Number(value))
-                      : Number(value).toLocaleString()
-                  }
+                  formatter={formatValue}
                 />
               </Bar>
             </BarChart>
           </ChartContainer>
         ) : (
           <p className="text-content-tertiary py-16 text-center text-sm leading-5">
-            No module activity recorded yet.
+            {t("empty")}
           </p>
         )}
       </CardContent>

@@ -1,5 +1,7 @@
 "use client"
 
+import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Link, useRouter } from "@/src/i18n/navigation"
 import { SearchX } from "lucide-react"
 
@@ -16,50 +18,58 @@ import { FinancePageBody, FinancePageHeader, HeaderFigure, MetaChips } from "../
 import { StatusPill } from "../../../components/shared/status-pill"
 import { formatAmount } from "../../../lib/utils/money"
 import { useCostCenter } from "../../lib/queries/planning"
-import type { CostCenter, CostCenterDetail } from "../../lib/types/planning"
+import { COST_CENTER_TYPES } from "../../lib/constants/planning"
+import type { CostCenter, CostCenterDetail, PlanningTranslator } from "../../lib/types/planning"
 
 type AccountRow = CostCenterDetail["accounts"][number]
 
-const CHILD_COLUMNS: FinanceColumn<CostCenter>[] = [
-  {
-    id: "center",
-    header: "Sub-center",
-    cell: (row) => (
-      <span className="flex items-baseline gap-2">
-        <DocNumber>{row.code}</DocNumber>
-        <span className="text-content-primary">{row.name}</span>
-      </span>
-    ),
-  },
-  { id: "revenue", header: "Revenue (EGP)", align: "end", cell: (row) => <Amount value={row.revenue} /> },
-  { id: "expense", header: "Expense (EGP)", align: "end", cell: (row) => <Amount value={row.expense} /> },
-  { id: "contribution", header: "Contribution (EGP)", align: "end", cell: (row) => <Amount value={row.contribution} signed /> },
-]
+function buildChildColumns(t: PlanningTranslator): FinanceColumn<CostCenter>[] {
+  return [
+    {
+      id: "center",
+      header: t("subCenter"),
+      cell: (row) => (
+        <span className="flex items-baseline gap-2">
+          <DocNumber>{row.code}</DocNumber>
+          <span className="text-content-primary">{row.name}</span>
+        </span>
+      ),
+    },
+    { id: "revenue", header: t("revenueEgp"), align: "end", cell: (row) => <Amount value={row.revenue} /> },
+    { id: "expense", header: t("expenseEgp"), align: "end", cell: (row) => <Amount value={row.expense} /> },
+    { id: "contribution", header: t("contributionEgp"), align: "end", cell: (row) => <Amount value={row.contribution} signed /> },
+  ]
+}
 
-const ACCOUNT_COLUMNS: FinanceColumn<AccountRow>[] = [
-  {
-    id: "account",
-    header: "Account",
-    cell: (row) => (
-      <span className="flex items-baseline gap-2">
-        <DocNumber href={`/finance/ledger?account=${row.code}`}>{row.code}</DocNumber>
-        <span className="text-content-primary">{row.name}</span>
-      </span>
-    ),
-  },
-  { id: "kind", header: "Kind", cell: (row) => (row.kind === "revenue" ? "Revenue" : "Expense") },
-  { id: "amount", header: "Amount (EGP)", align: "end", cell: (row) => <Amount value={row.amount} /> },
-]
+function buildAccountColumns(t: PlanningTranslator): FinanceColumn<AccountRow>[] {
+  return [
+    {
+      id: "account",
+      header: t("account"),
+      cell: (row) => (
+        <span className="flex items-baseline gap-2">
+          <DocNumber href={`/finance/ledger?account=${row.code}`}>{row.code}</DocNumber>
+          <span className="text-content-primary">{row.name}</span>
+        </span>
+      ),
+    },
+    { id: "kind", header: t("kind"), cell: (row) => (row.kind === "revenue" ? t("revenue") : t("expense")) },
+    { id: "amount", header: t("amountEgp"), align: "end", cell: (row) => <Amount value={row.amount} /> },
+  ]
+}
 
 /** 09.05 · Cost center — its own actuals, how its sub-centers are doing, and which accounts make them up. */
 function CostCenterDetailPage({ centerId }: { centerId: string }) {
+  const t = useTranslations("FinancePlanning")
+  const childColumns = React.useMemo(() => buildChildColumns(t), [t])
+  const accountColumns = React.useMemo(() => buildAccountColumns(t), [t])
   const router = useRouter()
   const { data, isError, isPending, refetch } = useCostCenter(centerId)
 
   if (isError) {
     return (
       <>
-        <FinancePageHeader title="Cost center" />
+        <FinancePageHeader title={t("costCenter")} />
         <FinancePageBody>
           <FinanceErrorState onRetry={() => refetch()} />
         </FinancePageBody>
@@ -70,16 +80,16 @@ function CostCenterDetailPage({ centerId }: { centerId: string }) {
   if (!isPending && !data) {
     return (
       <>
-        <FinancePageHeader title="Cost center not found" />
+        <FinancePageHeader title={t("centerNotFound")} />
         <FinancePageBody>
           <EmptyState
             variant="card"
             icon={<SearchX />}
-            title="There is no cost center with this code."
-            description="It may have been added in another session. Pick it from the cost center list."
+            title={t("centerNotFoundTitle")}
+            description={t("centerNotFoundDescription")}
             actions={
               <Button variant="secondary" size="sm" asChild>
-                <Link href="/finance/cost-centers">Open cost centers</Link>
+                <Link href="/finance/cost-centers">{t("openCostCenters")}</Link>
               </Button>
             }
           />
@@ -87,6 +97,9 @@ function CostCenterDetailPage({ centerId }: { centerId: string }) {
       </>
     )
   }
+
+  const typeOption = data ? COST_CENTER_TYPES.find((entry) => entry.value === data.type) : undefined
+  const typeLabel = typeOption ? t(typeOption.labelKey) : data?.type
 
   return (
     <>
@@ -98,15 +111,15 @@ function CostCenterDetailPage({ centerId }: { centerId: string }) {
               {data.name}
             </span>
           ) : (
-            "Cost center"
+            t("costCenter")
           )
         }
-        breadcrumbs={data ? [{ label: "Planning" }, { label: "Cost centers", href: "/finance/cost-centers" }, { label: `${data.code} ${data.name}` }] : undefined}
-        figure={data ? <HeaderFigure label="Contribution (EGP)">{formatAmount(data.contribution)}</HeaderFigure> : null}
+        breadcrumbs={data ? [{ label: t("planning") }, { label: t("costCenters"), href: "/finance/cost-centers" }, { label: `${data.code} ${data.name}` }] : undefined}
+        figure={data ? <HeaderFigure label={t("contributionEgp")}>{formatAmount(data.contribution)}</HeaderFigure> : null}
         actions={
           data?.budget_id ? (
             <Button variant="secondary" asChild>
-              <Link href={`/finance/budgets/${data.budget_id}`}>View budget</Link>
+              <Link href={`/finance/budgets/${data.budget_id}`}>{t("viewBudget")}</Link>
             </Button>
           ) : null
         }
@@ -117,17 +130,21 @@ function CostCenterDetailPage({ centerId }: { centerId: string }) {
         ) : (
           <>
             <MetaChips>
-              <StatusPill status={`center-${data.type}`} label={data.type} tone="neutral" />
-              <StatusPill status="ready" label="Active" tone="success" />
+              <StatusPill status={`center-${data.type}`} label={typeLabel} tone="neutral" />
+              <StatusPill status="ready" label={t("active")} tone="success" />
               {data.parent ? (
                 <span>
-                  Part of{" "}
-                  <Link href={`/finance/cost-centers/${data.parent.id}`} className="text-content-primary hover:underline">
-                    {data.parent.code} · {data.parent.name}
-                  </Link>
+                  {t.rich("partOf", {
+                    parent: `${data.parent.code} · ${data.parent.name}`,
+                    link: (chunks) => (
+                      <Link href={`/finance/cost-centers/${data.parent?.id}`} className="text-content-primary hover:underline">
+                        {chunks}
+                      </Link>
+                    ),
+                  })}
                 </span>
               ) : (
-                <span>Top level</span>
+                <span>{t("topLevel")}</span>
               )}
               {data.name_ar ? (
                 <span dir="rtl" lang="ar">
@@ -137,22 +154,22 @@ function CostCenterDetailPage({ centerId }: { centerId: string }) {
             </MetaChips>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Revenue (EGP)" value={formatAmount(data.revenue)} caption={`FY${data.year} to date`} />
-              <KpiCard layout="bar" accent="teal" label="Expense (EGP)" value={formatAmount(data.expense)} caption={`FY${data.year} to date`} />
+              <KpiCard layout="bar" accent="indigo" label={t("revenueEgp")} value={formatAmount(data.revenue)} caption={t("fyToDate", { year: data.year })} />
+              <KpiCard layout="bar" accent="teal" label={t("expenseEgp")} value={formatAmount(data.expense)} caption={t("fyToDate", { year: data.year })} />
               <KpiCard
                 layout="bar"
                 accent={data.contribution < 0 ? "danger" : "amber"}
-                label="Margin"
+                label={t("margin")}
                 value={data.margin === null ? "—" : `${data.margin}%`}
-                caption={data.margin === null ? "No revenue posted here" : undefined}
+                caption={data.margin === null ? t("noRevenueHere") : undefined}
               />
             </div>
 
             {data.children.length ? (
-              <FinanceSection title="Sub-centers" description="Each sub-center's figures include the centers below it.">
+              <FinanceSection title={t("subCenters")} description={t("subCentersDescription")}>
                 <FinanceTable
-                  caption={`Sub-centers of ${data.code}`}
-                  columns={CHILD_COLUMNS}
+                  caption={t("subCentersOf", { code: data.code })}
+                  columns={childColumns}
                   rows={data.children}
                   getRowId={(row) => row.id}
                   onRowClick={(row) => router.push(`/finance/cost-centers/${row.id}`)}
@@ -160,13 +177,13 @@ function CostCenterDetailPage({ centerId }: { centerId: string }) {
               </FinanceSection>
             ) : null}
 
-            <FinanceSection title="By account" description="What is posted to this center itself this year.">
+            <FinanceSection title={t("byAccount")} description={t("byAccountDescription")}>
               <FinanceTable
-                caption={`Accounts posted to ${data.code}`}
-                columns={ACCOUNT_COLUMNS}
+                caption={t("accountsPostedTo", { code: data.code })}
+                columns={accountColumns}
                 rows={data.accounts}
                 getRowId={(row) => row.id}
-                empty={<p className="text-content-tertiary py-8 text-center text-sm">Nothing is posted to this center yet.</p>}
+                empty={<p className="text-content-tertiary py-8 text-center text-sm">{t("nothingPostedYet")}</p>}
               />
             </FinanceSection>
           </>

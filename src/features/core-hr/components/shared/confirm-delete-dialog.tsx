@@ -1,6 +1,7 @@
 "use client"
 
 import { TriangleAlert, X } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import {
   AlertDialog,
@@ -33,11 +34,14 @@ export function ConfirmDeleteDialog({
   isPending,
   onConfirm,
 }: ConfirmDeleteDialogProps) {
+  const t = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="block max-w-md p-6">
         <AlertDialogCancel
-          aria-label="Close"
+          aria-label={tCommon("close")}
           className="text-content-tertiary hover:text-content-primary hover:bg-surface-hover absolute top-4 inset-e-4 inline-flex size-7 items-center justify-center rounded-lg border-0 bg-transparent p-0 shadow-none"
         >
           <X className="size-4" aria-hidden />
@@ -60,7 +64,7 @@ export function ConfirmDeleteDialog({
 
         <div className="mt-6 flex items-center justify-end gap-2">
           <AlertDialogCancel className="h-9 rounded-md px-4 text-sm font-semibold">
-            Cancel
+            {tCommon("cancel")}
           </AlertDialogCancel>
           <AlertDialogAction
             disabled={isPending}
@@ -70,7 +74,7 @@ export function ConfirmDeleteDialog({
             }}
             className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
           >
-            {isPending ? "Deleting…" : "Delete"}
+            {isPending ? t("deleting") : tCommon("delete")}
           </AlertDialogAction>
         </div>
       </AlertDialogContent>

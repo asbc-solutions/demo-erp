@@ -1,1 +1,83 @@
-{}
+{
+  "CommandCenter": {
+    "accessDeniedDescription": "Ask an admin to grant your role access to the Command Center.",
+    "accessDeniedTitle": "You don't have access",
+    "loadFailed": "Failed to load.",
+    "sectionKeyMetrics": "Key Metrics",
+    "sectionRevenueActivity": "Revenue Trend & Recent Activity",
+    "summaryLoadFailed": "Failed to load the command center summary."
+  },
+  "CommandCenterSummary": {
+    "burnRate": "Burn Rate",
+    "headcount": "Headcount",
+    "mrr": "MRR",
+    "pipeline": "Pipeline",
+    "runway": "Runway",
+    "runwayDays": "{count, plural, one {{value} day} other {{value} days}}"
+  },
+  "CommandCenterQuickActions": {
+    "addMember": "Add Member",
+    "newDeal": "New Deal",
+    "newInvoice": "New Invoice",
+    "runReport": "Run Report",
+    "welcomeBack": "Welcome back, {org}"
+  },
+  "CommandCenterRevenue": {
+    "cashIn": "Cash In",
+    "cashOut": "Cash Out",
+    "loadFailed": "Failed to load revenue trend.",
+    "ranges": {
+      "12m": "12 Months",
+      "6m": "6 Months",
+      "all": "All",
+      "ytd": "Year to Date"
+    },
+    "rangePills": {
+      "12m": "12 Months",
+      "6m": "6 Months",
+      "all": "All Time",
+      "ytd": "Year to Date"
+    },
+    "subtitle": "Cash in vs. cash out, historical only",
+    "thousandsTick": "{value}k",
+    "title": "Revenue Overview"
+  },
+  "CommandCenterActivity": {
+    "categories": {
+      "finance": "Finance",
+      "people": "People",
+      "sales": "Sales",
+      "system": "System"
+    },
+    "empty": "No activity yet.",
+    "live": "Live",
+    "loadFailed": "Failed to load activity.",
+    "title": "Activity Feed",
+    "viewAll": "View all activity →"
+  },
+  "CommandCenterInvoices": {
+    "amount": "Amount",
+    "client": "Client",
+    "empty": "No invoices yet.",
+    "invoiceNumber": "Invoice #",
+    "loadFailed": "Failed to load recent invoices.",
+    "status": {
+      "draft": "Draft",
+      "overdue": "Overdue",
+      "paid": "Paid",
+      "partial": "Partial",
+      "sent": "Sent",
+      "void": "Void"
+    },
+    "statusHeader": "Status",
+    "title": "Recent Invoices"
+  },
+  "CommandCenterInsights": {
+    "briefing": "Good morning, {org}. Your runway has extended by <success>4 days</success> due to a <strong>$12,000</strong> payment from Acme Corporation. Two deals in negotiation stage are approaching their close dates with a combined value of <primary>$113,000</primary>.",
+    "dailyBriefing": "Daily Briefing",
+    "demo": "Demo",
+    "followUp": "Consider following up with TechStart Inc on their proposal response.",
+    "footer": "Nucleus · Sample briefing — connect to AI for live insights",
+    "title": "AI Insights"
+  }
+}

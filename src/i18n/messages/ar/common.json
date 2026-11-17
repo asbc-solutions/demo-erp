@@ -59,6 +59,7 @@
     "yesterday": "أمس"
   },
   "Ui": {
+    "accessDeniedTitle": "ليس لديك صلاحية الوصول",
     "breadcrumb": "مسار التنقل",
     "dismiss": "إخفاء",
     "hidePassword": "إخفاء كلمة المرور",

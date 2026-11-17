@@ -11,7 +11,9 @@ import {
   Users,
   Zap,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button } from "@/src/shared/components/ui/button"
 import { Input } from "@/src/shared/components/ui/input"
 import { KpiCard } from "@/src/shared/components/ui/kpi-card"
@@ -26,12 +28,13 @@ import { Skeleton } from "@/src/shared/components/ui/skeleton"
 import {
   MODULE_IDS,
   TRACKED_MODULES,
-  getModuleLabel,
+  getModuleLabelKey,
 } from "@/src/shared/lib/constants/modules"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import { toCsv } from "../lib/format"
-import type { VisitorRecord } from "../lib/types"
+import type { BreakdownEntry, VisitorRecord } from "../lib/types"
+import { useOnboardingLabels } from "../lib/use-onboarding-labels"
 import { useTrackingSummary } from "../lib/use-tracking-summary"
 import { ModuleInterestChart } from "./module-interest-chart"
 import { BreakdownCard, OnboardingFunnelCard } from "./onboarding-insights"
@@ -39,10 +42,10 @@ import { VisitorDetailSheet } from "./visitor-detail-sheet"
 import { VisitorsTable } from "./visitors-table"
 
 const RANGES = [
-  { id: "24h", label: "24h", hours: 24 },
-  { id: "7d", label: "7 days", hours: 24 * 7 },
-  { id: "30d", label: "30 days", hours: 24 * 30 },
-  { id: "all", label: "All time", hours: Infinity },
+  { id: "24h", labelKey: "range24h", hours: 24 },
+  { id: "7d", labelKey: "range7d", hours: 24 * 7 },
+  { id: "30d", labelKey: "range30d", hours: 24 * 30 },
+  { id: "all", labelKey: "rangeAll", hours: Infinity },
 ] as const
 
 type RangeId = (typeof RANGES)[number]["id"]
@@ -60,6 +63,15 @@ function downloadCsv(visitors: VisitorRecord[]): void {
 }
 
 export function MarketingTrackingDashboard() {
+  const t = useTranslations("MarketingTrackingDashboard")
+  const tCommon = useTranslations("Common")
+  const tNav = useTranslations("Nav")
+  const locale = useIntlLocale()
+  const onboardingLabels = useOnboardingLabels()
+
+  // Breakdown labels arrive in English from the API; re-label them by id.
+  const relabel = (entries: BreakdownEntry[], label: (id: string) => string) =>
+    entries.map((entry) => ({ ...entry, label: label(entry.key) }))
   const { data, isLoading, isError, refetch, isFetching } = useTrackingSummary()
 
   const [search, setSearch] = React.useState("")
@@ -108,10 +120,10 @@ export function MarketingTrackingDashboard() {
 
           <div className="me-auto flex min-w-0 flex-col">
             <h1 className="font-heading text-content-primary text-base leading-6 font-semibold">
-              Demo Insights
+              {t("title")}
             </h1>
             <p className="text-content-tertiary truncate text-xs leading-4">
-              What prospects explore inside the Nucleus demo
+              {t("subtitle")}
             </p>
           </div>
 
@@ -129,7 +141,7 @@ export function MarketingTrackingDashboard() {
                     : "text-content-tertiary hover:text-content-primary",
                 )}
               >
-                {option.label}
+                {t(option.labelKey)}
               </button>
             ))}
           </div>
@@ -141,7 +153,7 @@ export function MarketingTrackingDashboard() {
             disabled={isFetching}
           >
             <RefreshCw className={cn(isFetching && "animate-spin")} aria-hidden />
-            Refresh
+            {tCommon("refresh")}
           </Button>
 
           <Button
@@ -151,7 +163,7 @@ export function MarketingTrackingDashboard() {
             disabled={visitors.length === 0}
           >
             <Download aria-hidden />
-            Export CSV
+            {t("exportCsv")}
           </Button>
         </div>
       </header>
@@ -160,13 +172,13 @@ export function MarketingTrackingDashboard() {
         {isError && (
           <div className="border-stroke-default bg-surface-white rounded-[14px] border p-6">
             <p className="text-content-primary text-sm leading-5 font-medium">
-              Couldn&apos;t load tracking data.
+              {t("loadError")}
             </p>
             <p className="text-content-tertiary pt-1 text-xs leading-4">
-              The tracking store may not be writable yet. Try refreshing.
+              {t("loadErrorHint")}
             </p>
             <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
-              Try again
+              {tCommon("retry")}
             </Button>
           </div>
         )}
@@ -185,14 +197,14 @@ export function MarketingTrackingDashboard() {
               <KpiCard
                 icon={<Users className="size-5" aria-hidden />}
                 accent="indigo"
-                value={totals.visitors.toLocaleString()}
-                label="Total visitors"
+                value={totals.visitors.toLocaleString(locale)}
+                label={t("totalVisitors")}
               />
               <KpiCard
                 icon={<UserCheck className="size-5" aria-hidden />}
                 accent="emerald"
-                value={totals.identified.toLocaleString()}
-                label="Signed in"
+                value={totals.identified.toLocaleString(locale)}
+                label={t("signedIn")}
                 trend={totals.identified > 0 ? "up" : "neutral"}
                 trendValue={
                   totals.visitors
@@ -204,21 +216,25 @@ export function MarketingTrackingDashboard() {
               <KpiCard
                 icon={<Sparkles className="size-5" aria-hidden />}
                 accent="violet"
-                value={totals.completedOnboarding.toLocaleString()}
-                label="Completed onboarding"
+                value={totals.completedOnboarding.toLocaleString(locale)}
+                label={t("completedOnboarding")}
               />
               <KpiCard
                 icon={<Layers className="size-5" aria-hidden />}
                 accent="blue"
                 value={totals.avgModulesExplored.toFixed(1)}
-                label={`Avg modules explored of ${TRACKED_MODULES.length}`}
+                label={t("avgModulesExplored", { total: TRACKED_MODULES.length })}
               />
               <KpiCard
                 icon={<Search className="size-5" aria-hidden />}
                 accent="amber"
-                value={leadingModule ? getModuleLabel(leadingModule.moduleId) : "—"}
-                label="Most-wanted module"
-                trendValue={leadingModule ? `${leadingModule.views} views` : undefined}
+                value={
+                  leadingModule ? tNav(getModuleLabelKey(leadingModule.moduleId)) : "—"
+                }
+                label={t("mostWantedModule")}
+                trendValue={
+                  leadingModule ? t("moduleViews", { count: leadingModule.views }) : undefined
+                }
               />
             </section>
 
@@ -232,23 +248,23 @@ export function MarketingTrackingDashboard() {
 
             <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
               <BreakdownCard
-                title="Industry"
-                description="Sector mix of your prospects"
-                entries={data.breakdowns.industry}
+                title={t("industryTitle")}
+                description={t("industryDescription")}
+                entries={relabel(data.breakdowns.industry, onboardingLabels.industry)}
               />
               <BreakdownCard
-                title="Company stage"
-                description="How mature they are"
-                entries={data.breakdowns.stage}
+                title={t("stageTitle")}
+                description={t("stageDescription")}
+                entries={relabel(data.breakdowns.stage, onboardingLabels.stage)}
               />
               <BreakdownCard
-                title="Team size"
-                description="Seats they'd likely need"
-                entries={data.breakdowns.teamSize}
+                title={t("teamSizeTitle")}
+                description={t("teamSizeDescription")}
+                entries={relabel(data.breakdowns.teamSize, onboardingLabels.teamSize)}
               />
               <BreakdownCard
-                title="Tools to connect"
-                description="Integrations they asked for"
+                title={t("toolsTitle")}
+                description={t("toolsDescription")}
                 entries={data.breakdowns.tools}
               />
             </section>
@@ -262,36 +278,37 @@ export function MarketingTrackingDashboard() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search name, e-mail, phone or company"
+                  placeholder={t("searchPlaceholder")}
                   className="ps-9"
-                  aria-label="Search visitors"
+                  aria-label={t("searchLabel")}
                 />
               </div>
 
               <Select value={moduleFilter} onValueChange={setModuleFilter}>
-                <SelectTrigger className="w-[220px]" aria-label="Filter by module">
-                  <SelectValue placeholder="All modules" />
+                <SelectTrigger className="w-[220px]" aria-label={t("filterByModule")}>
+                  <SelectValue placeholder={t("allModules")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All modules</SelectItem>
+                  <SelectItem value="all">{t("allModules")}</SelectItem>
                   {TRACKED_MODULES.map((module) => (
                     <SelectItem key={module.id} value={module.id}>
-                      {module.label}
+                      {tNav(module.labelKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
               <span className="text-content-tertiary ms-auto text-xs leading-4">
-                {visitors.length} of {data.visitors.length} visitors
+                {t("visibleCount", { shown: visitors.length, total: data.visitors.length })}
               </span>
             </section>
 
             <VisitorsTable visitors={visitors} onSelect={setSelected} />
 
             <p className="text-content-quaternary pb-4 text-center text-[11px] leading-[15.4px]">
-              Updated {new Date(data.generatedAt).toLocaleTimeString()} · refreshes
-              every 30s
+              {t("updatedAt", {
+                time: new Date(data.generatedAt).toLocaleTimeString(locale),
+              })}
             </p>
           </>
         )}

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Award, CheckCircle2, TriangleAlert } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -25,47 +26,44 @@ import type { TrainingCertification, TrainingCertStatus } from "../../lib/types"
 
 const STATUS_CFG: Record<
   TrainingCertStatus,
-  { label: string; variant: "success" | "warning" | "danger" | "neutral"; icon: React.ReactNode }
+  { variant: "success" | "warning" | "danger" | "neutral"; icon: React.ReactNode }
 > = {
   active: {
-    label: "Active",
     variant: "success",
     icon: <CheckCircle2 strokeWidth={2} />,
   },
   expiring_soon: {
-    label: "Expiring Soon",
     variant: "warning",
     icon: <TriangleAlert strokeWidth={2} />,
   },
   expired: {
-    label: "Expired",
     variant: "danger",
     icon: <TriangleAlert strokeWidth={2} />,
   },
   revoked: {
-    label: "Revoked",
     variant: "neutral",
     icon: <TriangleAlert strokeWidth={2} />,
   },
 }
 
-const STATUS_FILTERS: { id: TrainingCertStatus | "all"; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "active", label: "Active" },
-  { id: "expiring_soon", label: "Expiring Soon" },
-  { id: "expired", label: "Expired" },
+const STATUS_FILTERS: { id: TrainingCertStatus | "all" }[] = [
+  { id: "all" },
+  { id: "active" },
+  { id: "expiring_soon" },
+  { id: "expired" },
 ]
 
 const HEAD_CLASS =
   "h-10 text-xs font-medium normal-case tracking-normal text-content-secondary"
 
-function employeeLabel(cert: TrainingCertification) {
-  return cert.employee_name ?? "Employee"
+function employeeLabel(cert: TrainingCertification, fallback: string) {
+  return cert.employee_name ?? fallback
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function CertificationsTab() {
+  const t = useTranslations("HrTraining")
   const [filter, setFilter] = useState<TrainingCertStatus | "all">("all")
 
   const { data, isLoading, isError } = useCertifications({ per_page: 100 })
@@ -98,7 +96,7 @@ export function CertificationsTab() {
               size="sm"
               onClick={() => setFilter(f.id)}
             >
-              {f.label}
+              {t(`certStatus.${f.id}`)}
               {count !== null && (
                 <Badge
                   variant="neutral"
@@ -124,11 +122,13 @@ export function CertificationsTab() {
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-0.5">
               <h4 className="text-sm leading-5 font-semibold text-content-primary">
-                Certification Renewal Alert
+                {t("renewalAlertTitle")}
               </h4>
               <p className="text-sm leading-5 text-brand-warning">
-                {counts.expiring_soon} certification(s) expiring within 90 days and{" "}
-                {counts.expired} expired. Schedule renewal for affected employees.
+                {t("renewalAlertBody", {
+                  expiring: counts.expiring_soon,
+                  expired: counts.expired,
+                })}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -137,9 +137,11 @@ export function CertificationsTab() {
                   key={c.cert_id}
                   className="inline-flex items-center gap-1 rounded-lg border border-stroke-default bg-surface-white px-2.5 py-1 text-xs text-content-secondary"
                 >
-                  {employeeLabel(c)} — {c.cert_name}
+                  {employeeLabel(c, t("employeeFallback"))} — {c.cert_name}
                   {c.status === "expired" && (
-                    <span className="font-medium text-brand-danger">(Expired)</span>
+                    <span className="font-medium text-brand-danger">
+                      {t("expiredTag")}
+                    </span>
                   )}
                 </span>
               ))}
@@ -152,10 +154,10 @@ export function CertificationsTab() {
       <Card variant="elevated" className="gap-0">
         <div className="flex flex-col gap-1 p-6">
           <h3 className="text-lg leading-7 font-semibold text-content-primary">
-            Employee Certifications
+            {t("employeeCertifications")}
           </h3>
           <p className="text-sm leading-5 text-content-tertiary">
-            Track professional certifications across the organisation.
+            {t("employeeCertificationsSubtitle")}
           </p>
         </div>
 
@@ -163,12 +165,12 @@ export function CertificationsTab() {
           <Table>
             <TableHeader className="bg-transparent">
               <TableRow className="hover:bg-transparent">
-                <TableHead className={HEAD_CLASS}>Employee</TableHead>
-                <TableHead className={HEAD_CLASS}>Certification</TableHead>
-                <TableHead className={HEAD_CLASS}>Issuing Body</TableHead>
-                <TableHead className={HEAD_CLASS}>Obtained</TableHead>
-                <TableHead className={HEAD_CLASS}>Expiry</TableHead>
-                <TableHead className={HEAD_CLASS}>Status</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colEmployee")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colCertification")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colIssuingBody")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colObtained")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colExpiry")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colStatus")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -188,8 +190,8 @@ export function CertificationsTab() {
                     className="h-24 text-center text-sm text-content-tertiary"
                   >
                     {isError
-                      ? "Couldn't load certifications. Please try again."
-                      : "No certifications match the current filter."}
+                      ? t("certsLoadError")
+                      : t("certsEmpty")}
                   </TableCell>
                 </TableRow>
               )}
@@ -197,18 +199,20 @@ export function CertificationsTab() {
               {!isLoading &&
                 !isError &&
                 filtered.map((cert) => {
-                  const st = STATUS_CFG[cert.status] ?? STATUS_CFG.active
+                  const status = cert.status in STATUS_CFG ? cert.status : "active"
+                  const st = STATUS_CFG[status]
+                  const employee = employeeLabel(cert, t("employeeFallback"))
                   return (
                     <TableRow key={cert.cert_id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar
                             size="default"
-                            alt={employeeLabel(cert)}
+                            alt={employee}
                             color="neutral"
                           />
                           <span className="text-sm font-medium text-content-primary">
-                            {employeeLabel(cert)}
+                            {employee}
                           </span>
                         </div>
                       </TableCell>
@@ -233,7 +237,7 @@ export function CertificationsTab() {
                       <TableCell>
                         <Badge variant={st.variant} className="gap-1">
                           {st.icon}
-                          {st.label}
+                          {t(`certStatus.${status}`)}
                         </Badge>
                       </TableCell>
                     </TableRow>

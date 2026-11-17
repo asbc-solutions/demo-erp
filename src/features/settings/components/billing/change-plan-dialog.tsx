@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -31,6 +32,9 @@ export function ChangePlanDialog({
   currentPlanCode?: string
   availablePlans: BillingPlan[]
 }>) {
+  const t = useTranslations("SettingsChangePlan")
+  const tShared = useTranslations("SettingsShared")
+  const tCommon = useTranslations("Common")
   const [selectedPlanId, setSelectedPlanId] = React.useState<string | null>(null)
   const changePlan = useChangePlan()
 
@@ -45,10 +49,10 @@ export function ChangePlanDialog({
       { plan_id: selectedPlanId },
       {
         onSuccess: () => {
-          toast.success("Plan changed.")
+          toast.success(t("success"))
           handleOpenChange(false)
         },
-        onError: (err) => toastMutationError(err, "Failed to change plan"),
+        onError: (err) => toastMutationError(err, t("failed"), tShared),
       },
     )
   }
@@ -57,14 +61,12 @@ export function ChangePlanDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Change Plan</DialogTitle>
-          <DialogDescription>
-            Your next billing date resets to the first of next month on the new plan.
-          </DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
         <DialogBody className="gap-3">
           {availablePlans.length === 0 ? (
-            <p className="text-content-tertiary text-sm">No other plans are available.</p>
+            <p className="text-content-tertiary text-sm">{t("noPlans")}</p>
           ) : (
             availablePlans.map((plan) => {
               const isCurrent = plan.code === currentPlanCode
@@ -87,13 +89,13 @@ export function ChangePlanDialog({
                       {plan.name}
                       {isCurrent ? (
                         <span className="text-content-tertiary ms-2 text-xs font-normal">
-                          (current)
+                          {t("current")}
                         </span>
                       ) : null}
                     </span>
                     <span className="text-content-tertiary text-xs">
-                      {plan.seat_limit ? `${plan.seat_limit} seats · ` : ""}
-                      {plan.storage_limit_gb ? `${plan.storage_limit_gb} GB storage` : ""}
+                      {plan.seat_limit ? `${t("seats", { count: plan.seat_limit })} · ` : ""}
+                      {plan.storage_limit_gb ? t("storage", { size: plan.storage_limit_gb }) : ""}
                     </span>
                   </div>
                   <span className="text-content-primary text-sm font-semibold">
@@ -106,7 +108,7 @@ export function ChangePlanDialog({
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             type="button"
@@ -115,7 +117,7 @@ export function ChangePlanDialog({
             onClick={handleConfirm}
           >
             {changePlan.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Confirm Change
+            {t("confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

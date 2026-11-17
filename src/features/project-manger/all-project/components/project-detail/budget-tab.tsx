@@ -1,6 +1,7 @@
 "use client"
 
 import { TrendingDown, TrendingUp } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Cell, Pie, PieChart } from "recharts"
 import { toast } from "sonner"
 
@@ -15,6 +16,7 @@ import {
   buildCostMix,
   evmMetricCards,
   formatMoney,
+  isKnownCostType,
 } from "../../../lib/mappers/cost-budget-mapper"
 import { useReleaseBudget } from "../../../lib/mutations/cost-budget"
 import {
@@ -31,6 +33,8 @@ const VALUE_TONE = {
 }
 
 export function BudgetTab({ projectId }: { projectId: string }) {
+  const t = useTranslations("ProjectsProjectDetail")
+  const tShared = useTranslations("ProjectsShared")
   // The project's root node id is the project id for node-scoped endpoints.
   const nodeId = projectId
 
@@ -43,7 +47,9 @@ export function BudgetTab({ projectId }: { projectId: string }) {
   const evm = evmQ.data
   const metrics = evm ? evmMetricCards(evm) : []
   const nodeCost = nodeCostQ.data
-  const { slices, total } = buildCostMix(costPlansQ.data ?? [])
+  const { slices, total } = buildCostMix(costPlansQ.data ?? [], (key) =>
+    isKnownCostType(key) ? tShared(`costType.${key}`) : undefined,
+  )
   const budgets = budgetsQ.data ?? []
 
   const consumed =
@@ -53,9 +59,9 @@ export function BudgetTab({ projectId }: { projectId: string }) {
 
   const handleRelease = (budgetId: string) =>
     releaseBudget.mutate(budgetId, {
-      onSuccess: () => toast.success("Budget released"),
+      onSuccess: () => toast.success(t("budgetReleased")),
       onError: (err) =>
-        toast.error("Couldn't release budget", {
+        toast.error(t("budgetReleaseFailed"), {
           description: (err as unknown as ApiError).message,
         }),
     })
@@ -65,11 +71,9 @@ export function BudgetTab({ projectId }: { projectId: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-content-primary text-xl leading-7 font-bold tracking-tight">
-            Budget &amp; Costs
+            {t("budgetTitle")}
           </h2>
-          <p className="text-content-tertiary text-sm">
-            Earned-value, cost variance, and forecast at completion
-          </p>
+          <p className="text-content-tertiary text-sm">{t("budgetSubtitle")}</p>
         </div>
       </div>
 
@@ -86,7 +90,7 @@ export function BudgetTab({ projectId }: { projectId: string }) {
       ) : evmQ.isError || !evm ? (
         <Card className="flex h-24 items-center justify-center p-4">
           <p className="text-content-tertiary text-sm">
-            Earned-value metrics are not available yet.
+            {t("evmUnavailable")}
           </p>
         </Card>
       ) : (
@@ -105,7 +109,7 @@ export function BudgetTab({ projectId }: { projectId: string }) {
                 {metric.value}
               </span>
               <span className="text-content-tertiary text-[11px]">
-                {metric.sub}
+                {tShared(`evm.${metric.id}`)}
               </span>
             </Card>
           ))}
@@ -117,23 +121,23 @@ export function BudgetTab({ projectId }: { projectId: string }) {
         <Card className="gap-4 p-5">
           <div className="flex flex-col gap-0.5">
             <h3 className="text-content-primary text-sm font-semibold">
-              Cost Summary
+              {t("costSummary")}
             </h3>
             <p className="text-content-tertiary text-xs">
-              Planned vs. committed and actual for this project
+              {t("costSummarySubtitle")}
             </p>
           </div>
           {nodeCostQ.isLoading ? (
             <div className="bg-surface-muted h-32 animate-pulse rounded-lg" />
           ) : !nodeCost ? (
-            <p className="text-content-tertiary text-sm">No cost data yet.</p>
+            <p className="text-content-tertiary text-sm">{t("noCostData")}</p>
           ) : (
             <>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "Planned", value: nodeCost.planned },
-                  { label: "Committed", value: nodeCost.committed },
-                  { label: "Actual", value: nodeCost.actual },
+                  { label: t("costPlanned"), value: nodeCost.planned },
+                  { label: t("costCommitted"), value: nodeCost.committed },
+                  { label: t("costActual"), value: nodeCost.actual },
                 ].map((item) => (
                   <div key={item.label} className="flex flex-col gap-0.5">
                     <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
@@ -148,7 +152,7 @@ export function BudgetTab({ projectId }: { projectId: string }) {
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-content-secondary font-medium">
-                    Consumed
+                    {t("consumed")}
                   </span>
                   <span className="text-content-tertiary">
                     {Math.round(consumed)}%
@@ -161,7 +165,9 @@ export function BudgetTab({ projectId }: { projectId: string }) {
                 />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-content-tertiary text-xs">Variance</span>
+                <span className="text-content-tertiary text-xs">
+                  {t("variance")}
+                </span>
                 <span
                   className={cn(
                     "flex items-center gap-1 text-sm font-semibold",
@@ -186,15 +192,17 @@ export function BudgetTab({ projectId }: { projectId: string }) {
         <Card className="gap-4 p-5">
           <div className="flex flex-col gap-0.5">
             <h3 className="text-content-primary text-sm font-semibold">
-              Cost Type Mix
+              {t("costTypeMix")}
             </h3>
-            <p className="text-content-tertiary text-xs">Planned by cost type</p>
+            <p className="text-content-tertiary text-xs">
+              {t("costTypeMixSubtitle")}
+            </p>
           </div>
           {costPlansQ.isLoading ? (
             <div className="bg-surface-muted h-32 animate-pulse rounded-lg" />
           ) : slices.length === 0 ? (
             <p className="text-content-tertiary text-sm">
-              No cost plan lines yet.
+              {t("noCostPlanLines")}
             </p>
           ) : (
             <div className="flex items-center gap-4">
@@ -215,7 +223,7 @@ export function BudgetTab({ projectId }: { projectId: string }) {
                       stroke="var(--surface-white)"
                     >
                       {slices.map((entry) => (
-                        <Cell key={entry.label} fill={entry.color} />
+                        <Cell key={entry.key} fill={entry.color} />
                       ))}
                     </Pie>
                   </PieChart>
@@ -229,7 +237,7 @@ export function BudgetTab({ projectId }: { projectId: string }) {
               <ul className="flex flex-1 flex-col gap-2">
                 {slices.map((item) => (
                   <li
-                    key={item.label}
+                    key={item.key}
                     className="flex items-center justify-between gap-2 text-xs"
                   >
                     <span className="text-content-secondary flex items-center gap-2">
@@ -255,17 +263,19 @@ export function BudgetTab({ projectId }: { projectId: string }) {
         <Card className="gap-4 p-5">
           <div className="flex flex-col gap-0.5">
             <h3 className="text-content-primary text-sm font-semibold">
-              Forecast
+              {t("forecast")}
             </h3>
-            <p className="text-content-tertiary text-xs">Estimate at Completion</p>
+            <p className="text-content-tertiary text-xs">
+              {t("forecastSubtitle")}
+            </p>
           </div>
           {!evm ? (
-            <p className="text-content-tertiary text-sm">Not available yet.</p>
+            <p className="text-content-tertiary text-sm">{t("notAvailableYet")}</p>
           ) : (
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-0.5">
                 <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-                  Budget at Completion
+                  {t("budgetAtCompletion")}
                 </span>
                 <span className="text-content-primary text-xl font-bold">
                   {formatMoney(evm.bac)}
@@ -273,7 +283,7 @@ export function BudgetTab({ projectId }: { projectId: string }) {
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-                  Forecast EAC
+                  {t("forecastEac")}
                 </span>
                 <span
                   className={cn(
@@ -290,7 +300,7 @@ export function BudgetTab({ projectId }: { projectId: string }) {
                     ) : (
                       <TrendingUp className="size-3" aria-hidden />
                     )}
-                    VAC {formatMoney(evm.vac)}
+                    {t("vac", { value: formatMoney(evm.vac) })}
                   </span>
                 </span>
               </div>
@@ -300,13 +310,13 @@ export function BudgetTab({ projectId }: { projectId: string }) {
 
         {/* Budgets */}
         <Card className="gap-4 p-5">
-          <h3 className="text-content-primary text-sm font-semibold">Budgets</h3>
+          <h3 className="text-content-primary text-sm font-semibold">
+            {t("budgets")}
+          </h3>
           {budgetsQ.isLoading ? (
             <div className="bg-surface-muted h-24 animate-pulse rounded-lg" />
           ) : budgets.length === 0 ? (
-            <p className="text-content-tertiary text-sm">
-              No budgets created yet.
-            </p>
+            <p className="text-content-tertiary text-sm">{t("noBudgets")}</p>
           ) : (
             <div className="flex flex-col gap-3">
               {budgets.map((budget) => (
@@ -318,12 +328,14 @@ export function BudgetTab({ projectId }: { projectId: string }) {
                     <span className="text-content-primary text-sm font-semibold">
                       {formatMoney(budget.budget_amount)}
                       <span className="text-content-tertiary ms-2 text-[11px] font-normal">
-                        FY {budget.fiscal_year}
+                        {t("fiscalYear", { year: budget.fiscal_year })}
                       </span>
                     </span>
                     <span className="text-content-tertiary text-[11px]">
-                      Released {formatMoney(budget.released_amount)} ·{" "}
-                      {budget.status_label}
+                      {t("budgetReleasedLine", {
+                        amount: formatMoney(budget.released_amount),
+                        status: tShared(`budgetStatus.${budget.status}`),
+                      })}
                     </span>
                   </div>
                   {budget.status === "draft" && (
@@ -333,7 +345,7 @@ export function BudgetTab({ projectId }: { projectId: string }) {
                       onClick={() => handleRelease(budget.budget_id)}
                       disabled={releaseBudget.isPending}
                     >
-                      {releaseBudget.isPending ? "Releasing…" : "Release"}
+                      {releaseBudget.isPending ? t("releasing") : t("release")}
                     </Button>
                   )}
                 </div>

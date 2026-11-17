@@ -1,6 +1,7 @@
 "use client"
 
 import { CircleCheck } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -9,12 +10,14 @@ import { EmptyState } from "@/src/shared/components/ui/empty-state"
 import { Amount } from "../../../components/shared/amount"
 import { DocNumber } from "../../../components/shared/doc-number"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount } from "../../../lib/utils/money"
 import { useApproveExpense } from "../../lib/mutations/payables"
 import type { Expense } from "../../lib/types/payables"
 
 function ExpenseRow({ expense }: { expense: Expense }) {
+  const t = useTranslations("FinanceMoneyOut")
+  const { formatDate } = useFinanceDateFormat()
   const approve = useApproveExpense()
   return (
     <article
@@ -34,7 +37,7 @@ function ExpenseRow({ expense }: { expense: Expense }) {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <DocNumber>{expense.number}</DocNumber>
           <span className="text-content-tertiary text-xs leading-4">
-            Expense (EGP) <span className="text-content-primary tabular-nums">{formatAmount(expense.net)}</span>
+            {t("expenseEgp")} <span className="text-content-primary tabular-nums">{formatAmount(expense.net)}</span>
           </span>
         </div>
       </div>
@@ -46,13 +49,18 @@ function ExpenseRow({ expense }: { expense: Expense }) {
           approve.mutate(expense.id, {
             onSuccess: () =>
               toast.success(
-                `${expense.number} is posted. ${expense.treasury_name} is down ${formatAmount(expense.amount)} EGP.`,
+                t("expensePosted", {
+                  number: expense.number,
+                  treasury: expense.treasury_name,
+                  amount: formatAmount(expense.amount),
+                }),
               ),
-            onError: (error) => toast.error(errorMessage(error, `${expense.number} could not be posted. Try again.`)),
+            onError: (error) =>
+              toast.error(errorMessage(error, t("expensePostFailed", { number: expense.number }))),
           })
         }
       >
-        Approve and post
+        {t("approveAndPost")}
       </Button>
     </article>
   )
@@ -60,14 +68,15 @@ function ExpenseRow({ expense }: { expense: Expense }) {
 
 /** 03.06 · Expenses · Awaiting approval — approving posts the entry and takes the cash. */
 function AwaitingTab({ items }: { items: Expense[] }) {
+  const t = useTranslations("FinanceMoneyOut")
   const waiting = items.filter((item) => item.status === "awaiting_approval")
   if (waiting.length === 0) {
     return (
       <EmptyState
         variant="card"
         icon={<CircleCheck />}
-        title="Nothing is waiting for approval."
-        description="Expenses sent from Capture appear here until someone approves and posts them."
+        title={t("awaitingEmptyTitle")}
+        description={t("awaitingEmptyDescription")}
       />
     )
   }

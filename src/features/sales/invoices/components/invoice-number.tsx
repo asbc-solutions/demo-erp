@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl"
+
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import type { InvoiceStatus } from "../../lib/types"
@@ -19,16 +21,16 @@ import type { InvoiceStatus } from "../../lib/types"
  * draft invoice with no identifier anywhere on screen. See
  * `docs/backend-sales-quotation-expiry-and-delivery-date.md` §3.
  */
-const PLACEHOLDER = "Not yet numbered"
+type InvoicesTranslator = ReturnType<typeof useTranslations<"SalesInvoices">>
 
-function hint(status: InvoiceStatus): string {
+function hint(status: InvoiceStatus, t: InvoicesTranslator): string {
   if (status === "cancelled") {
-    return "This invoice was cancelled before it was posted, so it was never assigned a number."
+    return t("numberHintCancelled")
   }
   if (status === "draft") {
-    return "The invoice number is assigned when the invoice is posted."
+    return t("numberHintDraft")
   }
-  return "This invoice has no number — it was never posted."
+  return t("numberHintNeverPosted")
 }
 
 export function InvoiceNumber({
@@ -36,21 +38,27 @@ export function InvoiceNumber({
   status,
   className,
 }: Readonly<{ value: string | null; status: InvoiceStatus; className?: string }>) {
+  const t = useTranslations("SalesInvoices")
+
   if (value) return <span className={className}>{value}</span>
 
-  const title = hint(status)
+  const title = hint(status, t)
   return (
     <span
       className={cn("font-sans font-normal text-content-quaternary italic", className)}
       title={title}
       aria-label={title}
     >
-      {PLACEHOLDER}
+      {t("notYetNumbered")}
     </span>
   )
 }
 
 /** Screen-reader / clipboard label for an invoice that may not have a number yet. */
-export function invoiceLabel(value: string | null, customerName: string): string {
-  return value ?? `unnumbered invoice for ${customerName}`
+export function invoiceLabel(
+  value: string | null,
+  customerName: string,
+  t: InvoicesTranslator,
+): string {
+  return value ?? t("unnumberedFor", { customer: customerName })
 }

@@ -1,22 +1,28 @@
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import type { ApiError } from "@/src/shared/lib/types/api"
 
+export type IntegrationsTranslator = ReturnType<typeof useTranslations<"Integrations">>
+
 /** Inline centered "failed to load" fallback — use wherever a query's isError branch renders. */
 export function IntegrationsErrorState({
-  message = "Failed to load.",
+  message,
   onRetry,
 }: Readonly<{ message?: string; onRetry?: () => void }>) {
+  const t = useTranslations("Integrations")
+  const tCommon = useTranslations("Common")
+
   return (
     <div className="py-12 text-center text-sm text-content-tertiary">
-      {message}{" "}
+      {message ?? t("loadFailed")}{" "}
       {onRetry ? (
         <button
           type="button"
           onClick={onRetry}
           className="ms-1 text-brand-primary underline"
         >
-          Try again
+          {tCommon("retry")}
         </button>
       ) : null}
     </div>
@@ -24,17 +30,21 @@ export function IntegrationsErrorState({
 }
 
 /** Toasts a mutation error, surfacing field-level validation messages from ApiError.details.fields when present. */
-export function toastMutationError(err: unknown, fallbackTitle: string) {
+export function toastMutationError(
+  err: unknown,
+  fallbackTitle: string,
+  t: IntegrationsTranslator,
+) {
   const apiErr = err as ApiError
   const fields = apiErr.details?.fields as Record<string, string[]> | undefined
   if (fields) {
     const description = Object.entries(fields)
       .map(([f, msgs]) => `${f.replace(/_/g, " ")}: ${msgs[0]}`)
       .join(" · ")
-    toast.error("Validation failed", { description })
+    toast.error(t("validationFailed"), { description })
   } else {
     toast.error(fallbackTitle, {
-      description: apiErr.message ?? "Please check the details and try again.",
+      description: apiErr.message ?? t("checkDetails"),
     })
   }
 }

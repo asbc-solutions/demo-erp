@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { AlertTriangle, Check, Copy, Download, ListFilter, Loader2, MoreHorizontal, Plus, Search } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -36,7 +37,7 @@ import {
 } from "@/src/shared/components/ui/table"
 import { cn } from "@/src/shared/lib/utils/utils"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesPageSpinner } from "../../components/shared/sales-loading"
 import { SalesTablePagination } from "../../components/shared/sales-table-pagination"
 import { formatCurrency } from "../../lib/utils/currency"
@@ -47,16 +48,22 @@ import { useCreateQuotation, useExportQuotations } from "../../lib/mutations/quo
 import { useCustomer, useCustomerDirectory } from "../../lib/queries/customers"
 import { useQuotations } from "../../lib/queries/quotations"
 import { useActiveSalespeople } from "../../lib/queries/salespeople"
-import type { CreateQuotationPayload, QuotationListItem, QuotationTab } from "../../lib/types"
+import type {
+  CreateQuotationPayload,
+  QuotationListItem,
+  QuotationStatus,
+  QuotationTab,
+} from "../../lib/types"
 
-const QUOTATION_TABS: { value: QuotationTab; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "draft", label: "Draft" },
-  { value: "sent", label: "Sent" },
-  { value: "accepted", label: "Accepted" },
-  { value: "rejected", label: "Rejected" },
-  { value: "expired", label: "Expired" },
-  { value: "converted", label: "Converted" },
+/** Labels come from `Common.all` and the `SalesShared.quotationStatus` enum map. */
+const QUOTATION_TABS: { value: QuotationTab }[] = [
+  { value: "all" },
+  { value: "draft" },
+  { value: "sent" },
+  { value: "accepted" },
+  { value: "rejected" },
+  { value: "expired" },
+  { value: "converted" },
 ]
 
 const PAGE_SIZE = 20
@@ -74,7 +81,8 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
   return debounced
 }
 
-function QuotationStatusBadge({ label, status }: Readonly<{ label: string; status: string }>) {
+function QuotationStatusBadge({ status }: Readonly<{ status: QuotationStatus }>) {
+  const tShared = useTranslations("SalesShared")
   const className = cn(
     "rounded-full px-3 font-normal",
     status === "accepted" && "bg-emerald-50 text-emerald-600",
@@ -86,7 +94,7 @@ function QuotationStatusBadge({ label, status }: Readonly<{ label: string; statu
   )
   return (
     <Badge variant="neutral" className={className}>
-      {label}
+      {tShared(`quotationStatus.${status}`)}
     </Badge>
   )
 }
@@ -98,6 +106,7 @@ function QuotationStatusBadge({ label, status }: Readonly<{ label: string; statu
  * every draft, which is exactly the row the warning matters most on.
  */
 function ValidityCell({ quotation }: Readonly<{ quotation: QuotationListItem }>) {
+  const tShared = useTranslations("SalesShared")
   const validity = getQuotationValidity(quotation)
 
   return (
@@ -106,10 +115,10 @@ function ValidityCell({ quotation }: Readonly<{ quotation: QuotationListItem }>)
       {validity.isExpired ? (
         <span
           className="flex items-center gap-1 text-xs font-medium text-brand-danger"
-          title={validity.label}
+          title={tShared(`validity.${validity.label.key}`, { count: validity.label.count })}
         >
           <AlertTriangle className="size-3.5" strokeWidth={1.75} aria-hidden />
-          Expired
+          {tShared("validity.expired")}
         </span>
       ) : null}
     </div>
@@ -120,6 +129,7 @@ function QuotationActions({
   quotation,
   onOpen,
 }: Readonly<{ quotation: QuotationListItem; onOpen: () => void }>) {
+  const t = useTranslations("SalesQuotations")
   const copy = (value: string) => {
     if (!navigator.clipboard) return
     void navigator.clipboard.writeText(value).catch(() => {})
@@ -132,17 +142,17 @@ function QuotationActions({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label={`Actions for ${quotation.number}`}
+          aria-label={t("actionsFor", { number: quotation.number })}
           className="text-content-tertiary"
         >
           <MoreHorizontal aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={onOpen}>Open</DropdownMenuItem>
+        <DropdownMenuItem onClick={onOpen}>{t("open")}</DropdownMenuItem>
         <DropdownMenuItem onClick={() => copy(quotation.number)}>
           <Copy aria-hidden />
-          Copy quotation number
+          {t("copyNumber")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -158,18 +168,21 @@ function QuotationsTable({
   customerSalespeopleByName: ReadonlyMap<string, string>
   onSelectQuotation: (id: string) => void
 }>) {
+  const t = useTranslations("SalesQuotations")
+  const tCommon = useTranslations("Common")
+
   return (
     <div className="overflow-hidden rounded-2xl border border-stroke-default bg-surface-white shadow-sm">
       <Table className="min-w-[1260px] table-fixed">
         <TableHeader className="bg-surface-white">
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[160px] px-5">Quotation #</TableHead>
-            <TableHead className="w-[280px]">Customer</TableHead>
-            <TableHead className="w-[150px] text-end">Total</TableHead>
-            <TableHead className="w-[190px]">Validity Date</TableHead>
-            <TableHead className="w-[160px]">Status</TableHead>
-            <TableHead className="w-[190px]">Salesperson</TableHead>
-            <TableHead className="w-[72px] px-5 text-end">Actions</TableHead>
+            <TableHead className="w-[160px] px-5">{t("quotationNumber")}</TableHead>
+            <TableHead className="w-[280px]">{t("customer")}</TableHead>
+            <TableHead className="w-[150px] text-end">{tCommon("total")}</TableHead>
+            <TableHead className="w-[190px]">{t("validityDate")}</TableHead>
+            <TableHead className="w-[160px]">{tCommon("status")}</TableHead>
+            <TableHead className="w-[190px]">{t("salesperson")}</TableHead>
+            <TableHead className="w-[72px] px-5 text-end">{tCommon("actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -193,7 +206,7 @@ function QuotationsTable({
                   <ValidityCell quotation={quotation} />
                 </TableCell>
                 <TableCell className="py-3">
-                  <QuotationStatusBadge status={quotation.status} label={quotation.status_label} />
+                  <QuotationStatusBadge status={quotation.status} />
                 </TableCell>
                 <TableCell className="truncate py-3 text-xs text-content-secondary">
                   {customerSalespeopleByName.get(
@@ -215,7 +228,7 @@ function QuotationsTable({
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="h-32 text-center text-content-tertiary">
-                No quotations match the current filters.
+                {t("noMatches")}
               </TableCell>
             </TableRow>
           )}
@@ -234,6 +247,9 @@ function NewQuotationDialog({
   onOpenChange: (open: boolean) => void
   onCreated: (id: string) => void
 }>) {
+  const t = useTranslations("SalesQuotations")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const { data: customerDirectory = [] } = useCustomerDirectory({ enabled: open })
   const createQuotation = useCreateQuotation()
   const customers = customerDirectory.filter((customer) => customer.status === "active")
@@ -255,12 +271,12 @@ function NewQuotationDialog({
 
     createQuotation.mutate(payload, {
       onSuccess: (quotation) => {
-        toast.success("Draft quotation created — add line items to begin.")
+        toast.success(t("createdToast"))
         setSelectedCustomerId("")
         onOpenChange(false)
         onCreated(quotation.id)
       },
-      onError: (err) => toastMutationError(err, "Failed to create quotation"),
+      onError: (err) => toastMutationError(err, t("createFailed")),
     })
   }
 
@@ -269,14 +285,14 @@ function NewQuotationDialog({
       <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New Quotation</DialogTitle>
+            <DialogTitle>{t("newQuotation")}</DialogTitle>
             <DialogDescription>
-              Creates a draft — you&apos;ll add line items on the next screen.
+              {t("newQuotationDescription")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-xs font-medium text-content-secondary">Customer</span>
+              <span className="text-xs font-medium text-content-secondary">{t("customer")}</span>
               <select
                 name="customer"
                 className={SELECT_CLASS_NAME}
@@ -285,7 +301,7 @@ function NewQuotationDialog({
                 onChange={(event) => setSelectedCustomerId(event.target.value)}
               >
                 <option value="" disabled>
-                  Select a customer…
+                  {t("selectCustomer")}
                 </option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
@@ -295,29 +311,29 @@ function NewQuotationDialog({
               </select>
             </label>
             <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-xs font-medium text-content-secondary">Salesperson</span>
+              <span className="text-xs font-medium text-content-secondary">{t("salesperson")}</span>
               <Input
                 value={
                   isCustomerLoading
-                    ? "Loading assigned salesperson…"
+                    ? t("loadingSalesperson")
                     : selectedCustomer?.assigned_salesperson_name ??
-                      "Select a customer first"
+                      t("selectCustomerFirst")
                 }
                 readOnly
-                aria-label="Customer's assigned salesperson"
+                aria-label={t("assignedSalespersonLabel")}
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Quotation date</span>
+              <span className="text-xs font-medium text-content-secondary">{t("quotationDate")}</span>
               <Input name="quotationDate" type="date" />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Validity (days)</span>
-              <Input name="validityDays" type="number" min="1" placeholder="Uses default" />
+              <span className="text-xs font-medium text-content-secondary">{t("validityDays")}</span>
+              <Input name="validityDays" type="number" min="1" placeholder={t("usesDefault")} />
             </label>
             <label className="flex flex-col gap-1.5 sm:col-span-2">
               <span className="text-xs font-medium text-content-secondary">
-                Terms &amp; conditions
+                {t("termsAndConditions")}
               </span>
               <textarea
                 name="terms"
@@ -328,7 +344,7 @@ function NewQuotationDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -344,7 +360,7 @@ function NewQuotationDialog({
               ) : (
                 <Check aria-hidden />
               )}
-              Create Quotation
+              {t("createQuotation")}
             </Button>
           </DialogFooter>
         </form>
@@ -356,6 +372,10 @@ function NewQuotationDialog({
 export function QuotationsListView({
   onSelectQuotation,
 }: Readonly<{ onSelectQuotation: (id: string) => void }>) {
+  const t = useTranslations("SalesQuotations")
+  const tCommon = useTranslations("Common")
+  const tShared = useTranslations("SalesShared")
+  const toastMutationError = useToastMutationError()
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const [activeTab, setActiveTab] = React.useState<QuotationTab>("all")
@@ -414,7 +434,7 @@ export function QuotationsListView({
       },
       {
         onSuccess: (url) => window.open(url, "_blank"),
-        onError: (err) => toastMutationError(err, "Failed to export quotations"),
+        onError: (err) => toastMutationError(err, t("exportFailed")),
       },
     )
   }
@@ -431,8 +451,8 @@ export function QuotationsListView({
           <Input
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
-            placeholder="Search by quotation # or customer…"
-            aria-label="Search quotations"
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchLabel")}
             className="h-10 rounded-[10px] ps-10 shadow-none"
           />
         </div>
@@ -441,14 +461,14 @@ export function QuotationsListView({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" className="h-10 rounded-[10px] px-4">
                 <ListFilter strokeWidth={1.75} aria-hidden />
-                Filter
+                {tCommon("filter")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>Salesperson</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("salesperson")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuRadioGroup value={salespersonFilter} onValueChange={handleSalespersonChange}>
-                <DropdownMenuRadioItem value="all">All salespeople</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="all">{t("allSalespeople")}</DropdownMenuRadioItem>
                 {salespeople.map((person) => (
                   <DropdownMenuRadioItem key={person.id} value={person.id}>
                     {person.name}
@@ -470,7 +490,7 @@ export function QuotationsListView({
               ) : (
                 <Download strokeWidth={1.75} aria-hidden />
               )}
-              Export
+              {tCommon("export")}
             </Button>
           ) : null}
           {can.write(SALES_RESOURCES.quotation) ? (
@@ -481,14 +501,14 @@ export function QuotationsListView({
               onClick={() => setNewQuotationOpen(true)}
             >
               <Plus strokeWidth={1.75} aria-hidden />
-              New Quotation
+              {t("newQuotation")}
             </Button>
           ) : null}
         </div>
       </div>
 
       <nav
-        aria-label="Quotation status"
+        aria-label={t("statusTabsLabel")}
         className="flex w-full shrink-0 items-center overflow-x-auto border-b border-stroke-default"
       >
         {QUOTATION_TABS.map((tab) => {
@@ -505,7 +525,7 @@ export function QuotationsListView({
                 selected && "text-brand-primary after:bg-brand-primary",
               )}
             >
-              {tab.label}
+              {tab.value === "all" ? tCommon("all") : tShared(`quotationStatus.${tab.value}`)}
               <span
                 className={cn(
                   "flex min-w-6 items-center justify-center rounded-full bg-surface-hover px-1.5 py-0.5 text-xs font-semibold text-content-tertiary",
@@ -522,7 +542,7 @@ export function QuotationsListView({
       {isLoading ? (
         <SalesPageSpinner />
       ) : isError ? (
-        <SalesErrorState message="Failed to load quotations." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadListFailed")} onRetry={() => void refetch()} />
       ) : (
         <>
           <QuotationsTable

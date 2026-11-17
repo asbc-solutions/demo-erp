@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Check, Loader2, Pencil } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -31,12 +32,7 @@ import type { ComplianceRule, RuleStatus, UpdateRulePayload } from "../lib/types
 import { ComplianceErrorState, toastMutationError } from "./shared/compliance-error-state"
 import { CompliancePageSpinner } from "./shared/compliance-loading"
 
-const STATUS_FILTERS: ReadonlyArray<{ label: string; value: RuleStatus | "all" }> = [
-  { label: "All Statuses", value: "all" },
-  { label: "Compliant", value: "compliant" },
-  { label: "In Progress", value: "in_progress" },
-  { label: "Non-compliant", value: "non_compliant" },
-]
+const RULE_STATUSES: readonly RuleStatus[] = ["compliant", "in_progress", "non_compliant"]
 
 const SEVERITY_BADGE_VARIANT: Record<ComplianceRule["severity"], "danger" | "warning" | "info"> = {
   critical: "danger",
@@ -51,6 +47,9 @@ const STATUS_BADGE_VARIANT: Record<RuleStatus, "success" | "warning" | "danger">
 }
 
 export function RulesTab() {
+  const t = useTranslations("ComplianceRules")
+  const tCompliance = useTranslations("Compliance")
+  const tCommon = useTranslations("Common")
   const [frameworkFilter, setFrameworkFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState<RuleStatus | "all">("all")
   const [editingRule, setEditingRule] = useState<ComplianceRule | null>(null)
@@ -72,9 +71,15 @@ export function RulesTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <Badge variant="success">{counts.compliant} Compliant</Badge>
-        <Badge variant="warning">{counts.in_progress} In Progress</Badge>
-        <Badge variant="danger">{counts.non_compliant} Non-compliant</Badge>
+        <Badge variant="success">
+          {t("statusCount.compliant", { count: String(counts.compliant) })}
+        </Badge>
+        <Badge variant="warning">
+          {t("statusCount.in_progress", { count: String(counts.in_progress) })}
+        </Badge>
+        <Badge variant="danger">
+          {t("statusCount.non_compliant", { count: String(counts.non_compliant) })}
+        </Badge>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -86,7 +91,7 @@ export function RulesTab() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Frameworks</SelectItem>
+            <SelectItem value="all">{t("allFrameworks")}</SelectItem>
             {(frameworks ?? []).map((framework) => (
               <SelectItem key={framework.id} value={framework.code}>
                 {framework.label} ({framework.rule_count})
@@ -102,9 +107,10 @@ export function RulesTab() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {STATUS_FILTERS.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
+            <SelectItem value="all">{t("allStatuses")}</SelectItem>
+            {RULE_STATUSES.map((value) => (
+              <SelectItem key={value} value={value}>
+                {tCompliance(`ruleStatus.${value}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -114,12 +120,12 @@ export function RulesTab() {
       {isLoading ? (
         <CompliancePageSpinner />
       ) : isError ? (
-        <ComplianceErrorState message="Failed to load compliance rules." onRetry={() => void refetch()} />
+        <ComplianceErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
       ) : (
         <div className="space-y-3">
           {rules.length === 0 ? (
             <Card className="p-6 text-center">
-              <p className="text-content-tertiary text-sm">No rules match this filter.</p>
+              <p className="text-content-tertiary text-sm">{t("empty")}</p>
             </Card>
           ) : (
             rules.map((rule) => (
@@ -133,16 +139,21 @@ export function RulesTab() {
                       </Badge>
                       <Badge variant="neutral">{rule.framework.label}</Badge>
                       <Badge variant={STATUS_BADGE_VARIANT[rule.status]}>{rule.status_label}</Badge>
-                      {rule.is_overdue ? <Badge variant="danger">Overdue</Badge> : null}
+                      {rule.is_overdue ? (
+                        <Badge variant="danger">{tCompliance("overdue")}</Badge>
+                      ) : null}
                     </div>
                     <p className="text-content-tertiary text-sm">{rule.description}</p>
                     <p className="text-content-tertiary text-xs">
-                      {rule.owner?.name ?? "Unassigned"} · Due {rule.due_date ?? "—"}
+                      {tCompliance("ownerDue", {
+                        owner: rule.owner?.name ?? tCompliance("unassigned"),
+                        date: rule.due_date ?? "—",
+                      })}
                     </p>
                   </div>
                   <Button variant="secondary" size="sm" onClick={() => setEditingRule(rule)}>
                     <Pencil className="size-4" />
-                    Update
+                    {tCommon("update")}
                   </Button>
                 </div>
                 {rule.tags.length > 0 ? (
@@ -178,6 +189,9 @@ function UpdateRuleDialog({
   rule,
   onOpenChange,
 }: Readonly<{ rule: ComplianceRule | null; onOpenChange: (open: boolean) => void }>) {
+  const t = useTranslations("ComplianceRules")
+  const tCompliance = useTranslations("Compliance")
+  const tCommon = useTranslations("Common")
   const updateRule = useUpdateRule()
   // The parent remounts this component (via `key={rule?.id}`) whenever a
   // different rule is opened, so these initializers only need to run once.
@@ -197,10 +211,10 @@ function UpdateRuleDialog({
       { id: rule.id, payload },
       {
         onSuccess: () => {
-          toast.success("Rule updated.")
+          toast.success(t("updatedToast"))
           onOpenChange(false)
         },
-        onError: (err) => toastMutationError(err, "Failed to update rule"),
+        onError: (err) => toastMutationError(err, t("updateFailed"), tCompliance),
       },
     )
   }
@@ -210,36 +224,38 @@ function UpdateRuleDialog({
       <DialogContent className="max-w-[520px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Update {rule?.code}</DialogTitle>
+            <DialogTitle>{t("updateTitle", { code: rule?.code ?? "" })}</DialogTitle>
             <DialogDescription>{rule?.title}</DialogDescription>
           </DialogHeader>
           <DialogBody className="gap-4">
             <div className="space-y-2">
-              <p className="text-content-primary text-sm font-medium">Status</p>
+              <p className="text-content-primary text-sm font-medium">{tCommon("status")}</p>
               <Select value={status} onValueChange={(value) => setStatus(value as RuleStatus)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="compliant">Compliant</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="non_compliant">Non-compliant</SelectItem>
+                  {RULE_STATUSES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {tCompliance(`ruleStatus.${value}`)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <p className="text-content-primary text-sm font-medium">Evidence</p>
+              <p className="text-content-primary text-sm font-medium">{t("evidence")}</p>
               <Textarea
                 value={evidence}
                 onChange={(event) => setEvidence(event.target.value)}
-                placeholder="Describe the evidence supporting this status..."
+                placeholder={t("evidencePlaceholder")}
                 className="min-h-[100px]"
               />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={updateRule.isPending}>
               {updateRule.isPending ? (
@@ -247,7 +263,7 @@ function UpdateRuleDialog({
               ) : (
                 <Check aria-hidden />
               )}
-              Save
+              {tCommon("save")}
             </Button>
           </DialogFooter>
         </form>

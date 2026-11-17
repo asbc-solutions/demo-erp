@@ -1,6 +1,9 @@
 "use client"
 
 import { AlertTriangle, DollarSign, LayoutGrid, Wallet } from "lucide-react"
+import { useTranslations } from "next-intl"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -27,9 +30,13 @@ const iconMap = {
 } as const
 
 function ProjectKpiCard({ tile, value }: { tile: ProjectKpiTile; value: number }) {
+  const t = useTranslations("OperationsProjects")
+  const locale = useIntlLocale()
   const Icon = iconMap[tile.icon]
   const display =
-    tile.format === "currency" ? formatCurrencyAmount(value) : value.toLocaleString("en-US")
+    tile.format === "currency"
+      ? formatCurrencyAmount(value, locale)
+      : value.toLocaleString(locale)
   return (
     <Card variant="elevated" className="flex-row items-center gap-4 p-5">
       <div
@@ -42,7 +49,7 @@ function ProjectKpiCard({ tile, value }: { tile: ProjectKpiTile; value: number }
       </div>
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-content-tertiary text-[11px] leading-[15.4px]">
-          {tile.label}
+          {t(tile.labelKey)}
         </span>
         <span className="text-content-primary text-[25px] leading-[32.5px] font-semibold">
           {display}
@@ -53,6 +60,7 @@ function ProjectKpiCard({ tile, value }: { tile: ProjectKpiTile; value: number }
 }
 
 export function ProjectsTab() {
+  const t = useTranslations("OperationsProjects")
   const projectsQuery = useProjects({ per_page: 100 })
   const kpisQuery = useProjectKpis()
 
@@ -66,7 +74,7 @@ export function ProjectsTab() {
   if (isError) {
     return (
       <OperationsErrorState
-        message="Failed to load projects."
+        message={t("loadError")}
         onRetry={() => {
           void projectsQuery.refetch()
           void kpisQuery.refetch()
@@ -89,7 +97,7 @@ export function ProjectsTab() {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {projects.length === 0 ? (
           <div className="border-stroke-default bg-surface-white text-content-tertiary col-span-full flex h-24 items-center justify-center rounded-2xl border border-dashed text-[12px] leading-[18px]">
-            No projects yet.
+            {t("empty")}
           </div>
         ) : (
           projects.map((project) => <ProjectCard key={project.id} project={project} />)

@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import {
   Card,
   CardContent,
@@ -11,6 +13,7 @@ import { Progress } from "@/src/shared/components/ui/progress"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import type { BreakdownEntry, FunnelStep } from "../lib/types"
+import { ONBOARDING_STEP_LABEL_KEYS } from "../lib/types"
 
 type FunnelCardProps = {
   funnel: FunnelStep[]
@@ -23,16 +26,18 @@ type FunnelCardProps = {
  * two rows is the number of people lost there.
  */
 export function OnboardingFunnelCard({ funnel, totalVisitors }: FunnelCardProps) {
+  const t = useTranslations("MarketingTrackingOnboarding")
+  const tStep = useTranslations("MarketingTrackingSteps")
   const base = Math.max(1, totalVisitors)
 
   return (
     <Card variant="elevated" className="p-6">
       <CardHeader className="flex flex-col items-start gap-1 p-0 pb-5">
         <CardTitle className="text-base leading-6 font-semibold">
-          Onboarding funnel
+          {t("funnelTitle")}
         </CardTitle>
         <CardDescription className="text-xs leading-4">
-          Where prospects stop before signing in
+          {t("funnelDescription")}
         </CardDescription>
       </CardHeader>
 
@@ -45,7 +50,7 @@ export function OnboardingFunnelCard({ funnel, totalVisitors }: FunnelCardProps)
             <div key={step.step} className="flex flex-col gap-1.5">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="text-content-primary text-xs leading-4 font-medium">
-                  {step.label}
+                  {tStep(ONBOARDING_STEP_LABEL_KEYS[step.step])}
                 </span>
                 <span className="text-content-tertiary font-mono text-[11px] leading-[15.4px]">
                   {step.count} · {percent}%
@@ -80,6 +85,7 @@ export function BreakdownCard({
   entries,
   className,
 }: BreakdownCardProps) {
+  const t = useTranslations("MarketingTrackingOnboarding")
   const max = Math.max(1, ...entries.map((entry) => entry.count))
 
   return (
@@ -92,7 +98,7 @@ export function BreakdownCard({
       <CardContent className="p-0">
         {entries.length === 0 ? (
           <p className="text-content-tertiary py-8 text-center text-xs leading-4">
-            Nothing recorded yet.
+            {t("breakdownEmpty")}
           </p>
         ) : (
           <ul className="flex flex-col gap-3">

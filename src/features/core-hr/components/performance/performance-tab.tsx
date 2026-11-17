@@ -1,6 +1,7 @@
 "use client"
 
 import { Gauge, MessageSquare, Target, Users } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import {
   Tabs,
@@ -17,6 +18,7 @@ import { ReviewCyclesTab } from "./review-cycles-tab"
 import { TeamReviewTab } from "./team-review-tab"
 
 export function PerformanceTab() {
+  const t = useTranslations("HrPerformance")
   const { can, isLoading, role } = usePermissions()
   const canReviewTeam =
     role === HR_ROLES.hrAdmin ||
@@ -31,21 +33,21 @@ export function PerformanceTab() {
       <TabsList>
         <TabsTrigger value="review-cycles">
           <Target strokeWidth={1.75} />
-          Review Cycles
+          {t("tabReviewCycles")}
         </TabsTrigger>
         {!isLoading && canReviewTeam ? (
           <TabsTrigger value="team-reviews">
             <Users strokeWidth={1.75} />
-            Team Reviews
+            {t("tabTeamReviews")}
           </TabsTrigger>
         ) : null}
         <TabsTrigger value="goals-okrs">
           <Gauge strokeWidth={1.75} />
-          Goals &amp; OKRs
+          {t("tabGoals")}
         </TabsTrigger>
         <TabsTrigger value="feedback-360">
           <MessageSquare strokeWidth={1.75} />
-          360 Feedback
+          {t("tabFeedback360")}
         </TabsTrigger>
       </TabsList>
 

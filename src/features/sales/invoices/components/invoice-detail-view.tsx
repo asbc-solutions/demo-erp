@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ArrowLeft, Download, Loader2, Plus, Printer, XCircle } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -27,7 +28,7 @@ import {
 import { Textarea } from "@/src/shared/components/ui/textarea"
 import { cn } from "@/src/shared/lib/utils/utils"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesPageSpinner, SalesSectionSpinner } from "../../components/shared/sales-loading"
 import { formatCurrency } from "../../lib/utils/currency"
 import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
@@ -59,25 +60,30 @@ const STATUS_STYLE: Record<InvoiceStatus, string> = {
   cancelled: "bg-red-50 text-red-600 dark:bg-red-950/45 dark:text-red-300",
 }
 
-function StatusBadge({ status, label }: Readonly<{ status: InvoiceStatus; label: string }>) {
+function StatusBadge({ status }: Readonly<{ status: InvoiceStatus }>) {
+  const tShared = useTranslations("SalesShared")
+
   return (
     <Badge variant="neutral" className={cn("rounded-full px-3 font-normal", STATUS_STYLE[status])}>
-      {label}
+      {tShared(`invoiceStatus.${status}`)}
     </Badge>
   )
 }
 
 function LinesCard({ invoice }: Readonly<{ invoice: Invoice }>) {
+  const t = useTranslations("SalesInvoices")
+  const tCommon = useTranslations("Common")
+
   return (
     <div className="overflow-hidden rounded-2xl border border-stroke-default bg-surface-white shadow-sm">
       <Table className="min-w-[900px] table-fixed">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="px-5">Description</TableHead>
-            <TableHead className="w-[90px] text-end">Qty</TableHead>
-            <TableHead className="w-[120px] text-end">Unit Price</TableHead>
-            <TableHead className="w-[90px] text-end">Tax</TableHead>
-            <TableHead className="w-[130px] px-5 text-end">Line Total</TableHead>
+            <TableHead className="px-5">{tCommon("description")}</TableHead>
+            <TableHead className="w-[90px] text-end">{t("qty")}</TableHead>
+            <TableHead className="w-[120px] text-end">{t("unitPrice")}</TableHead>
+            <TableHead className="w-[90px] text-end">{t("tax")}</TableHead>
+            <TableHead className="w-[130px] px-5 text-end">{t("lineTotal")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -96,7 +102,7 @@ function LinesCard({ invoice }: Readonly<{ invoice: Invoice }>) {
           ) : (
             <TableRow>
               <TableCell colSpan={5} className="h-24 text-center text-content-tertiary">
-                No line items.
+                {t("noLines")}
               </TableCell>
             </TableRow>
           )}
@@ -104,23 +110,23 @@ function LinesCard({ invoice }: Readonly<{ invoice: Invoice }>) {
       </Table>
       <div className="flex flex-col items-end gap-1 border-t border-stroke-light px-5 py-4 text-sm">
         <div className="flex w-56 justify-between text-content-tertiary">
-          <span>Subtotal</span>
+          <span>{t("subtotal")}</span>
           <span>{formatCurrency(invoice.subtotal)}</span>
         </div>
         <div className="flex w-56 justify-between text-content-tertiary">
-          <span>Tax</span>
+          <span>{t("tax")}</span>
           <span>{formatCurrency(invoice.tax_total)}</span>
         </div>
         <div className="flex w-56 justify-between text-base font-bold text-content-primary">
-          <span>Total Due</span>
+          <span>{t("totalDue")}</span>
           <span>{formatCurrency(invoice.total_due)}</span>
         </div>
         <div className="flex w-56 justify-between text-content-tertiary">
-          <span>Amount Paid</span>
+          <span>{t("amountPaid")}</span>
           <span>{formatCurrency(invoice.amount_paid)}</span>
         </div>
         <div className="flex w-56 justify-between font-semibold text-brand-primary">
-          <span>Remaining Due</span>
+          <span>{t("remainingDue")}</span>
           <span>{formatCurrency(invoice.remaining_due)}</span>
         </div>
       </div>
@@ -133,6 +139,9 @@ function RecordPaymentDialog({
   onOpenChange,
   invoice,
 }: Readonly<{ open: boolean; onOpenChange: (open: boolean) => void; invoice: Invoice }>) {
+  const t = useTranslations("SalesInvoices")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const recordPayment = useRecordPayment()
 
   const [paymentMethodId, setPaymentMethodId] = React.useState("")
@@ -154,11 +163,11 @@ function RecordPaymentDialog({
       },
       {
         onSuccess: () => {
-          toast.success("Payment recorded")
+          toast.success(t("paymentRecorded"))
           onOpenChange(false)
           setPaymentMethodId("")
         },
-        onError: (err) => toastMutationError(err, "Failed to record payment"),
+        onError: (err) => toastMutationError(err, t("recordPaymentFailed")),
       },
     )
   }
@@ -174,12 +183,12 @@ function RecordPaymentDialog({
       <DialogContent className="max-w-sm">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Record payment</DialogTitle>
+            <DialogTitle>{t("recordPaymentTitle")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-content-secondary">
-                Amount (remaining: {formatCurrency(invoice.remaining_due)})
+                {t("amountRemaining", { remaining: formatCurrency(invoice.remaining_due) })}
               </span>
               <Input
                 name="amount"
@@ -194,40 +203,40 @@ function RecordPaymentDialog({
             <MasterDataSelect
               field="payment_methods"
               name="paymentMethod"
-              label="Payment method"
+              label={t("paymentMethod")}
               value={paymentMethodId}
               onValueChange={setPaymentMethodId}
-              placeholder="Select a method…"
-              emptyMessage="No payment methods are configured yet, so payments can’t be recorded. Ask an administrator to add them to the sales master data."
+              placeholder={t("selectMethod")}
+              emptyMessage={t("noPaymentMethods")}
             />
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Paid on</span>
+              <span className="text-xs font-medium text-content-secondary">{t("paidOn")}</span>
               <Input name="paidAt" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} />
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-content-secondary">
                 {selectedPaymentMethod?.requires_reference ? (
                   <>
-                    Reference <span className="text-brand-danger">*</span>
+                    {t("reference")} <span className="text-brand-danger">*</span>
                   </>
                 ) : (
-                  "Reference (optional)"
+                  t("referenceOptional")
                 )}
               </span>
               <Input
                 name="reference"
-                placeholder="Check / transfer number"
+                placeholder={t("referencePlaceholder")}
                 required={selectedPaymentMethod?.requires_reference ?? false}
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Note (optional)</span>
+              <span className="text-xs font-medium text-content-secondary">{t("noteOptional")}</span>
               <Textarea name="note" />
             </label>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -235,7 +244,7 @@ function RecordPaymentDialog({
               disabled={recordPayment.isPending || !paymentMethodId}
             >
               {recordPayment.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              Record payment
+              {t("recordPaymentTitle")}
             </Button>
           </DialogFooter>
         </form>
@@ -245,6 +254,9 @@ function RecordPaymentDialog({
 }
 
 function PaymentsSection({ invoice }: Readonly<{ invoice: Invoice }>) {
+  const t = useTranslations("SalesInvoices")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const { data: payments, isLoading, isError, refetch } = useInvoicePayments(invoice.id)
   const [recordOpen, setRecordOpen] = React.useState(false)
   const [voidingId, setVoidingId] = React.useState<string | null>(null)
@@ -260,10 +272,10 @@ function PaymentsSection({ invoice }: Readonly<{ invoice: Invoice }>) {
       { paymentId: voidingId, invoiceId: invoice.id, payload: { void_reason: reason } },
       {
         onSuccess: () => {
-          toast.success("Payment voided")
+          toast.success(t("paymentVoided"))
           setVoidingId(null)
         },
-        onError: (err) => toastMutationError(err, "Failed to void payment"),
+        onError: (err) => toastMutationError(err, t("voidPaymentFailed")),
       },
     )
   }
@@ -271,11 +283,11 @@ function PaymentsSection({ invoice }: Readonly<{ invoice: Invoice }>) {
   return (
     <>
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-content-primary">Payments</h2>
+        <h2 className="text-sm font-semibold text-content-primary">{t("payments")}</h2>
         {canRecord && invoice.remaining_due > 0 ? (
           <Button type="button" variant="secondary" size="sm" onClick={() => setRecordOpen(true)}>
             <Plus aria-hidden />
-            Record Payment
+            {t("recordPayment")}
           </Button>
         ) : null}
       </div>
@@ -283,7 +295,7 @@ function PaymentsSection({ invoice }: Readonly<{ invoice: Invoice }>) {
       {isLoading ? (
         <SalesSectionSpinner />
       ) : isError ? (
-        <SalesErrorState message="Failed to load payments." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadPaymentsFailed")} onRetry={() => void refetch()} />
       ) : (
         <div className="flex flex-col divide-y divide-stroke-light rounded-2xl border border-stroke-default bg-surface-white">
           {payments && payments.length > 0 ? (
@@ -291,14 +303,18 @@ function PaymentsSection({ invoice }: Readonly<{ invoice: Invoice }>) {
               <div key={payment.id} className="flex items-center justify-between gap-3 px-5 py-3">
                 <div className="flex flex-col gap-0.5">
                   <span className={cn("font-medium text-content-primary", payment.is_voided && "line-through opacity-60")}>
-                    {formatCurrency(payment.amount)} — {payment.payment_method_name ?? "Payment"}
+                    {formatCurrency(payment.amount)} — {payment.payment_method_name ?? t("paymentFallback")}
                   </span>
                   <span className="text-xs text-content-tertiary">
                     {payment.paid_at}
-                    {payment.reference ? ` · Ref: ${payment.reference}` : ""}
+                    {payment.reference ? ` · ${t("refLabel", { reference: payment.reference })}` : ""}
                   </span>
                   {payment.is_voided ? (
-                    <span className="text-xs text-brand-danger">Voided{payment.void_reason ? `: ${payment.void_reason}` : ""}</span>
+                    <span className="text-xs text-brand-danger">
+                      {payment.void_reason
+                        ? t("voidedWithReason", { reason: payment.void_reason })
+                        : t("voided")}
+                    </span>
                   ) : null}
                 </div>
                 {!payment.is_voided ? (
@@ -306,7 +322,7 @@ function PaymentsSection({ invoice }: Readonly<{ invoice: Invoice }>) {
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Void payment"
+                    aria-label={t("voidPayment")}
                     className="text-brand-danger"
                     onClick={() => setVoidingId(payment.id)}
                   >
@@ -316,7 +332,7 @@ function PaymentsSection({ invoice }: Readonly<{ invoice: Invoice }>) {
               </div>
             ))
           ) : (
-            <p className="px-5 py-6 text-center text-xs text-content-tertiary">No payments recorded yet.</p>
+            <p className="px-5 py-6 text-center text-xs text-content-tertiary">{t("noPayments")}</p>
           )}
         </div>
       )}
@@ -327,20 +343,20 @@ function PaymentsSection({ invoice }: Readonly<{ invoice: Invoice }>) {
         <DialogContent className="max-w-sm">
           <form onSubmit={handleVoid}>
             <DialogHeader>
-              <DialogTitle>Void payment</DialogTitle>
+              <DialogTitle>{t("voidPayment")}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-content-secondary">Reason</span>
+                <span className="text-xs font-medium text-content-secondary">{t("reason")}</span>
                 <Textarea name="voidReason" required autoFocus />
               </label>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setVoidingId(null)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" variant="danger" disabled={voidPayment.isPending}>
-                Void payment
+                {t("voidPayment")}
               </Button>
             </DialogFooter>
           </form>
@@ -351,6 +367,9 @@ function PaymentsSection({ invoice }: Readonly<{ invoice: Invoice }>) {
 }
 
 function ActionBar({ invoice, onBack }: Readonly<{ invoice: Invoice; onBack: () => void }>) {
+  const t = useTranslations("SalesInvoices")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [sentOpen, setSentOpen] = React.useState(false)
   const [cancelOpen, setCancelOpen] = React.useState(false)
   const postInvoice = usePostInvoice()
@@ -365,15 +384,15 @@ function ActionBar({ invoice, onBack }: Readonly<{ invoice: Invoice; onBack: () 
 
   const handlePost = () => {
     postInvoice.mutate(invoice.id, {
-      onSuccess: () => toast.success("Invoice posted"),
-      onError: (err) => toastMutationError(err, "Failed to post invoice"),
+      onSuccess: () => toast.success(t("postedToast")),
+      onError: (err) => toastMutationError(err, t("postFailed")),
     })
   }
 
   const handleClose = () => {
     closeInvoice.mutate(invoice.id, {
-      onSuccess: () => toast.success("Invoice closed"),
-      onError: (err) => toastMutationError(err, "Failed to close invoice — it may not be fully paid yet"),
+      onSuccess: () => toast.success(t("closedToast")),
+      onError: (err) => toastMutationError(err, t("closeFailed")),
     })
   }
 
@@ -382,7 +401,7 @@ function ActionBar({ invoice, onBack }: Readonly<{ invoice: Invoice; onBack: () 
       { id: invoice.id },
       {
         onSuccess: (url) => window.open(url, "_blank"),
-        onError: (err) => toastMutationError(err, "Failed to generate PDF"),
+        onError: (err) => toastMutationError(err, t("pdfFailed")),
       },
     )
   }
@@ -392,7 +411,7 @@ function ActionBar({ invoice, onBack }: Readonly<{ invoice: Invoice; onBack: () 
       { id: invoice.id },
       {
         onSuccess: (url) => window.open(url, "_blank"),
-        onError: (err) => toastMutationError(err, "Failed to open print view"),
+        onError: (err) => toastMutationError(err, t("printFailed")),
       },
     )
   }
@@ -400,8 +419,8 @@ function ActionBar({ invoice, onBack }: Readonly<{ invoice: Invoice; onBack: () 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button type="button" variant="ghost" onClick={onBack}>
-        <ArrowLeft aria-hidden />
-        Back
+        <ArrowLeft className="rtl:rotate-180" aria-hidden />
+        {tCommon("back")}
       </Button>
       <div className="ms-auto flex flex-wrap items-center gap-2">
         {can.write(SALES_RESOURCES.invoice) ? (
@@ -409,34 +428,34 @@ function ActionBar({ invoice, onBack }: Readonly<{ invoice: Invoice; onBack: () 
             {invoice.status === "draft" ? (
               <Button type="button" variant="primary" disabled={postInvoice.isPending} onClick={handlePost}>
                 {postInvoice.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-                Post
+                {t("post")}
               </Button>
             ) : null}
             {invoice.status === "posted" ? (
               <Button type="button" variant="primary" onClick={() => setSentOpen(true)}>
-                Mark Sent
+                {t("markSent")}
               </Button>
             ) : null}
             {invoice.status === "sent" ? (
               <Button type="button" variant="primary" disabled={closeInvoice.isPending} onClick={handleClose}>
                 {closeInvoice.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-                Close
+                {tCommon("close")}
               </Button>
             ) : null}
             {canCancel ? (
               <Button type="button" variant="secondary" onClick={() => setCancelOpen(true)}>
-                Cancel Invoice
+                {t("cancelInvoice")}
               </Button>
             ) : null}
           </>
         ) : null}
         <Button type="button" variant="secondary" disabled={getPrintUrl.isPending} onClick={handlePrint}>
           {getPrintUrl.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Printer aria-hidden />}
-          Print
+          {t("print")}
         </Button>
         <Button type="button" variant="secondary" disabled={getPdf.isPending} onClick={handlePdf}>
           {getPdf.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Download aria-hidden />}
-          PDF
+          {t("pdf")}
         </Button>
       </div>
 
@@ -450,33 +469,33 @@ function ActionBar({ invoice, onBack }: Readonly<{ invoice: Invoice; onBack: () 
                 { id: invoice.id, payload: { sent_via: sentVia } },
                 {
                   onSuccess: () => {
-                    toast.success("Invoice marked as sent")
+                    toast.success(t("markedSentToast"))
                     setSentOpen(false)
                   },
-                  onError: (err) => toastMutationError(err, "Failed to mark invoice as sent"),
+                  onError: (err) => toastMutationError(err, t("markSentFailed")),
                 },
               )
             }}
           >
             <DialogHeader>
-              <DialogTitle>Mark invoice sent</DialogTitle>
+              <DialogTitle>{t("markSentTitle")}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-content-secondary">Sent via</span>
+                <span className="text-xs font-medium text-content-secondary">{t("sentVia")}</span>
                 <select name="sentVia" className={SALES_SELECT_CLASS_NAME} defaultValue="email">
-                  <option value="email">Email</option>
+                  <option value="email">{t("sentViaEmail")}</option>
                   <option value="whatsapp">WhatsApp</option>
-                  <option value="manual">Manual</option>
+                  <option value="manual">{t("sentViaManual")}</option>
                 </select>
               </label>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setSentOpen(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={markSent.isPending}>
-                Mark Sent
+                {t("markSent")}
               </Button>
             </DialogFooter>
           </form>
@@ -493,33 +512,33 @@ function ActionBar({ invoice, onBack }: Readonly<{ invoice: Invoice; onBack: () 
                 { id: invoice.id, payload: { cancellation_reason: reason } },
                 {
                   onSuccess: () => {
-                    toast.success("Invoice cancelled")
+                    toast.success(t("cancelledToast"))
                     setCancelOpen(false)
                   },
                   onError: (err) =>
-                    toastMutationError(err, "Failed to cancel invoice — void any active payments first"),
+                    toastMutationError(err, t("cancelFailed")),
                 },
               )
             }}
           >
             <DialogHeader>
-              <DialogTitle>Cancel invoice</DialogTitle>
+              <DialogTitle>{t("cancelInvoiceTitle")}</DialogTitle>
             </DialogHeader>
             <DialogBody className="flex flex-col gap-4">
               <p className="text-xs text-content-tertiary">
-                Blocked if this invoice has any active (non-voided) payments — void them first.
+                {t("cancelBlockedHint")}
               </p>
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-content-secondary">Reason</span>
+                <span className="text-xs font-medium text-content-secondary">{t("reason")}</span>
                 <Textarea name="reason" required autoFocus />
               </label>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setCancelOpen(false)}>
-                Keep invoice
+                {t("keepInvoice")}
               </Button>
               <Button type="submit" variant="danger" disabled={cancelInvoice.isPending}>
-                Cancel invoice
+                {t("cancelInvoiceTitle")}
               </Button>
             </DialogFooter>
           </form>
@@ -533,11 +552,13 @@ export function InvoiceDetailView({
   invoiceId,
   onBack,
 }: Readonly<{ invoiceId: string; onBack: () => void }>) {
+  const t = useTranslations("SalesInvoices")
+  const tShared = useTranslations("SalesShared")
   const { data: invoice, isLoading, isError, refetch } = useInvoice(invoiceId)
 
   if (isLoading) return <SalesPageSpinner />
   if (isError || !invoice) {
-    return <SalesErrorState message="Failed to load invoice." onRetry={() => void refetch()} />
+    return <SalesErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
   }
 
   return (
@@ -551,32 +572,32 @@ export function InvoiceDetailView({
               <h1 className="font-mono text-lg font-semibold text-content-primary">
                 <InvoiceNumber value={invoice.number} status={invoice.status} />
               </h1>
-              <StatusBadge status={invoice.status} label={invoice.status_label} />
+              <StatusBadge status={invoice.status} />
             </div>
             <p className="text-sm text-content-secondary">{invoice.customer_name}</p>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <div>
-            <p className="text-xs text-content-quaternary">Invoice Date</p>
+            <p className="text-xs text-content-quaternary">{t("invoiceDate")}</p>
             <p className="font-mono font-medium text-content-primary">{invoice.invoice_date}</p>
           </div>
           <div>
-            <p className="text-xs text-content-quaternary">Due Date</p>
+            <p className="text-xs text-content-quaternary">{t("dueDate")}</p>
             <p className="font-mono font-medium text-content-primary">{invoice.due_date}</p>
           </div>
           <div>
-            <p className="text-xs text-content-quaternary">Payment Status</p>
-            <p className="font-medium text-content-primary">{invoice.payment_status_label}</p>
+            <p className="text-xs text-content-quaternary">{t("paymentStatus")}</p>
+            <p className="font-medium text-content-primary">{tShared(`paymentStatus.${invoice.payment_status}`)}</p>
           </div>
           <div>
-            <p className="text-xs text-content-quaternary">Remaining Due</p>
+            <p className="text-xs text-content-quaternary">{t("remainingDue")}</p>
             <p className="font-medium text-content-primary">{formatCurrency(invoice.remaining_due)}</p>
           </div>
         </div>
       </Card>
 
-      <h2 className="text-sm font-semibold text-content-primary">Line Items</h2>
+      <h2 className="text-sm font-semibold text-content-primary">{t("lineItems")}</h2>
       <LinesCard invoice={invoice} />
 
       <PaymentsSection invoice={invoice} />

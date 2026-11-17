@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react"
 import { Clock, DollarSign, Search, Store } from "lucide-react"
+import { useTranslations } from "next-intl"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { Input } from "@/src/shared/components/ui/input"
@@ -35,9 +38,13 @@ const iconMap = {
 } as const
 
 function VendorKpiCard({ tile, value }: { tile: VendorKpiTile; value: number }) {
+  const t = useTranslations("OperationsVendors")
+  const locale = useIntlLocale()
   const Icon = iconMap[tile.icon]
   const display =
-    tile.format === "currency" ? formatCurrencyAmount(value) : value.toLocaleString("en-US")
+    tile.format === "currency"
+      ? formatCurrencyAmount(value, locale)
+      : value.toLocaleString(locale)
   return (
     <Card variant="elevated" className="flex-row items-center gap-4 p-5">
       <div
@@ -50,7 +57,7 @@ function VendorKpiCard({ tile, value }: { tile: VendorKpiTile; value: number }) 
       </div>
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-content-tertiary text-[11px] leading-[15.4px]">
-          {tile.label}
+          {t(tile.labelKey)}
         </span>
         <span className="text-content-primary text-[25px] leading-[32.5px] font-semibold">
           {display}
@@ -61,6 +68,8 @@ function VendorKpiCard({ tile, value }: { tile: VendorKpiTile; value: number }) 
 }
 
 export function VendorsTab() {
+  const t = useTranslations("OperationsVendors")
+  const tCommon = useTranslations("Common")
   const [filter, setFilter] = useState<VendorStatus | "all">("all")
   const [query, setQuery] = useState("")
   const [renewTarget, setRenewTarget] = useState<VendorListItem | null>(null)
@@ -94,7 +103,7 @@ export function VendorsTab() {
   if (isError) {
     return (
       <OperationsErrorState
-        message="Failed to load vendors."
+        message={t("loadError")}
         onRetry={() => {
           void vendorsQuery.refetch()
           void kpisQuery.refetch()
@@ -114,12 +123,12 @@ export function VendorsTab() {
       <section className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {VENDOR_FILTER_OPTIONS.map((option) => {
-            const isActive = filter === option.value
+            const isActive = filter === option
             return (
               <button
-                key={option.value}
+                key={option}
                 type="button"
-                onClick={() => setFilter(option.value)}
+                onClick={() => setFilter(option)}
                 className={cn(
                   "inline-flex h-8 items-center rounded-lg border px-2.5 text-[11px] leading-[15.4px] font-medium transition-colors",
                   isActive
@@ -127,7 +136,7 @@ export function VendorsTab() {
                     : "border-stroke-default bg-surface-white text-content-secondary hover:text-content-primary",
                 )}
               >
-                {option.label}
+                {option === "all" ? tCommon("all") : t(`status.${option}`)}
               </button>
             )
           })}
@@ -140,7 +149,7 @@ export function VendorsTab() {
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search vendors..."
+            placeholder={t("searchPlaceholder")}
             className="h-9 ps-9 text-[13px]"
           />
         </div>
@@ -149,7 +158,7 @@ export function VendorsTab() {
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {vendors.length === 0 ? (
           <div className="border-stroke-default bg-surface-white text-content-tertiary col-span-full flex h-24 items-center justify-center rounded-2xl border border-dashed text-[12px] leading-[18px]">
-            No vendors match the current filters.
+            {t("empty")}
           </div>
         ) : (
           vendors.map((vendor) => (

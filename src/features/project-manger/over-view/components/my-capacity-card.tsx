@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { Card } from "@/src/shared/components/ui/card"
 import { CircularProgress } from "@/src/shared/components/ui/circular-progress"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -13,6 +15,7 @@ const CAPACITY_DOT: Record<string, string> = {
 }
 
 export function MyCapacityCard() {
+  const t = useTranslations("ProjectsOverview")
   const { data, isLoading, isError } = useMyCapacity()
 
   const bookedHours = data?.booked_hours ?? 0
@@ -24,10 +27,10 @@ export function MyCapacityCard() {
     <Card className="overflow-hidden p-0">
       <div className="border-stroke-default flex flex-col gap-0.5 border-b px-5 py-3.5">
         <h2 className="text-content-primary text-base leading-6 font-semibold">
-          My Capacity
+          {t("myCapacity")}
         </h2>
         <p className="text-content-tertiary text-[12px] leading-[17px]">
-          This week
+          {t("thisWeek")}
         </p>
       </div>
 
@@ -38,7 +41,7 @@ export function MyCapacityCard() {
         </div>
       ) : isError ? (
         <p className="text-content-tertiary px-5 py-10 text-center text-sm">
-          Couldn&apos;t load your capacity.
+          {t("capacityLoadFailed")}
         </p>
       ) : (
         <div className="flex flex-col gap-5 p-5">
@@ -52,18 +55,18 @@ export function MyCapacityCard() {
               <span className="text-content-primary text-xl leading-6 font-bold">
                 {bookedHours}
                 <span className="text-content-tertiary text-[11px] font-medium">
-                  /{totalHours}h
+                  {t("capacityTotal", { hours: totalHours })}
                 </span>
               </span>
               <span className="text-content-tertiary text-[10px] leading-[15px] tracking-wide uppercase">
-                Booked
+                {t("booked")}
               </span>
             </CircularProgress>
           </div>
 
           {breakdown.length === 0 ? (
             <p className="text-content-tertiary text-center text-[12px]">
-              No hours logged this week yet.
+              {t("noHoursThisWeek")}
             </p>
           ) : (
             <ul className="flex flex-col gap-2.5">
@@ -80,7 +83,7 @@ export function MyCapacityCard() {
                     {row.label}
                   </span>
                   <span className="text-content-primary text-sm leading-[18px] font-medium tabular-nums">
-                    {row.hours}h
+                    {t("hoursShort", { hours: row.hours })}
                   </span>
                 </li>
               ))}

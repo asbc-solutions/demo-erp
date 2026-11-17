@@ -1,1 +1,145 @@
-{}
+{
+  "SettingsView": {
+    "description": "أدِر مساحة العمل والفريق والفوترة وتفضيلات الإشعارات.",
+    "tabBilling": "الفوترة",
+    "tabNotifications": "الإشعارات",
+    "tabProfile": "ملف الشركة",
+    "tabRoles": "الأدوار والصلاحيات",
+    "tabTeam": "الفريق والصلاحيات",
+    "title": "الإعدادات"
+  },
+  "SettingsShared": {
+    "accessDenied": "اطلب من المسؤول منح دورك صلاحية الوصول إلى هذا القسم من الإعدادات.",
+    "checkDetails": "يرجى مراجعة البيانات والمحاولة مرة أخرى.",
+    "loadFailed": "تعذّر التحميل.",
+    "validationFailed": "فشل التحقق من البيانات"
+  },
+  "SettingsProfile": {
+    "companyName": "اسم الشركة",
+    "industry": "القطاع",
+    "industryPlaceholder": "اختر القطاع",
+    "loadError": "تعذّر تحميل ملف الشركة.",
+    "resetButton": "إعادة تعيين البيانات",
+    "resetDescription": "امسح جميع البيانات في كل مساحات العمل واستعد الإعدادات الافتراضية الأصلية للعرض التجريبي. يشمل ذلك الفواتير والموظفين والصفقات وبيانات الشركة. لا يمكن التراجع عن هذا الإجراء، وسيؤدي إلى تسجيل خروج الجميع بمن فيهم أنت.",
+    "resetTitle": "إعادة التعيين إلى بيانات العرض التجريبي",
+    "stage": "المرحلة الحالية",
+    "stagePlaceholder": "اختر المرحلة",
+    "updateFailed": "تعذّر تحديث ملف الشركة",
+    "updated": "تم تحديث ملف الشركة",
+    "website": "الموقع الإلكتروني"
+  },
+  "SettingsResetDemo": {
+    "confirm": "إعادة تعيين كل شيء",
+    "confirmLabel": "اكتب <highlight>{phrase}</highlight> للتأكيد",
+    "description": "سيؤدي هذا إلى مسح قاعدة البيانات <strong>بالكامل</strong> وإعادة تعبئتها — الفواتير والموظفين والصفقات وبيانات الشركة — لجميع المستخدمين. لا يمكن التراجع عن ذلك، وسيُنهي فورًا كل جلسة نشطة بما فيها جلستك، وسيتم تسجيل خروجك.",
+    "failed": "تعذّرت إعادة تعيين بيانات العرض التجريبي",
+    "success": "تمت إعادة تعيين بيانات العرض التجريبي. جارٍ تسجيل خروجك…",
+    "successDescription": "تم إبطال كل الجلسات للتو، بما فيها جلستك.",
+    "title": "إعادة تعيين كل بيانات العرض التجريبي؟"
+  },
+  "SettingsTeam": {
+    "cannotDeactivateSelf": "لا يمكنك تعطيل حسابك الخاص",
+    "deactivateMember": "تعطيل العضو",
+    "deactivateNamed": "تعطيل {name}",
+    "description": "إدارة الوصول والأدوار",
+    "inactive": "(غير نشط)",
+    "invite": "دعوة عضو",
+    "loadError": "تعذّر تحميل أعضاء الفريق.",
+    "noRole": "بدون دور",
+    "roleUpdateFailed": "تعذّر تحديث دور العضو",
+    "roleUpdated": "تم تحديث دور {name}",
+    "title": "أعضاء الفريق"
+  },
+  "SettingsDeactivateMember": {
+    "confirm": "تعطيل",
+    "description": "سيُعلَّم حسابه كغير نشط، وتُلغى فورًا كل جلسة نشطة أو رمز API يملكه. لا يحذف ذلك سجله — تبقى سجلات التدقيق والفواتير والموافقات المرتبطة به محفوظة.",
+    "failed": "تعذّر تعطيل العضو",
+    "success": "تم تعطيل {name}.",
+    "title": "تعطيل {name}؟"
+  },
+  "SettingsInviteMember": {
+    "description": "سيصله بريد إلكتروني لتعيين كلمة المرور بنفسه — لا يتم إنشاء أي كلمة مرور أو عرضها هنا.",
+    "failed": "تعذّرت دعوة العضو",
+    "role": "الدور",
+    "roleHint": "ظهور الدور هنا لا يضمن أنك تستطيع منحه — يظل الخادم يفرض حدود صلاحياتك.",
+    "rolePlaceholder": "اختر دورًا",
+    "roleRequired": "اختر دورًا لهذا العضو",
+    "rolesLoading": "جارٍ تحميل الأدوار…",
+    "submit": "إرسال الدعوة",
+    "success": "تم إرسال الدعوة.",
+    "successDescription": "سيتلقى العضو الجديد بريدًا إلكترونيًا لتعيين كلمة المرور.",
+    "title": "دعوة عضو إلى الفريق"
+  },
+  "SettingsRoles": {
+    "accessDenied": "يمكن فقط لمسؤول الموارد البشرية (أو دور لديه صلاحية roles = write) عرض صلاحيات الأدوار أو تعديلها.",
+    "changedCount": "{count} معدّلة",
+    "colLevel": "المستوى",
+    "colResource": "المورد",
+    "level": {
+      "approval_required": "تتطلب موافقة",
+      "none": "بدون وصول",
+      "read": "قراءة فقط",
+      "write": "وصول كامل"
+    },
+    "levelTooHigh": "لا يمكنك منح مستوى أعلى مما لديك",
+    "saveWithCount": "حفظ ({count})",
+    "selectRole": "اختر دورًا لعرض مصفوفة صلاحياته وتعديلها.",
+    "system": "نظامي",
+    "title": "الأدوار",
+    "tryAgain": "يرجى المحاولة مرة أخرى.",
+    "updateFailed": "تعذّر تحديث الصلاحيات",
+    "updated": "تم تحديث صلاحيات الدور",
+    "userCount": "{count, plural, zero {لا يوجد مستخدمون} one {مستخدم واحد} two {مستخدمان} few {# مستخدمين} many {# مستخدمًا} other {# مستخدم}}"
+  },
+  "SettingsBilling": {
+    "cardEnding": "بطاقة {brand} المنتهية بـ {last4}",
+    "cardExpires": "تنتهي في {month}/{year}",
+    "changePlan": "تغيير الخطة",
+    "choosePlan": "اختر خطة",
+    "colInvoice": "الفاتورة",
+    "colPeriod": "الفترة",
+    "downloadFailed": "تعذّر تنزيل الفاتورة",
+    "downloadInvoice": "تنزيل الفاتورة",
+    "downloadInvoiceNamed": "تنزيل الفاتورة {number}",
+    "invoiceHistory": "سجل الفواتير",
+    "invoiceStatus": {
+      "open": "مفتوحة",
+      "paid": "مدفوعة",
+      "void": "ملغاة"
+    },
+    "invoicesLoadError": "تعذّر تحميل سجل الفواتير.",
+    "loadError": "تعذّر تحميل معلومات الفوترة.",
+    "nextBillingDate": "تاريخ الفوترة التالي",
+    "noDocument": "لا يوجد مستند متاح",
+    "noInvoices": "لا توجد فواتير بعد.",
+    "noPaymentMethod": "لا توجد وسيلة دفع مسجّلة.",
+    "noSubscription": "لا يوجد اشتراك نشط. اختر خطة للبدء.",
+    "paymentMethod": "وسيلة الدفع",
+    "seatsUsed": "المقاعد المستخدمة",
+    "storage": "التخزين",
+    "storageValue": "{used} جيجابايت / {limit} جيجابايت",
+    "updatePayment": "تحديث",
+    "updatePaymentHint": "يتطلب ترميز البطاقة من جهة العميل عبر SDK لمزوّد الدفع — غير مفعّل بعد",
+    "updatePaymentToast": "تحديث وسيلة الدفع غير مفعّل بعد",
+    "updatePaymentToastDescription": "تقبل هذه الواجهة رمز مزوّد الدفع فقط (Stripe/Paymob/Fawry) — ولا تقبل رقم بطاقة خامًا أبدًا. ترميز البطاقة من جهة العميل خارج نطاق هذا التغيير."
+  },
+  "SettingsChangePlan": {
+    "confirm": "تأكيد التغيير",
+    "current": "(الحالية)",
+    "description": "يُعاد تعيين تاريخ الفوترة التالي إلى أول الشهر القادم وفق الخطة الجديدة.",
+    "failed": "تعذّر تغيير الخطة",
+    "noPlans": "لا توجد خطط أخرى متاحة.",
+    "seats": "{count, plural, zero {بدون مقاعد} one {مقعد واحد} two {مقعدان} few {# مقاعد} many {# مقعدًا} other {# مقعد}}",
+    "storage": "{size} جيجابايت تخزين",
+    "success": "تم تغيير الخطة.",
+    "title": "تغيير الخطة"
+  },
+  "SettingsNotifications": {
+    "description": "اختر ما تريد أن تُبلَّغ به",
+    "loadError": "تعذّر تحميل تفضيلات الإشعارات.",
+    "save": "حفظ التفضيلات",
+    "saveFailed": "تعذّر حفظ التفضيلات",
+    "saved": "تم حفظ تفضيلات الإشعارات",
+    "title": "تفضيلات الإشعارات"
+  }
+}

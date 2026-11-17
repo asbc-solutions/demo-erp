@@ -1,6 +1,7 @@
 "use client"
 
 import { Ban, Copy, Eye, MoreHorizontal, Pencil, ShieldCheck } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -28,6 +29,7 @@ export function CustomerActions({
   onBlock: () => void
   onUnblock: () => void
 }>) {
+  const t = useTranslations("SalesCustomers")
   const copy = (value: string) => {
     if (!navigator.clipboard) return
     void navigator.clipboard.writeText(value).catch(() => {})
@@ -40,7 +42,7 @@ export function CustomerActions({
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label={`Actions for ${customer.name}`}
+          aria-label={t("actionsFor", { name: customer.name })}
           className="text-content-tertiary"
         >
           <MoreHorizontal aria-hidden />
@@ -49,33 +51,33 @@ export function CustomerActions({
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuItem onSelect={onView}>
           <Eye aria-hidden />
-          View details
+          {t("viewDetails")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => copy(customer.email)}>
           <Copy aria-hidden />
-          Copy email
+          {t("copyEmail")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => copy(customer.phone)}>
           <Copy aria-hidden />
-          Copy phone
+          {t("copyPhone")}
         </DropdownMenuItem>
         {canManage ? (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={onEdit}>
               <Pencil aria-hidden />
-              Edit customer
+              {t("editCustomer")}
             </DropdownMenuItem>
             {customer.status === "blocked" ? (
               <DropdownMenuItem onSelect={onUnblock}>
                 <ShieldCheck aria-hidden />
-                Unblock customer
+                {t("unblockCustomer")}
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem variant="danger" onSelect={onBlock}>
                 <Ban aria-hidden />
-                Block customer
+                {t("blockCustomer")}
               </DropdownMenuItem>
             )}
           </>

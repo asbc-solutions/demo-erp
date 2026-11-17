@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 
 import {
   Select,
@@ -30,12 +31,13 @@ function AccountSelect({
   id,
   value,
   onValueChange,
-  placeholder = "Choose an account",
+  placeholder,
   invalid,
   className,
   "aria-label": ariaLabel,
   filter,
 }: AccountSelectProps) {
+  const t = useTranslations("FinanceShared")
   const { data = [] } = useFinanceAccounts()
   const accounts = filter ? data.filter((account) => filter(account.code)) : data
   return (
@@ -47,7 +49,7 @@ function AccountSelect({
         aria-invalid={invalid || undefined}
         className={cn("h-9 w-full", className)}
       >
-        <SelectValue placeholder={placeholder} />
+        <SelectValue placeholder={placeholder ?? t("chooseAccount")} />
       </SelectTrigger>
       <SelectContent>
         {accounts.map((account) => (

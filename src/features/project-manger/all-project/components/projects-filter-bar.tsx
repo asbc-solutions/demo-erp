@@ -1,6 +1,7 @@
 "use client"
 
 import { ArrowUpDown, Download, Search } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
@@ -26,25 +27,24 @@ type ProjectsFilterBarProps = {
   onChange: (patch: Partial<ProjectFilterState>) => void
 }
 
-const STATUS_OPTIONS: { value: ProjectFilterState["status"]; label: string }[] =
-  [
-    { value: "all", label: "Status: All" },
-    { value: "created", label: "Created" },
-    { value: "released", label: "Released" },
-    { value: "technically_complete", label: "Technically Complete" },
-    { value: "closed", label: "Closed" },
-  ]
+const STATUS_OPTIONS: ProjectFilterState["status"][] = [
+  "all",
+  "created",
+  "released",
+  "technically_complete",
+  "closed",
+]
 
-const TYPE_OPTIONS: { value: ProjectFilterState["projectType"]; label: string }[] =
-  [
-    { value: "all", label: "Type: All" },
-    { value: "internal", label: "Internal" },
-    { value: "external", label: "External" },
-    { value: "capital", label: "Capital (CAPEX)" },
-    { value: "overhead", label: "Overhead" },
-  ]
+const TYPE_OPTIONS: ProjectFilterState["projectType"][] = [
+  "all",
+  "internal",
+  "external",
+  "capital",
+  "overhead",
+]
 
 export function ProjectsFilterBar({ value, onChange }: ProjectsFilterBarProps) {
+  const t = useTranslations("ProjectsAllProjects")
   return (
     <Card className="flex flex-row flex-wrap items-center gap-3 p-3">
       <div className="relative w-full sm:w-60">
@@ -56,8 +56,8 @@ export function ProjectsFilterBar({ value, onChange }: ProjectsFilterBarProps) {
           type="search"
           value={value.search}
           onChange={(e) => onChange({ search: e.target.value })}
-          placeholder="Search projects…"
-          aria-label="Search projects"
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchLabel")}
           className="h-[34px] rounded-lg ps-9 text-[13px] shadow-none"
         />
       </div>
@@ -72,9 +72,9 @@ export function ProjectsFilterBar({ value, onChange }: ProjectsFilterBarProps) {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {STATUS_OPTIONS.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
+          {STATUS_OPTIONS.map((option) => (
+            <SelectItem key={option} value={option}>
+              {t(`statusFilter.${option}`)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -90,9 +90,9 @@ export function ProjectsFilterBar({ value, onChange }: ProjectsFilterBarProps) {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {TYPE_OPTIONS.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
+          {TYPE_OPTIONS.map((option) => (
+            <SelectItem key={option} value={option}>
+              {t(`typeFilter.${option}`)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -104,12 +104,12 @@ export function ProjectsFilterBar({ value, onChange }: ProjectsFilterBarProps) {
           className="h-[34px] gap-1.5 px-3 text-[13px] font-normal"
         >
           <ArrowUpDown className="size-3" aria-hidden />
-          Sort: Recent
+          {t("sortRecent")}
         </Button>
         <Button
           variant="outline"
           size="icon"
-          aria-label="Export projects"
+          aria-label={t("exportProjects")}
           className="size-8"
         >
           <Download className="size-3.5" aria-hidden />

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/src/shared/lib/utils/utils";
 
@@ -10,6 +11,8 @@ type StepBackButtonProps = Readonly<{
 }>;
 
 export function StepBackButton({ onClick, className }: StepBackButtonProps) {
+  const t = useTranslations("Onboarding");
+
   return (
     <button
       type="button"
@@ -20,8 +23,8 @@ export function StepBackButton({ onClick, className }: StepBackButtonProps) {
         className,
       )}
     >
-      <ChevronLeft className="size-4" strokeWidth={2} suppressHydrationWarning />
-      Back
+      <ChevronLeft className="size-4 rtl:rotate-180" strokeWidth={2} suppressHydrationWarning />
+      {t("back")}
     </button>
   );
 }

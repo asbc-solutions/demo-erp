@@ -1,1 +1,29 @@
-{}
+{
+  "Integrations": {
+    "accessDeniedDescription": "اطلب من المسؤول منح دورك صلاحية الوصول إلى التكاملات.",
+    "accessDeniedTitle": "ليست لديك صلاحية الوصول",
+    "available": "<n>{count}</n> متاح",
+    "checkDetails": "يُرجى مراجعة البيانات والمحاولة مرة أخرى.",
+    "connected": "<n>{count}</n> متصل",
+    "loadFailed": "تعذّر التحميل.",
+    "listLoadFailed": "تعذّر تحميل التكاملات.",
+    "needsAttention": "<n>{count}</n> يحتاج إلى متابعة",
+    "subtitle": "زامِن أدواتك مع Nucleus",
+    "title": "التطبيقات المتصلة",
+    "validationFailed": "فشل التحقق من البيانات"
+  },
+  "IntegrationsCard": {
+    "connect": "ربط",
+    "connectFailed": "تعذّر ربط {name}",
+    "connectedToast": "تم ربط {name}",
+    "disconnect": "فصل",
+    "disconnectFailed": "تعذّر فصل {name}",
+    "disconnectedToast": "تم فصل {name}",
+    "lastSynced": "آخر مزامنة {date}",
+    "neverSynced": "لم تتم المزامنة مطلقًا",
+    "syncFailed": "تعذّرت مزامنة {name}",
+    "syncNeedsAttention": "مزامنة {name} تحتاج إلى متابعة",
+    "syncNow": "مزامنة الآن",
+    "syncedToast": "تمت مزامنة {name}"
+  }
+}

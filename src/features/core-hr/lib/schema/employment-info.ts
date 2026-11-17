@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { vk } from "./validation-key"
+
 /** Same custom message whether the value is missing (undefined) or empty. */
 const requiredString = (message: string) =>
   z.string({ required_error: message, invalid_type_error: message }).min(1, message)
@@ -10,7 +12,7 @@ const requiredString = (message: string) =>
  * omitted — unknown keys on the parsed object are ignored by zod.
  */
 export const employmentInfoSchema = z.object({
-  department: requiredString("Department is required."),
-  hireDate: requiredString("Hire date is required."),
-  employmentType: requiredString("Employment type is required."),
+  department: requiredString(vk("departmentRequired")),
+  hireDate: requiredString(vk("hireDateRequired")),
+  employmentType: requiredString(vk("employmentTypeRequired")),
 })

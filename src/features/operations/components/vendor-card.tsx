@@ -1,7 +1,10 @@
 "use client"
 
 import { FileText, Loader2, Power, RotateCw, Settings } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
@@ -37,14 +40,17 @@ export function VendorCard({
   vendor,
   onRenewClick,
 }: Readonly<{ vendor: VendorListItem; onRenewClick: (vendor: VendorListItem) => void }>) {
+  const t = useTranslations("OperationsVendors")
+  const tShared = useTranslations("OperationsShared")
+  const locale = useIntlLocale()
   const { can } = usePermissions()
   const canManage = can.write(OPERATIONS_RESOURCES.vendors)
   const activateVendor = useActivateVendor()
 
   const handleActivate = () => {
     activateVendor.mutate(vendor.id, {
-      onSuccess: () => toast.success(`${vendor.name} activated.`),
-      onError: (err) => toastMutationError(err, "Failed to activate vendor"),
+      onSuccess: () => toast.success(t("activated", { name: vendor.name })),
+      onError: (err) => toastMutationError(err, t("activateFailed"), tShared),
     })
   }
 
@@ -63,7 +69,7 @@ export function VendorCard({
               VENDOR_STATUS_STYLE[vendor.status],
             )}
           >
-            {vendor.status_label}
+            {t(`status.${vendor.status}`)}
           </span>
         </div>
         <span className="bg-[#f4f4f5] inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] leading-[15px] font-medium text-content-tertiary">
@@ -73,16 +79,16 @@ export function VendorCard({
 
       <div className="flex flex-col gap-0.5">
         <span className="text-content-tertiary text-[11px] leading-[15.4px]">
-          Monthly Spend
+          {t("monthlySpend")}
         </span>
         <span className="text-content-primary text-[31px] leading-[37.2px] font-semibold tabular-nums">
-          {formatCurrencyAmount(vendor.monthly_spend, vendor.currency_code)}
+          {formatCurrencyAmount(vendor.monthly_spend, locale, vendor.currency_code)}
         </span>
       </div>
 
       <div className="flex items-center justify-between">
         <span className="text-content-tertiary text-[11px] leading-[15.4px]">
-          Contract End
+          {t("contractEnd")}
         </span>
         <span
           className={cn(
@@ -90,7 +96,7 @@ export function VendorCard({
             TONE[tone],
           )}
         >
-          {vendor.contract_end ? formatDate(vendor.contract_end) : "—"}
+          {vendor.contract_end ? formatDate(vendor.contract_end, locale) : "—"}
         </span>
       </div>
 
@@ -98,7 +104,7 @@ export function VendorCard({
 
       <div className="flex flex-col gap-1">
         <span className="text-content-secondary text-[11px] leading-[15.4px]">
-          {vendor.contact_role || vendor.contact_name || "No contact on file"}
+          {vendor.contact_role || vendor.contact_name || t("noContact")}
         </span>
         {vendor.contact_email ? (
           <span className="text-content-tertiary truncate text-[11px] leading-[15.4px]">
@@ -124,7 +130,7 @@ export function VendorCard({
           className="text-content-tertiary inline-flex h-8 items-center gap-2 rounded-lg px-2.5 text-[11px] leading-[15.4px] font-medium hover:text-content-primary"
         >
           <FileText className="size-4" aria-hidden />
-          View contract
+          {t("viewContract")}
         </button>
         {/* `primary_action` is a single derived field (never both) — see List Vendors.bru:
             active → manage, pending → activate, inactive → renew. */}
@@ -134,7 +140,7 @@ export function VendorCard({
             className="bg-surface-page border-stroke-default text-content-secondary inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-[11px] leading-[15.4px] font-medium shadow-xs hover:text-content-primary"
           >
             <Settings className="size-4" aria-hidden />
-            Manage
+            {t("manage")}
           </button>
         ) : null}
         {vendor.primary_action === "activate" && canManage ? (
@@ -149,7 +155,7 @@ export function VendorCard({
             ) : (
               <Power className="size-4" aria-hidden />
             )}
-            Activate
+            {t("activate")}
           </button>
         ) : null}
         {vendor.primary_action === "renew" && canManage ? (
@@ -159,7 +165,7 @@ export function VendorCard({
             className="bg-surface-page border-stroke-default text-brand-warning inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-[11px] leading-[15.4px] font-medium shadow-xs"
           >
             <RotateCw className="size-4" aria-hidden />
-            Renew
+            {t("renew")}
           </button>
         ) : null}
       </div>

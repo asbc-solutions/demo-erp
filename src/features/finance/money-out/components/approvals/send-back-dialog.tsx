@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -20,7 +21,7 @@ import { Textarea } from "@/src/shared/components/ui/textarea"
 import { FinanceAlert } from "../../../components/shared/finance-alert"
 import type { SubledgerDocument } from "../../../subledger/lib/types/subledger"
 import { useSendBackBill } from "../../lib/mutations/payables"
-import { sendBackSchema, type SendBackFormValues } from "../../lib/schema/payables"
+import { sendBackSchema, type PayablesErrorKey, type SendBackFormValues } from "../../lib/schema/payables"
 
 type SendBackDialogProps = {
   bill: SubledgerDocument | null
@@ -30,6 +31,8 @@ type SendBackDialogProps = {
 
 /** Reject this bill? — returns it to the requester with a reason; nothing posts. */
 function SendBackDialog({ bill, onOpenChange, onSentBack }: SendBackDialogProps) {
+  const t = useTranslations("FinanceMoneyOut")
+  const tCommon = useTranslations("Common")
   const sendBack = useSendBackBill()
   const {
     register,
@@ -55,7 +58,7 @@ function SendBackDialog({ bill, onOpenChange, onSentBack }: SendBackDialogProps)
           onSentBack(bill)
           onOpenChange(false)
         },
-        onError: () => toast.error(`${bill.number} could not be sent back. Try again.`),
+        onError: () => toast.error(t("sendBackFailed", { number: bill.number })),
       },
     )
   }
@@ -65,25 +68,26 @@ function SendBackDialog({ bill, onOpenChange, onSentBack }: SendBackDialogProps)
       <DialogContent className="max-w-md" showCloseButton={false}>
         <form onSubmit={handleSubmit(submit)} noValidate>
           <DialogHeader>
-            <DialogTitle>Reject this bill?</DialogTitle>
+            <DialogTitle>{t("rejectTitle")}</DialogTitle>
           </DialogHeader>
           <DialogBody>
             <FinanceAlert tone="warning" className="text-status-warning-fg">
-              Rejecting sends the bill back to the requester with your reason and removes it from the
-              approval queue. No ledger entry is created. The requester can correct and resubmit it.
+              {t("rejectExplainer")}
             </FinanceAlert>
             <Field>
-              <FieldLabel htmlFor="send-back-reason">Reason</FieldLabel>
+              <FieldLabel htmlFor="send-back-reason">{t("reason")}</FieldLabel>
               <Textarea id="send-back-reason" rows={3} aria-invalid={Boolean(errors.reason)} {...register("reason")} />
-              {errors.reason ? <FieldError>{errors.reason.message}</FieldError> : null}
+              {errors.reason?.message ? (
+                <FieldError>{t(errors.reason.message as PayablesErrorKey)}</FieldError>
+              ) : null}
             </Field>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="danger" disabled={!isValid || sendBack.isPending}>
-              Reject bill
+              {t("rejectBill")}
             </Button>
           </DialogFooter>
         </form>

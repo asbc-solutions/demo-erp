@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { X } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -31,12 +32,13 @@ import { useProjects } from "../../lib/queries/projects"
 import { useResources } from "../../lib/queries/resources"
 import type { DigestSection } from "../../lib/types"
 
-const DIGEST_INCLUDES: { id: DigestSection; label: string }[] = [
-  { id: "health", label: "Health & status update" },
-  { id: "milestones", label: "Completed milestones" },
-  { id: "risks", label: "Risks & blockers" },
-  { id: "focus", label: "Next week's focus" },
-  { id: "budget", label: "Budget snapshot" },
+/** Digest sections; each id is a `ProjectsOverview.digestInclude` message key. */
+const DIGEST_INCLUDES: DigestSection[] = [
+  "health",
+  "milestones",
+  "risks",
+  "focus",
+  "budget",
 ]
 
 type SendWeeklyDigestDialogProps = {
@@ -48,11 +50,12 @@ export function SendWeeklyDigestDialog({
   open,
   onOpenChange,
 }: SendWeeklyDigestDialogProps) {
+  const t = useTranslations("ProjectsOverview")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
   const [projectId, setProjectId] = useState("")
   const [recipients, setRecipients] = useState<string[]>([])
-  const [includes, setIncludes] = useState<DigestSection[]>(
-    DIGEST_INCLUDES.map((i) => i.id),
-  )
+  const [includes, setIncludes] = useState<DigestSection[]>(DIGEST_INCLUDES)
   const [message, setMessage] = useState("")
 
   const projectsQ = useProjects({ is_active: true, per_page: 100 }, { enabled: open })
@@ -76,7 +79,7 @@ export function SendWeeklyDigestDialog({
   const reset = () => {
     setProjectId("")
     setRecipients([])
-    setIncludes(DIGEST_INCLUDES.map((i) => i.id))
+    setIncludes(DIGEST_INCLUDES)
     setMessage("")
   }
 
@@ -103,14 +106,14 @@ export function SendWeeklyDigestDialog({
 
   const handleSend = () => {
     if (!projectId) {
-      toast.error("Pick a project", {
-        description: "The digest is a summary of one project.",
+      toast.error(t("digestPickProject"), {
+        description: t("digestPickProjectDescription"),
       })
       return
     }
     if (recipients.length === 0) {
-      toast.error("Add at least one recipient", {
-        description: "The digest needs someone to send to.",
+      toast.error(t("digestAddRecipient"), {
+        description: t("digestAddRecipientDescription"),
       })
       return
     }
@@ -123,15 +126,15 @@ export function SendWeeklyDigestDialog({
       },
       {
         onSuccess: (result) => {
-          toast.success("Weekly digest sent", {
-            description: `Delivered to ${result.recipient_count} recipient${
-              result.recipient_count === 1 ? "" : "s"
-            }.`,
+          toast.success(t("digestSent"), {
+            description: t("digestSentDescription", {
+              count: result.recipient_count,
+            }),
           })
           close()
         },
         onError: (err) =>
-          toast.error("Couldn't send digest", {
+          toast.error(t("digestSendFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
@@ -145,23 +148,25 @@ export function SendWeeklyDigestDialog({
       <DialogContent className="max-w-[600px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-lg leading-7 font-semibold">
-            Send Weekly Digest
+            {t("sendWeeklyDigest")}
           </DialogTitle>
           <DialogDescription className="text-content-tertiary text-[13px] leading-5">
-            Stakeholder summary of this week&apos;s progress
+            {t("digestDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <DialogBody className="gap-5">
           <div className="flex flex-col gap-2">
             <span className="text-content-secondary text-[13px] leading-5 font-semibold">
-              Project
+              {tShared("projectLabel")}
             </span>
             <Select value={projectId || undefined} onValueChange={setProjectId}>
               <SelectTrigger className="w-full text-[13px]">
                 <SelectValue
                   placeholder={
-                    projectsQ.isLoading ? "Loading projects…" : "Select a project"
+                    projectsQ.isLoading
+                      ? tShared("loadingProjects")
+                      : tShared("selectProject")
                   }
                 />
               </SelectTrigger>
@@ -177,12 +182,12 @@ export function SendWeeklyDigestDialog({
 
           <div className="flex flex-col gap-2">
             <span className="text-content-secondary text-[13px] leading-5 font-semibold">
-              Recipients
+              {t("digestRecipients")}
             </span>
             <div className="border-stroke-default flex flex-wrap gap-2 rounded-xl border p-3">
               {recipients.length === 0 ? (
                 <span className="text-content-quaternary text-[13px] leading-5">
-                  No recipients selected
+                  {t("digestNoRecipients")}
                 </span>
               ) : (
                 recipients.map((id) => (
@@ -190,12 +195,14 @@ export function SendWeeklyDigestDialog({
                     key={id}
                     className="bg-brand-primary/[0.08] text-brand-primary inline-flex items-center gap-1.5 rounded-full py-1 pe-1.5 ps-2.5 text-[12px] leading-4 font-medium"
                   >
-                    {employeeLabel.get(id) ?? "Employee"}
+                    {employeeLabel.get(id) ?? t("digestEmployee")}
                     <button
                       type="button"
                       onClick={() => removeRecipient(id)}
                       className="hover:bg-brand-primary/15 flex size-4 items-center justify-center rounded-full transition-colors"
-                      aria-label={`Remove ${employeeLabel.get(id) ?? "recipient"}`}
+                      aria-label={t("digestRemoveRecipient", {
+                        name: employeeLabel.get(id) ?? t("digestRecipient"),
+                      })}
                     >
                       <X className="size-3" aria-hidden />
                     </button>
@@ -208,8 +215,8 @@ export function SendWeeklyDigestDialog({
                 <SelectValue
                   placeholder={
                     resourcesQ.isLoading
-                      ? "Loading employees…"
-                      : "Add a recipient…"
+                      ? t("digestLoadingEmployees")
+                      : t("digestAddRecipientPlaceholder")
                   }
                 />
               </SelectTrigger>
@@ -225,19 +232,19 @@ export function SendWeeklyDigestDialog({
 
           <div className="flex flex-col gap-2.5">
             <span className="text-content-secondary text-[13px] leading-5 font-semibold">
-              Include
+              {t("digestInclude")}
             </span>
             <div className="flex flex-col gap-2.5 ps-1">
               {DIGEST_INCLUDES.map((item) => (
                 <Label
-                  key={item.id}
+                  key={item}
                   className="text-content-primary flex items-center gap-2.5 text-sm leading-5 font-normal"
                 >
                   <Checkbox
-                    checked={includes.includes(item.id)}
-                    onCheckedChange={() => toggleInclude(item.id)}
+                    checked={includes.includes(item)}
+                    onCheckedChange={() => toggleInclude(item)}
                   />
-                  {item.label}
+                  {t(`digestSection.${item}`)}
                 </Label>
               ))}
             </div>
@@ -245,13 +252,13 @@ export function SendWeeklyDigestDialog({
 
           <div className="flex flex-col gap-2">
             <span className="text-content-secondary text-[13px] leading-5 font-semibold">
-              Custom Message{" "}
+              {t("digestCustomMessage")}{" "}
               <span className="text-content-quaternary font-normal">
-                (optional)
+                ({tCommon("optional")})
               </span>
             </span>
             <Textarea
-              placeholder="Add a personal note for stakeholders..."
+              placeholder={t("digestMessagePlaceholder")}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="min-h-[88px] text-[13px]"
@@ -261,7 +268,7 @@ export function SendWeeklyDigestDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={close} className="text-[13px]">
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             variant="primary"
@@ -269,7 +276,7 @@ export function SendWeeklyDigestDialog({
             disabled={sendDigest.isPending}
             className="text-[13px]"
           >
-            {sendDigest.isPending ? "Sending…" : "Send Digest"}
+            {sendDigest.isPending ? t("digestSending") : t("digestSend")}
           </Button>
         </DialogFooter>
       </DialogContent>

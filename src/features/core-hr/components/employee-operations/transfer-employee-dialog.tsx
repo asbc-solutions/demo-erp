@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { ArrowLeft, ArrowLeftRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -59,24 +60,33 @@ type TransferField =
 
 type TransferFieldErrors = Partial<Record<TransferField, string>>
 
-const STEPS = ["Select Destination", "Review Details", "Result"]
+type OperationsTranslator = ReturnType<
+  typeof useTranslations<"HrEmployeeOperations">
+>
 
+const STEP_KEYS = [
+  "stepSelectDestination",
+  "stepReviewDetails",
+  "stepResult",
+] as const
+
+// `value` is what the API stores, so it stays English; only the label is translated.
 const TRANSFER_REASONS = [
-  "Team realignment",
-  "Restructuring",
-  "Employee request",
-  "Promotion",
-  "Performance",
-  "Other",
-]
+  { value: "Team realignment", labelKey: "teamRealignment" },
+  { value: "Restructuring", labelKey: "restructuring" },
+  { value: "Employee request", labelKey: "employeeRequest" },
+  { value: "Promotion", labelKey: "promotion" },
+  { value: "Performance", labelKey: "performance" },
+  { value: "Other", labelKey: "other" },
+] as const
 
-const FIELD_LABEL: Record<TransferField, string> = {
-  target_branch_id: "Branch",
-  target_dept_id: "Department",
-  target_cost_centre_id: "Cost center",
-  effective_date: "Effective date",
-  reason: "Transfer reason",
-}
+const FIELD_LABEL = {
+  target_branch_id: "branch",
+  target_dept_id: "department",
+  target_cost_centre_id: "costCenter",
+  effective_date: "effectiveDate",
+  reason: "transferReason",
+} as const satisfies Record<TransferField, string>
 
 function today() {
   return new Date().toISOString().slice(0, 10)
@@ -117,11 +127,11 @@ function fieldErrorsFromApi(err: unknown): TransferFieldErrors {
   )
 }
 
-function fieldSummary(errors: TransferFieldErrors) {
+function fieldSummary(errors: TransferFieldErrors, t: OperationsTranslator) {
   return Object.entries(errors)
     .map(
       ([field, message]) =>
-        `${FIELD_LABEL[field as TransferField]}: ${message}`,
+        `${t(FIELD_LABEL[field as TransferField])}: ${message}`,
     )
     .join(" ")
 }
@@ -132,6 +142,9 @@ export function TransferEmployeeDialog({
   onOpenChange,
   onViewProfile,
 }: TransferEmployeeDialogProps) {
+  const t = useTranslations("HrEmployeeOperations")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
   const [step, setStep] = useState(0)
   const [branchId, setBranchId] = useState("")
   const [deptId, setDeptId] = useState("")
@@ -222,14 +235,13 @@ export function TransferEmployeeDialog({
     const selectedDept = departments.find((d) => d.id === deptId)
     const selectedCostCentre = costCentres.find((c) => c.id === costCentreId)
 
-    if (!branchId) nextErrors.target_branch_id = "Select a destination branch."
-    if (!deptId) nextErrors.target_dept_id = "Select a destination department."
-    if (!effectiveDate) nextErrors.effective_date = "Select an effective date."
-    if (!reason) nextErrors.reason = "Select a transfer reason."
+    if (!branchId) nextErrors.target_branch_id = t("errSelectBranch")
+    if (!deptId) nextErrors.target_dept_id = t("errSelectDepartment")
+    if (!effectiveDate) nextErrors.effective_date = t("errSelectEffectiveDate")
+    if (!reason) nextErrors.reason = t("errSelectReason")
 
     if (selectedDept && selectedDept.branch_id !== branchId) {
-      nextErrors.target_dept_id =
-        "Select a department that belongs to the destination branch."
+      nextErrors.target_dept_id = t("errDeptNotInBranch")
     }
 
     if (
@@ -237,8 +249,7 @@ export function TransferEmployeeDialog({
       (selectedCostCentre.branch_id !== branchId ||
         selectedCostCentre.dept_id !== deptId)
     ) {
-      nextErrors.target_cost_centre_id =
-        "Select a cost center that belongs to the destination branch and department."
+      nextErrors.target_cost_centre_id = t("errCostCenterMismatch")
     }
 
     setFieldErrors(nextErrors)
@@ -248,22 +259,21 @@ export function TransferEmployeeDialog({
   const handleTransferError = (err: unknown) => {
     const apiErr = err as Partial<ApiError>
     const apiFieldErrors = fieldErrorsFromApi(err)
-    const summary = fieldSummary(apiFieldErrors)
-    const message =
-      summary || apiErr.message || "Please check the transfer details."
+    const summary = fieldSummary(apiFieldErrors, t)
+    const message = summary || apiErr.message || t("checkTransferDetails")
 
     if (Object.keys(apiFieldErrors).length > 0) {
       setFieldErrors(apiFieldErrors)
       setSubmitError("")
       setStep(0)
-      toast.error("Transfer details need attention", {
+      toast.error(t("transferNeedsAttention"), {
         description: summary,
       })
       return
     }
 
     setSubmitError(message)
-    toast.error("Transfer failed", {
+    toast.error(t("transferFailed"), {
       description: message,
     })
   }
@@ -332,7 +342,7 @@ export function TransferEmployeeDialog({
         <div className="flex flex-col gap-5 p-6">
           <div className="flex flex-col gap-3 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
-              Transfer Employee
+              {t("transferTitle")}
             </DialogTitle>
             <EmployeeChip
               initials={employee.avatar_initials}
@@ -341,17 +351,21 @@ export function TransferEmployeeDialog({
             />
           </div>
 
-          <OperationStepper steps={STEPS} current={step} accent="primary" />
+          <OperationStepper
+            steps={STEP_KEYS.map((key) => t(key))}
+            current={step}
+            accent="primary"
+          />
 
           {step === 0 && (
             <div className="flex flex-col gap-4">
               <p className="text-content-tertiary text-[11px] font-semibold tracking-[0.4px] uppercase">
-                New Assignment
+                {t("newAssignment")}
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                    Branch
+                    {t("branch")}
                   </Label>
                   <Select
                     value={branchId}
@@ -368,7 +382,7 @@ export function TransferEmployeeDialog({
                       className="h-10 rounded-md text-sm"
                       aria-invalid={Boolean(fieldErrors.target_branch_id)}
                     >
-                      <SelectValue placeholder="Select branch" />
+                      <SelectValue placeholder={t("selectBranch")} />
                     </SelectTrigger>
                     <SelectContent>
                       {branches.map((b) => (
@@ -384,7 +398,7 @@ export function TransferEmployeeDialog({
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                    Department
+                    {t("department")}
                   </Label>
                   <Select
                     value={deptId}
@@ -403,10 +417,10 @@ export function TransferEmployeeDialog({
                       <SelectValue
                         placeholder={
                           !branchId
-                            ? "Select branch first"
+                            ? t("selectBranchFirst")
                             : branchHasNoDepartments
-                              ? "No departments available"
-                              : "Select department"
+                              ? t("noDepartmentsAvailable")
+                              : t("selectDepartment")
                         }
                       />
                     </SelectTrigger>
@@ -414,8 +428,8 @@ export function TransferEmployeeDialog({
                       {branchDepts.length === 0 ? (
                         <div className="text-content-tertiary px-2 py-1.5 text-sm">
                           {deptsPending
-                            ? "Loading departments..."
-                            : "No departments available in this branch."}
+                            ? t("loadingDepartments")
+                            : t("noDepartmentsInBranch")}
                         </div>
                       ) : (
                         branchDepts.map((d) => (
@@ -431,8 +445,7 @@ export function TransferEmployeeDialog({
                   )}
                   {branchHasNoDepartments && !fieldErrors.target_dept_id && (
                     <p className="text-content-tertiary text-xs leading-4">
-                      No departments available in this branch. Choose a
-                      different branch to continue.
+                      {t("noDepartmentsInBranchHint")}
                     </p>
                   )}
                 </div>
@@ -440,7 +453,7 @@ export function TransferEmployeeDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  Cost Center
+                  {t("costCenter")}
                 </Label>
                 <Select
                   value={costCentreId}
@@ -456,14 +469,14 @@ export function TransferEmployeeDialog({
                   >
                     <SelectValue
                       placeholder={
-                        deptId ? "Select cost center" : "Select department first"
+                        deptId ? t("selectCostCenter") : t("selectDepartmentFirst")
                       }
                     />
                   </SelectTrigger>
                   <SelectContent>
                     {availableCostCentres.length === 0 ? (
                       <div className="text-content-tertiary px-2 py-1.5 text-sm">
-                        No cost centers for this department.
+                        {t("noCostCenters")}
                       </div>
                     ) : (
                       availableCostCentres.map((c) => (
@@ -482,7 +495,7 @@ export function TransferEmployeeDialog({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                    Effective Date
+                    {t("effectiveDate")}
                   </Label>
                   <Input
                     type="date"
@@ -500,7 +513,7 @@ export function TransferEmployeeDialog({
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                    Transfer Reason
+                    {t("transferReason")}
                   </Label>
                   <Select
                     value={reason}
@@ -513,12 +526,12 @@ export function TransferEmployeeDialog({
                       className="h-10 rounded-md text-sm"
                       aria-invalid={Boolean(fieldErrors.reason)}
                     >
-                      <SelectValue placeholder="Select reason" />
+                      <SelectValue placeholder={t("selectReason")} />
                     </SelectTrigger>
                     <SelectContent>
                       {TRANSFER_REASONS.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {r}
+                        <SelectItem key={r.value} value={r.value}>
+                          {t(`transferReasons.${r.labelKey}`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -531,12 +544,13 @@ export function TransferEmployeeDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  Notes <span className="normal-case">(optional)</span>
+                  {tCommon("notes")}{" "}
+                  <span className="normal-case">({tCommon("optional")})</span>
                 </Label>
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Additional notes..."
+                  placeholder={t("additionalNotes")}
                   rows={2}
                   className="resize-none rounded-md text-sm"
                 />
@@ -547,7 +561,7 @@ export function TransferEmployeeDialog({
           {step === 1 && (
             <div className="flex flex-col gap-4">
               <p className="text-content-tertiary text-sm">
-                Review transfer details
+                {t("transferReview")}
               </p>
               {submitError && (
                 <div className="border-brand-danger/30 bg-brand-danger/5 text-brand-danger rounded-[10px] border px-3 py-2 text-sm">
@@ -555,29 +569,29 @@ export function TransferEmployeeDialog({
                 </div>
               )}
               <ComparisonTable
-                nextLabel="After Transfer"
+                nextLabel={t("afterTransfer")}
                 rows={[
                   {
-                    label: "Branch",
+                    label: t("branch"),
                     current: nameOf.branch(detail?.employment.branch_id),
                     next: nameOf.branch(branchId),
                   },
                   {
-                    label: "Department",
+                    label: t("department"),
                     current: nameOf.dept(detail?.employment.dept_id),
                     next: nameOf.dept(deptId),
                   },
                   {
-                    label: "Cost Center",
+                    label: t("costCenter"),
                     current: "-",
-                    next: costCentreId ? nameOf.cc(costCentreId) : "- (unchanged)",
+                    next: costCentreId ? nameOf.cc(costCentreId) : t("unchanged"),
                   },
                   {
-                    label: "Manager",
+                    label: t("manager"),
                     current: detail?.employment.manager_id
-                      ? "Current manager"
+                      ? t("currentManager")
                       : "-",
-                    next: "- (TBD)",
+                    next: t("tbd"),
                   },
                 ]}
               />
@@ -587,14 +601,14 @@ export function TransferEmployeeDialog({
                     checked={notifyEmployee}
                     onCheckedChange={(v) => setNotifyEmployee(v === true)}
                   />
-                  Notify employee by email
+                  {t("notifyEmployee")}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={notifyManager}
                     onCheckedChange={(v) => setNotifyManager(v === true)}
                   />
-                  Notify new department manager
+                  {t("notifyManager")}
                 </label>
               </div>
             </div>
@@ -602,7 +616,7 @@ export function TransferEmployeeDialog({
 
           {step === 2 && (
             <OperationResult
-              title="Transfer confirmed"
+              title={t("transferConfirmed")}
               onViewProfile={
                 onViewProfile ? () => onViewProfile(employee.id) : undefined
               }
@@ -613,30 +627,32 @@ export function TransferEmployeeDialog({
                   { operationId, employeeId: employee.id },
                   {
                     onSuccess: () => {
-                      toast.success("Transfer undone", {
-                        description:
-                          "The employee's previous branch and department have been restored.",
+                      toast.success(t("transferUndone"), {
+                        description: t("transferUndoneDescription"),
                       })
                       handleOpenChange(false)
                     },
                     onError: (err) => {
                       const apiErr = err as Partial<ApiError>
-                      toast.error("Unable to undo transfer", {
+                      toast.error(t("transferUndoFailed"), {
                         description:
-                          apiErr.message ?? "Please try again.",
+                          apiErr.message ?? tShared("pleaseTryAgain"),
                       })
                     },
                   },
                 )
               }}
               undoing={undoOperation.isPending}
-              undoLabel="Undo transfer (24h window)"
+              undoLabel={t("undoTransfer24h")}
               onDone={() => handleOpenChange(false)}
             >
-              <strong>{employee.full_name}</strong> has been transferred to{" "}
-              <strong>{nameOf.branch(branchId)}</strong>,{" "}
-              <strong>{nameOf.dept(deptId)}</strong> effective{" "}
-              <strong>{effectiveDate}</strong>.
+              {t.rich("transferResult", {
+                name: employee.full_name,
+                branch: nameOf.branch(branchId),
+                department: nameOf.dept(deptId),
+                date: effectiveDate,
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </OperationResult>
           )}
 
@@ -648,7 +664,7 @@ export function TransferEmployeeDialog({
                   className="rounded-[10px]"
                   onClick={() => handleOpenChange(false)}
                 >
-                  Cancel
+                  {tCommon("cancel")}
                 </Button>
               ) : (
                 <Button
@@ -656,8 +672,8 @@ export function TransferEmployeeDialog({
                   className="rounded-[10px]"
                   onClick={() => setStep(0)}
                 >
-                  <ArrowLeft />
-                  Back
+                  <ArrowLeft className="rtl:rotate-180" />
+                  {tCommon("back")}
                 </Button>
               )}
 
@@ -668,7 +684,7 @@ export function TransferEmployeeDialog({
                   disabled={previewTransfer.isPending || branchHasNoDepartments}
                   onClick={goToReview}
                 >
-                  {previewTransfer.isPending ? "Checking..." : "Next"}
+                  {previewTransfer.isPending ? t("checking") : tCommon("next")}
                 </Button>
               ) : (
                 <Button
@@ -679,8 +695,8 @@ export function TransferEmployeeDialog({
                 >
                   <ArrowLeftRight />
                   {transferEmployee.isPending
-                    ? "Transferring..."
-                    : "Confirm Transfer"}
+                    ? t("transferring")
+                    : t("confirmTransfer")}
                 </Button>
               )}
             </div>

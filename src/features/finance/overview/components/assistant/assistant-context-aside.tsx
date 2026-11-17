@@ -1,4 +1,5 @@
 import { Check, Minus } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -34,20 +35,21 @@ function AssistantContextAside({
   periodLabel,
   onHide,
 }: AssistantContextAsideProps) {
+  const t = useTranslations("FinanceAssistant")
   return (
     <aside
-      aria-label="Answer context"
+      aria-label={t("answerContext")}
       className="border-stroke-input bg-surface-white flex w-full shrink-0 flex-col gap-5 self-start rounded-xl border p-4 lg:sticky lg:top-4 lg:w-80"
     >
       <div className="flex items-center justify-between">
-        <span className="text-content-secondary text-[13px] leading-5 font-medium">Context</span>
+        <span className="text-content-secondary text-[13px] leading-5 font-medium">{t("context")}</span>
         <Button variant="ghost" size="sm" onClick={onHide}>
-          Hide
+          {t("hide")}
         </Button>
       </div>
 
       <section className="flex flex-col gap-3">
-        <AsideHeading>Grounding</AsideHeading>
+        <AsideHeading>{t("grounding")}</AsideHeading>
         {answer && answer.grounding.length > 0 ? (
           <>
             <ul className="flex flex-col gap-2">
@@ -62,7 +64,7 @@ function AssistantContextAside({
             </ul>
             {answer.not_read.length > 0 ? (
               <div className="flex flex-col gap-0.5">
-                <span className="text-content-secondary text-xs leading-4 font-medium">Did not read</span>
+                <span className="text-content-secondary text-xs leading-4 font-medium">{t("didNotRead")}</span>
                 <span className="text-content-tertiary text-[13px] leading-5">
                   {answer.not_read.join(" · ")}
                 </span>
@@ -72,21 +74,21 @@ function AssistantContextAside({
         ) : (
           <p className="text-content-tertiary text-[13px] leading-5">
             {offline
-              ? `Nothing read. The last grounded answer was at ${LAST_GROUNDED.time} (${LAST_GROUNDED.source}).`
+              ? t("offlineNothingRead", { time: LAST_GROUNDED.time })
               : answer
-                ? "Nothing was read for this answer."
-                : "No answer yet. The screens and rules behind each answer appear here."}
+                ? t("nothingReadForAnswer")
+                : t("noAnswerYet")}
           </p>
         )}
       </section>
 
       <section className="flex flex-col gap-3">
-        <AsideHeading>Scope</AsideHeading>
+        <AsideHeading>{t("scope")}</AsideHeading>
         <dl className="flex flex-col gap-3">
           {[
-            ["Role", roleLabel],
-            ["Entities", String(entityCount)],
-            ["Period", periodLabel],
+            [t("role"), roleLabel],
+            [t("entities"), String(entityCount)],
+            [t("period"), periodLabel],
           ].map(([term, value]) => (
             <div key={term} className="flex flex-col gap-0.5">
               <dt className="text-content-secondary text-[13px] leading-5">{term}</dt>
@@ -97,7 +99,7 @@ function AssistantContextAside({
       </section>
 
       <section className="flex flex-col gap-3">
-        <AsideHeading>Data groups</AsideHeading>
+        <AsideHeading>{t("dataGroups")}</AsideHeading>
         <ul className="flex flex-col gap-1">
           {(settings?.groups ?? []).map((group) => {
             const enabled = group.available && Boolean(settings?.data_groups[group.id])
@@ -110,10 +112,10 @@ function AssistantContextAside({
                     className={cn("size-3.5", enabled ? "text-status-success-fg" : "text-content-quaternary")}
                   />
                   {group.label}
-                  <span className="sr-only">{enabled ? "(readable)" : "(not readable)"}</span>
+                  <span className="sr-only">{enabled ? t("readable") : t("notReadable")}</span>
                 </span>
                 {!group.available ? (
-                  <span className="text-content-tertiary text-xs leading-4">Module not in this prototype</span>
+                  <span className="text-content-tertiary text-xs leading-4">{t("moduleNotInPrototype")}</span>
                 ) : null}
               </li>
             )

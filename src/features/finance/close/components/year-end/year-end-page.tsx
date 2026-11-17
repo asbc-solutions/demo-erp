@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Lock } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -26,14 +27,16 @@ import { errorMessage } from "../../../lib/utils/api"
 import { useCompleteYearEndStep, useLockYear } from "../../lib/mutations/close"
 import { useYearEnd } from "../../lib/queries/close"
 
-/** Steps completed from this screen; the rest follow the periods and the lock. */
-const STEP_ACTION: Record<string, string> = {
-  adjustments: "Mark posted",
-  income_statement: "Post closing entry",
+/** Steps completed from this screen (`FinanceClose` keys); the rest follow the periods and the lock. */
+const STEP_ACTION: Partial<Record<string, "stepMarkPosted" | "stepPostClosingEntry">> = {
+  adjustments: "stepMarkPosted",
+  income_statement: "stepPostClosingEntry",
 }
 
 /** 06.03 · Year end — zero the income statement into retained earnings and seal the year. */
 function YearEndPage() {
+  const t = useTranslations("FinanceClose")
+  const tCommon = useTranslations("Common")
   const { data, isError, refetch } = useYearEnd()
   const complete = useCompleteYearEndStep()
   const lock = useLockYear()
@@ -42,10 +45,10 @@ function YearEndPage() {
   return (
     <>
       <FinancePageHeader
-        title="Year-end close"
+        title={t("yearEndTitle")}
         figure={
           data ? (
-            <HeaderFigure label={`${data.fiscal_year} · steps complete`}>
+            <HeaderFigure label={t("stepsComplete", { year: data.fiscal_year })}>
               {data.done}/{data.total}
             </HeaderFigure>
           ) : null
@@ -53,7 +56,7 @@ function YearEndPage() {
         actions={
           <Button variant="danger" disabled={!data?.can_lock || data?.locked} onClick={() => setConfirming(true)}>
             <Lock aria-hidden />
-            {data?.locked ? "Year locked" : "Lock fiscal year"}
+            {data?.locked ? t("yearLocked") : t("lockFiscalYear")}
           </Button>
         }
       />
@@ -66,19 +69,18 @@ function YearEndPage() {
           <>
             {data.locked ? (
               <FinanceAlert tone="success" className="text-status-success-fg">
-                {data.fiscal_year} is locked. Every period in the year is sealed and takes no further postings.
+                {t("yearIsLocked", { year: data.fiscal_year })}
               </FinanceAlert>
             ) : (
               <FinanceAlert tone="warning" className="text-status-warning-fg">
-                Year-end close zeroes the income statement into retained earnings and locks every period in the year.
-                This is a one-way operation, so complete every step first.
+                {t("yearEndWarning")}
               </FinanceAlert>
             )}
             <FinanceSection
-              title="Closing steps"
+              title={t("closingSteps")}
               action={
                 <span className="text-content-tertiary text-[13px] leading-5 tabular-nums">
-                  {data.done} of {data.total}
+                  {t("doneOfTotal", { done: data.done, total: data.total })}
                 </span>
               }
             >
@@ -92,7 +94,11 @@ function YearEndPage() {
                       <span className="text-content-primary text-[13px] leading-5 font-medium">{step.title}</span>
                       <span className="text-content-secondary text-xs leading-4">{step.detail}</span>
                     </span>
-                    {step.done ? <StatusPill status="done" label="Done" /> : <StatusPill status="pending" label="Pending" />}
+                    {step.done ? (
+                      <StatusPill status="done" label={t("done")} />
+                    ) : (
+                      <StatusPill status="pending" label={t("pending")} />
+                    )}
                     {!step.done && STEP_ACTION[step.id] ? (
                       <Button
                         variant="secondary"
@@ -102,15 +108,13 @@ function YearEndPage() {
                           complete.mutate(step.id, {
                             onSuccess: () =>
                               toast.success(
-                                step.id === "income_statement"
-                                  ? "FY2025 revenue and expenses are closed into 320101."
-                                  : "Adjusting entries are marked as posted.",
+                                step.id === "income_statement" ? t("incomeStatementClosed") : t("adjustmentsMarkedPosted"),
                               ),
-                            onError: (error) => toast.error(errorMessage(error, "The step could not be completed. Try again.")),
+                            onError: (error) => toast.error(errorMessage(error, t("stepFailed"))),
                           })
                         }
                       >
-                        {STEP_ACTION[step.id]}
+                        {t(STEP_ACTION[step.id] ?? "stepMarkPosted")}
                       </Button>
                     ) : null}
                   </li>
@@ -124,23 +128,20 @@ function YearEndPage() {
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Lock {data?.fiscal_year}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Locking seals every period in the year. No entry can be posted into it again, and it cannot be undone in
-              this prototype.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("lockYearTitle", { year: data?.fiscal_year ?? "" })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("lockYearDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
                 lock.mutate(undefined, {
-                  onSuccess: (state) => toast.success(`${state.fiscal_year} is locked.`),
-                  onError: (error) => toast.error(errorMessage(error, "The year could not be locked. Try again.")),
+                  onSuccess: (state) => toast.success(t("yearLockedToast", { year: state.fiscal_year })),
+                  onError: (error) => toast.error(errorMessage(error, t("lockFailed"))),
                 })
               }
             >
-              Lock fiscal year
+              {t("lockFiscalYear")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

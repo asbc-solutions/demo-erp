@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useRouter } from "@/src/i18n/navigation"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -27,56 +28,59 @@ import {
 import { StatusPill } from "../../../components/shared/status-pill"
 import { VoucherDialog } from "../../../components/shared/voucher-dialog"
 import { useFinanceContacts, useFinanceTreasuries } from "../../../lib/queries/master-data"
-import { formatDate, formatPeriod } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount } from "../../../lib/utils/money"
 import { SUBLEDGER_SIDES } from "../../lib/constants/sides"
 import { useCreateVoucher } from "../../lib/mutations/subledger"
 import { useVouchers } from "../../lib/queries/subledger"
 import type { Side, Voucher } from "../../lib/types/subledger"
 
-const GROUP_OPTIONS = [
-  { value: "none", label: "No grouping" },
-  { value: "treasury", label: "Treasury" },
-  { value: "month", label: "Month" },
-]
+type SubledgerT = ReturnType<typeof useTranslations<"FinanceSubledger">>
 
-function voucherColumns(side: Side): FinanceColumn<Voucher>[] {
+const GROUP_OPTIONS = [
+  { value: "none", labelKey: "groupNone" },
+  { value: "treasury", labelKey: "groupTreasury" },
+  { value: "month", labelKey: "groupMonth" },
+] as const
+
+function voucherColumns(side: Side, t: SubledgerT, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<Voucher>[] {
   return [
-    { id: "number", header: "Voucher no.", cell: (row) => <DocNumber>{row.number}</DocNumber> },
-    { id: "date", header: "Date", hideable: true, cell: (row) => formatDate(row.date) },
+    { id: "number", header: t("colVoucherNo"), cell: (row) => <DocNumber>{row.number}</DocNumber> },
+    { id: "date", header: t("colDate"), hideable: true, cell: (row) => formatDate(row.date) },
     {
       id: "description",
-      header: "Description",
+      header: t("colDescription"),
       hideable: true,
       cell: (row) => <span className="block max-w-72 truncate">{row.description}</span>,
     },
     {
       id: "treasury",
-      header: SUBLEDGER_SIDES[side].vouchers.treasury,
+      header: t(`vouchersTreasury.${side}`),
       hideable: true,
       cell: (row) => row.treasury_name,
     },
     {
       id: "origin",
-      header: "Origin",
+      header: t("colOrigin"),
       hideable: true,
       cell: (row) => (
         <StatusPill
           status={row.origin}
-          label={row.origin === "auto" ? "Auto" : "Manual"}
+          label={row.origin === "auto" ? t("originAuto") : t("originManual")}
           tone={row.origin === "auto" ? "info" : "neutral"}
         />
       ),
     },
     {
       id: "amount",
-      header: "Amount",
+      header: t("colAmount"),
       align: "end",
       cell: (row) => <Amount value={row.amount} currency={row.currency} />,
     },
     {
       id: "status",
-      header: "Status",
+      header: t("colStatus"),
       cell: (row) => (
         <span className="flex flex-wrap gap-1">
           <StatusPill status={row.status} />
@@ -92,6 +96,8 @@ function voucherColumns(side: Side): FinanceColumn<Voucher>[] {
  * 03.05) as a dialog over the list.
  */
 function VoucherListPage({ side, newVoucher = false }: { side: Side; newVoucher?: boolean }) {
+  const t = useTranslations("FinanceSubledger")
+  const { formatDate, formatPeriod } = useFinanceDateFormat()
   const router = useRouter()
   const config = SUBLEDGER_SIDES[side]
   const { data, isError, refetch } = useVouchers(side)
@@ -101,7 +107,7 @@ function VoucherListPage({ side, newVoucher = false }: { side: Side; newVoucher?
   const [dialogOpen, setDialogOpen] = React.useState(newVoucher)
   const [groupBy, setGroupBy] = React.useState("none")
   const [hiddenIds, setHiddenIds] = React.useState<string[]>([])
-  const columns = React.useMemo(() => voucherColumns(side), [side])
+  const columns = React.useMemo(() => voucherColumns(side, t, formatDate), [side, t, formatDate])
 
   const setOpen = (open: boolean) => {
     setDialogOpen(open)
@@ -125,19 +131,19 @@ function VoucherListPage({ side, newVoucher = false }: { side: Side; newVoucher?
         },
       }
     })
-  }, [data, groupBy])
+  }, [data, groupBy, formatPeriod])
 
   return (
     <>
       <FinancePageHeader
-        title={config.vouchers.title}
+        title={t(`vouchersTitle.${side}`)}
         figure={
-          data ? <HeaderFigure label={config.vouchers.figure}>{formatAmount(data.total_base)}</HeaderFigure> : null
+          data ? <HeaderFigure label={t(`vouchersFigure.${side}`)}>{formatAmount(data.total_base)}</HeaderFigure> : null
         }
         actions={
           <Button variant="primary" onClick={() => setOpen(true)}>
             <Plus aria-hidden />
-            {config.vouchers.newLabel}
+            {t(`vouchersNew.${side}`)}
           </Button>
         }
       />
@@ -145,27 +151,35 @@ function VoucherListPage({ side, newVoucher = false }: { side: Side; newVoucher?
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : !data ? (
-          <div aria-busy aria-label={`Loading ${config.vouchers.title.toLowerCase()}`} className="flex flex-col gap-6">
+          <div aria-busy aria-label={t(`vouchersLoading.${side}`)} className="flex flex-col gap-6">
             <FinanceTilesSkeleton />
             <Skeleton className="h-96 rounded-lg" />
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Vouchers" value={data.count} />
-              <KpiCard layout="bar" accent="teal" label="Total (EGP)" value={formatAmount(data.total_base)} />
+              <KpiCard layout="bar" accent="indigo" label={t("vouchers")} value={data.count} />
+              <KpiCard layout="bar" accent="teal" label={t("totalEgp")} value={formatAmount(data.total_base)} />
               <KpiCard
                 layout="bar"
                 accent="amber"
-                label="Average (EGP)"
+                label={t("averageEgp")}
                 value={formatAmount(data.average_base)}
-                caption={data.unallocated_count > 0 ? `${data.unallocated_count} not yet allocated` : undefined}
+                caption={
+                  data.unallocated_count > 0
+                    ? t("notYetAllocated", { count: data.unallocated_count })
+                    : undefined
+                }
               />
             </div>
 
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <GroupBySelect value={groupBy} onValueChange={setGroupBy} options={GROUP_OPTIONS} />
+                <GroupBySelect
+                  value={groupBy}
+                  onValueChange={setGroupBy}
+                  options={GROUP_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
+                />
                 <ColumnChooser
                   columns={columns
                     .filter((column) => column.hideable)
@@ -175,7 +189,7 @@ function VoucherListPage({ side, newVoucher = false }: { side: Side; newVoucher?
                 />
               </div>
               <FinanceTable
-                caption={config.vouchers.caption}
+                caption={t(`vouchersCaption.${side}`)}
                 columns={columns}
                 rows={data.items}
                 groups={groups}
@@ -205,10 +219,10 @@ function VoucherListPage({ side, newVoucher = false }: { side: Side; newVoucher?
             },
             {
               onSuccess: (voucher) => {
-                toast.success(`${voucher.number} was saved as a draft.`)
+                toast.success(t("voucherSavedDraft", { number: voucher.number }))
                 setOpen(false)
               },
-              onError: () => toast.error(`The ${config.vouchers.noun} could not be saved. Try again.`),
+              onError: () => toast.error(t(`voucherSaveFailed.${side}`)),
             },
           )
         }

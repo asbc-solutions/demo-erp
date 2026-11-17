@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -16,7 +17,7 @@ import {
 import { Button } from "@/src/shared/components/ui/button"
 import { Textarea } from "@/src/shared/components/ui/textarea"
 
-import { toastMutationError } from "../../components/shared/sales-error-state"
+import { useToastMutationError } from "../../components/shared/sales-error-state"
 import { useBlockCustomer } from "../../lib/mutations/customers"
 import type { CustomerListItem } from "../../lib/types"
 
@@ -24,6 +25,9 @@ export function BlockCustomerDialog({
   customer,
   onOpenChange,
 }: Readonly<{ customer: CustomerListItem | null; onOpenChange: (open: boolean) => void }>) {
+  const t = useTranslations("SalesCustomers")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [reason, setReason] = React.useState("")
   const blockCustomer = useBlockCustomer()
   const isValid = reason.trim().length >= 10
@@ -34,10 +38,10 @@ export function BlockCustomerDialog({
       { id: customer.id, payload: { reason: reason.trim() } },
       {
         onSuccess: () => {
-          toast.success(`${customer.name} blocked.`)
+          toast.success(t("blockedToast", { name: customer.name }))
           onOpenChange(false)
         },
-        onError: (err) => toastMutationError(err, "Failed to block customer"),
+        onError: (err) => toastMutationError(err, t("blockFailed")),
       }
     )
   }
@@ -46,27 +50,25 @@ export function BlockCustomerDialog({
     <AlertDialog open={customer !== null} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Block {customer?.name}?</AlertDialogTitle>
+          <AlertDialogTitle>{t("blockTitle", { name: customer?.name ?? "" })}</AlertDialogTitle>
           <AlertDialogDescription>
-            Blocking this customer will prevent any new sales orders from being confirmed for
-            their account. Existing confirmed orders and invoices are not affected. You can
-            unblock them at any time.
+            {t("blockDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex flex-col gap-1.5 px-6 pb-6 text-start">
-          <span className="text-xs font-medium text-content-secondary">Reason for blocking</span>
+          <span className="text-xs font-medium text-content-secondary">{t("blockReason")}</span>
           <Textarea
             value={reason}
             onChange={(event) => setReason(event.target.value)}
-            placeholder="e.g. Payment disputes, legal hold…"
+            placeholder={t("blockReasonPlaceholder")}
             aria-invalid={reason.length > 0 && !isValid}
           />
           {reason.length > 0 && !isValid ? (
-            <span className="text-brand-danger text-xs">Reason must be at least 10 characters.</span>
+            <span className="text-brand-danger text-xs">{t("blockReasonMin")}</span>
           ) : null}
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
           <Button
             type="button"
             variant="danger"
@@ -74,7 +76,7 @@ export function BlockCustomerDialog({
             onClick={handleConfirm}
           >
             {blockCustomer.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Block Customer
+            {t("blockCustomer")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

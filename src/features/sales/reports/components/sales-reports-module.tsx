@@ -2,7 +2,10 @@
 
 import * as React from "react"
 import { Download, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
@@ -21,7 +24,7 @@ import {
 } from "@/src/shared/components/ui/select"
 import { cn } from "@/src/shared/lib/utils/utils"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesSectionSpinner } from "../../components/shared/sales-loading"
 import { formatCurrency } from "../../lib/utils/currency"
 import { computeDateRange, type DateRangePreset } from "../../lib/utils/date-range"
@@ -38,24 +41,26 @@ import type { InvoiceStatus, ReportType, TotalSalesReportParams } from "../../li
 
 const COLOR_PALETTE = ["#8555ed", "#fb923c", "#3b82f6", "#ec4899", "#14b8a6", "#9ca3af"]
 
-const trendConfig = { amount: { label: "Revenue", color: "#4f46e5" } } satisfies ChartConfig
-const barConfig = { value: { label: "Revenue", color: "#4f46e5" } } satisfies ChartConfig
-const pieConfig = { value: { label: "Revenue", color: "#4f46e5" } } satisfies ChartConfig
+/** Chart series config; `label` is the translated series name shown in tooltips. */
+function revenueConfig(key: string, label: string): ChartConfig {
+  return { [key]: { label, color: "#4f46e5" } }
+}
 
-const DATE_RANGE_OPTIONS: { value: DateRangePreset; label: string }[] = [
-  { value: "30d", label: "Last 30 days" },
-  { value: "90d", label: "Last 90 days" },
-  { value: "year", label: "This year" },
-  { value: "all", label: "All time" },
-]
+const DATE_RANGE_OPTIONS = [
+  { value: "30d", labelKey: "last30Days" },
+  { value: "90d", labelKey: "last90Days" },
+  { value: "year", labelKey: "thisYear" },
+  { value: "all", labelKey: "allTime" },
+] as const satisfies readonly { value: DateRangePreset; labelKey: string }[]
 
-const INVOICE_STATUS_OPTIONS: { value: InvoiceStatus | "all"; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "draft", label: "Draft" },
-  { value: "posted", label: "Posted" },
-  { value: "sent", label: "Sent" },
-  { value: "closed", label: "Closed" },
-  { value: "cancelled", label: "Cancelled" },
+/** Labels come from `Common.all` and the `SalesShared.invoiceStatus` enum map. */
+const INVOICE_STATUS_OPTIONS: { value: InvoiceStatus | "all" }[] = [
+  { value: "all" },
+  { value: "draft" },
+  { value: "posted" },
+  { value: "sent" },
+  { value: "closed" },
+  { value: "cancelled" },
 ]
 
 function formatCompact(value: number) {
@@ -65,10 +70,10 @@ function formatCompact(value: number) {
   return String(value)
 }
 
-function formatShortDate(iso: string) {
+function formatShortDate(iso: string, locale: string) {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return date.toLocaleDateString(locale, { month: "short", day: "numeric" })
 }
 
 function niceTicks(max: number) {
@@ -81,13 +86,15 @@ function ReportCardHeader({
   onExport,
   isExporting,
 }: Readonly<{ title: string; onExport?: () => void; isExporting?: boolean }>) {
+  const tCommon = useTranslations("Common")
+
   return (
     <div className="border-stroke-light flex min-h-[74px] w-full items-center justify-between border-b px-5 py-4 sm:px-6">
       <h2 className="text-[14px] leading-[22px] font-semibold text-content-primary">{title}</h2>
       {onExport ? (
         <Button type="button" variant="ghost" size="sm" onClick={onExport} disabled={isExporting}>
           {isExporting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Download aria-hidden />}
-          Export
+          {tCommon("export")}
         </Button>
       ) : null}
     </div>
@@ -116,25 +123,30 @@ function ReportCard({
 }
 
 function useReportExport() {
+  const t = useTranslations("SalesReports")
+  const toastMutationError = useToastMutationError()
   const exportReport = useExportReport()
   return (type: ReportType, params: TotalSalesReportParams) =>
     exportReport.mutate(
       { type, params },
       {
         onSuccess: (url) => window.open(url, "_blank"),
-        onError: (err) => toastMutationError(err, "Failed to export report"),
+        onError: (err) => toastMutationError(err, t("exportFailed")),
       },
     )
 }
 
 function RevenueTrendCard({ params }: Readonly<{ params: TotalSalesReportParams }>) {
+  const t = useTranslations("SalesReports")
+  const intlLocale = useIntlLocale()
+  const trendConfig = revenueConfig("amount", t("revenue"))
   const { data, isLoading, isError, refetch } = useTotalSalesReport(params)
   const exportReport = useExportReport()
   const triggerExport = useReportExport()
 
   return (
     <ReportCard
-      title="Total Sales by Date Range"
+      title={t("totalSalesTitle")}
       className="lg:col-span-2"
       onExport={() => triggerExport("total-sales", params)}
       isExporting={exportReport.isPending}
@@ -142,12 +154,15 @@ function RevenueTrendCard({ params }: Readonly<{ params: TotalSalesReportParams 
       {isLoading ? (
         <SalesSectionSpinner />
       ) : isError || !data ? (
-        <SalesErrorState message="Failed to load report." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
       ) : (
         <div className="px-3 pt-5 pb-4 sm:px-5">
           <p className="mb-3 px-2 text-xs text-content-tertiary">
-            <span className="font-semibold text-content-primary">{formatCurrency(data.total_amount)}</span> total
-            across <span className="font-semibold text-content-primary">{data.invoice_count}</span> invoices
+            {t.rich("totalAcross", {
+              amount: formatCurrency(data.total_amount),
+              count: data.invoice_count,
+              b: (chunks) => <span className="font-semibold text-content-primary">{chunks}</span>,
+            })}
           </p>
           <ChartContainer config={trendConfig} className="aspect-auto h-[290px] w-full" initialDimension={{ width: 900, height: 290 }}>
             <AreaChart data={data.series} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
@@ -160,7 +175,7 @@ function RevenueTrendCard({ params }: Readonly<{ params: TotalSalesReportParams 
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.7} />
               <XAxis
                 dataKey="date"
-                tickFormatter={formatShortDate}
+                tickFormatter={(iso: string) => formatShortDate(iso, intlLocale)}
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
@@ -204,6 +219,8 @@ function RevenueTrendCard({ params }: Readonly<{ params: TotalSalesReportParams 
 }
 
 function SalesByCustomerCard({ params }: Readonly<{ params: TotalSalesReportParams }>) {
+  const t = useTranslations("SalesReports")
+  const barConfig = revenueConfig("value", t("revenue"))
   const { data, isLoading, isError, refetch } = useSalesByCustomerReport(params)
   const exportReport = useExportReport()
   const triggerExport = useReportExport()
@@ -216,16 +233,16 @@ function SalesByCustomerCard({ params }: Readonly<{ params: TotalSalesReportPara
 
   return (
     <ReportCard
-      title="Sales by Customer"
+      title={t("byCustomerTitle")}
       onExport={() => triggerExport("sales-by-customer", params)}
       isExporting={exportReport.isPending}
     >
       {isLoading ? (
         <SalesSectionSpinner />
       ) : isError ? (
-        <SalesErrorState message="Failed to load report." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
       ) : rows.length === 0 ? (
-        <p className="px-5 py-10 text-center text-xs text-content-tertiary">No data for this filter.</p>
+        <p className="px-5 py-10 text-center text-xs text-content-tertiary">{t("noDataForFilter")}</p>
       ) : (
         <div className="overflow-x-auto px-3 pt-4 pb-5 sm:px-5">
           <ChartContainer config={barConfig} className="aspect-auto h-[310px] w-full min-w-[520px]" initialDimension={{ width: 560, height: 310 }}>
@@ -270,6 +287,8 @@ function SalesByCustomerCard({ params }: Readonly<{ params: TotalSalesReportPara
 }
 
 function SalesBySalespersonCard({ params }: Readonly<{ params: TotalSalesReportParams }>) {
+  const t = useTranslations("SalesReports")
+  const barConfig = revenueConfig("value", t("revenue"))
   const { data, isLoading, isError, refetch } = useSalesBySalespersonReport(params)
   const exportReport = useExportReport()
   const triggerExport = useReportExport()
@@ -282,16 +301,16 @@ function SalesBySalespersonCard({ params }: Readonly<{ params: TotalSalesReportP
 
   return (
     <ReportCard
-      title="Sales by Salesperson"
+      title={t("bySalespersonTitle")}
       onExport={() => triggerExport("sales-by-salesperson", params)}
       isExporting={exportReport.isPending}
     >
       {isLoading ? (
         <SalesSectionSpinner />
       ) : isError ? (
-        <SalesErrorState message="Failed to load report." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
       ) : rows.length === 0 ? (
-        <p className="px-5 py-10 text-center text-xs text-content-tertiary">No data for this filter.</p>
+        <p className="px-5 py-10 text-center text-xs text-content-tertiary">{t("noDataForFilter")}</p>
       ) : (
         <div className="overflow-x-auto px-3 pt-4 pb-5 sm:px-5">
           <ChartContainer config={barConfig} className="aspect-auto h-[310px] w-full min-w-[520px]" initialDimension={{ width: 560, height: 310 }}>
@@ -336,6 +355,8 @@ function SalesBySalespersonCard({ params }: Readonly<{ params: TotalSalesReportP
 }
 
 function TopCustomersProductsCard() {
+  const t = useTranslations("SalesReports")
+  const pieConfig = revenueConfig("value", t("revenue"))
   const { data, isLoading, isError, refetch } = useSalesDashboard()
 
   const topCustomers = (data?.top_customers ?? []).map((c, index) => ({
@@ -346,17 +367,17 @@ function TopCustomersProductsCard() {
   const topProducts = data?.top_products ?? []
 
   return (
-    <ReportCard title="Top Customers & Top Products" className="lg:col-span-2">
+    <ReportCard title={t("topTitle")} className="lg:col-span-2">
       {isLoading ? (
         <SalesSectionSpinner />
       ) : isError || !data ? (
-        <SalesErrorState message="Failed to load dashboard data." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadDashboardFailed")} onRetry={() => void refetch()} />
       ) : (
         <div className="grid gap-6 px-5 py-5 sm:px-6 lg:grid-cols-2 lg:gap-7">
           <div className="min-w-0">
-            <h3 className="mb-3 text-xs font-medium text-content-secondary">Top Customers</h3>
+            <h3 className="mb-3 text-xs font-medium text-content-secondary">{t("topCustomers")}</h3>
             {topCustomers.length === 0 ? (
-              <p className="text-xs text-content-tertiary">No data yet.</p>
+              <p className="text-xs text-content-tertiary">{t("noData")}</p>
             ) : (
               <div className="flex min-h-[218px] flex-col items-center sm:flex-row">
                 <ChartContainer config={pieConfig} className="aspect-square h-[210px] w-full max-w-[380px]" initialDimension={{ width: 340, height: 210 }}>
@@ -392,9 +413,9 @@ function TopCustomersProductsCard() {
           </div>
 
           <div className="min-w-0">
-            <h3 className="mb-3 text-xs font-medium text-content-secondary">Top Products</h3>
+            <h3 className="mb-3 text-xs font-medium text-content-secondary">{t("topProducts")}</h3>
             {topProducts.length === 0 ? (
-              <p className="text-xs text-content-tertiary">No data yet.</p>
+              <p className="text-xs text-content-tertiary">{t("noData")}</p>
             ) : (
               <ol className="flex flex-col gap-2">
                 {topProducts.map((product, index) => (
@@ -420,6 +441,9 @@ function TopCustomersProductsCard() {
 }
 
 export function SalesReportsModule() {
+  const t = useTranslations("SalesReports")
+  const tShared = useTranslations("SalesShared")
+  const tCommon = useTranslations("Common")
   const [dateRange, setDateRange] = React.useState<DateRangePreset>("90d")
   const [customerId, setCustomerId] = React.useState("all")
   const [salespersonId, setSalespersonId] = React.useState("all")
@@ -441,28 +465,28 @@ export function SalesReportsModule() {
 
   return (
     <div className="bg-surface-page flex flex-1 flex-col gap-5 p-4 sm:p-6">
-      <section aria-label="Report filters" className="flex flex-wrap items-center gap-2.5 xl:justify-between">
+      <section aria-label={t("filtersLabel")} className="flex flex-wrap items-center gap-2.5 xl:justify-between">
         <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangePreset)}>
-          <SelectTrigger aria-label="Date Range" className="h-10 w-auto min-w-[180px] gap-1 rounded-[10px] px-3 text-[13px] shadow-xs">
-            <span className="text-content-tertiary">Date Range:</span>
+          <SelectTrigger aria-label={t("dateRange")} className="h-10 w-auto min-w-[180px] gap-1 rounded-[10px] px-3 text-[13px] shadow-xs">
+            <span className="text-content-tertiary">{t("dateRangePrefix")}</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {DATE_RANGE_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                {t(option.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select value={customerId} onValueChange={setCustomerId}>
-          <SelectTrigger aria-label="Customer" className="h-10 w-auto min-w-[160px] gap-1 rounded-[10px] px-3 text-[13px] shadow-xs">
-            <span className="text-content-tertiary">Customer:</span>
+          <SelectTrigger aria-label={t("customer")} className="h-10 w-auto min-w-[160px] gap-1 rounded-[10px] px-3 text-[13px] shadow-xs">
+            <span className="text-content-tertiary">{t("customerPrefix")}</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="all">{tCommon("all")}</SelectItem>
             {customers.map((customer) => (
               <SelectItem key={customer.id} value={customer.id}>
                 {customer.name}
@@ -472,12 +496,12 @@ export function SalesReportsModule() {
         </Select>
 
         <Select value={salespersonId} onValueChange={setSalespersonId}>
-          <SelectTrigger aria-label="Salesperson" className="h-10 w-auto min-w-[160px] gap-1 rounded-[10px] px-3 text-[13px] shadow-xs">
-            <span className="text-content-tertiary">Salesperson:</span>
+          <SelectTrigger aria-label={t("salesperson")} className="h-10 w-auto min-w-[160px] gap-1 rounded-[10px] px-3 text-[13px] shadow-xs">
+            <span className="text-content-tertiary">{t("salespersonPrefix")}</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="all">{tCommon("all")}</SelectItem>
             {salespeople.map((person) => (
               <SelectItem key={person.id} value={person.id}>
                 {person.name}
@@ -487,14 +511,14 @@ export function SalesReportsModule() {
         </Select>
 
         <Select value={invoiceStatus} onValueChange={(v) => setInvoiceStatus(v as InvoiceStatus | "all")}>
-          <SelectTrigger aria-label="Invoice Status" className="h-10 w-auto min-w-[160px] gap-1 rounded-[10px] px-3 text-[13px] shadow-xs">
-            <span className="text-content-tertiary">Invoice Status:</span>
+          <SelectTrigger aria-label={t("invoiceStatus")} className="h-10 w-auto min-w-[160px] gap-1 rounded-[10px] px-3 text-[13px] shadow-xs">
+            <span className="text-content-tertiary">{t("invoiceStatusPrefix")}</span>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {INVOICE_STATUS_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                {option.value === "all" ? tCommon("all") : tShared(`invoiceStatus.${option.value}`)}
               </SelectItem>
             ))}
           </SelectContent>

@@ -17,11 +17,13 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge, type badgeVariants } from "@/src/shared/components/ui/badge"
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import {
   useConnectIntegration,
@@ -54,9 +56,9 @@ const STATUS_BADGE_VARIANT: Record<IntegrationStatus, BadgeVariant> = {
   disconnected: "neutral",
 }
 
-function formatSyncDate(iso: string | null) {
+function formatSyncDate(iso: string | null, intlLocale: string) {
   if (!iso) return null
-  return new Date(iso).toLocaleDateString("en-US", {
+  return new Date(iso).toLocaleDateString(intlLocale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -67,7 +69,11 @@ export function IntegrationCard({
   integration,
   canManage,
 }: Readonly<{ integration: Integration; canManage: boolean }>) {
+  const t = useTranslations("IntegrationsCard")
+  const tIntegrations = useTranslations("Integrations")
+  const intlLocale = useIntlLocale()
   const Icon = PROVIDER_ICON[integration.provider] ?? FALLBACK_ICON
+  const name = integration.label
 
   const connect = useConnectIntegration()
   const disconnect = useDisconnectIntegration()
@@ -75,22 +81,22 @@ export function IntegrationCard({
 
   const isConnected = integration.status !== "disconnected"
   const isMutating = connect.isPending || disconnect.isPending || recordSync.isPending
-  const lastSyncedAt = formatSyncDate(integration.last_sync.at)
+  const lastSyncedAt = formatSyncDate(integration.last_sync.at, intlLocale)
 
   const handleConnect = () => {
     connect.mutate(
       { provider: integration.provider },
       {
-        onSuccess: () => toast.success(`${integration.label} connected`),
-        onError: (err) => toastMutationError(err, `Failed to connect ${integration.label}`),
+        onSuccess: () => toast.success(t("connectedToast", { name })),
+        onError: (err) => toastMutationError(err, t("connectFailed", { name }), tIntegrations),
       },
     )
   }
 
   const handleDisconnect = () => {
     disconnect.mutate(integration.provider, {
-      onSuccess: () => toast.success(`${integration.label} disconnected`),
-      onError: (err) => toastMutationError(err, `Failed to disconnect ${integration.label}`),
+      onSuccess: () => toast.success(t("disconnectedToast", { name })),
+      onError: (err) => toastMutationError(err, t("disconnectFailed", { name }), tIntegrations),
     })
   }
 
@@ -101,10 +107,10 @@ export function IntegrationCard({
         onSuccess: (data) =>
           toast.success(
             data.status === "error"
-              ? `${integration.label} sync needs attention`
-              : `${integration.label} synced`,
+              ? t("syncNeedsAttention", { name })
+              : t("syncedToast", { name }),
           ),
-        onError: (err) => toastMutationError(err, `Failed to sync ${integration.label}`),
+        onError: (err) => toastMutationError(err, t("syncFailed", { name }), tIntegrations),
       },
     )
   }
@@ -131,8 +137,8 @@ export function IntegrationCard({
         {integration.status === "error" && integration.last_sync.message
           ? integration.last_sync.message
           : lastSyncedAt
-            ? `Last synced ${lastSyncedAt}`
-            : "Never synced"}
+            ? t("lastSynced", { date: lastSyncedAt })
+            : t("neverSynced")}
       </p>
 
       {canManage ? (
@@ -150,7 +156,7 @@ export function IntegrationCard({
               ) : (
                 <RefreshCw className="size-3.5" aria-hidden />
               )}
-              Sync now
+              {t("syncNow")}
             </Button>
             <Button
               type="button"
@@ -164,7 +170,7 @@ export function IntegrationCard({
               ) : (
                 <Unplug className="size-3.5" aria-hidden />
               )}
-              Disconnect
+              {t("disconnect")}
             </Button>
           </div>
         ) : (
@@ -180,7 +186,7 @@ export function IntegrationCard({
             ) : (
               <Plug className="size-3.5" aria-hidden />
             )}
-            Connect
+            {t("connect")}
           </Button>
         )
       ) : null}

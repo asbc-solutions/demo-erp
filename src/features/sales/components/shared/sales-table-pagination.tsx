@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import {
   Pagination,
   PaginationButton,
@@ -11,14 +13,24 @@ import {
 } from "@/src/shared/components/ui/pagination"
 import { cn } from "@/src/shared/lib/utils/utils"
 
+type SalesPaginationItem = "customers" | "invoices" | "orders" | "products" | "quotations"
+
+const RANGE_KEY = {
+  customers: "showingCustomers",
+  invoices: "showingInvoices",
+  orders: "showingOrders",
+  products: "showingProducts",
+  quotations: "showingQuotations",
+} as const satisfies Record<SalesPaginationItem, string>
+
 type SalesTablePaginationProps = Readonly<{
   page: number
   pageCount: number
   total: number
   pageSize: number
   onPageChange: (page: number) => void
-  /** Plural noun for the "Showing X-Y of Z {itemLabel}" line, e.g. "customers". */
-  itemLabel: string
+  /** Which records the "Showing X-Y of Z …" line counts. */
+  itemLabel: SalesPaginationItem
   className?: string
 }>
 
@@ -46,6 +58,8 @@ export function SalesTablePagination({
   itemLabel,
   className,
 }: SalesTablePaginationProps) {
+  const t = useTranslations("SalesShared")
+
   if (total === 0) return null
 
   const from = (page - 1) * pageSize + 1
@@ -59,9 +73,12 @@ export function SalesTablePagination({
       )}
     >
       <p className="text-sm text-content-tertiary">
-        Showing <span className="font-medium text-content-primary">{from}</span>–
-        <span className="font-medium text-content-primary">{to}</span> of{" "}
-        <span className="font-medium text-content-primary">{total}</span> {itemLabel}
+        {t.rich(RANGE_KEY[itemLabel], {
+          from,
+          to,
+          total,
+          b: (chunks) => <span className="font-medium text-content-primary">{chunks}</span>,
+        })}
       </p>
 
       {pageCount > 1 && (

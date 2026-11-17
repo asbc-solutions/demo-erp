@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -22,6 +23,8 @@ import {
   SelectValue,
 } from "@/src/shared/components/ui/select"
 import type { ApiError } from "@/src/shared/lib/types/api"
+
+import { contactErrorText } from "./contact-form-errors"
 
 import { useCreateEmergencyContact } from "../../lib/mutations/emergency-contacts"
 import {
@@ -44,7 +47,7 @@ const DEFAULT_VALUES: EmergencyContactFormValues = {
   is_primary: false,
 }
 
-function apiErrorDescription(err: unknown) {
+function apiErrorDescription(err: unknown, fallback: string) {
   const apiErr = err as ApiError
   const fields = apiErr.details?.fields as Record<string, string[]> | undefined
   if (fields) {
@@ -52,7 +55,7 @@ function apiErrorDescription(err: unknown) {
       .map(([field, messages]) => `${field.replace(/_/g, " ")}: ${messages[0]}`)
       .join(" | ")
   }
-  return apiErr.message ?? "Please check the details and try again."
+  return apiErr.message ?? fallback
 }
 
 export function AddEmergencyContactDialog({
@@ -61,6 +64,8 @@ export function AddEmergencyContactDialog({
   employees,
   employeesLoading = false,
 }: AddEmergencyContactDialogProps) {
+  const t = useTranslations("HrEmergencyContacts")
+  const tCommon = useTranslations("Common")
   const createContact = useCreateEmergencyContact()
   const [selectedEmployeeId, setSelectedEmployeeId] = React.useState("")
 
@@ -90,7 +95,7 @@ export function AddEmergencyContactDialog({
 
   const onSubmit = (values: EmergencyContactFormValues) => {
     if (!selectedEmployeeId) {
-      toast.error("Please select an employee")
+      toast.error(t("selectEmployeeRequired"))
       return
     }
 
@@ -110,12 +115,12 @@ export function AddEmergencyContactDialog({
       { employeeId: selectedEmployeeId, payload },
       {
         onSuccess: (contact) => {
-          toast.success("Contact added", { description: contact.full_name })
+          toast.success(t("contactAdded"), { description: contact.full_name })
           handleOpenChange(false)
         },
         onError: (err) => {
-          toast.error("Failed to add contact", {
-            description: apiErrorDescription(err),
+          toast.error(t("addFailed"), {
+            description: apiErrorDescription(err, t("checkDetailsRetry")),
           })
         },
       }
@@ -132,17 +137,17 @@ export function AddEmergencyContactDialog({
         >
           <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
-              Add emergency contact
+              {t("addDialogTitle")}
             </DialogTitle>
             <p className="text-content-tertiary text-sm leading-5">
-              Register a new emergency contact for an employee
+              {t("addDialogDescription")}
             </p>
           </div>
 
           <div className="flex flex-col gap-4 pt-1">
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Employee <span className="text-brand-danger">*</span>
+                {t("colEmployee")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={selectedEmployeeId || undefined}
@@ -153,8 +158,8 @@ export function AddEmergencyContactDialog({
                   <SelectValue
                     placeholder={
                       employeesLoading
-                        ? "Loading employees..."
-                        : "Select employee..."
+                        ? t("loadingEmployees")
+                        : t("selectEmployee")
                     }
                   />
                 </SelectTrigger>
@@ -173,17 +178,17 @@ export function AddEmergencyContactDialog({
                 htmlFor="ec-name"
                 className="text-sm font-semibold text-content-primary"
               >
-                Name <span className="text-brand-danger">*</span>
+                {tCommon("name")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 id="ec-name"
                 {...register("full_name")}
-                placeholder="Full name"
+                placeholder={t("fullNamePlaceholder")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white text-sm"
               />
               {errors.full_name && (
                 <p className="text-xs text-brand-danger">
-                  {errors.full_name.message}
+                  {contactErrorText(t, errors.full_name.message)}
                 </p>
               )}
             </div>
@@ -193,17 +198,17 @@ export function AddEmergencyContactDialog({
                 htmlFor="ec-relationship"
                 className="text-sm font-semibold text-content-primary"
               >
-                Relationship <span className="text-brand-danger">*</span>
+                {t("relationship")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 id="ec-relationship"
                 {...register("relationship")}
-                placeholder="e.g. Spouse, Parent, Sibling"
+                placeholder={t("relationshipPlaceholder")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white text-sm"
               />
               {errors.relationship && (
                 <p className="text-xs text-brand-danger">
-                  {errors.relationship.message}
+                  {contactErrorText(t, errors.relationship.message)}
                 </p>
               )}
             </div>
@@ -214,7 +219,7 @@ export function AddEmergencyContactDialog({
                   htmlFor="ec-phone"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Phone <span className="text-brand-danger">*</span>
+                  {tCommon("phone")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   id="ec-phone"
@@ -225,7 +230,7 @@ export function AddEmergencyContactDialog({
                 />
                 {errors.phone_primary && (
                   <p className="text-xs text-brand-danger">
-                    {errors.phone_primary.message}
+                    {contactErrorText(t, errors.phone_primary.message)}
                   </p>
                 )}
               </div>
@@ -235,7 +240,7 @@ export function AddEmergencyContactDialog({
                   htmlFor="ec-phone2"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Secondary phone
+                  {t("secondaryPhone")}
                 </Label>
                 <Input
                   id="ec-phone2"
@@ -246,7 +251,7 @@ export function AddEmergencyContactDialog({
                 />
                 {errors.phone_secondary && (
                   <p className="text-xs text-brand-danger">
-                    {errors.phone_secondary.message}
+                    {contactErrorText(t, errors.phone_secondary.message)}
                   </p>
                 )}
               </div>
@@ -257,7 +262,7 @@ export function AddEmergencyContactDialog({
                 htmlFor="ec-email"
                 className="text-sm font-semibold text-content-primary"
               >
-                Email
+                {tCommon("email")}
               </Label>
               <Input
                 id="ec-email"
@@ -268,7 +273,7 @@ export function AddEmergencyContactDialog({
               />
               {errors.email && (
                 <p className="text-xs text-brand-danger">
-                  {errors.email.message}
+                  {contactErrorText(t, errors.email.message)}
                 </p>
               )}
             </div>
@@ -278,12 +283,12 @@ export function AddEmergencyContactDialog({
                 htmlFor="ec-address"
                 className="text-sm font-semibold text-content-primary"
               >
-                Address
+                {t("address")}
               </Label>
               <Input
                 id="ec-address"
                 {...register("address")}
-                placeholder="Street, city"
+                placeholder={t("addressPlaceholder")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white text-sm"
               />
             </div>
@@ -300,7 +305,7 @@ export function AddEmergencyContactDialog({
                 htmlFor="ec-primary"
                 className="cursor-pointer text-sm font-semibold text-content-primary"
               >
-                Mark as primary contact
+                {t("markAsPrimary")}
               </Label>
             </div>
           </div>
@@ -313,7 +318,7 @@ export function AddEmergencyContactDialog({
               className="h-9 rounded-md px-4 text-sm font-semibold"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -322,7 +327,7 @@ export function AddEmergencyContactDialog({
               disabled={createContact.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {createContact.isPending ? "Adding..." : "Add contact"}
+              {createContact.isPending ? t("adding") : t("addContactSubmit")}
             </Button>
           </div>
         </form>

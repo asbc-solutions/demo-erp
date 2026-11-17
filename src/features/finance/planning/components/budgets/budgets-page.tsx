@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -37,37 +38,40 @@ import { StatusPill } from "../../../components/shared/status-pill"
 import { errorMessage } from "../../../lib/utils/api"
 import { useCreateBudget } from "../../lib/mutations/planning"
 import { useBudgets, useCostCenters } from "../../lib/queries/planning"
-import type { Budget } from "../../lib/types/planning"
+import type { Budget, PlanningMessageKey, PlanningTranslator } from "../../lib/types/planning"
 
-const SESSION_NOTE =
-  "Saved records live in this session only. The seeded data is never modified, so a reload returns the prototype to its known state."
+/** Messages are `FinancePlanning` keys, translated where the error is rendered. */
+const msg = (key: PlanningMessageKey) => key
 
 const budgetSchema = z.object({
-  name: z.string().trim().min(1, "Name the budget."),
+  name: z.string().trim().min(1, msg("errBudgetName")),
   year: z
     .string()
     .trim()
-    .refine((value) => Number.isInteger(Number(value)) && Number(value) >= 2020 && Number(value) <= 2035, "Enter a year between 2020 and 2035."),
-  scope: z.string().min(1, "Choose what the budget covers."),
+    .refine((value) => Number.isInteger(Number(value)) && Number(value) >= 2020 && Number(value) <= 2035, msg("errBudgetYear")),
+  scope: z.string().min(1, msg("errBudgetScope")),
   annual: z
     .string()
     .trim()
-    .refine((value) => Number(value) > 0, "Enter the annual budget above zero."),
+    .refine((value) => Number(value) > 0, msg("errBudgetAnnual")),
 })
 type BudgetValues = z.infer<typeof budgetSchema>
 
 const EMPTY: BudgetValues = { name: "", year: "2026", scope: "all", annual: "" }
 
-const COLUMNS: FinanceColumn<Budget>[] = [
-  { id: "code", header: "Budget", cell: (row) => <DocNumber>{row.code}</DocNumber> },
-  { id: "name", header: "Name", cell: (row) => <span className="text-content-primary font-medium">{row.name}</span> },
-  { id: "year", header: "Year", cell: (row) => row.year },
-  { id: "scope", header: "Scope", cell: (row) => <span className="text-content-secondary">{row.scope_label}</span> },
-  { id: "total", header: "Total (EGP)", align: "end", cell: (row) => <Amount value={row.total} /> },
-  { id: "status", header: "Status", cell: (row) => <StatusPill status={row.status} /> },
-]
+function buildColumns(t: PlanningTranslator): FinanceColumn<Budget>[] {
+  return [
+    { id: "code", header: t("budget"), cell: (row) => <DocNumber>{row.code}</DocNumber> },
+    { id: "name", header: t("name"), cell: (row) => <span className="text-content-primary font-medium">{row.name}</span> },
+    { id: "year", header: t("year"), cell: (row) => row.year },
+    { id: "scope", header: t("scope"), cell: (row) => <span className="text-content-secondary">{row.scope_label}</span> },
+    { id: "total", header: t("totalEgp"), align: "end", cell: (row) => <Amount value={row.total} /> },
+    { id: "status", header: t("status"), cell: (row) => <StatusPill status={row.status} /> },
+  ]
+}
 
 function NewBudgetDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations("FinancePlanning")
   const router = useRouter()
   const create = useCreateBudget()
   const { data: centers } = useCostCenters()
@@ -93,36 +97,33 @@ function NewBudgetDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
               { name: values.name, year: Number(values.year), scope: values.scope, annual: Number(values.annual) },
               {
                 onSuccess: (budget) => {
-                  toast.success(`${budget.code} is saved as a draft.`)
+                  toast.success(t("toastBudgetDraft", { code: budget.code }))
                   onOpenChange(false)
                   router.push(`/finance/budgets/${budget.id}`)
                 },
-                onError: (error) => toast.error(errorMessage(error, "The budget could not be saved. Try again.")),
+                onError: (error) => toast.error(errorMessage(error, t("errorSaveBudget"))),
               },
             ),
           )}
         >
           <DialogHeader>
-            <DialogTitle>New budget</DialogTitle>
-            <DialogDescription>
-              A budget is measured against posted actuals. Saving creates it as a draft; approving and locking are separate
-              steps.
-            </DialogDescription>
+            <DialogTitle>{t("newBudget")}</DialogTitle>
+            <DialogDescription>{t("newBudgetDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Field>
-              <FieldLabel htmlFor="budget-name">Name *</FieldLabel>
-              <Input id="budget-name" placeholder="e.g. FY2027 operating budget" aria-invalid={Boolean(errors.name)} {...register("name")} />
-              {errors.name ? <FieldError>{errors.name.message}</FieldError> : null}
+              <FieldLabel htmlFor="budget-name">{t("nameRequired")}</FieldLabel>
+              <Input id="budget-name" placeholder={t("budgetNamePlaceholder")} aria-invalid={Boolean(errors.name)} {...register("name")} />
+              {errors.name ? <FieldError>{t(errors.name.message as PlanningMessageKey)}</FieldError> : null}
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="budget-year">Year *</FieldLabel>
+                <FieldLabel htmlFor="budget-year">{t("yearRequired")}</FieldLabel>
                 <Input id="budget-year" inputMode="numeric" className="tabular-nums" aria-invalid={Boolean(errors.year)} {...register("year")} />
-                {errors.year ? <FieldError>{errors.year.message}</FieldError> : null}
+                {errors.year ? <FieldError>{t(errors.year.message as PlanningMessageKey)}</FieldError> : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="budget-scope">Scope *</FieldLabel>
+                <FieldLabel htmlFor="budget-scope">{t("scopeRequired")}</FieldLabel>
                 <Controller
                   control={control}
                   name="scope"
@@ -132,7 +133,7 @@ function NewBudgetDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All cost centers</SelectItem>
+                        <SelectItem value="all">{t("allCostCenters")}</SelectItem>
                         {tops.map((row) => (
                           <SelectItem key={row.id} value={row.id}>
                             {row.code} · {row.name}
@@ -145,18 +146,18 @@ function NewBudgetDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
               </Field>
             </div>
             <Field>
-              <FieldLabel htmlFor="budget-annual">Annual budget (EGP) *</FieldLabel>
+              <FieldLabel htmlFor="budget-annual">{t("annualBudgetEgpRequired")}</FieldLabel>
               <Input id="budget-annual" inputMode="decimal" placeholder="0.00" className="tabular-nums" aria-invalid={Boolean(errors.annual)} {...register("annual")} />
-              {errors.annual ? <FieldError>{errors.annual.message}</FieldError> : null}
+              {errors.annual ? <FieldError>{t(errors.annual.message as PlanningMessageKey)}</FieldError> : null}
             </Field>
-            <p className="text-content-tertiary text-[13px] leading-5">{SESSION_NOTE}</p>
+            <p className="text-content-tertiary text-[13px] leading-5">{t("sessionNote")}</p>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={create.isPending}>
-              Save
+              {t("save")}
             </Button>
           </DialogFooter>
         </form>
@@ -167,6 +168,8 @@ function NewBudgetDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
 
 /** 09.01 · Budgets — each plan, its scope and where it stands in approval. */
 function BudgetsPage() {
+  const t = useTranslations("FinancePlanning")
+  const columns = React.useMemo(() => buildColumns(t), [t])
   const router = useRouter()
   const { data, isError, refetch } = useBudgets()
   const [dialogOpen, setDialogOpen] = React.useState(false)
@@ -174,12 +177,12 @@ function BudgetsPage() {
   return (
     <>
       <FinancePageHeader
-        title="Budgets"
-        figure={data ? <HeaderFigure label="Active budgets">{data.active}</HeaderFigure> : null}
+        title={t("budgets")}
+        figure={data ? <HeaderFigure label={t("activeBudgets")}>{data.active}</HeaderFigure> : null}
         actions={
           <Button variant="primary" onClick={() => setDialogOpen(true)}>
             <Plus aria-hidden />
-            New budget
+            {t("newBudget")}
           </Button>
         }
       />
@@ -191,15 +194,14 @@ function BudgetsPage() {
         ) : (
           <>
             <FinanceTable
-              caption="Budgets"
-              columns={COLUMNS}
+              caption={t("budgets")}
+              columns={columns}
               rows={data.items}
               getRowId={(row) => row.id}
               onRowClick={(row) => router.push(`/finance/budgets/${row.id}`)}
             />
             <p className="text-content-secondary text-[13px] leading-5">
-              Open a budget to see it measured against actuals. Approved budgets lock their figures; revisions keep an audit
-              trail of the original.
+              {t("budgetsInfo")}
             </p>
           </>
         )}
@@ -209,4 +211,4 @@ function BudgetsPage() {
   )
 }
 
-export { BudgetsPage, SESSION_NOTE }
+export { BudgetsPage }

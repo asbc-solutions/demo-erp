@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { FinanceAlert } from "../../../components/shared/finance-alert"
 import { FinancePageBody, FinancePageHeader } from "../../../components/shared/page-header"
 import { StyleGuideComponents } from "./style-guide-components"
@@ -7,17 +9,16 @@ import { StyleGuideTokens } from "./style-guide-tokens"
 
 /** 11.12 · Living style guide — every finance primitive, rendered live. */
 function StyleGuidePage() {
+  const t = useTranslations("FinanceStyleGuide")
   return (
     <>
       <FinancePageHeader
-        title="Living style guide"
-        breadcrumbs={[{ label: "Configuration" }, { label: "Style guide" }]}
+        title={t("livingStyleGuide")}
+        breadcrumbs={[{ label: t("configuration") }, { label: t("styleGuide") }]}
       />
       <FinancePageBody className="gap-10">
         <FinanceAlert tone="info">
-          This is a real screen in the app, not documentation. Flip the theme from the header —
-          everything here is live and drawn from the same tokens and components as the finance
-          screens.
+          {t("styleGuideIntro")}
         </FinanceAlert>
         <StyleGuideTokens />
         <StyleGuideComponents />

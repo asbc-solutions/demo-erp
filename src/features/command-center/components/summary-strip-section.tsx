@@ -1,7 +1,9 @@
 import { Activity, Clock, Target, TrendingUp, Users } from "lucide-react"
+import { useLocale, useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
+import type { Locale } from "@/src/i18n/routing"
 
 import type { CommandCenterStrip } from "../lib/types/summary"
 import { formatCurrency, formatNumber } from "../lib/utils/format"
@@ -29,35 +31,45 @@ const summaryIconText: Record<StripAccent, string> = {
   emerald: "text-brand-success",
 }
 
-function buildStripItems(strip: CommandCenterStrip, currencyCode: string) {
+type SummaryTranslator = ReturnType<typeof useTranslations<"CommandCenterSummary">>
+
+function buildStripItems(
+  strip: CommandCenterStrip,
+  currencyCode: string,
+  locale: Locale,
+  t: SummaryTranslator,
+) {
   return [
     {
-      label: "Runway",
-      value: `${formatNumber(strip.runway_days)} days`,
+      label: t("runway"),
+      value: t("runwayDays", {
+        count: strip.runway_days,
+        value: formatNumber(strip.runway_days, locale),
+      }),
       accent: "amber" as const,
       Icon: Clock,
     },
     {
-      label: "MRR",
-      value: formatCurrency(strip.mrr, currencyCode),
+      label: t("mrr"),
+      value: formatCurrency(strip.mrr, currencyCode, locale),
       accent: "indigo" as const,
       Icon: TrendingUp,
     },
     {
-      label: "Burn Rate",
-      value: formatCurrency(strip.burn_rate, currencyCode),
+      label: t("burnRate"),
+      value: formatCurrency(strip.burn_rate, currencyCode, locale),
       accent: "red" as const,
       Icon: Activity,
     },
     {
-      label: "Headcount",
-      value: formatNumber(strip.headcount),
+      label: t("headcount"),
+      value: formatNumber(strip.headcount, locale),
       accent: "emerald" as const,
       Icon: Users,
     },
     {
-      label: "Pipeline",
-      value: formatCurrency(strip.pipeline_value, currencyCode),
+      label: t("pipeline"),
+      value: formatCurrency(strip.pipeline_value, currencyCode, locale),
       accent: "amber" as const,
       Icon: Target,
     },
@@ -68,7 +80,9 @@ export function SummaryStripSection({
   strip,
   currencyCode,
 }: Readonly<{ strip: CommandCenterStrip; currencyCode: string }>) {
-  const items = buildStripItems(strip, currencyCode)
+  const t = useTranslations("CommandCenterSummary")
+  const locale = useLocale()
+  const items = buildStripItems(strip, currencyCode, locale, t)
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

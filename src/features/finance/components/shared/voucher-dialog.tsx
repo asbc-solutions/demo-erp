@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import { Controller, useForm, useWatch } from "react-hook-form"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -25,16 +26,26 @@ import {
 } from "@/src/shared/components/ui/select"
 import { Textarea } from "@/src/shared/components/ui/textarea"
 
-import { voucherSchema, type VoucherFormValues } from "../../lib/schema/voucher"
+import { voucherSchema, type VoucherErrorKey, type VoucherFormValues } from "../../lib/schema/voucher"
 import type { FinanceContact, FinanceTreasury } from "../../lib/types/common"
-import { formatDate } from "../../lib/utils/date"
+import { useFinanceDateFormat } from "../../lib/hooks/use-finance-date-format"
 
 /** The finance calendar's today; new vouchers default to it. */
 const VOUCHER_DEFAULT_DATE = "2026-03-31"
 
 const COPY = {
-  receipt: { title: "New receipt", contact: "Customer", treasury: "Into" },
-  payment: { title: "New payment", contact: "Supplier", treasury: "From" },
+  receipt: {
+    title: "voucherNewReceipt",
+    contact: "voucherCustomer",
+    contactPlaceholder: "voucherChooseCustomer",
+    treasury: "voucherInto",
+  },
+  payment: {
+    title: "voucherNewPayment",
+    contact: "voucherSupplier",
+    contactPlaceholder: "voucherChooseSupplier",
+    treasury: "voucherFrom",
+  },
 } as const
 
 type VoucherDialogProps = {
@@ -68,7 +79,11 @@ function VoucherDialog({
   pending,
   onSubmit,
 }: VoucherDialogProps) {
+  const t = useTranslations("FinanceShared")
+  const tCommon = useTranslations("Common")
+  const { formatDate } = useFinanceDateFormat()
   const copy = COPY[kind]
+  const errorText = (message?: string) => (message ? t(message as VoucherErrorKey) : null)
   const form = useForm<VoucherFormValues>({
     resolver: zodResolver(voucherSchema),
     mode: "onChange",
@@ -95,22 +110,19 @@ function VoucherDialog({
       <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogHeader>
-            <DialogTitle>{copy.title}</DialogTitle>
-            <DialogDescription>
-              Saving records the voucher. It does not post to the ledger — post it from the journal
-              once the counter-account is set.
-            </DialogDescription>
+            <DialogTitle>{t(copy.title)}</DialogTitle>
+            <DialogDescription>{t("voucherDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Field>
-              <FieldLabel htmlFor="voucher-contact">{copy.contact} *</FieldLabel>
+              <FieldLabel htmlFor="voucher-contact">{t(copy.contact)} *</FieldLabel>
               <Controller
                 control={control}
                 name="contact_id"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="voucher-contact" aria-invalid={Boolean(errors.contact_id)}>
-                      <SelectValue placeholder={`Choose a ${copy.contact.toLowerCase()}`} />
+                      <SelectValue placeholder={t(copy.contactPlaceholder)} />
                     </SelectTrigger>
                     <SelectContent>
                       {contacts.map((row) => (
@@ -122,18 +134,18 @@ function VoucherDialog({
                   </Select>
                 )}
               />
-              {errors.contact_id ? <FieldError>{errors.contact_id.message}</FieldError> : null}
+              {errors.contact_id ? <FieldError>{errorText(errors.contact_id.message)}</FieldError> : null}
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="voucher-treasury">{copy.treasury} *</FieldLabel>
+              <FieldLabel htmlFor="voucher-treasury">{t(copy.treasury)} *</FieldLabel>
               <Controller
                 control={control}
                 name="treasury_id"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="voucher-treasury" aria-invalid={Boolean(errors.treasury_id)}>
-                      <SelectValue placeholder="Choose an account" />
+                      <SelectValue placeholder={t("chooseAccount")} />
                     </SelectTrigger>
                     <SelectContent>
                       {treasuries.map((row) => (
@@ -148,7 +160,7 @@ function VoucherDialog({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="voucher-amount">Amount *</FieldLabel>
+              <FieldLabel htmlFor="voucher-amount">{tCommon("amount")} *</FieldLabel>
               <div className="relative">
                 <Input
                   id="voucher-amount"
@@ -162,37 +174,34 @@ function VoucherDialog({
                   {contact?.currency ?? "EGP"}
                 </span>
               </div>
-              {errors.amount ? <FieldError>{errors.amount.message}</FieldError> : null}
+              {errors.amount ? <FieldError>{errorText(errors.amount.message)}</FieldError> : null}
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="voucher-date">Date *</FieldLabel>
+              <FieldLabel htmlFor="voucher-date">{tCommon("date")} *</FieldLabel>
               <Input id="voucher-date" type="date" aria-invalid={Boolean(errors.date)} {...register("date")} />
               <FieldDescription>{date ? formatDate(date) : "—"}</FieldDescription>
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="voucher-description">Description *</FieldLabel>
+              <FieldLabel htmlFor="voucher-description">{tCommon("description")} *</FieldLabel>
               <Textarea
                 id="voucher-description"
                 rows={2}
                 aria-invalid={Boolean(errors.description)}
                 {...register("description")}
               />
-              {errors.description ? <FieldError>{errors.description.message}</FieldError> : null}
+              {errors.description ? <FieldError>{errorText(errors.description.message)}</FieldError> : null}
             </Field>
 
-            <p className="text-content-tertiary text-[13px] leading-5">
-              Saved records live in this session only. The seeded data is never modified, so a reload
-              returns the prototype to its known state.
-            </p>
+            <p className="text-content-tertiary text-[13px] leading-5">{t("sessionOnlyNote")}</p>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={!isValid || pending}>
-              Save
+              {tCommon("save")}
             </Button>
           </DialogFooter>
         </form>

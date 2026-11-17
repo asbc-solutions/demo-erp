@@ -3,6 +3,7 @@
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -27,25 +28,21 @@ import {
   jobGradeSchema,
   type JobGradeFormValues,
 } from "../../lib/schema/job-grade"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
 type AddJobGradeDialogProps = Readonly<{
   open: boolean
   onOpenChange: (open: boolean) => void
 }>
 
-const CATEGORY_LABEL: Record<typeof gradeCategoryValues[number], string> = {
-  executive: "Executive",
-  management: "Management",
-  professional: "Professional",
-  technical: "Technical",
-  administrative: "Administrative",
-  operational: "Operational",
-}
-
 export function AddJobGradeDialog({
   open,
   onOpenChange,
 }: AddJobGradeDialogProps) {
+  const t = useTranslations("HrJobGrades")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const createJobGrade = useCreateJobGrade()
 
   const form = useForm<JobGradeFormValues>({
@@ -88,13 +85,13 @@ export function AddJobGradeDialog({
   const onSubmit = (values: JobGradeFormValues) => {
     createJobGrade.mutate({ ...values, currency_code: "EGP" }, {
       onSuccess: (grade) => {
-        toast.success(`Grade "${grade.grade_name}" created`)
+        toast.success(t("gradeCreated", { name: grade.grade_name }))
         handleOpenChange(false)
       },
       onError: (err) => {
         const apiErr = err as unknown as { message?: string }
-        toast.error("Failed to create job grade", {
-          description: apiErr.message ?? "Please check the details and try again.",
+        toast.error(t("createFailed"), {
+          description: apiErr.message ?? t("checkDetails"),
         })
       },
     })
@@ -110,10 +107,10 @@ export function AddJobGradeDialog({
         >
           <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
-              Add Job Grade
+              {t("addTitle")}
             </DialogTitle>
             <p className="text-content-quaternary text-sm leading-5">
-              Define a pay band and level for roles
+              {t("addSubtitle")}
             </p>
           </div>
 
@@ -121,29 +118,29 @@ export function AddJobGradeDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Grade Name <span className="text-brand-danger">*</span>
+                {t("fieldGradeName")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("grade_name")}
-                placeholder="e.g. Senior Engineer"
+                placeholder={t("phGradeName")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white text-sm"
               />
               {errors.grade_name && (
-                <p className="text-brand-danger text-xs">{errors.grade_name.message}</p>
+                <p className="text-brand-danger text-xs">{fieldError(errors.grade_name.message)}</p>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Grade Code <span className="text-brand-danger">*</span>
+                {t("fieldGradeCode")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("grade_code")}
-                placeholder="e.g. G5"
+                placeholder={t("phGradeCode")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white font-mono text-sm uppercase"
                 onChange={(e) => setValue("grade_code", e.target.value.toUpperCase())}
               />
               {errors.grade_code && (
-                <p className="text-brand-danger text-xs">{errors.grade_code.message}</p>
+                <p className="text-brand-danger text-xs">{fieldError(errors.grade_code.message)}</p>
               )}
             </div>
           </div>
@@ -152,7 +149,7 @@ export function AddJobGradeDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Level <span className="text-brand-danger">*</span>
+                {t("fieldLevel")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("grade_level", { valueAsNumber: true })}
@@ -162,12 +159,12 @@ export function AddJobGradeDialog({
                 className="h-9 rounded-md border-stroke-default bg-surface-white font-mono text-sm"
               />
               {errors.grade_level && (
-                <p className="text-brand-danger text-xs">{errors.grade_level.message}</p>
+                <p className="text-brand-danger text-xs">{fieldError(errors.grade_level.message)}</p>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Category <span className="text-brand-danger">*</span>
+                {t("fieldCategory")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={selectedGradeCategory}
@@ -180,18 +177,18 @@ export function AddJobGradeDialog({
                 }
               >
                 <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
-                  <SelectValue placeholder="Select…" />
+                  <SelectValue placeholder={t("phSelect")} />
                 </SelectTrigger>
                 <SelectContent>
                   {gradeCategoryValues.map((c) => (
                     <SelectItem key={c} value={c}>
-                      {CATEGORY_LABEL[c]}
+                      {tShared(`gradeCategory.${c}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {errors.grade_category && (
-                <p className="text-brand-danger text-xs">{errors.grade_category.message}</p>
+                <p className="text-brand-danger text-xs">{fieldError(errors.grade_category.message)}</p>
               )}
             </div>
           </div>
@@ -199,11 +196,11 @@ export function AddJobGradeDialog({
           {/* Salary band */}
           <div className="flex flex-col gap-2">
             <p className="text-sm font-semibold text-content-primary">
-              Salary Band (annual) <span className="text-brand-danger">*</span>
+              {t("salaryBandAnnual")} <span className="text-brand-danger">*</span>
             </p>
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-content-tertiary">Min</Label>
+                <Label className="text-xs text-content-tertiary">{t("min")}</Label>
                 <Input
                   {...register("min_salary", { valueAsNumber: true })}
                   type="number"
@@ -212,11 +209,11 @@ export function AddJobGradeDialog({
                   className="h-9 rounded-md border-stroke-default bg-surface-white font-mono text-sm"
                 />
                 {errors.min_salary && (
-                  <p className="text-brand-danger text-xs">{errors.min_salary.message}</p>
+                  <p className="text-brand-danger text-xs">{fieldError(errors.min_salary.message)}</p>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-content-tertiary">Mid</Label>
+                <Label className="text-xs text-content-tertiary">{t("mid")}</Label>
                 <Input
                   {...register("mid_salary", { valueAsNumber: true })}
                   type="number"
@@ -225,11 +222,11 @@ export function AddJobGradeDialog({
                   className="h-9 rounded-md border-stroke-default bg-surface-white font-mono text-sm"
                 />
                 {errors.mid_salary && (
-                  <p className="text-brand-danger text-xs">{errors.mid_salary.message}</p>
+                  <p className="text-brand-danger text-xs">{fieldError(errors.mid_salary.message)}</p>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-content-tertiary">Max</Label>
+                <Label className="text-xs text-content-tertiary">{t("max")}</Label>
                 <Input
                   {...register("max_salary", { valueAsNumber: true })}
                   type="number"
@@ -238,13 +235,13 @@ export function AddJobGradeDialog({
                   className="h-9 rounded-md border-stroke-default bg-surface-white font-mono text-sm"
                 />
                 {errors.max_salary && (
-                  <p className="text-brand-danger text-xs">{errors.max_salary.message}</p>
+                  <p className="text-brand-danger text-xs">{fieldError(errors.max_salary.message)}</p>
                 )}
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Currency <span className="text-brand-danger">*</span>
+                {t("fieldCurrency")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("currency_code")}
@@ -254,7 +251,7 @@ export function AddJobGradeDialog({
                 className="h-9 w-24 rounded-md border-stroke-default bg-surface-muted font-mono text-sm uppercase"
               />
               {errors.currency_code && (
-                <p className="text-brand-danger text-xs">{errors.currency_code.message}</p>
+                <p className="text-brand-danger text-xs">{fieldError(errors.currency_code.message)}</p>
               )}
             </div>
           </div>
@@ -263,7 +260,7 @@ export function AddJobGradeDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Annual Leave Days
+                {t("fieldAnnualLeaveDays")}
               </Label>
               <Input
                 {...register("annual_leave_days", { valueAsNumber: true })}
@@ -273,12 +270,12 @@ export function AddJobGradeDialog({
                 className="h-9 rounded-md border-stroke-default bg-surface-white font-mono text-sm"
               />
               {errors.annual_leave_days && (
-                <p className="text-brand-danger text-xs">{errors.annual_leave_days.message}</p>
+                <p className="text-brand-danger text-xs">{fieldError(errors.annual_leave_days.message)}</p>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Sick Leave Days
+                {t("fieldSickLeaveDays")}
               </Label>
               <Input
                 {...register("sick_leave_days", { valueAsNumber: true })}
@@ -288,7 +285,7 @@ export function AddJobGradeDialog({
                 className="h-9 rounded-md border-stroke-default bg-surface-white font-mono text-sm"
               />
               {errors.sick_leave_days && (
-                <p className="text-brand-danger text-xs">{errors.sick_leave_days.message}</p>
+                <p className="text-brand-danger text-xs">{fieldError(errors.sick_leave_days.message)}</p>
               )}
             </div>
           </div>
@@ -296,11 +293,11 @@ export function AddJobGradeDialog({
           {/* Description */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-sm font-semibold text-content-primary">
-              Description
+              {tCommon("description")}
             </Label>
             <Textarea
               {...register("description")}
-              placeholder="Scope, expectations, or notes…"
+              placeholder={t("phDescription")}
               rows={2}
              
               className="min-h-16 text-ellipsis max-h-18 w-full max-w-110 resize-none rounded-md border-stroke-default bg-surface-white text-sm placeholder:text-content-quaternary"
@@ -315,7 +312,7 @@ export function AddJobGradeDialog({
               className="h-9 rounded-md border-stroke-default bg-surface-white px-4 text-sm font-semibold text-content-primary"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -324,7 +321,7 @@ export function AddJobGradeDialog({
               disabled={createJobGrade.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {createJobGrade.isPending ? "Saving…" : "Save Grade"}
+              {createJobGrade.isPending ? tShared("saving") : t("saveGrade")}
             </Button>
           </div>
         </form>

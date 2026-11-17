@@ -10,6 +10,7 @@ import {
   Scale,
   X,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import type { ApiError } from "@/src/shared/lib/types/api"
@@ -37,7 +38,12 @@ import {
   useMyLeaveBalances,
   useMyLeaveRequests,
 } from "../../lib/queries/leave"
-import type { LeaveBalance, LeaveRequest, LeaveType } from "../../lib/types"
+import type {
+  LeaveBalance,
+  LeaveRequest,
+  LeaveRequestStatus,
+  LeaveType,
+} from "../../lib/types"
 import { formatLeaveDate, formatLeaveRange } from "../../lib/utils/leave-format"
 import {
   getLeaveCategoryStyle,
@@ -132,6 +138,7 @@ function AnnualBalanceCard({
   balance,
   type,
 }: Readonly<{ balance: LeaveBalance; type?: LeaveType }>) {
+  const t = useTranslations("HrLeaves")
   const style = getLeaveCategoryStyle(type?.category ?? "annual")
   const total = balance.opening_balance + balance.accrued_ytd
   const available = balance.available_balance
@@ -151,10 +158,10 @@ function AnnualBalanceCard({
           </span>
           <div className="flex flex-col">
             <h3 className="text-base font-semibold text-content-primary">
-              {type?.name ?? "Annual Leave"} Balance
+              {t("balanceTitle", { name: type?.name ?? t("annualLeave") })}
             </h3>
             <p className="text-sm text-content-tertiary">
-              Your remaining leave entitlement
+              {t("balanceSubtitle")}
             </p>
           </div>
         </div>
@@ -167,15 +174,17 @@ function AnnualBalanceCard({
           >
             {available}
           </p>
-          <p className="text-sm text-content-tertiary">days available</p>
+          <p className="text-sm text-content-tertiary">
+            {t("daysAvailable")}
+          </p>
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between text-sm text-content-secondary">
-          <span>{balance.used_ytd} days used</span>
-          <span>{balance.pending_ytd} days pending</span>
-          <span>{total} total entitlement</span>
+          <span>{t("daysUsed", { count: balance.used_ytd })}</span>
+          <span>{t("daysPending", { count: balance.pending_ytd })}</span>
+          <span>{t("totalEntitlement", { count: total })}</span>
         </div>
         <div className="relative h-3 overflow-hidden rounded-full bg-stroke-light">
           <div
@@ -184,7 +193,7 @@ function AnnualBalanceCard({
           />
         </div>
         <p className="text-end text-xs text-content-tertiary">
-          {remainingPct}% remaining
+          {t("percentRemaining", { percent: remainingPct })}
         </p>
       </div>
     </div>
@@ -231,10 +240,11 @@ function RequestRow({
   onCancel: (id: string) => void
   cancelling: boolean
 }>) {
+  const t = useTranslations("HrLeaves")
   const style = getLeaveCategoryStyle(type?.category)
-  const status =
-    LEAVE_REQUEST_STATUS_CONFIG[request.status] ??
-    LEAVE_REQUEST_STATUS_CONFIG.pending
+  const statusKey: LeaveRequestStatus =
+    request.status in LEAVE_REQUEST_STATUS_CONFIG ? request.status : "pending"
+  const status = LEAVE_REQUEST_STATUS_CONFIG[statusKey]
   const canCancel =
     request.can_be_cancelled ??
     (request.status === "pending" || request.status === "draft")
@@ -244,7 +254,7 @@ function RequestRow({
       <TableCell className="ps-6">
         <span className="inline-flex items-center gap-2 text-sm text-content-primary">
           <span className={cn("size-2.5 shrink-0 rounded-full", style.dotClass)} />
-          {type?.name ?? "Leave"}
+          {type?.name ?? t("leaveFallback")}
         </span>
       </TableCell>
       <TableCell className="text-sm text-content-secondary">
@@ -263,7 +273,7 @@ function RequestRow({
           )}
         >
           <span className={cn("size-1.5 rounded-full", status.dotClass)} />
-          {request.status_label ?? status.label}
+          {t(`requestStatus.${statusKey}`)}
         </span>
       </TableCell>
       <TableCell className="pe-6 text-sm text-content-tertiary">
@@ -277,7 +287,7 @@ function RequestRow({
             className="text-content-tertiary hover:text-brand-danger"
             disabled={cancelling}
             onClick={() => onCancel(request.id)}
-            aria-label="Cancel request"
+            aria-label={t("cancelRequest")}
           >
             <X className="size-4" strokeWidth={1.75} />
           </Button>
@@ -290,6 +300,7 @@ function RequestRow({
 // ─── Main view ────────────────────────────────────────────────────────────────
 
 export function MyLeaveView() {
+  const t = useTranslations("HrLeaves")
   const [applyOpen, setApplyOpen] = useState(false)
   const year = new Date().getFullYear()
 
@@ -317,7 +328,7 @@ export function MyLeaveView() {
 
   const balances = balancesData ?? []
   const types = typesData?.data ?? []
-  const typeMap = new Map(types.map((t) => [t.id, t]))
+  const typeMap = new Map(types.map((type) => [type.id, type]))
   const resolveType = (leaveTypeId: string, embedded?: LeaveType) =>
     embedded ?? typeMap.get(leaveTypeId)
 
@@ -350,12 +361,11 @@ export function MyLeaveView() {
 
   const handleCancel = (id: string) => {
     cancelRequest.mutate(id, {
-      onSuccess: () => toast.success("Leave request cancelled"),
+      onSuccess: () => toast.success(t("requestCancelled")),
       onError: (err) => {
         const apiError = err as unknown as ApiError
-        toast.error("Couldn't cancel request", {
-          description:
-            apiError.message ?? "This request can no longer be cancelled.",
+        toast.error(t("cancelFailed"), {
+          description: apiError.message ?? t("cancelNoLongerPossible"),
         })
       },
     })
@@ -372,53 +382,54 @@ export function MyLeaveView() {
         ) : employeeProfileMissing ? (
           <div className="flex min-h-32 flex-col justify-center gap-2 rounded-[14px] border border-brand-warning/30 bg-brand-warning/[0.06] p-6 sm:col-span-2 xl:col-span-4">
             <h3 className="text-base font-semibold text-content-primary">
-              Employee profile is not linked
+              {t("profileNotLinkedTitle")}
             </h3>
             <p className="max-w-2xl text-sm leading-6 text-content-tertiary">
-              This account must be linked to an employee profile before leave
-              balances, requests, and applications can be loaded.
+              {t("profileNotLinkedBody")}
             </p>
           </div>
         ) : balancesIsError ? (
           <div className="flex min-h-32 items-center justify-center rounded-[14px] border border-stroke-default bg-surface-white p-6 text-center sm:col-span-2 xl:col-span-4">
             <span className="text-sm text-content-tertiary">
-              {`Couldn't load leave balances. ${
-                (balancesError as Partial<ApiError>)?.message ??
-                "Please try again."
-              }`}
+              {t("balancesLoadError", {
+                detail:
+                  (balancesError as Partial<ApiError>)?.message ??
+                  t("pleaseTryAgain"),
+              })}
             </span>
           </div>
         ) : (
           <>
             <StatCard
-              label="Annual Available"
-              value={`${annualAvailable} days`}
+              label={t("statAnnualAvailable")}
+              value={t("daysCount", { count: annualAvailable })}
               valueClass="text-brand-success"
               Icon={CalendarDays}
               iconClass="bg-brand-success/10 text-brand-success"
               caption={{
-                left: `${annualAvailable} / ${annualTotal} days`,
-                right: `${annualPct}%`,
+                left: t("daysOfTotal", {
+                  available: annualAvailable,
+                  total: annualTotal,
+                }),
+                right: t("percent", { percent: annualPct }),
               }}
               progress={annualPct}
             />
             <StatCard
-              label="Sick Used"
-              value={`${sickBalance?.used_ytd ?? 0} ${
-                (sickBalance?.used_ytd ?? 0) === 1 ? "day" : "days"
-              }`}
+              label={t("statSickUsed")}
+              value={t("daysCount", { count: sickBalance?.used_ytd ?? 0 })}
               valueClass="text-brand-warning"
               Icon={HeartPulse}
               iconClass="bg-brand-warning/10 text-brand-warning"
             />
             <StatCard
-              label="Pending Requests"
+              label={t("statPendingRequests")}
               value={String(pendingCount)}
               Icon={Clock}
               iconClass="bg-brand-info/10 text-brand-info"
             />
             <StatCard
-              label="Approved This Year"
+              label={t("statApprovedThisYear")}
               value={String(approvedCount)}
               Icon={CheckCircle2}
               iconClass="bg-brand-primary/10 text-brand-primary"
@@ -432,11 +443,11 @@ export function MyLeaveView() {
         <TabsList>
           <TabsTrigger value="requests">
             <Clock className="size-4" strokeWidth={1.75} />
-            My Requests
+            {t("tabMyRequests")}
           </TabsTrigger>
           <TabsTrigger value="policies">
             <Scale className="size-4" strokeWidth={1.75} />
-            Policies
+            {t("tabPolicies")}
           </TabsTrigger>
         </TabsList>
 
@@ -451,7 +462,7 @@ export function MyLeaveView() {
           {/* Requests header */}
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-semibold text-content-primary">
-              My Leave Requests
+              {t("myLeaveRequests")}
             </h3>
             <Button
               variant="primary"
@@ -460,7 +471,7 @@ export function MyLeaveView() {
               onClick={() => setApplyOpen(true)}
             >
               <Plus className="size-4" strokeWidth={2} />
-              Apply for Leave
+              {t("applyForLeave")}
             </Button>
           </div>
 
@@ -469,11 +480,11 @@ export function MyLeaveView() {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="ps-6">Type</TableHead>
-                  <TableHead>Dates</TableHead>
-                  <TableHead>Days</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="pe-6">Submitted</TableHead>
+                  <TableHead className="ps-6">{t("colType")}</TableHead>
+                  <TableHead>{t("colDates")}</TableHead>
+                  <TableHead>{t("colDays")}</TableHead>
+                  <TableHead>{t("colStatus")}</TableHead>
+                  <TableHead className="pe-6">{t("colSubmitted")}</TableHead>
                   <TableHead className="w-0" />
                 </TableRow>
               </TableHeader>
@@ -487,8 +498,7 @@ export function MyLeaveView() {
                         colSpan={6}
                         className="h-32 text-center text-sm text-content-tertiary"
                       >
-                        Link this user to an employee profile to load leave
-                        requests.
+                        {t("requestsProfileMissing")}
                       </TableCell>
                     </TableRow>
                   ) : balancesIsError ? (
@@ -497,7 +507,7 @@ export function MyLeaveView() {
                         colSpan={6}
                         className="h-32 text-center text-sm text-content-tertiary"
                       >
-                        Leave requests are unavailable until balances load.
+                        {t("requestsUnavailable")}
                       </TableCell>
                     </TableRow>
                   ) : requestsIsError ? (
@@ -506,10 +516,11 @@ export function MyLeaveView() {
                         colSpan={6}
                         className="h-32 text-center text-sm text-content-tertiary"
                       >
-                        {`Couldn't load leave requests. ${
-                          (requestsError as Partial<ApiError>)?.message ??
-                          "Please try again."
-                        }`}
+                        {t("requestsLoadError", {
+                          detail:
+                            (requestsError as Partial<ApiError>)?.message ??
+                            t("pleaseTryAgain"),
+                        })}
                       </TableCell>
                     </TableRow>
                   ) : requests.length === 0 ? (
@@ -518,7 +529,7 @@ export function MyLeaveView() {
                         colSpan={6}
                         className="h-32 text-center text-sm text-content-tertiary"
                       >
-                        No leave requests yet. Apply for leave to get started.
+                        {t("requestsEmpty")}
                       </TableCell>
                     </TableRow>
                   ) : (

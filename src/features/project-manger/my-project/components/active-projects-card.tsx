@@ -1,4 +1,5 @@
 import { ChevronRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/src/i18n/navigation"
 
 import { Card } from "@/src/shared/components/ui/card"
@@ -15,14 +16,16 @@ export function ActiveProjectsCard({
   projects: ProjectRow[]
   isLoading?: boolean
 }) {
+  const t = useTranslations("ProjectsMyProjects")
+  const tShared = useTranslations("ProjectsShared")
   return (
     <Card className="overflow-hidden p-0">
       <div className="border-stroke-default flex flex-col gap-0.5 border-b px-5 py-3.5">
         <h2 className="text-content-primary text-base leading-6 font-semibold">
-          Active Projects
+          {t("activeProjects")}
         </h2>
         <p className="text-content-tertiary text-[12px] leading-[17px]">
-          {projects.length} projects in this view
+          {t("projectsInView", { count: projects.length })}
         </p>
       </div>
 
@@ -36,13 +39,14 @@ export function ActiveProjectsCard({
         </ul>
       ) : projects.length === 0 ? (
         <p className="text-content-tertiary px-5 py-8 text-center text-sm">
-          No active projects.
+          {t("noActiveProjects")}
         </p>
       ) : (
         <ul className="flex flex-col">
           {projects.map((project) => {
             // Fall back so a project with an unrecognised status still renders
             // rather than taking the whole card down.
+            const known = project.status in LIFECYCLE_STATUS_STYLE
             const status =
               LIFECYCLE_STATUS_STYLE[project.status] ??
               LIFECYCLE_STATUS_STYLE.created
@@ -74,17 +78,22 @@ export function ActiveProjectsCard({
                           className={cn("size-1.5 rounded-full", status.dot)}
                           aria-hidden
                         />
-                        {project.statusLabel}
+                        {known
+                          ? tShared(`lifecycle.${project.status}`)
+                          : project.statusLabel}
                       </span>
                     </div>
                     <span className="text-content-tertiary truncate text-[12px] leading-[17px]">
                       <span className="font-mono">{project.code}</span> ·{" "}
-                      {project.startDate} → {project.endDate}
+                      {tShared("dateRange", {
+                        start: project.startDate,
+                        end: project.endDate,
+                      })}
                     </span>
                   </div>
 
                   <ChevronRight
-                    className="text-content-quaternary size-4 shrink-0"
+                    className="text-content-quaternary size-4 shrink-0 rtl:rotate-180"
                     aria-hidden
                   />
                 </Link>

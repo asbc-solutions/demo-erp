@@ -2,10 +2,12 @@
 
 import { useState } from "react"
 import { DollarSign, Plus, TrendingUp } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
 import { cn } from "@/src/shared/lib/utils/utils"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { useSalaryAnalytics } from "../../lib/queries/salaries"
 import { useEmployees } from "../../lib/queries/employees"
@@ -48,13 +50,13 @@ function deptColor(index: number): DeptColor {
   return DEPT_COLORS[index % DEPT_COLORS.length]
 }
 
-const formatEGP = (value: number) =>
+const formatEGP = (value: number, locale: string) =>
   value >= 1_000_000
     ? `EGP ${(value / 1_000_000).toFixed(1)}M`
-    : `EGP ${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+    : `EGP ${value.toLocaleString(locale, { maximumFractionDigits: 0 })}`
 
-const formatEGPK = (value: number) =>
-  `EGP ${Math.round(value / 1000).toLocaleString("en-US")}K`
+const formatEGPK = (value: number, locale: string) =>
+  `EGP ${Math.round(value / 1000).toLocaleString(locale)}K`
 
 type StatPanelProps = Readonly<{
   label: string
@@ -118,11 +120,12 @@ function StatPanelSkeleton() {
 function SalaryCostByDepartment({
   rows,
 }: Readonly<{ rows: SalaryAnalyticsDept[] }>) {
+  const t = useTranslations("HrSalaries")
   const max = Math.max(...rows.map((r) => r.total_cost), 1)
   return (
     <section className="border-stroke-default bg-surface-white flex flex-col gap-4 rounded-[14px] border p-5">
       <h3 className="text-content-primary text-base leading-6 font-semibold">
-        Salary Cost by Department
+        {t("costByDepartment")}
       </h3>
       <ul className="flex flex-col gap-3">
         {rows.map((row, i) => {
@@ -154,20 +157,23 @@ function SalaryCostByDepartment({
 function DepartmentBreakdown({
   rows,
 }: Readonly<{ rows: SalaryAnalyticsDept[] }>) {
+  const t = useTranslations("HrSalaries")
+  const intlLocale = useIntlLocale()
+
   return (
     <section className="border-stroke-default bg-surface-white flex flex-col gap-4 rounded-[14px] border p-5">
       <h3 className="text-content-primary text-base leading-6 font-semibold">
-        Department Breakdown
+        {t("departmentBreakdown")}
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-content-tertiary text-xs">
-              <th className="py-2 text-start font-medium">Department</th>
-              <th className="py-2 text-end font-medium">Headcount</th>
-              <th className="py-2 text-end font-medium">Total Cost</th>
-              <th className="py-2 text-end font-medium">Avg Salary</th>
-              <th className="py-2 text-end font-medium">% of Total</th>
+              <th className="py-2 text-start font-medium">{t("colDepartment")}</th>
+              <th className="py-2 text-end font-medium">{t("colHeadcount")}</th>
+              <th className="py-2 text-end font-medium">{t("colTotalCost")}</th>
+              <th className="py-2 text-end font-medium">{t("colAvgSalary")}</th>
+              <th className="py-2 text-end font-medium">{t("colPctOfTotal")}</th>
             </tr>
           </thead>
           <tbody className="text-content-secondary">
@@ -189,10 +195,10 @@ function DepartmentBreakdown({
                   </span>
                 </td>
                 <td className="text-end">{row.headcount}</td>
-                <td className="text-end">{formatEGPK(row.total_cost)}</td>
+                <td className="text-end">{formatEGPK(row.total_cost, intlLocale)}</td>
                 <td className="text-end">
                   EGP{" "}
-                  {row.avg_salary.toLocaleString("en-US", {
+                  {row.avg_salary.toLocaleString(intlLocale, {
                     maximumFractionDigits: 0,
                   })}
                 </td>
@@ -209,6 +215,8 @@ function DepartmentBreakdown({
 }
 
 export function SalariesTab() {
+  const t = useTranslations("HrSalaries")
+  const intlLocale = useIntlLocale()
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState<HrFilterValues>({})
   const [salaryDialogOpen, setSalaryDialogOpen] = useState(false)
@@ -224,7 +232,7 @@ export function SalariesTab() {
   const filterGroups: HrFilterGroup[] = [
     {
       id: "department",
-      label: "Department",
+      label: t("colDepartment"),
       options: depts.map((dept) => ({
         value: dept.dept_name,
         label: dept.dept_name,
@@ -251,40 +259,44 @@ export function SalariesTab() {
         ) : (
           <>
             <StatPanel
-              label="Total Payroll"
-              value={formatEGP(analytics?.total_payroll?.amount ?? 0)}
+              label={t("statTotalPayroll")}
+              value={formatEGP(analytics?.total_payroll?.amount ?? 0, intlLocale)}
               trend={
                 analytics?.total_payroll?.mom_change_pct
-                  ? `+${analytics.total_payroll.mom_change_pct.toFixed(1)}% from last month`
+                  ? t("fromLastMonth", {
+                      pct: analytics.total_payroll.mom_change_pct.toFixed(1),
+                    })
                   : undefined
               }
               icon={<DollarSign className="size-4" strokeWidth={1.75} />}
             />
             <StatPanel
-              label="Average Salary"
-              value={formatEGP(analytics?.average_salary?.amount ?? 0)}
+              label={t("statAverageSalary")}
+              value={formatEGP(analytics?.average_salary?.amount ?? 0, intlLocale)}
               description={
                 analytics?.average_salary
-                  ? `Based on ${analytics.average_salary.employee_count} employees`
+                  ? t("basedOnEmployees", {
+                      count: analytics.average_salary.employee_count,
+                    })
                   : undefined
               }
               icon={<DollarSign className="size-4" strokeWidth={1.75} />}
             />
             <StatPanel
-              label="Highest Dept Avg"
-              value={formatEGP(analytics?.highest_dept_avg?.amount ?? 0)}
+              label={t("statHighestDeptAvg")}
+              value={formatEGP(analytics?.highest_dept_avg?.amount ?? 0, intlLocale)}
               description={analytics?.highest_dept_avg?.department}
               icon={<TrendingUp className="size-4" strokeWidth={1.75} />}
               tone="emerald"
             />
             <StatPanel
-              label="MoM Change"
+              label={t("statMomChange")}
               value={
                 analytics?.mom_change_pct != null
                   ? `${analytics.mom_change_pct >= 0 ? "+" : ""}${analytics.mom_change_pct.toFixed(1)}%`
                   : "—"
               }
-              description="vs previous month"
+              description={t("vsPreviousMonth")}
               icon={<TrendingUp className="size-4" strokeWidth={1.75} />}
               tone="emerald"
             />
@@ -301,7 +313,7 @@ export function SalariesTab() {
               onClick={() => setSalaryDialogOpen(true)}
             >
               <Plus />
-              Salary Change
+              {t("salaryChange")}
             </Button>
           }
           searchValue={search}
@@ -320,7 +332,7 @@ export function SalariesTab() {
 
         {!isLoading && depts.length === 0 && (
           <p className="text-content-tertiary py-8 text-center text-sm">
-            No salary data available yet.
+            {t("empty")}
           </p>
         )}
       </div>

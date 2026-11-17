@@ -3,6 +3,8 @@
 import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 
+import { parse, TYPE } from "@formatjs/icu-messageformat-parser"
+
 const MESSAGES_DIR = join(import.meta.dirname, "..", "src", "i18n", "messages")
 const SOURCE_LOCALE = "en"
 
@@ -15,10 +17,25 @@ function flatten(value, prefix = "", out = new Map()) {
   return out
 }
 
+/** Every argument name in an ICU message, including those nested in plural/select branches. */
+function collectArguments(elements, names) {
+  for (const element of elements) {
+    if ("value" in element && element.type !== TYPE.literal && element.type !== TYPE.pound) {
+      names.add(element.value)
+    }
+    for (const option of Object.values(element.options ?? {})) collectArguments(option.value, names)
+    if (element.type === TYPE.tag) collectArguments(element.children, names)
+  }
+  return names
+}
+
+// Arabic plurals add zero/two/few/many branches, so compare the set of names, not the count.
 function placeholders(message) {
-  // Arabic plurals add zero/two/few/many branches, so compare the set of names, not the count.
-  const names = new Set([...message.matchAll(/\{\s*(\w+)/g)].map((match) => match[1]))
-  return [...names].sort().join(",")
+  try {
+    return [...collectArguments(parse(message), new Set())].sort().join(",")
+  } catch (error) {
+    return `<invalid ICU: ${error.message}>`
+  }
 }
 
 function readLocale(locale) {

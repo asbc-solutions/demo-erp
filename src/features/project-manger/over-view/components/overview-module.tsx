@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button } from "@/src/shared/components/ui/button"
 
 import { EmployeeNotLinkedAlert } from "../../components/employee-not-linked-alert"
@@ -18,64 +20,76 @@ import { RecentActivityCard } from "./recent-activity-card"
 import { SendWeeklyDigestDialog } from "./send-weekly-digest-dialog"
 import { TodaysPrioritiesCard } from "./todays-priorities-card"
 
-function buildStats(summary: MySummary): OverviewStat[] {
+type OverviewT = ReturnType<typeof useTranslations<"ProjectsOverview">>
+
+function buildStats(summary: MySummary, t: OverviewT): OverviewStat[] {
   const { active_projects, tasks_due_today, hours_this_week, approvals_pending } =
     summary
   return [
     {
       id: "active-projects",
-      label: "Active Projects",
+      label: t("statActiveProjects"),
       value: String(active_projects.count),
-      caption: `${active_projects.on_track} on track · ${active_projects.needs_attention} need attention`,
+      caption: t("statActiveProjectsCaption", {
+        onTrack: active_projects.on_track,
+        attention: active_projects.needs_attention,
+      }),
       icon: "folder",
       accent: "indigo",
     },
     {
       id: "tasks-due",
-      label: "Tasks Due Today",
+      label: t("statTasksDue"),
       value: String(tasks_due_today.count),
-      caption: `${tasks_due_today.high_priority} high priority`,
+      caption: t("statTasksDueCaption", { count: tasks_due_today.high_priority }),
       icon: "check",
       accent: "amber",
     },
     {
       id: "hours-week",
-      label: "Hours This Week",
+      label: t("statHoursWeek"),
       value: `${hours_this_week.booked} / ${hours_this_week.capacity}`,
-      caption: `${hours_this_week.remaining}h remaining capacity`,
+      caption: t("statHoursWeekCaption", { hours: hours_this_week.remaining }),
       icon: "clock",
       accent: "emerald",
     },
     {
       id: "approvals",
-      label: "Approvals Pending",
+      label: t("statApprovals"),
       value: String(approvals_pending.count),
-      caption: `${approvals_pending.gates} gates · ${approvals_pending.change_requests} change requests`,
+      caption: t("statApprovalsCaption", {
+        gates: approvals_pending.gates,
+        changeRequests: approvals_pending.change_requests,
+      }),
       icon: "flag",
       accent: "red",
     },
   ]
 }
 
-function greetingForNow(date: Date): string {
+function greetingKeyForNow(
+  date: Date,
+): "greetingMorning" | "greetingAfternoon" | "greetingEvening" {
   const hour = date.getHours()
-  if (hour < 12) return "Good morning"
-  if (hour < 18) return "Good afternoon"
-  return "Good evening"
+  if (hour < 12) return "greetingMorning"
+  if (hour < 18) return "greetingAfternoon"
+  return "greetingEvening"
 }
 
 export function OverviewModule() {
+  const t = useTranslations("ProjectsOverview")
+  const locale = useIntlLocale()
   const [newProjectOpen, setNewProjectOpen] = useState(false)
   const [digestOpen, setDigestOpen] = useState(false)
 
   const summary = useMySummary()
   const stats = useMemo(
-    () => (summary.data ? buildStats(summary.data) : null),
-    [summary.data],
+    () => (summary.data ? buildStats(summary.data, t) : null),
+    [summary.data, t],
   )
 
   const now = new Date()
-  const dateLabel = now.toLocaleDateString("en-US", {
+  const dateLabel = now.toLocaleDateString(locale, {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -87,10 +101,10 @@ export function OverviewModule() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-content-primary text-2xl leading-8 font-semibold tracking-tight">
-            {greetingForNow(now)}
+            {t(greetingKeyForNow(now))}
           </h1>
           <p className="text-content-tertiary text-sm leading-6">
-            {dateLabel} · Here&apos;s what needs your attention today
+            {t("headerSubtitle", { date: dateLabel })}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -99,7 +113,7 @@ export function OverviewModule() {
             className="h-9 px-3 text-[12px]"
             onClick={() => setDigestOpen(true)}
           >
-            Send Weekly Digest
+            {t("sendWeeklyDigest")}
           </Button>
           <Button
             variant="primary"
@@ -107,7 +121,7 @@ export function OverviewModule() {
             onClick={() => setNewProjectOpen(true)}
           >
             <Plus className="size-4" aria-hidden />
-            New Project
+            {t("newProject")}
           </Button>
         </div>
       </header>
@@ -121,7 +135,7 @@ export function OverviewModule() {
           stats.map((stat) => <OverviewStatCard key={stat.id} stat={stat} />)
         ) : summary.isError ? (
           <p className="text-content-tertiary col-span-full py-4 text-sm">
-            Couldn&apos;t load your summary.
+            {t("summaryLoadFailed")}
           </p>
         ) : (
           Array.from({ length: 4 }).map((_, i) => (

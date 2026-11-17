@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Search, SendHorizontal } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 
@@ -14,6 +15,7 @@ type AssistantComposerProps = {
 
 /** The question box. Enter sends; the scope the answer will use is stated underneath. */
 function AssistantComposer({ disabled, busy, scopeLabel, onSubmit }: AssistantComposerProps) {
+  const t = useTranslations("FinanceAssistant")
   const [question, setQuestion] = React.useState("")
   const inputId = React.useId()
   const canSend = !disabled && !busy && question.trim().length > 0
@@ -33,26 +35,22 @@ function AssistantComposer({ disabled, busy, scopeLabel, onSubmit }: AssistantCo
       >
         <Search aria-hidden className="text-content-quaternary size-4 shrink-0" />
         <label htmlFor={inputId} className="sr-only">
-          Ask the finance assistant
+          {t("composerLabel")}
         </label>
         <input
           id={inputId}
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           disabled={disabled}
-          placeholder={
-            disabled
-              ? "The assistant is offline — Briefing and Drafts still work"
-              : "Ask about accounts, balances, tax, close or approvals…"
-          }
+          placeholder={disabled ? t("composerOfflinePlaceholder") : t("composerPlaceholder")}
           className="text-content-primary placeholder:text-content-tertiary min-w-0 flex-1 bg-transparent py-1 text-sm leading-5 outline-none disabled:cursor-not-allowed"
         />
         <Button type="submit" variant="primary" size="sm" disabled={!canSend}>
-          Send
-          <SendHorizontal aria-hidden />
+          {t("send")}
+          <SendHorizontal aria-hidden className="rtl:rotate-180" />
         </Button>
       </form>
-      <p className="text-content-tertiary text-[13px] leading-5">Scope: {scopeLabel}</p>
+      <p className="text-content-tertiary text-[13px] leading-5">{t("scopeLabel", { scope: scopeLabel })}</p>
     </div>
   )
 }

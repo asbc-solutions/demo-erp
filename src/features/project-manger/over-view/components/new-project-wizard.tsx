@@ -3,8 +3,10 @@
 import { useState } from "react"
 import { useRouter } from "@/src/i18n/navigation"
 import { Check, ChevronLeft, ChevronRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button } from "@/src/shared/components/ui/button"
 import {
   Dialog,
@@ -39,6 +41,7 @@ type NewProjectWizardProps = {
 }
 
 function StepHeader({ current }: { current: number }) {
+  const t = useTranslations("ProjectsNewProject")
   return (
     <ol className="flex items-start">
       {WIZARD_STEPS.map((step, index) => {
@@ -94,7 +97,7 @@ function StepHeader({ current }: { current: number }) {
                 !isLast && "self-start ps-0",
               )}
             >
-              {step.label}
+              {t(step.labelKey)}
             </span>
           </li>
         )
@@ -104,6 +107,9 @@ function StepHeader({ current }: { current: number }) {
 }
 
 export function NewProjectWizard({ open, onOpenChange }: NewProjectWizardProps) {
+  const t = useTranslations("ProjectsNewProject")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const router = useRouter()
   const createProject = useCreateProject()
   const [step, setStep] = useState(0)
@@ -135,33 +141,37 @@ export function NewProjectWizard({ open, onOpenChange }: NewProjectWizardProps) 
   const goBack = () => setStep((s) => Math.max(s - 1, 0))
 
   const handleSaveDraft = () => {
-    toast("Saved as draft", {
+    toast(t("draftSaved"), {
       description: form.name
-        ? `“${form.name}” kept in your drafts.`
-        : "You can finish setting it up later.",
+        ? t("draftSavedNamed", { name: form.name })
+        : t("draftSavedDescription"),
     })
     close()
   }
 
   const handleSubmit = () => {
     if (!form.name.trim()) {
-      toast.error("Project name is required", {
-        description: "Add a name in the Details step before submitting.",
+      toast.error(t("nameRequired"), {
+        description: t("nameRequiredDescription"),
       })
       setStep(1)
       return
     }
 
     const missing: string[] = []
-    if (!form.code.trim()) missing.push("project code")
-    if (!form.managerId) missing.push("project manager")
-    if (!form.branchId) missing.push("branch")
-    if (!form.costCentreId) missing.push("cost centre")
-    if (!form.startDate) missing.push("start date")
-    if (!form.endDate) missing.push("end date")
+    if (!form.code.trim()) missing.push(t("missingCode"))
+    if (!form.managerId) missing.push(t("missingManager"))
+    if (!form.branchId) missing.push(t("missingBranch"))
+    if (!form.costCentreId) missing.push(t("missingCostCentre"))
+    if (!form.startDate) missing.push(t("missingStartDate"))
+    if (!form.endDate) missing.push(t("missingEndDate"))
     if (missing.length > 0) {
-      toast.error("Missing required fields", {
-        description: `Please set: ${missing.join(", ")} in the Details step.`,
+      const fields = new Intl.ListFormat(locale, {
+        style: "long",
+        type: "conjunction",
+      }).format(missing)
+      toast.error(t("missingFields"), {
+        description: t("missingFieldsDescription", { fields }),
       })
       setStep(1)
       return
@@ -185,16 +195,16 @@ export function NewProjectWizard({ open, onOpenChange }: NewProjectWizardProps) 
       },
       {
         onSuccess: (project) => {
-          toast.success("Project created", {
-            description: `"${project.name}" has been created.`,
+          toast.success(t("projectCreated"), {
+            description: t("projectCreatedDescription", { name: project.name }),
           })
           close()
           router.push(`/all-project/${project.id}`)
         },
         onError: (err) => {
           const e = err as unknown as ApiError
-          toast.error("Couldn't create project", {
-            description: e.message ?? "Please try again.",
+          toast.error(t("createFailed"), {
+            description: e.message ?? t("tryAgain"),
           })
         },
       },
@@ -209,10 +219,14 @@ export function NewProjectWizard({ open, onOpenChange }: NewProjectWizardProps) 
       >
         <DialogHeader className="gap-0.5 px-6 py-4">
           <DialogTitle className="text-lg leading-7 font-semibold">
-            New Project
+            {t("title")}
           </DialogTitle>
           <DialogDescription className="text-content-tertiary text-[13px] leading-5">
-            Step {step + 1} of {WIZARD_STEPS.length} — {currentStep.label}
+            {t("stepOf", {
+              step: step + 1,
+              total: WIZARD_STEPS.length,
+              label: t(currentStep.labelKey),
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -236,8 +250,8 @@ export function NewProjectWizard({ open, onOpenChange }: NewProjectWizardProps) 
               onClick={close}
               className="text-content-tertiary hover:text-content-primary gap-1 px-2 text-[13px]"
             >
-              <ChevronLeft className="size-4" aria-hidden />
-              Cancel
+              <ChevronLeft className="size-4 rtl:rotate-180" aria-hidden />
+              {tCommon("cancel")}
             </Button>
           ) : (
             <Button
@@ -245,8 +259,8 @@ export function NewProjectWizard({ open, onOpenChange }: NewProjectWizardProps) 
               onClick={goBack}
               className="text-content-secondary hover:text-content-primary gap-1 px-2 text-[13px]"
             >
-              <ChevronLeft className="size-4" aria-hidden />
-              Back
+              <ChevronLeft className="size-4 rtl:rotate-180" aria-hidden />
+              {tCommon("back")}
             </Button>
           )}
 
@@ -257,7 +271,7 @@ export function NewProjectWizard({ open, onOpenChange }: NewProjectWizardProps) 
                 onClick={handleSaveDraft}
                 className="text-[13px]"
               >
-                Save as Draft
+                {t("saveDraft")}
               </Button>
               <Button
                 variant="primary"
@@ -266,7 +280,7 @@ export function NewProjectWizard({ open, onOpenChange }: NewProjectWizardProps) 
                 className="gap-1.5 text-[13px]"
               >
                 <Check className="size-4" aria-hidden />
-                {createProject.isPending ? "Creating…" : "Create Project"}
+                {createProject.isPending ? t("creating") : t("createProject")}
               </Button>
             </div>
           ) : (
@@ -275,8 +289,8 @@ export function NewProjectWizard({ open, onOpenChange }: NewProjectWizardProps) 
               onClick={goNext}
               className="gap-1.5 text-[13px]"
             >
-              <ChevronRight className="size-4" aria-hidden />
-              Continue
+              <ChevronRight className="size-4 rtl:rotate-180" aria-hidden />
+              {t("continue")}
             </Button>
           )}
         </div>

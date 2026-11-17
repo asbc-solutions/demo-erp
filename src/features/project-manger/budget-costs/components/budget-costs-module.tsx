@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { TrendingDown, TrendingUp } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Cell, Pie, PieChart } from "recharts"
 
 import { Card } from "@/src/shared/components/ui/card"
@@ -26,12 +27,23 @@ import {
   humanizeLabel,
   type BudgetCostRow,
   type EvmMetricCard,
+  isKnownCostType,
 } from "../../lib/mappers/cost-budget-mapper"
 import {
   useBudgetDashboard,
   useCostMix,
   useWaterfall,
 } from "../../lib/queries/cost-budget"
+
+type EvmMetricId = "pv" | "ev" | "ac" | "cpi" | "spi" | "eac" | "etc"
+
+/** WBS node types the cost-detail "Level" column can show. */
+const NODE_TYPES = ["project", "timeline", "phase", "task", "subtask"] as const
+type NodeTypeKey = (typeof NODE_TYPES)[number]
+
+function isNodeType(value: string | undefined): value is NodeTypeKey {
+  return NODE_TYPES.includes(value as NodeTypeKey)
+}
 
 const VALUE_TONE: Record<EvmMetricCard["tone"], string> = {
   default: "text-content-primary",
@@ -46,6 +58,8 @@ const VARIANCE_TONE: Record<BudgetCostRow["varianceTone"], string> = {
 }
 
 export function BudgetCostsModule() {
+  const t = useTranslations("ProjectsBudgetCosts")
+  const tShared = useTranslations("ProjectsShared")
   // Omit project_id everywhere → portfolio-wide roll-up.
   const dashboard = useBudgetDashboard()
   const costMix = useCostMix()
@@ -56,8 +70,10 @@ export function BudgetCostsModule() {
     [dashboard.data],
   )
   const mix = useMemo(
-    () => buildCostMixSlices(costMix.data?.items),
-    [costMix.data],
+    () => buildCostMixSlices(costMix.data?.items, (key) =>
+        isKnownCostType(key) ? tShared(`costType.${key}`) : undefined,
+      ),
+    [costMix.data, tShared],
   )
   const bars = useMemo(
     () => buildWaterfallBars(waterfall.data?.items),
@@ -77,10 +93,10 @@ export function BudgetCostsModule() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-content-primary text-2xl leading-8 font-bold tracking-tight">
-            Budget &amp; Costs
+            {t("title")}
           </h1>
           <p className="text-content-tertiary text-sm">
-            Earned-value, cost variance, and forecast across all projects
+            {t("subtitle")}
           </p>
         </div>
       </header>
@@ -108,7 +124,7 @@ export function BudgetCostsModule() {
                   {metric.value}
                 </span>
                 <span className="text-content-tertiary text-[11px]">
-                  {metric.sub}
+                  {t(`evmSub.${metric.id as EvmMetricId}`)}
                 </span>
               </Card>
             ))}
@@ -119,17 +135,17 @@ export function BudgetCostsModule() {
         <Card className="gap-4 p-5">
           <div className="flex flex-col gap-0.5">
             <h3 className="text-content-primary text-sm font-semibold">
-              Budget Consumption by Project
+              {t("consumptionTitle")}
             </h3>
             <p className="text-content-tertiary text-xs">
-              Committed + actual vs. planned
+              {t("consumptionSubtitle")}
             </p>
           </div>
           {waterfall.isLoading ? (
             <div className="bg-surface-muted h-40 animate-pulse rounded-lg" />
           ) : bars.length === 0 ? (
             <p className="text-content-tertiary py-8 text-center text-sm">
-              No budget data yet.
+              {t("noBudgetData")}
             </p>
           ) : (
             <div className="flex flex-col gap-4">
@@ -157,15 +173,17 @@ export function BudgetCostsModule() {
         <Card className="gap-4 p-5">
           <div className="flex flex-col gap-0.5">
             <h3 className="text-content-primary text-sm font-semibold">
-              Cost Type Mix
+              {t("costMixTitle")}
             </h3>
-            <p className="text-content-tertiary text-xs">Planned cost by type</p>
+            <p className="text-content-tertiary text-xs">
+              {t("costMixSubtitle")}
+            </p>
           </div>
           {costMix.isLoading ? (
             <div className="bg-surface-muted h-32 animate-pulse rounded-lg" />
           ) : mix.slices.length === 0 ? (
             <p className="text-content-tertiary py-8 text-center text-sm">
-              No cost plans yet.
+              {t("noCostPlans")}
             </p>
           ) : (
             <div className="flex items-center gap-4">
@@ -225,15 +243,17 @@ export function BudgetCostsModule() {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className="gap-4 p-5">
           <div className="flex flex-col gap-0.5">
-            <h3 className="text-content-primary text-sm font-semibold">Forecast</h3>
+            <h3 className="text-content-primary text-sm font-semibold">
+              {t("forecastTitle")}
+            </h3>
             <p className="text-content-tertiary text-xs">
-              Estimate at Completion (portfolio)
+              {t("forecastSubtitle")}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-0.5">
               <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-                Original Budget
+                {t("originalBudget")}
               </span>
               <span className="text-content-primary text-xl font-bold">
                 {formatMoney(forecast?.original_budget)}
@@ -241,7 +261,7 @@ export function BudgetCostsModule() {
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-                Forecast EAC
+                {t("forecastEac")}
               </span>
               <span
                 className={cn(
@@ -267,7 +287,7 @@ export function BudgetCostsModule() {
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-              Variance at Completion
+              {t("varianceAtCompletion")}
             </span>
             <span className="text-content-primary text-base font-semibold">
               {formatMoney(forecast?.variance_amount)}
@@ -278,16 +298,16 @@ export function BudgetCostsModule() {
         <Card className="gap-4 p-5">
           <div className="flex flex-col gap-0.5">
             <h3 className="text-content-primary text-sm font-semibold">
-              Performance
+              {t("performanceTitle")}
             </h3>
             <p className="text-content-tertiary text-xs">
-              Cost &amp; schedule health across the portfolio
+              {t("performanceSubtitle")}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-surface-muted flex flex-col gap-1 rounded-lg p-3">
               <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-                Cost (CPI)
+                {t("costCpi")}
               </span>
               <span className="text-content-primary text-lg font-bold">
                 {evm?.cpi == null ? "—" : evm.cpi.toFixed(2)}
@@ -298,7 +318,7 @@ export function BudgetCostsModule() {
             </div>
             <div className="bg-surface-muted flex flex-col gap-1 rounded-lg p-3">
               <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-                Schedule (SPI)
+                {t("scheduleSpi")}
               </span>
               <span className="text-content-primary text-lg font-bold">
                 {evm?.spi == null ? "—" : evm.spi.toFixed(2)}
@@ -315,22 +335,22 @@ export function BudgetCostsModule() {
       <Card className="overflow-hidden p-0">
         <div className="flex flex-col gap-0.5 px-5 pt-5 pb-3">
           <h3 className="text-content-primary text-sm font-semibold">
-            Cost Detail
+            {t("costDetailTitle")}
           </h3>
           <p className="text-content-tertiary text-xs">
-            By WBS element across all projects
+            {t("costDetailSubtitle")}
           </p>
         </div>
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead>WBS Element</TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Planned</TableHead>
-              <TableHead>Committed</TableHead>
-              <TableHead>Actual</TableHead>
-              <TableHead>Variance</TableHead>
-              <TableHead className="text-end">% Consumed</TableHead>
+              <TableHead>{t("colWbsElement")}</TableHead>
+              <TableHead>{t("colLevel")}</TableHead>
+              <TableHead>{t("colPlanned")}</TableHead>
+              <TableHead>{t("colCommitted")}</TableHead>
+              <TableHead>{t("colActual")}</TableHead>
+              <TableHead>{t("colVariance")}</TableHead>
+              <TableHead className="text-end">{t("colConsumed")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -340,7 +360,7 @@ export function BudgetCostsModule() {
                   colSpan={7}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  Loading cost detail…
+                  {t("costDetailLoading")}
                 </TableCell>
               </TableRow>
             ) : costDetail.length === 0 ? (
@@ -349,65 +369,71 @@ export function BudgetCostsModule() {
                   colSpan={7}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  No cost detail yet.
+                  {t("costDetailEmpty")}
                 </TableCell>
               </TableRow>
             ) : (
-              costDetail.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="text-content-primary text-[13px] font-medium">
-                    <span className="text-content-tertiary me-2 font-mono text-[11px]">
-                      {row.code}
-                    </span>
-                    {row.element}
-                  </TableCell>
-                  <TableCell className="text-content-secondary text-[13px]">
-                    {row.typeLabel}
-                  </TableCell>
-                  <TableCell className="text-content-secondary text-[13px] tabular-nums">
-                    {row.planned}
-                  </TableCell>
-                  <TableCell className="text-content-secondary text-[13px] tabular-nums">
-                    {row.committed}
-                  </TableCell>
-                  <TableCell className="text-content-primary text-[13px] font-semibold tabular-nums">
-                    {row.actual}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "text-[13px] font-semibold tabular-nums",
-                      VARIANCE_TONE[row.varianceTone],
-                    )}
-                  >
-                    {row.variance}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-end gap-2">
-                      <Progress
-                        value={Math.min(row.consumed, 100)}
-                        color={
-                          row.consumed > 100
-                            ? "red"
-                            : row.consumed >= 85
-                              ? "amber"
-                              : "emerald"
-                        }
-                        className="bg-surface-muted h-1.5 w-20"
-                      />
-                      <span
-                        className={cn(
-                          "w-10 text-end text-xs font-semibold tabular-nums",
-                          row.consumed > 100
-                            ? "text-brand-danger"
-                            : "text-content-secondary",
-                        )}
-                      >
-                        {row.consumed}%
+              costDetail.map((row, index) => {
+                // buildCostDetail maps the waterfall items 1:1 and in order.
+                const nodeType = waterfall.data?.items[index]?.node_type
+                return (
+                  <TableRow key={row.id}>
+                    <TableCell className="text-content-primary text-[13px] font-medium">
+                      <span className="text-content-tertiary me-2 font-mono text-[11px]">
+                        {row.code}
                       </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                      {row.element}
+                    </TableCell>
+                    <TableCell className="text-content-secondary text-[13px]">
+                      {isNodeType(nodeType)
+                        ? t(`nodeType.${nodeType}`)
+                        : row.typeLabel}
+                    </TableCell>
+                    <TableCell className="text-content-secondary text-[13px] tabular-nums">
+                      {row.planned}
+                    </TableCell>
+                    <TableCell className="text-content-secondary text-[13px] tabular-nums">
+                      {row.committed}
+                    </TableCell>
+                    <TableCell className="text-content-primary text-[13px] font-semibold tabular-nums">
+                      {row.actual}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "text-[13px] font-semibold tabular-nums",
+                        VARIANCE_TONE[row.varianceTone],
+                      )}
+                    >
+                      {row.variance}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-2">
+                        <Progress
+                          value={Math.min(row.consumed, 100)}
+                          color={
+                            row.consumed > 100
+                              ? "red"
+                              : row.consumed >= 85
+                                ? "amber"
+                                : "emerald"
+                          }
+                          className="bg-surface-muted h-1.5 w-20"
+                        />
+                        <span
+                          className={cn(
+                            "w-10 text-end text-xs font-semibold tabular-nums",
+                            row.consumed > 100
+                              ? "text-brand-danger"
+                              : "text-content-secondary",
+                          )}
+                        >
+                          {row.consumed}%
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>

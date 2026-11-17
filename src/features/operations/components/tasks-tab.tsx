@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react"
 import { Search } from "lucide-react"
+import { useTranslations } from "next-intl"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { Input } from "@/src/shared/components/ui/input"
 import {
@@ -30,6 +33,10 @@ import { OperationsErrorState, toastMutationError } from "./shared/operations-er
 import { OperationsPageSpinner } from "./shared/operations-loading"
 
 export function TasksTab() {
+  const t = useTranslations("OperationsTasks")
+  const tShared = useTranslations("OperationsShared")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const [filter, setFilter] = useState<TaskStatus | "all">("all")
   const [query, setQuery] = useState("")
   const { can } = usePermissions()
@@ -72,7 +79,7 @@ export function TasksTab() {
     if (status === task.status) return
     updateTask.mutate(
       { id: task.id, payload: { status } },
-      { onError: (err) => toastMutationError(err, "Failed to update task") },
+      { onError: (err) => toastMutationError(err, t("updateFailed"), tShared) },
     )
   }
 
@@ -83,7 +90,7 @@ export function TasksTab() {
   if (tasksQuery.isError) {
     return (
       <OperationsErrorState
-        message="Failed to load tasks."
+        message={t("loadError")}
         onRetry={() => void tasksQuery.refetch()}
       />
     )
@@ -100,18 +107,18 @@ export function TasksTab() {
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search tasks by title or assignee..."
+            placeholder={t("searchPlaceholder")}
             className="h-9 ps-9 text-[13px]"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {TASK_FILTER_OPTIONS.map((option) => {
-            const isActive = filter === option.value
+            const isActive = filter === option
             return (
               <button
-                key={option.value}
+                key={option}
                 type="button"
-                onClick={() => setFilter(option.value)}
+                onClick={() => setFilter(option)}
                 className={cn(
                   "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] leading-[15.4px] font-medium transition-colors",
                   isActive
@@ -119,14 +126,16 @@ export function TasksTab() {
                     : "border-stroke-default bg-surface-white text-content-secondary hover:text-content-primary",
                 )}
               >
-                <span>{option.label}</span>
+                <span>
+                  {option === "all" ? tCommon("all") : t(`status.${option}`)}
+                </span>
                 <span
                   className={cn(
                     "tabular-nums",
                     isActive ? "text-white/90" : "text-content-tertiary",
                   )}
                 >
-                  {counts[option.value]}
+                  {counts[option]}
                 </span>
               </button>
             )
@@ -137,7 +146,7 @@ export function TasksTab() {
       <div className="flex flex-col gap-2">
         {tasks.length === 0 ? (
           <div className="border-stroke-default bg-surface-white text-content-tertiary flex h-16 items-center justify-center rounded-2xl border border-dashed text-[12px] leading-[18px]">
-            No tasks match the current filters.
+            {t("empty")}
           </div>
         ) : (
           tasks.map((task) => (
@@ -161,7 +170,7 @@ export function TasksTab() {
                 {task.title}
               </p>
               <span className="bg-[#f4f4f5] inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] leading-[15px] font-medium text-content-tertiary">
-                {task.project?.name ?? "No project"}
+                {task.project?.name ?? t("noProject")}
               </span>
               <div className="flex items-center gap-1.5">
                 {task.assignee ? (
@@ -175,7 +184,7 @@ export function TasksTab() {
                   </>
                 ) : (
                   <span className="text-content-tertiary text-[11px] leading-[15.4px]">
-                    Unassigned
+                    {t("unassigned")}
                   </span>
                 )}
               </div>
@@ -188,7 +197,7 @@ export function TasksTab() {
                   aria-hidden
                 />
                 <span className="text-content-tertiary text-[11px] leading-[15.4px]">
-                  {task.priority_label}
+                  {t(`priority.${task.priority}`)}
                 </span>
               </div>
               <Select
@@ -200,9 +209,9 @@ export function TasksTab() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TASK_STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                  {TASK_STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {t(`status.${status}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -215,7 +224,7 @@ export function TasksTab() {
                     : "text-content-secondary",
                 )}
               >
-                {task.due_date ? formatDate(task.due_date) : "No due date"}
+                {task.due_date ? formatDate(task.due_date, locale) : t("noDueDate")}
               </span>
             </div>
           ))

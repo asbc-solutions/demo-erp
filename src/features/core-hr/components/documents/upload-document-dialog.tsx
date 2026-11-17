@@ -4,6 +4,7 @@ import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Upload } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -30,8 +31,6 @@ import {
   uploadDocumentSchema,
   DOCUMENT_TYPES,
   DOCUMENT_CATEGORIES,
-  DOCUMENT_TYPE_LABELS,
-  DOCUMENT_CATEGORY_LABELS,
   type UploadDocumentFormValues,
 } from "../../lib/schema/document"
 import type { EmployeeListItem } from "../../lib/types"
@@ -50,7 +49,23 @@ const DEFAULT_VALUES: UploadDocumentFormValues = {
   is_mandatory: false,
 }
 
-function apiErrorDescription(err: unknown) {
+/** The shared schema carries English messages; map the known ones to keys for display. */
+const SCHEMA_ERROR_KEYS = {
+  "Date must be YYYY-MM-DD": "errorDateFormat",
+  "Document type is required": "errorTypeRequired",
+  "Category is required": "errorCategoryRequired",
+  "Document title is required": "errorTitleRequired",
+  "Must be at least 1 day": "errorAlertDaysMin",
+  "Expiry date must be after issue date": "errorExpiryAfterIssue",
+} as const
+
+function isSchemaErrorMessage(
+  message: string,
+): message is keyof typeof SCHEMA_ERROR_KEYS {
+  return message in SCHEMA_ERROR_KEYS
+}
+
+function apiErrorDescription(err: unknown, fallback: string) {
   const apiErr = err as ApiError
   const fields = apiErr.details?.fields as Record<string, string[]> | undefined
   if (fields) {
@@ -58,7 +73,7 @@ function apiErrorDescription(err: unknown) {
       .map(([f, msgs]) => `${f.replace(/_/g, " ")}: ${msgs[0]}`)
       .join(" | ")
   }
-  return apiErr.message ?? "Please check the details and try again."
+  return apiErr.message ?? fallback
 }
 
 export function UploadDocumentDialog({
@@ -67,6 +82,8 @@ export function UploadDocumentDialog({
   employees,
   employeesLoading = false,
 }: UploadDocumentDialogProps) {
+  const t = useTranslations("HrDocuments")
+  const tCommon = useTranslations("Common")
   const createDocument = useCreateDocument()
   const fileRef = React.useRef<HTMLInputElement>(null)
   const [selectedEmployeeId, setSelectedEmployeeId] = React.useState("")
@@ -92,6 +109,11 @@ export function UploadDocumentDialog({
   const selectedType = watch("document_type")
   const selectedCategory = watch("document_category")
 
+  const errorText = (message?: string) =>
+    message && isSchemaErrorMessage(message)
+      ? t(SCHEMA_ERROR_KEYS[message])
+      : message
+
   const handleOpenChange = (next: boolean) => {
     onOpenChange(next)
     if (!next) {
@@ -111,12 +133,12 @@ export function UploadDocumentDialog({
 
   const onSubmit = (values: UploadDocumentFormValues) => {
     if (!selectedEmployeeId) {
-      toast.error("Please select an employee")
+      toast.error(t("selectEmployeeRequired"))
       return
     }
 
     if (!file) {
-      setFileError("Please attach a file before uploading.")
+      setFileError(t("fileRequired"))
       return
     }
 
@@ -140,14 +162,14 @@ export function UploadDocumentDialog({
       { employeeId: selectedEmployeeId, payload },
       {
         onSuccess: (doc) => {
-          toast.success("Document uploaded", {
+          toast.success(t("uploaded"), {
             description: doc.document_title,
           })
           handleOpenChange(false)
         },
         onError: (err) => {
-          toast.error("Upload failed", {
-            description: apiErrorDescription(err),
+          toast.error(t("uploadFailed"), {
+            description: apiErrorDescription(err, t("checkDetailsRetry")),
           })
         },
       }
@@ -164,17 +186,17 @@ export function UploadDocumentDialog({
         >
           <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-base font-semibold text-content-primary">
-              Upload Document
+              {t("uploadDocument")}
             </DialogTitle>
             <p className="text-content-quaternary text-sm leading-5">
-              Add a document for an employee
+              {t("uploadDescription")}
             </p>
           </div>
 
           {/* Employee */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-[11px] font-semibold text-content-primary">
-              Employee <span className="text-brand-danger">*</span>
+              {t("colEmployee")} <span className="text-brand-danger">*</span>
             </Label>
             <Select
               value={selectedEmployeeId || undefined}
@@ -184,7 +206,7 @@ export function UploadDocumentDialog({
               <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
                 <SelectValue
                   placeholder={
-                    employeesLoading ? "Loading employees..." : "Select employee..."
+                    employeesLoading ? t("loadingEmployees") : t("selectEmployee")
                   }
                 />
               </SelectTrigger>
@@ -202,7 +224,7 @@ export function UploadDocumentDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-[11px] font-semibold text-content-primary">
-                Document type <span className="text-brand-danger">*</span>
+                {t("documentTypeLabel")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={selectedType}
@@ -216,9 +238,9 @@ export function UploadDocumentDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_TYPES.map((t) => (
-                    <SelectItem key={t} value={t} className="text-sm">
-                      {DOCUMENT_TYPE_LABELS[t]}
+                  {DOCUMENT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type} className="text-sm">
+                      {t(`documentType.${type}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -227,7 +249,7 @@ export function UploadDocumentDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-[11px] font-semibold text-content-primary">
-                Category <span className="text-brand-danger">*</span>
+                {t("categoryLabel")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={selectedCategory}
@@ -243,7 +265,7 @@ export function UploadDocumentDialog({
                 <SelectContent>
                   {DOCUMENT_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c} className="text-sm">
-                      {DOCUMENT_CATEGORY_LABELS[c]}
+                      {t(`documentCategory.${c}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -257,17 +279,17 @@ export function UploadDocumentDialog({
               htmlFor="doc-title"
               className="text-[11px] font-semibold text-content-primary"
             >
-              Document title <span className="text-brand-danger">*</span>
+              {t("documentTitle")} <span className="text-brand-danger">*</span>
             </Label>
             <Input
               id="doc-title"
               {...register("document_title")}
-              placeholder="e.g. Egyptian Passport"
+              placeholder={t("documentTitlePlaceholder")}
               className="h-9 rounded-md border-stroke-default bg-surface-white text-sm"
             />
             {errors.document_title && (
               <p className="text-xs text-brand-danger">
-                {errors.document_title.message}
+                {errorText(errors.document_title.message)}
               </p>
             )}
           </div>
@@ -279,7 +301,7 @@ export function UploadDocumentDialog({
                 htmlFor="doc-number"
                 className="text-[11px] font-semibold text-content-primary"
               >
-                Document number
+                {t("documentNumber")}
               </Label>
               <Input
                 id="doc-number"
@@ -293,7 +315,7 @@ export function UploadDocumentDialog({
                 htmlFor="doc-country"
                 className="text-[11px] font-semibold text-content-primary"
               >
-                Issuing country (ISO 2)
+                {t("issuingCountry")}
               </Label>
               <Input
                 id="doc-country"
@@ -312,7 +334,7 @@ export function UploadDocumentDialog({
                 htmlFor="doc-issue"
                 className="text-[11px] font-semibold text-content-primary"
               >
-                Issue date
+                {t("issueDate")}
               </Label>
               <Input
                 id="doc-issue"
@@ -326,7 +348,7 @@ export function UploadDocumentDialog({
                 htmlFor="doc-expiry"
                 className="text-[11px] font-semibold text-content-primary"
               >
-                Expiry date
+                {t("expiryDate")}
               </Label>
               <Input
                 id="doc-expiry"
@@ -336,7 +358,7 @@ export function UploadDocumentDialog({
               />
               {errors.expiry_date && (
                 <p className="text-xs text-brand-danger">
-                  {errors.expiry_date.message}
+                  {errorText(errors.expiry_date.message)}
                 </p>
               )}
             </div>
@@ -355,7 +377,7 @@ export function UploadDocumentDialog({
               htmlFor="doc-mandatory"
               className="cursor-pointer text-[11px] font-semibold text-content-primary"
             >
-              Mandatory document (blocks payroll if expired)
+              {t("mandatoryDocument")}
             </Label>
           </div>
 
@@ -387,10 +409,10 @@ export function UploadDocumentDialog({
             >
               <Upload className="text-content-tertiary size-6" strokeWidth={1.5} />
               <p className="text-content-quaternary text-center text-[11px]">
-                Click or drag to upload file
+                {t("dropzone")}
               </p>
               <p className="text-content-quaternary text-center text-[10px]">
-                PDF, JPG, PNG, DOCX — max 10 MB
+                {t("dropzoneHint")}
               </p>
               {file && (
                 <p className="text-content-primary mt-1 truncate text-xs font-medium">
@@ -411,7 +433,7 @@ export function UploadDocumentDialog({
               className="h-9 rounded-md border-stroke-default bg-surface-white px-3.5 text-[11px] font-semibold text-content-primary"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -420,7 +442,7 @@ export function UploadDocumentDialog({
               disabled={createDocument.isPending}
               className="h-9 rounded-md px-3.5 text-[11px] font-semibold disabled:opacity-50"
             >
-              {createDocument.isPending ? "Uploading..." : "Upload"}
+              {createDocument.isPending ? t("uploading") : tCommon("upload")}
             </Button>
           </div>
         </form>

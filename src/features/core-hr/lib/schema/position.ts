@@ -1,27 +1,29 @@
 import { z } from "zod"
 
+import { vk } from "./validation-key"
+
 export const createPositionSchema = z
   .object({
     position_title: z
       .string()
-      .min(1, "Position title is required")
-      .max(200, "Title must be 200 characters or less"),
+      .min(1, vk("positionTitleRequired"))
+      .max(200, vk("titleMax")),
     position_code: z.string().optional(),
-    dept_id: z.string().uuid("Invalid department").nullable().optional(),
-    branch_id: z.string().uuid("Invalid branch").nullable().optional(),
+    dept_id: z.string().uuid(vk("invalidDepartment")).nullable().optional(),
+    branch_id: z.string().uuid(vk("invalidBranch")).nullable().optional(),
     headcount_budget: z
-      .number({ invalid_type_error: "Must be a number" })
-      .int("Must be a whole number")
-      .min(1, "Headcount must be at least 1"),
+      .number({ invalid_type_error: vk("mustBeNumber") })
+      .int(vk("mustBeWholeNumber"))
+      .min(1, vk("headcountMin")),
     is_budgeted: z.boolean().default(true),
     effective_date: z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
+      .regex(/^\d{4}-\d{2}-\d{2}$/, vk("dateFormat"))
       .nullable()
       .optional(),
     expiry_date: z
       .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
+      .regex(/^\d{4}-\d{2}-\d{2}$/, vk("dateFormat"))
       .nullable()
       .optional(),
     is_active: z.boolean().default(true),
@@ -32,7 +34,7 @@ export const createPositionSchema = z
       !d.expiry_date ||
       d.expiry_date >= d.effective_date,
     {
-      message: "Expiry date must be on or after effective date",
+      message: vk("expiryAfterEffective"),
       path: ["expiry_date"],
     },
   )

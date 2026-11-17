@@ -1,6 +1,7 @@
 "use client"
 
 import { Award, BarChart3, CheckCircle2, Target } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { Progress } from "@/src/shared/components/ui/progress"
@@ -115,24 +116,26 @@ function SummaryStatCard({
 // ─── Shared summary row for Review Cycles + Team Reviews ─────────────────────────
 
 function ReviewCycleKpis() {
+  const t = useTranslations("HrPerformance")
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <HeroStatCard
-        label="Active Cycle"
-        value="2026 Annual"
+        label={t("kpiActiveCycle")}
+        value={t("annualCycle", { year: 2026 })}
         valueClassName="text-lg leading-7"
         icon={<Target strokeWidth={1.75} />}
         accent="violet"
       />
       <HeroStatCard
-        label="Overall Progress"
-        value="52%"
+        label={t("overallProgress")}
+        value={t("percent", { percent: 52 })}
         icon={<BarChart3 strokeWidth={1.75} />}
         accent="blue"
         progress={52}
       />
       <HeroStatCard
-        label="Reviews Submitted"
+        label={t("kpiReviewsSubmitted")}
         value={
           <>
             6
@@ -143,7 +146,7 @@ function ReviewCycleKpis() {
         accent="emerald"
       />
       <HeroStatCard
-        label="Action Flags"
+        label={t("kpiActionFlags")}
         value="2"
         icon={<Award strokeWidth={1.75} />}
         accent="amber"
