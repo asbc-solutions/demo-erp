@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Download, FileSearch, Printer } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { EmptyState } from "@/src/shared/components/ui/empty-state"
@@ -28,58 +29,63 @@ import {
   SelectionBar,
 } from "../../../components/shared/filter-bar"
 import { KeyValueList } from "../../../components/shared/key-value-list"
-import { StatusPill } from "../../../components/shared/status-pill"
+import { StatusPill, useStatusLabel } from "../../../components/shared/status-pill"
 import {
   FINANCE_STATUSES,
-  STATUS_FAMILY_COPY,
   STATUS_FAMILY_ORDER,
   type StatusKey,
 } from "../../../lib/constants/statuses"
 
 type SampleAccount = { id: string; code: string; name: string; balance: number }
 
-const SAMPLE_COLUMNS: FinanceColumn<SampleAccount>[] = [
-  { id: "code", header: "Code", cell: (row) => <DocNumber>{row.code}</DocNumber>, width: "w-40" },
-  { id: "name", header: "Name", cell: (row) => row.name, hideable: true },
-  {
-    id: "balance",
-    header: "Balance",
-    align: "end",
-    cell: (row) => <Amount value={row.balance} />,
-    footer: <Amount value={32_274_830} emphasis="strong" />,
-  },
-]
+type StyleGuideTranslator = ReturnType<typeof useTranslations<"FinanceStyleGuide">>
 
-const SAMPLE_GROUPS = [
-  {
-    id: "11",
-    label: "11 · Current assets",
-    summary: { balance: <Amount value={21_118_430} emphasis="strong" /> },
-    rows: [
-      { id: "110101", code: "110101", name: "Cash on hand", balance: 1_240_000 },
-      { id: "110201", code: "110201", name: "CIB current account", balance: 6_482_300 },
-    ],
-  },
-  {
-    id: "12",
-    label: "12 · Fixed assets",
-    summary: { balance: <Amount value={11_156_400} emphasis="strong" /> },
-    rows: [
-      { id: "120101", code: "120101", name: "Machinery", balance: 13_406_400 },
-      { id: "120901", code: "120901", name: "Accumulated depreciation", balance: -2_250_000 },
-    ],
-  },
-]
+function buildSampleColumns(t: StyleGuideTranslator): FinanceColumn<SampleAccount>[] {
+  return [
+    { id: "code", header: t("code"), cell: (row) => <DocNumber>{row.code}</DocNumber>, width: "w-40" },
+    { id: "name", header: t("name"), cell: (row) => row.name, hideable: true },
+    {
+      id: "balance",
+      header: t("balance"),
+      align: "end",
+      cell: (row) => <Amount value={row.balance} />,
+      footer: <Amount value={32_274_830} emphasis="strong" />,
+    },
+  ]
+}
+
+function buildSampleGroups(t: StyleGuideTranslator) {
+  return [
+    {
+      id: "11",
+      label: t("sampleCurrentAssets"),
+      summary: { balance: <Amount value={21_118_430} emphasis="strong" /> },
+      rows: [
+        { id: "110101", code: "110101", name: "Cash on hand", balance: 1_240_000 },
+        { id: "110201", code: "110201", name: "CIB current account", balance: 6_482_300 },
+      ],
+    },
+    {
+      id: "12",
+      label: t("sampleFixedAssets"),
+      summary: { balance: <Amount value={11_156_400} emphasis="strong" /> },
+      rows: [
+        { id: "120101", code: "120101", name: "Machinery", balance: 13_406_400 },
+        { id: "120901", code: "120901", name: "Accumulated depreciation", balance: -2_250_000 },
+      ],
+    },
+  ]
+}
 
 function StatusVocabulary() {
+  const t = useTranslations("FinanceStyleGuide")
   return (
     <FinanceSection
-      title="Status vocabulary"
-      description="Every status in the module belongs to one of four families. The family is carried by the border and marker as well as colour, so the difference survives greyscale and colour-blindness."
+      title={t("statusVocabulary")}
+      description={t("statusVocabularyDescription")}
     >
       <FinanceAlert tone="warning">
-        Confusing these is the expensive mistake. Someone who reads submitted as posted will close a
-        period they should not have.
+        {t("statusVocabularyWarning")}
       </FinanceAlert>
       <div className="flex flex-col gap-5">
         {STATUS_FAMILY_ORDER.map((family) => {
@@ -89,10 +95,10 @@ function StatusVocabulary() {
           return (
             <div key={family} className="flex flex-col gap-2">
               <h3 className="text-content-primary text-sm leading-5 font-semibold">
-                {STATUS_FAMILY_COPY[family].title}
+                {t(`familyTitle.${family}`)}
               </h3>
               <p className="text-content-tertiary max-w-2xl text-[13px] leading-5">
-                {STATUS_FAMILY_COPY[family].description}
+                {t(`familyDescription.${family}`)}
               </p>
               <div className="flex flex-wrap gap-2">
                 {keys.map((key) => (
@@ -108,6 +114,10 @@ function StatusVocabulary() {
 }
 
 function StyleGuideComponents() {
+  const t = useTranslations("FinanceStyleGuide")
+  const statusLabel = useStatusLabel()
+  const sampleColumns = React.useMemo(() => buildSampleColumns(t), [t])
+  const sampleGroups = React.useMemo(() => buildSampleGroups(t), [t])
   const [status, setStatus] = React.useState("all")
   const [groupBy, setGroupBy] = React.useState("none")
   const [hiddenIds, setHiddenIds] = React.useState<string[]>([])
@@ -115,26 +125,26 @@ function StyleGuideComponents() {
 
   return (
     <>
-      <FinanceSection title="Components">
+      <FinanceSection title={t("components")}>
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="primary" size="sm">
-            Post entry
+            {t("postEntry")}
           </Button>
           <Button variant="secondary" size="sm">
-            Save draft
+            {t("saveDraft")}
           </Button>
           <Button variant="ghost" size="sm">
-            Cancel
+            {t("cancel")}
           </Button>
           <Button variant="danger" size="sm">
-            Reverse
+            {t("reverse")}
           </Button>
           <Button variant="primary" size="sm" disabled aria-busy>
             <Spinner />
-            Posting
+            {t("posting")}
           </Button>
           <Button variant="secondary" size="sm" disabled>
-            Disabled
+            {t("disabled")}
           </Button>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -146,30 +156,26 @@ function StyleGuideComponents() {
           <StatusPill status="void" tone="muted" family="internal" />
         </div>
         <div className="grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-3">
-          <KpiCard layout="bar" accent="indigo" label="Cash on hand" value="5,731,150.00" caption="6 accounts" />
-          <KpiCard layout="bar" accent="teal" label="Receivables" value="6,318,400.00" caption="1,748,400.00 overdue" />
-          <KpiCard layout="bar" accent="amber" label="Payables" value="3,914,200.00" caption="due this week" />
+          <KpiCard layout="bar" accent="indigo" label={t("kpiCashOnHand")} value="5,731,150.00" caption={t("kpiAccounts", { count: 6 })} />
+          <KpiCard layout="bar" accent="teal" label={t("kpiReceivables")} value="6,318,400.00" caption={t("kpiOverdue", { amount: "1,748,400.00" })} />
+          <KpiCard layout="bar" accent="amber" label={t("kpiPayables")} value="3,914,200.00" caption={t("kpiDueThisWeek")} />
         </div>
         <div className="flex max-w-4xl flex-col gap-3">
           <FinanceAlert
             tone="warning"
             action={
               <Button variant="secondary" size="sm">
-                Renew
+                {t("renew")}
               </Button>
             }
           >
-            The seal certificate expires in 9 days. Submissions will fail after 14 Apr 2026 until
-            it&apos;s renewed. Renew the certificate with your provider and upload it in Finance
-            settings.
+            {t("sampleCertificateAlert")}
           </FinanceAlert>
           <FinanceAlert tone="danger">
-            This entry doesn&apos;t balance. Debits total 42,000.00 and credits total 41,500.00, a
-            difference of 500.00. Adjust a line so both sides match, then post.
+            {t("sampleUnbalancedAlert")}
           </FinanceAlert>
           <FinanceAlert tone="success">
-            Reconciliation complete. Difference is 0.00 across 42 matched lines. The statement is
-            now stamped and locked for March.
+            {t("sampleReconciledAlert")}
           </FinanceAlert>
         </div>
       </FinanceSection>
@@ -177,34 +183,30 @@ function StyleGuideComponents() {
       <StatusVocabulary />
 
       <FinanceSection
-        title="Copy patterns — the three-sentence error"
-        description="What happened, why it matters, and what to do next — always in that order."
+        title={t("copyPatterns")}
+        description={t("copyPatternsDescription")}
       >
         <div className="flex max-w-4xl flex-col gap-3">
           <FinanceAlert tone="danger">
-            The period is closed. Entries dated 15 Feb 2026 can&apos;t be posted while February is
-            locked. Change the date to a date in an open period, or reopen February from Financial
-            periods.
+            {t("samplePeriodClosedError")}
           </FinanceAlert>
           <FinanceAlert tone="danger">
-            The tax authority rejected this document. Error 4004: item code EGS-1120 isn&apos;t
-            registered for your activity. Map the item to a valid EGS or GS1 code in Items, then
-            resubmit.
+            {t("sampleRejectedError")}
           </FinanceAlert>
         </div>
       </FinanceSection>
 
-      <FinanceSection title="Loading and empty states">
+      <FinanceSection title={t("loadingAndEmpty")}>
         <FinanceTilesSkeleton />
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <EmptyState
             variant="card"
             icon={<FileSearch />}
-            title="No entries match these filters."
-            description="Clear a filter or widen the period to see more journal entries."
+            title={t("sampleEmptyTitle")}
+            description={t("sampleEmptyDescription")}
             actions={
               <Button variant="secondary" size="sm">
-                Clear filters
+                {t("clearFilters")}
               </Button>
             }
           />
@@ -212,10 +214,10 @@ function StyleGuideComponents() {
         </div>
       </FinanceSection>
 
-      <FinanceSection title="Aging">
+      <FinanceSection title={t("aging")}>
         <AgingTiles
           buckets={[
-            { id: "current", label: "Current", amount: 3_180_000 },
+            { id: "current", label: t("agingCurrent"), amount: 3_180_000 },
             { id: "1-30", label: "1–30", amount: 1_420_000 },
             { id: "31-60", label: "31–60", amount: 892_400 },
             { id: "61-90", label: "61–90", amount: 486_000 },
@@ -224,32 +226,32 @@ function StyleGuideComponents() {
         />
       </FinanceSection>
 
-      <FinanceSection title="Document history">
+      <FinanceSection title={t("documentHistory")}>
         <DocumentHistory
           events={[
             {
               id: "e1",
-              title: "Posted entry",
+              title: t("historyPostedEntry"),
               actor: "Karim Fouad",
               at: "2026-03-31T09:14:00.000Z",
               reference: "JE-2026-000841",
             },
-            { id: "e2", title: "Created draft", actor: "Hala Mostafa", at: "2026-03-30T17:02:00.000Z" },
+            { id: "e2", title: t("historyCreatedDraft"), actor: "Hala Mostafa", at: "2026-03-30T17:02:00.000Z" },
           ]}
         />
       </FinanceSection>
 
-      <FinanceSection title="Needs your attention">
+      <FinanceSection title={t("needsAttention")}>
         <AttentionList
           items={[
-            { id: "a1", label: "18 unmatched bank lines on CIB current account", count: 18, tone: "danger" },
-            { id: "a2", label: "Seal certificate expires in 14 days", count: 14, tone: "warning" },
-            { id: "a3", label: "3 journals awaiting your approval", count: 3, tone: "info" },
+            { id: "a1", label: t("attentionUnmatched", { count: 18, account: "CIB current account" }), count: 18, tone: "danger" },
+            { id: "a2", label: t("attentionCertificate", { count: 14 }), count: 14, tone: "warning" },
+            { id: "a3", label: t("attentionApprovals", { count: 3 }), count: 3, tone: "info" },
           ]}
         />
       </FinanceSection>
 
-      <FinanceSection title="Finance components">
+      <FinanceSection title={t("financeComponents")}>
         <div className="flex flex-wrap items-start gap-10">
           <div className="flex flex-col gap-1">
             <span className="text-content-tertiary font-mono text-xs">Amount</span>
@@ -263,9 +265,9 @@ function StyleGuideComponents() {
             <span className="text-content-tertiary font-mono text-xs">KeyValueList</span>
             <KeyValueList
               items={[
-                { term: "Entity", value: "EG-01" },
-                { term: "Period", value: "March 2026" },
-                { term: "Base currency", value: "EGP" },
+                { term: t("entity"), value: "EG-01" },
+                { term: t("period"), value: t("sampleMarch2026") },
+                { term: t("baseCurrency"), value: "EGP" },
               ]}
             />
           </div>
@@ -275,15 +277,15 @@ function StyleGuideComponents() {
           <FilterSearch />
           <FilterIcon />
           <FilterChip
-            label="Status"
+            label={t("status")}
             value={status}
             onValueChange={setStatus}
             options={[
-              { value: "posted", label: "posted" },
-              { value: "draft", label: "draft" },
+              { value: "posted", label: statusLabel("posted") },
+              { value: "draft", label: statusLabel("draft") },
             ]}
           />
-          <ResultCount>42 entries</ResultCount>
+          <ResultCount>{t("entriesCount", { count: 42 })}</ResultCount>
         </FilterBar>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -291,23 +293,23 @@ function StyleGuideComponents() {
             value={groupBy}
             onValueChange={setGroupBy}
             options={[
-              { value: "none", label: "No grouping" },
-              { value: "type", label: "Account type" },
+              { value: "none", label: t("noGrouping") },
+              { value: "type", label: t("accountType") },
             ]}
           />
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm">
               <Download aria-hidden />
-              Export
+              {t("export")}
             </Button>
             <Button variant="secondary" size="sm">
               <Printer aria-hidden />
-              Print
+              {t("print")}
             </Button>
             <ColumnChooser
               columns={[
-                { id: "name", label: "Name" },
-                { id: "balance", label: "Balance" },
+                { id: "name", label: t("name") },
+                { id: "balance", label: t("balance") },
               ]}
               hiddenIds={hiddenIds}
               onHiddenIdsChange={setHiddenIds}
@@ -318,15 +320,15 @@ function StyleGuideComponents() {
         {selectedIds.length > 0 ? (
           <SelectionBar count={selectedIds.length} onClear={() => setSelectedIds([])}>
             <Button variant="secondary" size="sm">
-              Export selected
+              {t("exportSelected")}
             </Button>
           </SelectionBar>
         ) : null}
 
         <FinanceTable
-          caption="Sample chart of accounts"
-          columns={SAMPLE_COLUMNS}
-          groups={SAMPLE_GROUPS}
+          caption={t("sampleChartCaption")}
+          columns={sampleColumns}
+          groups={sampleGroups}
           getRowId={(row) => row.id}
           hiddenColumnIds={hiddenIds}
           selectable

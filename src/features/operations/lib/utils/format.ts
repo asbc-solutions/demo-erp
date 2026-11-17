@@ -5,18 +5,23 @@
  */
 export const DEFAULT_CURRENCY_CODE = "EGP"
 
-export function formatCurrencyAmount(value: number, currencyCode: string = DEFAULT_CURRENCY_CODE) {
-  return new Intl.NumberFormat("en-US", {
+/** `locale` is the active `Intl` tag — pass `useIntlLocale()` from the calling component. */
+export function formatCurrencyAmount(
+  value: number,
+  locale: string,
+  currencyCode: string = DEFAULT_CURRENCY_CODE,
+) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: currencyCode,
     maximumFractionDigits: 0,
   }).format(value)
 }
 
-export function formatDate(value: string) {
+export function formatDate(value: string, locale: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",

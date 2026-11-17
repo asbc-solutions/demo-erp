@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react"
 import { GitBranch, Plus, Route, Settings } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
@@ -34,6 +36,9 @@ const BAR_BG: Record<ProgressColor, string> = {
 }
 
 export function ScheduleTab({ projectId }: { projectId: string }) {
+  const t = useTranslations("ProjectsProjectDetail")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const { data: timelines, isLoading } = useProjectHierarchy(projectId)
   const { data: milestones } = useMilestones(projectId)
   const { data: criticalPath } = useCriticalPath(projectId)
@@ -42,8 +47,8 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
   const [criticalOnly, setCriticalOnly] = useState(false)
 
   const model = useMemo(
-    () => toGanttModel(timelines ?? [], milestones ?? [], criticalPath),
-    [timelines, milestones, criticalPath],
+    () => toGanttModel(timelines ?? [], milestones ?? [], criticalPath, locale),
+    [timelines, milestones, criticalPath, locale],
   )
 
   const timelineW = model.totalWeeks * WEEK_W
@@ -52,11 +57,11 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
   const handleBaseline = () => {
     const stamp = new Date().toISOString().slice(0, 10)
     createBaseline.mutate(
-      { name: `Baseline ${stamp}` },
+      { name: t("baselineName", { date: stamp }) },
       {
-        onSuccess: () => toast.success("Baseline captured"),
+        onSuccess: () => toast.success(t("baselineCaptured")),
         onError: (err) =>
-          toast.error("Couldn't capture baseline", {
+          toast.error(t("baselineFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
@@ -70,11 +75,9 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-content-primary text-xl leading-7 font-bold tracking-tight">
-            Schedule &amp; Gantt
+            {t("scheduleTitle")}
           </h2>
-          <p className="text-content-tertiary text-sm">
-            Plan, baseline, and track every task on the project timeline
-          </p>
+          <p className="text-content-tertiary text-sm">{t("scheduleSubtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -84,7 +87,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
             disabled={createBaseline.isPending}
           >
             <GitBranch className="size-3.5" aria-hidden />
-            {createBaseline.isPending ? "Saving…" : "Baseline"}
+            {createBaseline.isPending ? t("saving") : t("baseline")}
           </Button>
           <Button
             variant={criticalOnly ? "primary" : "outline"}
@@ -92,15 +95,15 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
             onClick={() => setCriticalOnly((v) => !v)}
           >
             <Route className="size-3.5" aria-hidden />
-            Critical Path
+            {t("criticalPath")}
           </Button>
           <Button variant="outline" className="h-9 gap-2 px-3 text-[12px]">
             <Settings className="size-3.5" aria-hidden />
-            Settings
+            {tCommon("settings")}
           </Button>
           <Button variant="primary" className="h-9 gap-2 px-3 text-[12px]">
             <Plus className="size-4" aria-hidden />
-            Task
+            {t("addTask")}
           </Button>
         </div>
       </div>
@@ -112,8 +115,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
       {!isLoading && !hasRows && (
         <Card className="flex h-64 items-center justify-center p-6">
           <p className="text-content-tertiary text-sm">
-            No scheduled work yet. Add phases and tasks with dates to populate
-            the Gantt.
+            {t("scheduleEmpty")}
           </p>
         </Card>
       )}
@@ -128,14 +130,14 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                   className="text-content-tertiary flex shrink-0 items-end px-4 pb-1.5 text-[10px] font-semibold tracking-wide uppercase"
                   style={{ width: LEFT_W }}
                 >
-                  Activity
+                  {t("colActivity")}
                 </div>
                 <div className="relative" style={{ width: timelineW }}>
                   <div className="flex">
                     {model.months.map((m, i) => (
                       <div
                         key={`${m.label}-${i}`}
-                        className="border-stroke-light text-content-secondary border-l py-1 text-center text-[11px] font-semibold"
+                        className="border-stroke-light text-content-secondary border-s py-1 text-center text-[11px] font-semibold"
                         style={{ width: m.weeks * WEEK_W }}
                       >
                         {m.label}
@@ -149,7 +151,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                         className="text-content-quaternary shrink-0 pb-1 text-center text-[9px]"
                         style={{ width: WEEK_W }}
                       >
-                        W{i + 1}
+                        {t("weekShort", { week: i + 1 })}
                       </div>
                     ))}
                   </div>
@@ -176,7 +178,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                         className={cn(
                           "text-content-primary flex-1 truncate text-[13px]",
                           row.kind === "phase" ? "font-semibold" : "font-normal",
-                          row.indent && "pl-3",
+                          row.indent && "ps-3",
                         )}
                       >
                         {row.name}
@@ -187,7 +189,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                       >
                         {row.owner.initials}
                       </Avatar>
-                      <span className="text-content-tertiary w-9 shrink-0 text-right text-[11px] font-medium tabular-nums">
+                      <span className="text-content-tertiary w-9 shrink-0 text-end text-[11px] font-medium tabular-nums">
                         {row.percent}%
                       </span>
                     </div>
@@ -204,10 +206,10 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                       {row.kind === "milestone" ? (
                         <div
                           className={cn(
-                            "absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px]",
+                            "absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] rtl:translate-x-1/2",
                             BAR_BG[row.color],
                           )}
-                          style={{ left: (row.startWeek - 1) * WEEK_W }}
+                          style={{ insetInlineStart: (row.startWeek - 1) * WEEK_W }}
                         />
                       ) : (
                         <div
@@ -217,7 +219,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                             row.kind === "phase" && "opacity-90",
                           )}
                           style={{
-                            left: (row.startWeek - 1) * WEEK_W + 2,
+                            insetInlineStart: (row.startWeek - 1) * WEEK_W + 2,
                             width: row.span * WEEK_W - 4,
                           }}
                         />
@@ -231,10 +233,10 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
               {todayX != null && (
                 <div
                   className="bg-brand-primary pointer-events-none absolute top-0 bottom-0 z-10 w-px"
-                  style={{ left: LEFT_W + todayX }}
+                  style={{ insetInlineStart: LEFT_W + todayX }}
                 >
                   <span className="bg-brand-primary absolute -top-0.5 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-0.5 text-[8px] font-semibold whitespace-nowrap text-white">
-                    Today
+                    {t("today")}
                   </span>
                 </div>
               )}
@@ -244,7 +246,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
           <div className="border-stroke-default flex flex-wrap items-center gap-4 border-t px-4 py-3">
             {GANTT_LEGEND.map((item) => (
               <span
-                key={item.label}
+                key={item.labelKey}
                 className="text-content-tertiary flex items-center gap-1.5 text-[11px]"
               >
                 <span
@@ -254,7 +256,7 @@ export function ScheduleTab({ projectId }: { projectId: string }) {
                     item.milestone ? "rotate-45 rounded-[1px]" : "rounded-full",
                   )}
                 />
-                {item.label}
+                {t(item.labelKey)}
               </span>
             ))}
           </div>

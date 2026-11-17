@@ -2,33 +2,53 @@ import { z } from "zod"
 
 import type { CustomerAddress } from "../types"
 
+/**
+ * Validation messages are `SalesCustomers` message keys; the form translates them where the
+ * error renders.
+ */
+export type CustomerFormErrorKey =
+  | "nameRequired"
+  | "phoneRequired"
+  | "phoneInvalid"
+  | "emailRequired"
+  | "emailInvalid"
+  | "emailInUse"
+  | "taxNumberInvalid"
+  | "salespersonRequired"
+
+const errorKey = (key: CustomerFormErrorKey) => key
+
 /** Digits only. Rejects letters, spaces, and symbols like "+", "-", "(", ")". */
 const PHONE_REGEX = /^[0-9]+$/
-const PHONE_MESSAGE = "Please enter a valid phone number."
+const PHONE_MESSAGE = errorKey("phoneInvalid")
 const PHONE_MAX_LENGTH = 11
 
 /** Exactly 9 digits — Egyptian Tax Registration Number, no letters or separators. */
 const TAX_NUMBER_REGEX = /^[0-9]{9}$/
-const TAX_NUMBER_MESSAGE = "Please enter a valid Tax Number."
+const TAX_NUMBER_MESSAGE = errorKey("taxNumberInvalid")
 export const TAX_NUMBER_LENGTH = 9
 
 export const customerFormSchema = z.object({
-  name: z.string().trim().min(1, "Customer name is required"),
+  name: z.string().trim().min(1, errorKey("nameRequired")),
   customer_type: z.enum(["company", "individual"]),
   phone: z
     .string()
     .trim()
-    .min(1, "Phone is required")
+    .min(1, errorKey("phoneRequired"))
     .max(PHONE_MAX_LENGTH, PHONE_MESSAGE)
     .regex(PHONE_REGEX, PHONE_MESSAGE),
-  email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
+  email: z
+    .string()
+    .trim()
+    .min(1, errorKey("emailRequired"))
+    .email(errorKey("emailInvalid")),
   tax_number: z
     .string()
     .trim()
     .regex(TAX_NUMBER_REGEX, TAX_NUMBER_MESSAGE)
     .optional()
     .or(z.literal("")),
-  assigned_salesperson_id: z.string().trim().min(1, "Select a salesperson"),
+  assigned_salesperson_id: z.string().trim().min(1, errorKey("salespersonRequired")),
   address_line: z.string().trim().optional(),
   address_city: z.string().trim().optional(),
   address_governorate: z.string().trim().optional(),

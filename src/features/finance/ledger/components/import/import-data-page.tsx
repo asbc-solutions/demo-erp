@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Download, FileUp } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -39,70 +40,89 @@ import { FinancePageBody, FinancePageHeader } from "../../../components/shared/p
 import { errorMessage } from "../../../lib/utils/api"
 import { downloadCsv, parseCsv } from "../../../lib/utils/csv"
 import { useImportRows } from "../../lib/mutations/ledger"
-import type { ImportKind } from "../../lib/types/ledger"
+import type { ImportKind, LedgerMessageKey, LedgerTranslator } from "../../lib/types/ledger"
 
-type FieldSpec = { key: string; label: string; required?: boolean; numeric?: boolean; aliases: string[]; example: string }
+type FieldSpec = {
+  key: string
+  labelKey: LedgerMessageKey
+  /** Column heading in the CSV template; also matched by exact name. */
+  header: string
+  required?: boolean
+  numeric?: boolean
+  aliases: string[]
+  example: string
+}
 
-const TARGETS: Record<ImportKind, { label: string; file: string; fields: FieldSpec[] }> = {
+const TARGETS: Record<ImportKind, { labelKey: LedgerMessageKey; actionKey: LedgerMessageKey; file: string; fields: FieldSpec[] }> = {
   tax_codes: {
-    label: "Tax codes",
+    labelKey: "importTaxCodes",
+    actionKey: "importTaxCodesAction",
     file: "taxCode-template.csv",
     fields: [
-      { key: "code", label: "Code", required: true, aliases: ["id", "taxcode"], example: "VAT5" },
-      { key: "name", label: "Name", required: true, aliases: ["description", "title"], example: "VAT 5% — reduced" },
-      { key: "kind", label: "Type", aliases: ["kind", "taxtype"], example: "vat" },
-      { key: "rate", label: "Rate", required: true, numeric: true, aliases: ["percent", "percentage"], example: "5" },
-      { key: "account_code", label: "Account", aliases: ["accountcode", "glaccount", "ledgeraccount"], example: "210201" },
-      { key: "jurisdiction", label: "Jurisdiction", aliases: ["country", "region"], example: "EG" },
+      { key: "code", labelKey: "code", header: "Code", required: true, aliases: ["id", "taxcode"], example: "VAT5" },
+      { key: "name", labelKey: "name", header: "Name", required: true, aliases: ["description", "title"], example: "VAT 5% — reduced" },
+      { key: "kind", labelKey: "type", header: "Type", aliases: ["kind", "taxtype"], example: "vat" },
+      { key: "rate", labelKey: "rate", header: "Rate", required: true, numeric: true, aliases: ["percent", "percentage"], example: "5" },
+      { key: "account_code", labelKey: "account", header: "Account", aliases: ["accountcode", "glaccount", "ledgeraccount"], example: "210201" },
+      { key: "jurisdiction", labelKey: "jurisdiction", header: "Jurisdiction", aliases: ["country", "region"], example: "EG" },
     ],
   },
   cost_centers: {
-    label: "Cost centers",
+    labelKey: "importCostCenters",
+    actionKey: "importCostCentersAction",
     file: "costCenter-template.csv",
     fields: [
-      { key: "code", label: "Code", required: true, aliases: ["id"], example: "CC-900" },
-      { key: "name", label: "Name", required: true, aliases: ["description", "title"], example: "Pilot plant" },
-      { key: "parent_code", label: "Parent", aliases: ["parentcode", "parentcenter"], example: "CC-100" },
-      { key: "manager", label: "Manager", aliases: ["owner", "responsible"], example: "Tarek Aziz" },
+      { key: "code", labelKey: "code", header: "Code", required: true, aliases: ["id"], example: "CC-900" },
+      { key: "name", labelKey: "name", header: "Name", required: true, aliases: ["description", "title"], example: "Pilot plant" },
+      { key: "parent_code", labelKey: "parent", header: "Parent", aliases: ["parentcode", "parentcenter"], example: "CC-100" },
+      { key: "manager", labelKey: "manager", header: "Manager", aliases: ["owner", "responsible"], example: "Tarek Aziz" },
     ],
   },
   dimensions: {
-    label: "Dimensions",
+    labelKey: "importDimensions",
+    actionKey: "importDimensionsAction",
     file: "dimension-template.csv",
     fields: [
-      { key: "code", label: "Code", required: true, aliases: ["id"], example: "REGION" },
-      { key: "name", label: "Name", required: true, aliases: ["description", "title"], example: "Sales region" },
-      { key: "values", label: "Values", aliases: ["options", "members"], example: "Cairo; Delta; Upper Egypt" },
+      { key: "code", labelKey: "code", header: "Code", required: true, aliases: ["id"], example: "REGION" },
+      { key: "name", labelKey: "name", header: "Name", required: true, aliases: ["description", "title"], example: "Sales region" },
+      { key: "values", labelKey: "values", header: "Values", aliases: ["options", "members"], example: "Cairo; Delta; Upper Egypt" },
     ],
   },
 }
 
-const STEPS = ["File", "Match columns", "Check", "Preview", "Import"] as const
+const STEPS: LedgerMessageKey[] = ["stepFile", "stepMatchColumns", "stepCheck", "stepPreview", "stepImport"]
 const UNMATCHED = "__none__"
 
 const normalise = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "")
 
-type Match = { field: string; by: "Exact name" | "Similar name" | "Not matched" }
+type MatchedBy = "exact" | "similar" | "none"
+type Match = { field: string; by: MatchedBy }
+
+const MATCHED_BY_KEY: Record<MatchedBy, LedgerMessageKey> = {
+  exact: "matchedExact",
+  similar: "matchedSimilar",
+  none: "matchedNone",
+}
 
 function matchColumns(headers: string[], fields: FieldSpec[]): Match[] {
   const used = new Set<string>()
   return headers.map((header) => {
     const name = normalise(header)
-    const exact = fields.find((field) => !used.has(field.key) && (normalise(field.label) === name || normalise(field.key) === name))
+    const exact = fields.find((field) => !used.has(field.key) && (normalise(field.header) === name || normalise(field.key) === name))
     const similar = exact ?? fields.find((field) => !used.has(field.key) && field.aliases.includes(name))
-    if (!similar) return { field: UNMATCHED, by: "Not matched" }
+    if (!similar) return { field: UNMATCHED, by: "none" }
     used.add(similar.key)
-    return { field: similar.key, by: exact ? "Exact name" : "Similar name" }
+    return { field: similar.key, by: exact ? "exact" : "similar" }
   })
 }
 
 type Checked = { rows: Record<string, string>[]; problems: string[]; usable: number }
 
-function checkRows(data: string[][], matches: Match[], fields: FieldSpec[]): Checked {
+function checkRows(data: string[][], matches: Match[], fields: FieldSpec[], t: LedgerTranslator): Checked {
   const problems: string[] = []
   const seen = new Set<string>()
   const missingFields = fields.filter((field) => field.required && !matches.some((match) => match.field === field.key))
-  for (const field of missingFields) problems.push(`No column is matched to ${field.label}, which every record needs.`)
+  for (const field of missingFields) problems.push(t("importMissingColumn", { field: t(field.labelKey) }))
   const rows: Record<string, string>[] = []
   data.forEach((cells, index) => {
     const row: Record<string, string> = {}
@@ -112,16 +132,16 @@ function checkRows(data: string[][], matches: Match[], fields: FieldSpec[]): Che
     const line = index + 2
     const empty = fields.filter((field) => field.required && !row[field.key])
     if (missingFields.length === 0 && empty.length > 0) {
-      problems.push(`Row ${line}: ${empty.map((field) => field.label).join(", ")} is empty.`)
+      problems.push(t("importRowEmpty", { line, fields: empty.map((field) => t(field.labelKey)).join(", ") }))
       return
     }
     const notNumber = fields.find((field) => field.numeric && row[field.key] && Number.isNaN(Number(row[field.key])))
     if (notNumber) {
-      problems.push(`Row ${line}: ${notNumber.label} “${row[notNumber.key]}” is not a number.`)
+      problems.push(t("importRowNotNumber", { line, field: t(notNumber.labelKey), value: row[notNumber.key] }))
       return
     }
     if (row.code && seen.has(row.code)) {
-      problems.push(`Row ${line}: code ${row.code} appears twice in the file.`)
+      problems.push(t("importRowDuplicate", { line, code: row.code }))
       return
     }
     if (row.code) seen.add(row.code)
@@ -132,6 +152,7 @@ function checkRows(data: string[][], matches: Match[], fields: FieldSpec[]): Che
 
 /** 05.11 · Import data — spreadsheet in, records out, nothing written until the last step. */
 function ImportDataPage() {
+  const t = useTranslations("FinanceLedger")
   const [step, setStep] = React.useState(0)
   const [kind, setKind] = React.useState<ImportKind>("tax_codes")
   const [fileName, setFileName] = React.useState("")
@@ -141,13 +162,13 @@ function ImportDataPage() {
   const [result, setResult] = React.useState<{ created: number; skipped: number } | null>(null)
   const importRows = useImportRows()
   const target = TARGETS[kind]
-  const checked = React.useMemo(() => checkRows(data, matches, target.fields), [data, matches, target.fields])
+  const checked = React.useMemo(() => checkRows(data, matches, target.fields, t), [data, matches, target.fields, t])
   const inputRef = React.useRef<HTMLInputElement>(null)
 
   const readFile = async (file: File) => {
     const rows = parseCsv(await file.text())
     if (rows.length < 2) {
-      toast.error("That file has no rows under its headings. The first row must be your column headings.")
+      toast.error(t("importNoRows"))
       return
     }
     setFileName(file.name)
@@ -159,7 +180,7 @@ function ImportDataPage() {
   }
 
   const downloadTemplate = () =>
-    downloadCsv(target.file, target.fields.map((field) => field.label), [target.fields.map((field) => field.example)])
+    downloadCsv(target.file, target.fields.map((field) => field.header), [target.fields.map((field) => field.example)])
 
   const startOver = () => {
     setStep(0)
@@ -172,43 +193,42 @@ function ImportDataPage() {
   }
 
   const status = (index: number): StepStatus => (index < step ? "completed" : index === step ? "current" : "upcoming")
-  const back = <Button variant="secondary" onClick={() => setStep((current) => current - 1)}>Back</Button>
+  const back = <Button variant="secondary" onClick={() => setStep((current) => current - 1)}>{t("back")}</Button>
 
   return (
     <>
-      <FinancePageHeader title="Import data" />
+      <FinancePageHeader title={t("importData")} />
       <FinancePageBody>
-        <Stepper orientation="horizontal" aria-label="Import steps">
-          {STEPS.map((label, index) => (
-            <Step key={label} status={status(index)} index={index} isLast={index === STEPS.length - 1}>
+        <Stepper orientation="horizontal" aria-label={t("importSteps")}>
+          {STEPS.map((labelKey, index) => (
+            <Step key={labelKey} status={status(index)} index={index} isLast={index === STEPS.length - 1}>
               <StepIndicator />
               <StepContent>
-                <StepTitle>{label}</StepTitle>
+                <StepTitle>{t(labelKey)}</StepTitle>
               </StepContent>
             </Step>
           ))}
         </Stepper>
         <p className="text-content-secondary text-[13px] leading-5">
-          Bring existing records in from a spreadsheet. Nothing is written until the last step, and you see exactly
-          what will be created first.
+          {t("importIntro")}
         </p>
 
         {step === 0 ? (
           <>
-            <FinanceSection title="What are you importing?">
+            <FinanceSection title={t("importWhatTitle")}>
               <RadioGroup value={kind} onValueChange={(value) => setKind(value as ImportKind)} className="flex flex-wrap gap-6">
                 {(Object.keys(TARGETS) as ImportKind[]).map((key) => (
                   <div key={key} className="flex items-center gap-2">
                     <RadioGroupItem id={`import-${key}`} value={key} />
-                    <Label htmlFor={`import-${key}`}>{TARGETS[key].label}</Label>
+                    <Label htmlFor={`import-${key}`}>{t(TARGETS[key].labelKey)}</Label>
                   </div>
                 ))}
               </RadioGroup>
             </FinanceSection>
             <div className="border-stroke-input bg-surface-white flex flex-col items-start gap-3 rounded-xl border border-dashed p-6">
-              <span className="text-content-primary text-sm leading-5 font-semibold">Choose a CSV file</span>
+              <span className="text-content-primary text-sm leading-5 font-semibold">{t("chooseCsvFile")}</span>
               <span className="text-content-secondary text-[13px] leading-5">
-                Export from Excel or Google Sheets as CSV. The first row must be your column headings.
+                {t("chooseCsvHint")}
               </span>
               <input
                 ref={inputRef}
@@ -224,32 +244,32 @@ function ImportDataPage() {
               <div className="flex flex-wrap gap-2">
                 <Button variant="primary" onClick={() => inputRef.current?.click()}>
                   <FileUp aria-hidden />
-                  Choose file
+                  {t("chooseFile")}
                 </Button>
                 <Button variant="secondary" onClick={downloadTemplate}>
                   <Download aria-hidden />
-                  Download a template
+                  {t("downloadTemplate")}
                 </Button>
               </div>
               <span className="text-content-tertiary text-xs leading-4">
-                The template has the right headings and one example row, so the first attempt is not a guess.
+                {t("templateHint")}
               </span>
             </div>
           </>
         ) : null}
 
         {step === 1 ? (
-          <FinanceSection title="Match your columns to ours" description="We matched what we could and say why. Change anything we got wrong.">
+          <FinanceSection title={t("matchColumnsTitle")} description={t("matchColumnsDescription")}>
             <p className="text-content-tertiary text-[13px] leading-5">
-              {data.length} rows read from {fileName}
+              {t("rowsReadFrom", { count: data.length, file: fileName })}
             </p>
             <div className="border-stroke-default bg-surface-white overflow-hidden rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Your column</TableHead>
-                    <TableHead>Our field</TableHead>
-                    <TableHead>Matched by</TableHead>
+                    <TableHead>{t("yourColumn")}</TableHead>
+                    <TableHead>{t("ourField")}</TableHead>
+                    <TableHead>{t("matchedBy")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -260,70 +280,70 @@ function ImportDataPage() {
                         <Select
                           value={matches[index]?.field ?? UNMATCHED}
                           onValueChange={(field) =>
-                            setMatches((current) => current.map((match, position) => (position === index ? { field, by: field === UNMATCHED ? "Not matched" : "Exact name" } : match)))
+                            setMatches((current) => current.map((match, position) => (position === index ? { field, by: field === UNMATCHED ? "none" : "exact" } : match)))
                           }
                         >
-                          <SelectTrigger aria-label={`Field for ${header}`} className="h-8 w-56">
+                          <SelectTrigger aria-label={t("fieldFor", { header })} className="h-8 w-56">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={UNMATCHED}>Don’t import</SelectItem>
+                            <SelectItem value={UNMATCHED}>{t("dontImport")}</SelectItem>
                             {target.fields.map((field) => (
                               <SelectItem key={field.key} value={field.key}>
-                                {field.label}
+                                {t(field.labelKey)}
                                 {field.required ? " *" : ""}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell className="text-content-secondary">{matches[index]?.by}</TableCell>
+                      <TableCell className="text-content-secondary">{matches[index] ? t(MATCHED_BY_KEY[matches[index].by]) : null}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
             <div className="flex gap-2">
-              <Button variant="secondary" onClick={startOver}>Back</Button>
-              <Button variant="primary" onClick={() => setStep(2)}>Continue</Button>
+              <Button variant="secondary" onClick={startOver}>{t("back")}</Button>
+              <Button variant="primary" onClick={() => setStep(2)}>{t("continue")}</Button>
             </div>
           </FinanceSection>
         ) : null}
 
         {step === 2 ? (
-          <FinanceSection title="What we found">
+          <FinanceSection title={t("whatWeFound")}>
             {checked.problems.length === 0 ? (
-              <FinanceAlert tone="success" className="text-status-success-fg">Every row is usable.</FinanceAlert>
+              <FinanceAlert tone="success" className="text-status-success-fg">{t("everyRowUsable")}</FinanceAlert>
             ) : (
               <FinanceAlert tone="warning" className="text-status-warning-fg">
                 <span className="flex flex-col gap-1">
                   {checked.problems.slice(0, 8).map((problem) => (
                     <span key={problem}>{problem}</span>
                   ))}
-                  {checked.problems.length > 8 ? <span>…and {checked.problems.length - 8} more.</span> : null}
-                  <span>Rows with a problem are skipped. Fix them in the file and import again to bring them in.</span>
+                  {checked.problems.length > 8 ? <span>{t("andMore", { count: checked.problems.length - 8 })}</span> : null}
+                  <span>{t("problemRowsSkipped")}</span>
                 </span>
               </FinanceAlert>
             )}
             <div className="flex gap-2">
               {back}
-              <Button variant="primary" disabled={checked.usable === 0} onClick={() => setStep(3)}>Continue</Button>
+              <Button variant="primary" disabled={checked.usable === 0} onClick={() => setStep(3)}>{t("continue")}</Button>
             </div>
           </FinanceSection>
         ) : null}
 
         {step === 3 ? (
-          <FinanceSection title="What the import will do">
+          <FinanceSection title={t("whatImportWillDo")}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Records created" value={checked.usable} />
-              <KpiCard layout="bar" accent="amber" label="Rows skipped" value={data.length - checked.usable} />
+              <KpiCard layout="bar" accent="indigo" label={t("recordsCreated")} value={checked.usable} />
+              <KpiCard layout="bar" accent="amber" label={t("rowsSkipped")} value={data.length - checked.usable} />
             </div>
             <div className="border-stroke-default bg-surface-white overflow-x-auto rounded-lg border">
               <Table density="compact">
                 <TableHeader>
                   <TableRow>
                     {target.fields.map((field) => (
-                      <TableHead key={field.key}>{field.label}</TableHead>
+                      <TableHead key={field.key}>{t(field.labelKey)}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -340,36 +360,38 @@ function ImportDataPage() {
             </div>
             <div className="flex gap-2">
               {back}
-              <Button variant="primary" onClick={() => setStep(4)}>Continue</Button>
+              <Button variant="primary" onClick={() => setStep(4)}>{t("continue")}</Button>
             </div>
           </FinanceSection>
         ) : null}
 
         {step === 4 ? (
-          <FinanceSection title="Import">
+          <FinanceSection title={t("stepImport")}>
             {result ? (
               <>
                 <FinanceAlert
                   tone="success"
                   className="text-status-success-fg"
-                  action={<Button variant="secondary" size="sm" onClick={startOver}>Import another file</Button>}
+                  action={<Button variant="secondary" size="sm" onClick={startOver}>{t("importAnotherFile")}</Button>}
                 >
-                  {result.created} records imported{result.skipped ? `, ${result.skipped} skipped because the code already exists` : ""}.
-                  Saved for this session. A reload returns the prototype to its starting figures.
+                  {result.skipped
+                    ? t("importedWithSkipped", { created: result.created, skipped: result.skipped })
+                    : t("imported", { created: result.created })}{" "}
+                  {t("savedForSession")}
                 </FinanceAlert>
                 <KeyValueList
                   items={[
-                    { term: "You asked for", value: `Import ${target.label.toLowerCase()}` },
-                    { term: "Records created", value: result.created },
-                    { term: "Rows skipped", value: result.skipped + (data.length - checked.usable) },
-                    { term: "What happened", value: "The change was written to this session only." },
+                    { term: t("youAskedFor"), value: t(target.actionKey) },
+                    { term: t("recordsCreated"), value: result.created },
+                    { term: t("rowsSkipped"), value: result.skipped + (data.length - checked.usable) },
+                    { term: t("whatHappened"), value: t("writtenToSession") },
                   ]}
                 />
               </>
             ) : (
               <>
                 <p className="text-content-secondary text-[13px] leading-5">
-                  Saved for this session. A reload returns the prototype to its starting figures.
+                  {t("savedForSession")}
                 </p>
                 <div className="flex gap-2">
                   {back}
@@ -381,12 +403,12 @@ function ImportDataPage() {
                         { kind, rows: checked.rows },
                         {
                           onSuccess: setResult,
-                          onError: (error) => toast.error(errorMessage(error, "The import failed. Nothing was written.")),
+                          onError: (error) => toast.error(errorMessage(error, t("errorImport"))),
                         },
                       )
                     }
                   >
-                    Import {checked.usable} records
+                    {t("importRecords", { count: checked.usable })}
                   </Button>
                 </div>
               </>

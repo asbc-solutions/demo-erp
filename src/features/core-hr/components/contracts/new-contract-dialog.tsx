@@ -4,6 +4,7 @@ import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -37,22 +38,19 @@ import type {
   ContractType,
   EmployeeListItem,
 } from "../../lib/types"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
-const CONTRACT_TYPES: { value: ContractType; label: string }[] = [
-  { value: "permanent", label: "Permanent" },
-  { value: "fixed_term", label: "Fixed term" },
-  { value: "temporary", label: "Temporary" },
-  { value: "internship", label: "Internship" },
-  { value: "contract", label: "Contract" },
-  { value: "seasonal", label: "Seasonal" },
-  { value: "secondment", label: "Secondment" },
+const CONTRACT_TYPES: readonly ContractType[] = [
+  "permanent",
+  "fixed_term",
+  "temporary",
+  "internship",
+  "contract",
+  "seasonal",
+  "secondment",
 ]
 
-const NOTICE_UNITS = [
-  { value: "day", label: "Days" },
-  { value: "week", label: "Weeks" },
-  { value: "month", label: "Months" },
-] as const
+const NOTICE_UNITS = ["day", "week", "month"] as const
 
 type NewContractDialogProps = Readonly<{
   open: boolean
@@ -77,7 +75,7 @@ function cleanOptional(value: string | undefined) {
   return trimmed ? trimmed : null
 }
 
-function apiErrorDescription(err: unknown) {
+function apiErrorDescription(err: unknown, fallback: string) {
   const apiErr = err as ApiError
   const fields = apiErr.details?.fields as Record<string, string[]> | undefined
 
@@ -87,7 +85,7 @@ function apiErrorDescription(err: unknown) {
       .join(" | ")
   }
 
-  return apiErr.message ?? "Please check the details and try again."
+  return apiErr.message ?? fallback
 }
 
 function buildDefaults(
@@ -122,6 +120,10 @@ export function NewContractDialog({
   mode = "create",
   initialContract = null,
 }: NewContractDialogProps) {
+  const t = useTranslations("HrContracts")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const createContract = useCreateContract()
   const renewContract = useRenewContract()
   const isRenewal = mode === "renew"
@@ -182,18 +184,16 @@ export function NewContractDialog({
             "contract" in result
               ? result.contract.contract_number
               : result.contract_number
-          toast.success(isRenewal ? "Contract renewed" : "Contract created", {
+          toast.success(isRenewal ? t("renewedToast") : t("createdToast"), {
             description: contractNumber,
           })
           handleOpenChange(false)
         },
         onError: (err) => {
           toast.error(
-            isRenewal
-              ? "Failed to renew contract"
-              : "Failed to create contract",
+            isRenewal ? t("renewFailed") : t("createFailed"),
             {
-              description: apiErrorDescription(err),
+              description: apiErrorDescription(err, t("checkDetails")),
             }
           )
         },
@@ -201,10 +201,10 @@ export function NewContractDialog({
     )
   }
 
-  const title = isRenewal ? "Renew Contract" : "New Contract"
+  const title = isRenewal ? t("renewContract") : t("newContract")
   const description = isRenewal
-    ? "Create a renewal from the current employee contract"
-    : "Register a contract for an employee"
+    ? t("renewSubtitle")
+    : t("createSubtitle")
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -214,7 +214,7 @@ export function NewContractDialog({
           className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
               {title}
             </DialogTitle>
@@ -226,7 +226,7 @@ export function NewContractDialog({
           <div className="flex flex-col gap-4 pt-1">
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Employee <span className="text-brand-danger">*</span>
+                {t("colEmployee")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={selectedEmployeeId || undefined}
@@ -241,8 +241,8 @@ export function NewContractDialog({
                   <SelectValue
                     placeholder={
                       employeesLoading
-                        ? "Loading employees..."
-                        : "Select employee..."
+                        ? t("loadingEmployees")
+                        : t("selectEmployee")
                     }
                   />
                 </SelectTrigger>
@@ -256,7 +256,7 @@ export function NewContractDialog({
               </Select>
               {errors.employee_id && (
                 <p className="text-xs text-brand-danger">
-                  {errors.employee_id.message}
+                  {fieldError(errors.employee_id.message)}
                 </p>
               )}
             </div>
@@ -264,7 +264,7 @@ export function NewContractDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Contract type <span className="text-brand-danger">*</span>
+                  {t("fieldContractType")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Select
                   value={selectedType}
@@ -289,9 +289,9 @@ export function NewContractDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CONTRACT_TYPES.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
+                    {CONTRACT_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {tShared(`contractType.${type}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -303,7 +303,7 @@ export function NewContractDialog({
                   htmlFor="contract-start"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Start date <span className="text-brand-danger">*</span>
+                  {t("startDate")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   id="contract-start"
@@ -313,7 +313,7 @@ export function NewContractDialog({
                 />
                 {errors.start_date && (
                   <p className="text-xs text-brand-danger">
-                    {errors.start_date.message}
+                    {fieldError(errors.start_date.message)}
                   </p>
                 )}
               </div>
@@ -325,7 +325,7 @@ export function NewContractDialog({
                   htmlFor="contract-end"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  End date
+                  {t("endDate")}
                   {requiresEndDate && (
                     <span className="text-brand-danger"> *</span>
                   )}
@@ -339,7 +339,7 @@ export function NewContractDialog({
                 />
                 {errors.end_date && (
                   <p className="text-xs text-brand-danger">
-                    {errors.end_date.message}
+                    {fieldError(errors.end_date.message)}
                   </p>
                 )}
               </div>
@@ -359,7 +359,7 @@ export function NewContractDialog({
                     }
                   }}
                 />
-                Open-ended
+                {t("openEnded")}
               </label>
             </div>
 
@@ -369,12 +369,12 @@ export function NewContractDialog({
                   htmlFor="contract-location"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Work location
+                  {t("fieldWorkLocation")}
                 </Label>
                 <Input
                   id="contract-location"
                   {...register("work_location")}
-                  placeholder="Cairo HQ"
+                  placeholder={t("phWorkLocation")}
                   className="h-9 rounded-md border-stroke-default bg-surface-white text-sm"
                 />
               </div>
@@ -383,7 +383,7 @@ export function NewContractDialog({
                   htmlFor="contract-schedule"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Work schedule <span className="text-brand-danger">*</span>
+                  {t("fieldWorkSchedule")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   id="contract-schedule"
@@ -392,7 +392,7 @@ export function NewContractDialog({
                 />
                 {errors.work_schedule && (
                   <p className="text-xs text-brand-danger">
-                    {errors.work_schedule.message}
+                    {fieldError(errors.work_schedule.message)}
                   </p>
                 )}
               </div>
@@ -404,7 +404,7 @@ export function NewContractDialog({
                   htmlFor="contract-hours"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Weekly hours
+                  {t("fieldWeeklyHours")}
                 </Label>
                 <Input
                   id="contract-hours"
@@ -416,7 +416,7 @@ export function NewContractDialog({
                 />
                 {errors.weekly_hours && (
                   <p className="text-xs text-brand-danger">
-                    {errors.weekly_hours.message}
+                    {fieldError(errors.weekly_hours.message)}
                   </p>
                 )}
               </div>
@@ -425,7 +425,7 @@ export function NewContractDialog({
                   htmlFor="contract-probation"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Probation days
+                  {t("fieldProbationDays")}
                 </Label>
                 <Input
                   id="contract-probation"
@@ -437,7 +437,7 @@ export function NewContractDialog({
                 />
                 {errors.probation_days && (
                   <p className="text-xs text-brand-danger">
-                    {errors.probation_days.message}
+                    {fieldError(errors.probation_days.message)}
                   </p>
                 )}
               </div>
@@ -446,7 +446,7 @@ export function NewContractDialog({
                   htmlFor="contract-notice"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Notice period
+                  {t("noticePeriodLabel")}
                 </Label>
                 <Input
                   id="contract-notice"
@@ -458,7 +458,7 @@ export function NewContractDialog({
                 />
                 {errors.notice_period_days && (
                   <p className="text-xs text-brand-danger">
-                    {errors.notice_period_days.message}
+                    {fieldError(errors.notice_period_days.message)}
                   </p>
                 )}
               </div>
@@ -466,7 +466,7 @@ export function NewContractDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Notice unit
+                {t("fieldNoticeUnit")}
               </Label>
               <Select
                 value={noticeUnit}
@@ -483,8 +483,8 @@ export function NewContractDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {NOTICE_UNITS.map((unit) => (
-                    <SelectItem key={unit.value} value={unit.value}>
-                      {unit.label}
+                    <SelectItem key={unit} value={unit}>
+                      {t(`noticeUnit.${unit}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -500,7 +500,7 @@ export function NewContractDialog({
               className="h-9 rounded-md px-4 text-sm font-semibold"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -511,11 +511,11 @@ export function NewContractDialog({
             >
               {isPending
                 ? isRenewal
-                  ? "Renewing..."
-                  : "Creating..."
+                  ? t("renewing")
+                  : t("creating")
                 : isRenewal
-                  ? "Renew contract"
-                  : "Create contract"}
+                  ? t("renewContractCta")
+                  : t("createContractCta")}
             </Button>
           </div>
         </form>

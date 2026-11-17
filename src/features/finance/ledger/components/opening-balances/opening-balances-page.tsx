@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Lock } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -24,35 +25,37 @@ import { FinanceTable, type FinanceColumn } from "../../../components/shared/fin
 import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate, formatDateTime } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount } from "../../../lib/utils/money"
 import { useLockOpenings } from "../../lib/mutations/ledger"
 import { useOpeningBalances } from "../../lib/queries/ledger"
-import type { OpeningBalances } from "../../lib/types/ledger"
+import type { LedgerTranslator, OpeningBalances } from "../../lib/types/ledger"
 
 type Row = OpeningBalances["items"][number]
 
-function columns(totals: { debit: number; credit: number }): FinanceColumn<Row>[] {
+function columns(t: LedgerTranslator, totals: { debit: number; credit: number }): FinanceColumn<Row>[] {
   return [
-    { id: "code", header: "Account", cell: (row) => <span className="font-mono text-xs">{row.code}</span>, footer: "Total" },
+    { id: "code", header: t("account"), cell: (row) => <span className="font-mono text-xs">{row.code}</span>, footer: t("total") },
     {
       id: "name",
-      header: "Name",
+      header: t("name"),
       cell: (row) => (
         <span className="flex flex-wrap items-center gap-2">
           {row.name}
-          {row.owned ? <StatusPill status="routing-auto" label="From subledger" tone="info" /> : null}
+          {row.owned ? <StatusPill status="routing-auto" label={t("fromSubledger")} tone="info" /> : null}
         </span>
       ),
     },
-    { id: "side", header: "Normal side", cell: (row) => (row.normal_side === "debit" ? "Debit" : "Credit") },
-    { id: "debit", header: "Debit (EGP)", align: "end", cell: (row) => (row.debit ? <Amount value={row.debit} /> : null), footer: <Amount value={totals.debit} emphasis="strong" /> },
-    { id: "credit", header: "Credit (EGP)", align: "end", cell: (row) => (row.credit ? <Amount value={row.credit} /> : null), footer: <Amount value={totals.credit} emphasis="strong" /> },
+    { id: "side", header: t("normalSide"), cell: (row) => (row.normal_side === "debit" ? t("debit") : t("credit")) },
+    { id: "debit", header: t("debitEgp"), align: "end", cell: (row) => (row.debit ? <Amount value={row.debit} /> : null), footer: <Amount value={totals.debit} emphasis="strong" /> },
+    { id: "credit", header: t("creditEgp"), align: "end", cell: (row) => (row.credit ? <Amount value={row.credit} /> : null), footer: <Amount value={totals.credit} emphasis="strong" /> },
   ]
 }
 
 /** 05.10 · Opening balances — the starting position of the year, checked and then locked. */
 function OpeningBalancesPage() {
+  const t = useTranslations("FinanceLedger")
+  const { formatDate, formatDateTime } = useFinanceDateFormat()
   const { data, isError, refetch } = useOpeningBalances()
   const lock = useLockOpenings()
   const [confirming, setConfirming] = React.useState(false)
@@ -61,12 +64,12 @@ function OpeningBalancesPage() {
   return (
     <>
       <FinancePageHeader
-        title="Opening balances"
-        figure={data ? <HeaderFigure label={`As at ${formatDate(data.as_at)}`}>{data.items.length} accounts</HeaderFigure> : null}
+        title={t("openingBalances")}
+        figure={data ? <HeaderFigure label={t("asAt", { date: formatDate(data.as_at) })}>{t("accountsCount", { count: data.items.length })}</HeaderFigure> : null}
         actions={
           <Button variant="primary" disabled={!data || data.locked || !balanced} onClick={() => setConfirming(true)}>
             <Lock aria-hidden />
-            {data?.locked ? "Locked" : "Lock opening balances"}
+            {data?.locked ? t("locked") : t("lockOpeningBalances")}
           </Button>
         }
       />
@@ -78,26 +81,26 @@ function OpeningBalancesPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Total debits (EGP)" value={formatAmount(data.debit)} />
-              <KpiCard layout="bar" accent="teal" label="Total credits (EGP)" value={formatAmount(data.credit)} />
-              <KpiCard layout="bar" accent="amber" label="Difference (EGP)" value={formatAmount(data.difference)} caption={balanced ? "Balanced" : "Out of balance"} />
+              <KpiCard layout="bar" accent="indigo" label={t("totalDebitsEgp")} value={formatAmount(data.debit)} />
+              <KpiCard layout="bar" accent="teal" label={t("totalCreditsEgp")} value={formatAmount(data.credit)} />
+              <KpiCard layout="bar" accent="amber" label={t("differenceEgp")} value={formatAmount(data.difference)} caption={balanced ? t("balanced") : t("outOfBalance")} />
             </div>
             {data.locked ? (
               <FinanceAlert tone="success" className="text-status-success-fg">
-                Locked{data.locked_at ? ` on ${formatDateTime(data.locked_at, " · ")}` : ""}. Changes to the starting
-                position now go through an adjusting journal.
+                {data.locked_at
+                  ? t("openingsLockedOn", { date: formatDateTime(data.locked_at, " · ") })
+                  : t("openingsLocked")}
               </FinanceAlert>
             ) : balanced ? (
               <FinanceAlert tone="success" className="text-status-success-fg">
-                Opening balances are in balance: total debits equal total credits. Locking them freezes the starting
-                position for the fiscal year, after which changes must go through an adjusting journal.
+                {t("openingsBalancedInfo")}
               </FinanceAlert>
             ) : (
               <FinanceAlert tone="danger">
-                Opening balances are out by {formatAmount(data.difference)}. Correct the difference before locking.
+                {t("openingsOutBy", { amount: formatAmount(data.difference) })}
               </FinanceAlert>
             )}
-            <FinanceTable caption="Opening balances" columns={columns(data)} rows={data.items} getRowId={(row) => row.code} />
+            <FinanceTable caption={t("openingBalances")} columns={columns(t, data)} rows={data.items} getRowId={(row) => row.code} />
           </>
         )}
       </FinancePageBody>
@@ -105,24 +108,21 @@ function OpeningBalancesPage() {
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Lock the opening balances?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Locking freezes the opening figures for the year. They can no longer be edited, and every report from
-              here on measures against them. This cannot be undone in this prototype.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("lockOpeningsTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("lockOpeningsDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className={buttonVariants({ variant: "primary" })}
               onClick={() =>
                 lock.mutate(undefined, {
-                  onSuccess: () => toast.success("The opening balances are locked."),
-                  onError: (error) => toast.error(errorMessage(error, "The balances could not be locked. Try again.")),
+                  onSuccess: () => toast.success(t("toastOpeningsLocked")),
+                  onError: (error) => toast.error(errorMessage(error, t("errorLockOpenings"))),
                 })
               }
             >
-              Lock opening balances
+              {t("lockOpeningBalances")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -4,6 +4,11 @@
  * These live outside the step components because the marketing-tracking
  * dashboard has to turn stored ids (`series_a`, `e_commerce`, …) back into the
  * labels a prospect actually saw. One list, two readers.
+ *
+ * The onboarding steps render translated copy keyed by `id` (`OnboardingIndustry`,
+ * `OnboardingTeamSize`, `OnboardingTools` in `messages/<locale>/onboarding.json`);
+ * the English labels below are what the `*Label()` helpers return for callers
+ * without a translator, such as the server-side tracking summary.
  */
 
 export const INDUSTRIES = [

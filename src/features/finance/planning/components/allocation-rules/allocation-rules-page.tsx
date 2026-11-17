@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -46,26 +47,28 @@ import { FinanceErrorState, FinanceTilesSkeleton } from "../../../components/sha
 import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatPeriod } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount } from "../../../lib/utils/money"
 import { RULE_STATUS } from "../../lib/constants/planning"
 import { useRunAllocation, useSaveAllocationRule, useToggleAllocationRule } from "../../lib/mutations/planning"
 import { useAllocationRules } from "../../lib/queries/planning"
-import type { AllocationRule } from "../../lib/types/planning"
-import { SESSION_NOTE } from "../budgets/budgets-page"
+import type { AllocationRule, PlanningMessageKey } from "../../lib/types/planning"
+
+/** Messages are `FinancePlanning` keys, translated where the error is rendered. */
+const msg = (key: PlanningMessageKey) => key
 
 const ruleSchema = z.object({
-  name: z.string().trim().min(1, "Name the rule."),
-  source_accounts: z.string().trim().min(1, "Add at least one source account."),
-  basis: z.string().min(1, "Choose the basis."),
+  name: z.string().trim().min(1, msg("errRuleName")),
+  source_accounts: z.string().trim().min(1, msg("errSourceAccounts")),
+  basis: z.string().min(1, msg("errBasis")),
   targets: z
     .string()
     .trim()
-    .min(1, "Add the target cost centers.")
+    .min(1, msg("errTargets"))
     .refine((value) => {
       const weights = value.split(",").map((pair) => Number(pair.split(":")[1]))
       return weights.every((weight) => weight > 0) && Math.round(weights.reduce((sum, weight) => sum + weight, 0) * 100) === 10000
-    }, "Weights must total 100."),
+    }, msg("errWeights")),
   active: z.boolean(),
 })
 type RuleValues = z.infer<typeof ruleSchema>
@@ -92,6 +95,7 @@ function RuleDialog({
   onOpenChange: (open: boolean) => void
   bases: { value: string; label: string }[]
 }) {
+  const t = useTranslations("FinancePlanning")
   const save = useSaveAllocationRule()
   const {
     control,
@@ -114,32 +118,32 @@ function RuleDialog({
               { id: rule?.id ?? null, input: values },
               {
                 onSuccess: (saved) => {
-                  toast.success(`${saved.code} · ${saved.name} saved.`)
+                  toast.success(t("toastRuleSaved", { code: saved.code, name: saved.name }))
                   onOpenChange(false)
                 },
-                onError: (error) => toast.error(errorMessage(error, "The rule could not be saved. Try again.")),
+                onError: (error) => toast.error(errorMessage(error, t("errorSaveRule"))),
               },
             ),
           )}
         >
           <DialogHeader>
-            <DialogTitle>{rule ? `Edit · ${rule.name}` : "New rule"}</DialogTitle>
-            <DialogDescription>An allocation rule redistributes a shared cost onto operating cost centers during the close. Weights must total 100%.</DialogDescription>
+            <DialogTitle>{rule ? t("editRule", { name: rule.name }) : t("newRule")}</DialogTitle>
+            <DialogDescription>{t("ruleDialogDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Field>
-              <FieldLabel htmlFor="rule-name">Name *</FieldLabel>
+              <FieldLabel htmlFor="rule-name">{t("nameRequired")}</FieldLabel>
               <Input id="rule-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-              {errors.name ? <FieldError>{errors.name.message}</FieldError> : null}
+              {errors.name ? <FieldError>{t(errors.name.message as PlanningMessageKey)}</FieldError> : null}
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="rule-sources">Source accounts *</FieldLabel>
+                <FieldLabel htmlFor="rule-sources">{t("sourceAccountsRequired")}</FieldLabel>
                 <Input id="rule-sources" className="font-mono text-xs" placeholder="620101, 620102" aria-invalid={Boolean(errors.source_accounts)} {...register("source_accounts")} />
-                {errors.source_accounts ? <FieldError>{errors.source_accounts.message}</FieldError> : <FieldDescription>Expense account codes, comma separated.</FieldDescription>}
+                {errors.source_accounts ? <FieldError>{t(errors.source_accounts.message as PlanningMessageKey)}</FieldError> : <FieldDescription>{t("sourceAccountsHint")}</FieldDescription>}
               </Field>
               <Field>
-                <FieldLabel htmlFor="rule-basis">Basis *</FieldLabel>
+                <FieldLabel htmlFor="rule-basis">{t("basisRequired")}</FieldLabel>
                 <Controller
                   control={control}
                   name="basis"
@@ -161,9 +165,9 @@ function RuleDialog({
               </Field>
             </div>
             <Field>
-              <FieldLabel htmlFor="rule-targets">Targets *</FieldLabel>
+              <FieldLabel htmlFor="rule-targets">{t("targetsRequired")}</FieldLabel>
               <Input id="rule-targets" className="font-mono text-xs" placeholder="CC-110:20, CC-210:35, CC-220:45" aria-invalid={Boolean(errors.targets)} {...register("targets")} />
-              {errors.targets ? <FieldError>{errors.targets.message}</FieldError> : <FieldDescription>Cost center and weight pairs, e.g. CC-110:20. Weights must total 100.</FieldDescription>}
+              {errors.targets ? <FieldError>{t(errors.targets.message as PlanningMessageKey)}</FieldError> : <FieldDescription>{t("targetsHint")}</FieldDescription>}
             </Field>
             <Controller
               control={control}
@@ -172,19 +176,19 @@ function RuleDialog({
                 <div className="flex items-center gap-2.5">
                   <Switch id="rule-active" checked={field.value} onCheckedChange={field.onChange} />
                   <Label htmlFor="rule-active" className="text-content-secondary text-[13px] font-normal">
-                    Include this rule in the next allocation run
+                    {t("includeInNextRun")}
                   </Label>
                 </div>
               )}
             />
-            <p className="text-content-tertiary text-[13px] leading-5">{SESSION_NOTE}</p>
+            <p className="text-content-tertiary text-[13px] leading-5">{t("sessionNote")}</p>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={save.isPending}>
-              Save
+              {t("save")}
             </Button>
           </DialogFooter>
         </form>
@@ -194,6 +198,8 @@ function RuleDialog({
 }
 
 function RuleCard({ rule, onEdit }: { rule: AllocationRule; onEdit: () => void }) {
+  const t = useTranslations("FinancePlanning")
+  const { formatPeriod } = useFinanceDateFormat()
   const toggle = useToggleAllocationRule()
   const status = RULE_STATUS[rule.status]
   return (
@@ -207,30 +213,30 @@ function RuleCard({ rule, onEdit }: { rule: AllocationRule; onEdit: () => void }
         <h3 id={`rule-${rule.id}`} className="text-content-primary text-sm leading-5 font-semibold">
           {rule.name}
         </h3>
-        <StatusPill status={`rule-${rule.status}`} label={status.label} tone={status.tone} />
+        <StatusPill status={`rule-${rule.status}`} label={t(status.labelKey)} tone={status.tone} />
         <StatusPill status="prepared" label={rule.basis_label} />
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ms-auto flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             disabled={toggle.isPending}
             onClick={() =>
               toggle.mutate(rule.id, {
-                onSuccess: (saved) => toast.success(saved.active ? `${saved.code} is back in the next run.` : `${saved.code} is paused.`),
-                onError: (error) => toast.error(errorMessage(error, "The rule could not be changed. Try again.")),
+                onSuccess: (saved) => toast.success(saved.active ? t("toastRuleResumed", { code: saved.code }) : t("toastRulePaused", { code: saved.code })),
+                onError: (error) => toast.error(errorMessage(error, t("errorChangeRule"))),
               })
             }
           >
-            {rule.active ? "Pause" : "Resume"}
+            {rule.active ? t("pause") : t("resume")}
           </Button>
           <Button variant="secondary" size="sm" onClick={onEdit}>
-            Edit
+            {t("edit")}
           </Button>
         </div>
       </header>
       <div className="grid grid-cols-1 gap-3 text-[13px] leading-5 md:grid-cols-2">
         <div className="flex flex-col gap-0.5">
-          <span className="text-content-tertiary">Source accounts</span>
+          <span className="text-content-tertiary">{t("sourceAccounts")}</span>
           <span className="text-content-primary">
             {rule.source_accounts.map((account, index) => (
               <React.Fragment key={account.code}>
@@ -241,20 +247,25 @@ function RuleCard({ rule, onEdit }: { rule: AllocationRule; onEdit: () => void }
           </span>
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="text-content-tertiary">Weights total {rule.weights_total}%</span>
+          <span className="text-content-tertiary">{t("weightsTotal", { total: rule.weights_total })}</span>
           <span className="text-content-primary">
-            {rule.targets.length} {rule.targets.length === 1 ? "target" : "targets"}
+            {t("targetsCount", { count: rule.targets.length })}
             {rule.last_run ? (
               <>
                 {" "}
-                · last run {formatPeriod(rule.last_run.period)}, {formatAmount(rule.last_run.amount)} EGP in{" "}
-                <DocNumber href={`/finance/journals/${rule.last_run.entry}`}>{rule.last_run.entry}</DocNumber>
+                ·{" "}
+                {t.rich("lastRun", {
+                  period: formatPeriod(rule.last_run.period),
+                  amount: formatAmount(rule.last_run.amount),
+                  entry: rule.last_run.entry,
+                  doc: (chunks) => <DocNumber href={`/finance/journals/${rule.last_run?.entry}`}>{chunks}</DocNumber>,
+                })}
               </>
             ) : null}
           </span>
         </div>
       </div>
-      <ul className="flex flex-wrap gap-2" aria-label={`${rule.name} targets`}>
+      <ul className="flex flex-wrap gap-2" aria-label={t("ruleTargets", { name: rule.name })}>
         {rule.targets.map((target) => (
           <li key={target.cost_center_id}>
             <Link
@@ -273,6 +284,8 @@ function RuleCard({ rule, onEdit }: { rule: AllocationRule; onEdit: () => void }
 
 /** 09.07 · Allocation rules — how shared costs are spread onto operating cost centers at close. */
 function AllocationRulesPage() {
+  const t = useTranslations("FinancePlanning")
+  const { formatPeriod } = useFinanceDateFormat()
   const { data, isError, refetch } = useAllocationRules()
   const run = useRunAllocation()
   const [editing, setEditing] = React.useState<AllocationRule | null>(null)
@@ -287,16 +300,16 @@ function AllocationRulesPage() {
   return (
     <>
       <FinancePageHeader
-        title="Allocation rules"
-        figure={data ? <HeaderFigure label="Configured rules">{data.items.length}</HeaderFigure> : null}
+        title={t("allocationRules")}
+        figure={data ? <HeaderFigure label={t("configuredRules")}>{data.items.length}</HeaderFigure> : null}
         actions={
           <>
             <Button variant="secondary" disabled={!data?.pending} onClick={() => setConfirmRun(true)}>
-              Run allocation
+              {t("runAllocation")}
             </Button>
             <Button variant="primary" onClick={() => openRule(null)}>
               <Plus aria-hidden />
-              New rule
+              {t("newRule")}
             </Button>
           </>
         }
@@ -309,9 +322,9 @@ function AllocationRulesPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Active rules" value={data.active} caption={data.pending ? `${data.pending} not yet run for ${formatPeriod(data.period)}` : `All run for ${formatPeriod(data.period)}`} />
-              <KpiCard layout="bar" accent="teal" label="Paused" value={data.paused} />
-              <KpiCard layout="bar" accent="amber" label="Target cost centers" value={data.targets} caption="Across all rules" />
+              <KpiCard layout="bar" accent="indigo" label={t("activeRules")} value={data.active} caption={data.pending ? t("notYetRun", { count: data.pending, period: formatPeriod(data.period) }) : t("allRun", { period: formatPeriod(data.period) })} />
+              <KpiCard layout="bar" accent="teal" label={t("paused")} value={data.paused} />
+              <KpiCard layout="bar" accent="amber" label={t("targetCostCenters")} value={data.targets} caption={t("acrossAllRules")} />
             </div>
             <div className="flex flex-col gap-3">
               {data.items.map((rule) => (
@@ -319,8 +332,7 @@ function AllocationRulesPage() {
               ))}
             </div>
             <p className="text-content-secondary text-[13px] leading-5">
-              Allocation rules redistribute shared costs onto operating cost centers during the period close, using the basis
-              you choose. They post as automatic entries you can trace back to this rule.
+              {t("allocationInfo")}
             </p>
             <RuleDialog rule={editing} open={dialogOpen} onOpenChange={setDialogOpen} bases={data.bases} />
           </>
@@ -330,28 +342,28 @@ function AllocationRulesPage() {
       <AlertDialog open={confirmRun} onOpenChange={setConfirmRun}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Run allocation for {data ? formatPeriod(data.period) : "the period"}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Each active rule spreads its source accounts across the target cost centers by the weights shown, posting one
-              balanced entry dated at period end. Rules that already ran this period are skipped, so nothing is allocated
-              twice.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{data ? t("runAllocationTitle", { period: formatPeriod(data.period) }) : t("runAllocationTitleGeneric")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("runAllocationDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className={buttonVariants({ variant: "primary" })}
               onClick={() =>
                 run.mutate(undefined, {
                   onSuccess: (result) =>
                     toast.success(
-                      `${result.posted.length} ${result.posted.length === 1 ? "rule" : "rules"} posted, ${formatAmount(result.total)} EGP allocated (${result.posted.map((row) => row.entry).join(", ")}).`,
+                      t("toastAllocationRun", {
+                        count: result.posted.length,
+                        amount: formatAmount(result.total),
+                        entries: result.posted.map((row) => row.entry).join(", "),
+                      }),
                     ),
-                  onError: (error) => toast.error(errorMessage(error, "The allocation could not run. Try again.")),
+                  onError: (error) => toast.error(errorMessage(error, t("errorRunAllocation"))),
                 })
               }
             >
-              Run allocation
+              {t("runAllocation")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

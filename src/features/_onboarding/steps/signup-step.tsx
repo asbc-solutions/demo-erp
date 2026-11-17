@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { signIn } from "next-auth/react"
+import { useTranslations, type Messages } from "next-intl"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
@@ -40,11 +41,31 @@ type RegisterErrorBody = {
   errors?: Record<string, string[]>
 }
 
+type ValidationKey = keyof Messages["OnboardingSignup"]["validation"]
+
+/**
+ * `registerSchema` is shared with the register API route, so its messages stay
+ * English there. The form maps the ones it knows onto translated copy; anything
+ * else (server-side field errors) is shown as received.
+ */
+const SCHEMA_MESSAGE_KEYS: Readonly<Record<string, ValidationKey>> = {
+  "Name is required": "nameRequired",
+  "Invalid email address": "invalidEmail",
+  "Password must be at least 12 characters": "passwordMinLength",
+  "Password must contain a lowercase letter": "passwordLowercase",
+  "Password must contain an uppercase letter": "passwordUppercase",
+  "Password must contain a symbol": "passwordSymbol",
+  "Please confirm your password": "confirmPassword",
+  "Passwords do not match": "passwordsMismatch",
+}
+
 export function SignupStep({
   onSuccess,
   onSignIn,
   isSubmitting = false,
 }: SignupStepProps) {
+  const t = useTranslations("OnboardingSignup")
+  const tOnboarding = useTranslations("Onboarding")
   const [formError, setFormError] = React.useState<string | null>(null)
 
   const form = useForm<RegisterFormValues>({
@@ -61,6 +82,12 @@ export function SignupStep({
   const { errors, isSubmitting: isValidating } = form.formState
   const isBusy = isValidating || isSubmitting
 
+  function fieldError(message: string | undefined): string | undefined {
+    if (!message) return undefined
+    const key = SCHEMA_MESSAGE_KEYS[message]
+    return key ? t(`validation.${key}`) : message
+  }
+
   async function onSubmit(values: RegisterFormValues) {
     setFormError(null)
 
@@ -74,7 +101,7 @@ export function SignupStep({
       })
       result = (await response.json()) as RegisterErrorBody
     } catch {
-      setFormError("Unable to reach the server. Please try again.")
+      setFormError(t("serverUnreachable"))
       return
     }
 
@@ -86,7 +113,7 @@ export function SignupStep({
           form.setError(field, { message: messages[0] })
         }
       }
-      setFormError(result.message ?? "We couldn't create your account.")
+      setFormError(result.message ?? t("createFailed"))
       return
     }
 
@@ -99,7 +126,7 @@ export function SignupStep({
     if (signedIn?.error) {
       // The account exists, so pushing them at sign-in is better than letting
       // them submit the form again and collide with their own email.
-      setFormError("Your account is ready — please sign in to continue.")
+      setFormError(t("accountReady"))
       onSignIn()
       return
     }
@@ -117,26 +144,34 @@ export function SignupStep({
 
       <div className="flex flex-col items-center pt-3">
         <h1 className="font-heading text-content-primary text-center text-[39px] leading-[42.9px] font-bold">
-          Create your account.
+          {t("title")}
         </h1>
         <p className="text-content-tertiary pt-3 pb-5 text-center text-xl leading-7 font-normal">
-          One last step before your workspace is ready.
+          {t("subtitle")}
         </p>
       </div>
 
       <div className="border-stroke-default bg-surface-white flex w-full flex-col gap-5 rounded-2xl border p-6 shadow-sm">
-        <OnboardingField id="signup-name" label="Full name" error={errors.name?.message}>
+        <OnboardingField
+          id="signup-name"
+          label={t("fullNameLabel")}
+          error={fieldError(errors.name?.message)}
+        >
           <input
             id="signup-name"
             autoComplete="name"
-            placeholder="Islam Walied"
+            placeholder={t("namePlaceholder")}
             aria-invalid={Boolean(errors.name) || undefined}
             className={cn(onboardingInputClass)}
             {...form.register("name")}
           />
         </OnboardingField>
 
-        <OnboardingField id="signup-email" label="E-mail" error={errors.email?.message}>
+        <OnboardingField
+          id="signup-email"
+          label={tOnboarding("emailLabel")}
+          error={fieldError(errors.email?.message)}
+        >
           <input
             id="signup-email"
             type="email"
@@ -150,31 +185,31 @@ export function SignupStep({
 
         <OnboardingField
           id="signup-password"
-          label="Password"
-          hint="12+ chars, mixed case, a symbol"
-          error={errors.password?.message}
+          label={tOnboarding("passwordLabel")}
+          hint={t("passwordHint")}
+          error={fieldError(errors.password?.message)}
         >
           <PasswordInput
             id="signup-password"
             autoComplete="new-password"
             placeholder="••••••••"
             aria-invalid={Boolean(errors.password) || undefined}
-            className={cn(onboardingInputClass, "pr-10")}
+            className={cn(onboardingInputClass, "pe-10")}
             {...form.register("password")}
           />
         </OnboardingField>
 
         <OnboardingField
           id="signup-password-confirmation"
-          label="Confirm password"
-          error={errors.password_confirmation?.message}
+          label={t("confirmPasswordLabel")}
+          error={fieldError(errors.password_confirmation?.message)}
         >
           <PasswordInput
             id="signup-password-confirmation"
             autoComplete="new-password"
             placeholder="••••••••"
             aria-invalid={Boolean(errors.password_confirmation) || undefined}
-            className={cn(onboardingInputClass, "pr-10")}
+            className={cn(onboardingInputClass, "pe-10")}
             {...form.register("password_confirmation")}
           />
         </OnboardingField>
@@ -193,21 +228,24 @@ export function SignupStep({
         className="mt-2"
       >
         {isSubmitting
-          ? "Setting up your workspace…"
+          ? tOnboarding("settingUpWorkspace")
           : isValidating
-            ? "Creating your account…"
-            : "Create account"}
+            ? t("creatingAccount")
+            : t("createAccount")}
       </OnboardingButton>
 
       <p className="text-content-tertiary text-sm leading-5">
-        Already have an account?{" "}
-        <button
-          type="button"
-          onClick={onSignIn}
-          className="text-brand-primary cursor-pointer font-medium underline-offset-4 hover:underline"
-        >
-          Sign in
-        </button>
+        {t.rich("alreadyHaveAccount", {
+          signIn: (chunks) => (
+            <button
+              type="button"
+              onClick={onSignIn}
+              className="text-brand-primary cursor-pointer font-medium underline-offset-4 hover:underline"
+            >
+              {chunks}
+            </button>
+          ),
+        })}
       </p>
     </form>
   )

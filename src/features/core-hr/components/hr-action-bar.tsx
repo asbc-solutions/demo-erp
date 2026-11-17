@@ -1,6 +1,7 @@
 "use client"
 
 import { Download, Plus, Search, SlidersHorizontal } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { Input } from "@/src/shared/components/ui/input"
@@ -32,6 +33,10 @@ export function HrActionBar({
   filterValues,
   onFilterChange,
 }: HrActionBarProps) {
+  const t = useTranslations("HrEmployees")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-2">
@@ -41,7 +46,7 @@ export function HrActionBar({
           onClick={onAddEmployee}
         >
           <Plus />
-          Add Employee
+          {t("addEmployee")}
         </Button>
         <Button
           variant="secondary"
@@ -49,7 +54,7 @@ export function HrActionBar({
           onClick={onExport}
         >
           <Download />
-          Export
+          {tCommon("export")}
         </Button>
       </div>
 
@@ -57,15 +62,15 @@ export function HrActionBar({
         <div className="relative w-full max-w-[360px]">
           <Search
             aria-hidden
-            className="text-content-quaternary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            className="text-content-quaternary pointer-events-none absolute top-1/2 inset-s-3 size-4 -translate-y-1/2"
             strokeWidth={1.75}
           />
           <Input
             type="search"
             value={searchValue ?? ""}
             onChange={(event) => onSearchChange?.(event.target.value)}
-            placeholder="Search by name, email, or employee number..."
-            className="bg-surface-page h-10 rounded-[10px] border-transparent pl-9 shadow-none"
+            placeholder={tShared("searchEmployeesPlaceholder")}
+            className="bg-surface-page h-10 rounded-[10px] border-transparent ps-9 shadow-none"
           />
         </div>
         {filterGroups && onFilterChange ? (
@@ -81,7 +86,7 @@ export function HrActionBar({
             onClick={onOpenFilters}
           >
             <SlidersHorizontal />
-            Filters
+            {tCommon("filters")}
           </Button>
         )}
       </div>

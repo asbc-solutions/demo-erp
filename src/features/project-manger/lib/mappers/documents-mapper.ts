@@ -9,7 +9,37 @@ import type {
   DocumentCategory,
   DocumentLibrary,
   DocumentLibraryItem,
+  DocumentStatus,
 } from "../types"
+
+/* ------------------------------------------------------------------ */
+/* Known enums (translated via `ProjectsShared.documentCategory/Status`) */
+/* ------------------------------------------------------------------ */
+
+const DOCUMENT_CATEGORIES: readonly string[] = [
+  "specification",
+  "drawing",
+  "report",
+  "contract",
+  "permit",
+  "meeting_minutes",
+  "other",
+] satisfies DocumentCategory[]
+
+const DOCUMENT_STATUSES: readonly string[] = [
+  "draft",
+  "pending_review",
+  "approved",
+  "rejected",
+] satisfies DocumentStatus[]
+
+export function isDocumentCategory(value: string): value is DocumentCategory {
+  return DOCUMENT_CATEGORIES.includes(value)
+}
+
+export function isDocumentStatus(value: string): value is DocumentStatus {
+  return DOCUMENT_STATUSES.includes(value)
+}
 
 /* ------------------------------------------------------------------ */
 /* Category → tile (icon + tone)                                       */
@@ -42,7 +72,10 @@ const FALLBACK_TILE: CategoryTile = {
 /* View model                                                          */
 /* ------------------------------------------------------------------ */
 
-/** Left-rail folder. `key === null` is the "All Documents" pseudo-folder. */
+/**
+ * Left-rail folder. `key === null` is the "All Documents" pseudo-folder (its
+ * `label` is empty — translate it at render). Other labels come from the API.
+ */
 export type DocFolder = { key: DocumentCategory | null; label: string; count: number }
 
 export type DocTile = {
@@ -50,6 +83,8 @@ export type DocTile = {
   title: string
   category: DocumentCategory
   categoryLabel: string
+  /** Raw status key — translate known ones with `isDocumentStatus`. */
+  status: string
   statusLabel: string
   author: string
   icon: LucideIcon
@@ -73,7 +108,7 @@ export function buildDocumentLibraryView(
   const statusLabel = new Map(facets.statuses.map((f) => [f.key, f.label]))
 
   const folders: DocFolder[] = [
-    { key: null, label: "All Documents", count: documents.length },
+    { key: null, label: "", count: documents.length },
     ...facets.categories
       .filter((c) => c.count > 0)
       .map((c) => ({
@@ -91,6 +126,7 @@ export function buildDocumentLibraryView(
       category: doc.document_category,
       categoryLabel:
         categoryLabel.get(doc.document_category) ?? doc.document_category,
+      status: doc.status,
       statusLabel: statusLabel.get(doc.status) ?? doc.status,
       author: doc.author?.name ?? doc.owner?.name ?? "—",
       icon: tile.icon,

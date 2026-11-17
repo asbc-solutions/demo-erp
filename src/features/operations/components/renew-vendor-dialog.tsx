@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -30,6 +31,8 @@ export function RenewVendorDialog({
   vendor,
   onOpenChange,
 }: Readonly<{ vendor: VendorListItem | null; onOpenChange: (open: boolean) => void }>) {
+  const t = useTranslations("OperationsVendors")
+  const tShared = useTranslations("OperationsShared")
   const [contractEnd, setContractEnd] = React.useState("")
   const renewVendor = useRenewVendor()
 
@@ -42,10 +45,10 @@ export function RenewVendorDialog({
       { id: vendor.id, payload: { contract_end: contractEnd } },
       {
         onSuccess: () => {
-          toast.success(`${vendor.name}'s contract renewed.`)
+          toast.success(t("renewed", { name: vendor.name }))
           onOpenChange(false)
         },
-        onError: (err) => toastMutationError(err, "Failed to renew vendor contract"),
+        onError: (err) => toastMutationError(err, t("renewFailed"), tShared),
       },
     )
   }
@@ -55,7 +58,7 @@ export function RenewVendorDialog({
       <DialogContent className="max-w-[400px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-[16px] leading-[25.6px] font-semibold">
-            Renew {vendor?.name}&apos;s contract
+            {t("renewTitle", { name: vendor?.name ?? "" })}
           </DialogTitle>
         </DialogHeader>
         <DialogBody className="gap-3.5">
@@ -64,7 +67,7 @@ export function RenewVendorDialog({
               htmlFor="renew-contract-end"
               className="text-content-tertiary flex items-center gap-1 text-xs"
             >
-              New Contract End Date
+              {t("newContractEnd")}
               <span className="text-brand-danger">*</span>
             </Label>
             <Input
@@ -77,7 +80,7 @@ export function RenewVendorDialog({
             />
             {contractEnd && !isValid ? (
               <span className="text-brand-danger text-xs">
-                Contract end date must be in the future.
+                {t("contractEndFuture")}
               </span>
             ) : null}
           </div>
@@ -93,7 +96,7 @@ export function RenewVendorDialog({
             {renewVendor.isPending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : null}
-            Renew Contract
+            {t("renewContract")}
           </Button>
         </DialogFooter>
       </DialogContent>

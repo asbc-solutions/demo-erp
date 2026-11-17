@@ -8,15 +8,14 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { cn } from "@/src/shared/lib/utils/utils"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { useSalaryHistory } from "../../../lib/queries/salaries"
-import {
-  CHANGE_REASON_LABELS,
-  CHANGE_TYPE_LABELS,
-} from "../../../lib/schema/salary"
+import { CHANGE_REASONS, CHANGE_TYPES } from "../../../lib/schema/salary"
 import type { SalaryRecord } from "../../../lib/types"
 import { HrSectionSpinner } from "../../shared/hr-loading"
 import { DetailField, SectionCard } from "../section-card"
@@ -70,20 +69,22 @@ function humanize(value: string) {
   return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-function reasonLabel(reason: string | null) {
-  if (!reason) return null
-  return (
-    CHANGE_REASON_LABELS[reason as keyof typeof CHANGE_REASON_LABELS] ??
-    humanize(reason)
-  )
+type SharedTranslator = ReturnType<typeof useTranslations<"HrShared">>
+
+function isOneOf<T extends string>(values: readonly T[], value: string): value is T {
+  return (values as readonly string[]).includes(value)
 }
 
-function typeLabel(type: string | null) {
+function reasonLabel(reason: string | null, t: SharedTranslator) {
+  if (!reason) return null
+  return isOneOf(CHANGE_REASONS, reason)
+    ? t(`changeReason.${reason}`)
+    : humanize(reason)
+}
+
+function typeLabel(type: string | null, t: SharedTranslator) {
   if (!type) return null
-  return (
-    CHANGE_TYPE_LABELS[type as keyof typeof CHANGE_TYPE_LABELS] ??
-    humanize(type)
-  )
+  return isOneOf(CHANGE_TYPES, type) ? t(`changeType.${type}`) : humanize(type)
 }
 
 function dateFromIso(iso: string | null | undefined) {
@@ -92,19 +93,23 @@ function dateFromIso(iso: string | null | undefined) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-function formatDate(iso: string | null | undefined) {
+function formatDate(iso: string | null | undefined, locale: string) {
   const date = dateFromIso(iso)
   if (!date) return iso ?? "—"
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
   })
 }
 
-function formatMoney(value: number | null | undefined, currency = "EGP") {
+function formatMoney(
+  value: number | null | undefined,
+  currency: string,
+  locale: string,
+) {
   if (value == null || !Number.isFinite(value)) return "—"
-  return `${currency} ${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+  return `${currency} ${value.toLocaleString(locale, { maximumFractionDigits: 0 })}`
 }
 
 type MoneyTileProps = Readonly<{
@@ -141,55 +146,61 @@ function MoneyTile({ label, value, tone }: MoneyTileProps) {
 function CurrentCompensationCard({
   salary,
 }: Readonly<{ salary: SalaryRecord }>) {
+  const t = useTranslations("HrEmployeeDetail")
+  const intlLocale = useIntlLocale()
   const currency = salary.currency_code || "EGP"
+  const money = (value: number | null | undefined) =>
+    formatMoney(value, currency, intlLocale)
   const allowances = (
     [
-      ["Housing", salary.housing_allowance],
-      ["Transport", salary.transport_allowance],
-      ["Food", salary.food_allowance],
-      ["Mobile", salary.mobile_allowance],
-      ["Other", salary.other_allowance],
+      ["housingAllowance", salary.housing_allowance],
+      ["transportAllowance", salary.transport_allowance],
+      ["foodAllowance", salary.food_allowance],
+      ["mobileAllowance", salary.mobile_allowance],
+      ["otherAllowance", salary.other_allowance],
     ] as const
   ).filter(([, amount]) => amount > 0)
 
   return (
     <SectionCard
-      title="Current Compensation"
-      description={`Effective ${formatDate(salary.effective_date)}`}
+      title={t("currentCompensation")}
+      description={t("effectiveOn", {
+        date: formatDate(salary.effective_date, intlLocale),
+      })}
       action={
         salary.is_current ? (
           <Badge variant="success" className="rounded-full px-2.5">
-            Active
+            {t("active")}
           </Badge>
         ) : undefined
       }
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <MoneyTile
-          label="Gross Monthly"
-          value={formatMoney(salary.gross_salary, currency)}
+          label={t("grossMonthly")}
+          value={money(salary.gross_salary)}
           tone="indigo"
         />
         <MoneyTile
-          label="Net Monthly"
-          value={formatMoney(salary.net_salary, currency)}
+          label={t("netMonthly")}
+          value={money(salary.net_salary)}
           tone="emerald"
         />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2 md:grid-cols-3">
         <DetailField
-          label="Basic Salary"
-          value={formatMoney(salary.basic_salary, currency)}
+          label={t("basicSalary")}
+          value={money(salary.basic_salary)}
         />
-        {allowances.map(([label, amount]) => (
+        {allowances.map(([labelKey, amount]) => (
           <DetailField
-            key={label}
-            label={`${label} Allowance`}
-            value={formatMoney(amount, currency)}
+            key={labelKey}
+            label={t(labelKey)}
+            value={money(amount)}
           />
         ))}
-        <DetailField label="Pay Frequency" value={salary.pay_frequency_label} />
+        <DetailField label={t("payFrequency")} value={salary.pay_frequency_label} />
       </div>
     </SectionCard>
   )
@@ -198,31 +209,37 @@ function CurrentCompensationCard({
 function CompensationHistoryCard({
   records,
 }: Readonly<{ records: SalaryRecord[] }>) {
+  const t = useTranslations("HrEmployeeDetail")
+  const tShared = useTranslations("HrShared")
+  const intlLocale = useIntlLocale()
+
   return (
     <SectionCard
-      title="Compensation History"
-      description="Salary changes over time"
+      title={t("compensationHistory")}
+      description={t("compensationHistoryDescription")}
       bodyClassName="px-6 pb-6 pt-1"
     >
       {records.length === 0 ? (
         <p className="text-content-tertiary py-8 text-center text-sm">
-          No compensation changes recorded yet.
+          {t("compensationHistoryEmpty")}
         </p>
       ) : (
-        <ol className="relative flex flex-col gap-3 pl-2">
+        <ol className="relative flex flex-col gap-3 ps-2">
           {records.map((record, index) => {
             const isLast = index === records.length - 1
             const config = typeConfig(record.change_type)
             const Icon = config.icon
             const currency = record.currency_code || "EGP"
-            const reason = reasonLabel(record.change_reason)
-            const type = typeLabel(record.change_type)
+            const money = (value: number | null | undefined) =>
+              formatMoney(value, currency, intlLocale)
+            const reason = reasonLabel(record.change_reason, tShared)
+            const type = typeLabel(record.change_type, tShared)
             return (
               <li key={record.id} className="relative flex items-start gap-4">
                 {!isLast && (
                   <span
                     aria-hidden
-                    className="bg-stroke-default absolute top-9 left-3.75 h-[calc(100%-12px)] w-px"
+                    className="bg-stroke-default absolute top-9 inset-s-3.75 h-[calc(100%-12px)] w-px"
                   />
                 )}
                 <span
@@ -238,14 +255,14 @@ function CompensationHistoryCard({
                 <article className="bg-surface-page border-stroke-default flex flex-1 flex-col gap-2 rounded-[12px] border p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-content-primary text-sm leading-5 font-semibold">
-                      {formatDate(record.effective_date)}
+                      {formatDate(record.effective_date, intlLocale)}
                     </span>
                     {type && <Badge variant={config.badge}>{type}</Badge>}
                     {record.is_current && (
-                      <Badge variant="neutral">Current</Badge>
+                      <Badge variant="neutral">{t("current")}</Badge>
                     )}
-                    <span className="text-content-primary ml-auto text-sm font-semibold">
-                      {formatMoney(record.basic_salary, currency)}
+                    <span className="text-content-primary ms-auto text-sm font-semibold">
+                      {money(record.basic_salary)}
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -255,8 +272,10 @@ function CompensationHistoryCard({
                       </span>
                     )}
                     <span className="text-content-tertiary text-xs leading-4">
-                      Gross {formatMoney(record.gross_salary, currency)} · Net{" "}
-                      {formatMoney(record.net_salary, currency)}
+                      {t("grossAndNet", {
+                        gross: money(record.gross_salary),
+                        net: money(record.net_salary),
+                      })}
                     </span>
                   </div>
                 </article>
@@ -270,6 +289,7 @@ function CompensationHistoryCard({
 }
 
 export function SalaryTab({ employeeId }: SalaryTabProps) {
+  const t = useTranslations("HrEmployeeDetail")
   const { data, isLoading } = useSalaryHistory(employeeId)
 
   const history = React.useMemo(() => data?.history ?? [], [data?.history])
@@ -295,7 +315,10 @@ export function SalaryTab({ employeeId }: SalaryTabProps) {
 
   if (isLoading) {
     return (
-      <SectionCard title="Salary Information" description="Compensation history">
+      <SectionCard
+        title={t("salaryInformation")}
+        description={t("salaryInformationDescription")}
+      >
         <HrSectionSpinner />
       </SectionCard>
     )
@@ -303,15 +326,20 @@ export function SalaryTab({ employeeId }: SalaryTabProps) {
 
   if (!current && timeline.length === 0) {
     return (
-      <SectionCard title="Salary Information" description="Compensation history">
+      <SectionCard
+        title={t("salaryInformation")}
+        description={t("salaryInformationDescription")}
+      >
         <div className="flex flex-col items-center gap-3 py-12 text-center">
           <span className="bg-surface-hover text-content-tertiary flex size-10 items-center justify-center rounded-full">
             <DollarSign className="size-5" strokeWidth={1.5} />
           </span>
           <p className="text-content-tertiary text-sm leading-5">
-            No salary on record for this employee yet. Add one from the{" "}
-            <span className="text-content-primary font-medium">Salaries</span>{" "}
-            tab.
+            {t.rich("salaryEmpty", {
+              strong: (chunks) => (
+                <span className="text-content-primary font-medium">{chunks}</span>
+              ),
+            })}
           </p>
         </div>
       </SectionCard>

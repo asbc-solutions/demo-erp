@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -47,6 +48,8 @@ function FieldLabel({
 }
 
 export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
+  const t = useTranslations("OperationsNewVendor")
+  const tShared = useTranslations("OperationsShared")
   const [name, setName] = React.useState("")
   const [category, setCategory] = React.useState("")
   const [contactName, setContactName] = React.useState("")
@@ -96,10 +99,10 @@ export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
 
     createVendor.mutate(payload, {
       onSuccess: () => {
-        toast.success("Vendor added.")
+        toast.success(t("created"))
         handleOpenChange(false)
       },
-      onError: (err) => toastMutationError(err, "Failed to add vendor"),
+      onError: (err) => toastMutationError(err, t("createFailed"), tShared),
     })
   }
 
@@ -108,18 +111,18 @@ export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
       <DialogContent className="max-w-[420px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-[16px] leading-[25.6px] font-semibold">
-            New Vendor
+            {t("title")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <DialogBody className="gap-3.5">
             <div className="flex flex-col gap-1.5">
               <FieldLabel htmlFor="nv-name" required>
-                Vendor Name
+                {t("name")}
               </FieldLabel>
               <Input
                 id="nv-name"
-                placeholder="e.g. Vercel"
+                placeholder={t("namePlaceholder")}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 className="bg-surface-page h-8 text-[12px]"
@@ -128,11 +131,11 @@ export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
 
             <div className="flex flex-col gap-1.5">
               <FieldLabel htmlFor="nv-category" required>
-                Category
+                {t("category")}
               </FieldLabel>
               <Input
                 id="nv-category"
-                placeholder="e.g. Infrastructure, Design, Payments"
+                placeholder={t("categoryPlaceholder")}
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
                 className="bg-surface-page h-8 text-[12px]"
@@ -140,10 +143,10 @@ export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel htmlFor="nv-contact">Contact Name</FieldLabel>
+              <FieldLabel htmlFor="nv-contact">{t("contactName")}</FieldLabel>
               <Input
                 id="nv-contact"
-                placeholder="Account manager name"
+                placeholder={t("contactNamePlaceholder")}
                 value={contactName}
                 onChange={(event) => setContactName(event.target.value)}
                 className="bg-surface-page h-8 text-[12px]"
@@ -151,7 +154,7 @@ export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel htmlFor="nv-email">Contact Email</FieldLabel>
+              <FieldLabel htmlFor="nv-email">{t("contactEmail")}</FieldLabel>
               <Input
                 id="nv-email"
                 type="email"
@@ -163,7 +166,7 @@ export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel htmlFor="nv-spend">Monthly Spend</FieldLabel>
+              <FieldLabel htmlFor="nv-spend">{t("monthlySpend")}</FieldLabel>
               <Input
                 id="nv-spend"
                 type="number"
@@ -176,7 +179,7 @@ export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel htmlFor="nv-contract">Contract End Date</FieldLabel>
+              <FieldLabel htmlFor="nv-contract">{t("contractEnd")}</FieldLabel>
               <Input
                 id="nv-contract"
                 type="date"
@@ -187,10 +190,10 @@ export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel htmlFor="nv-tags">Tags</FieldLabel>
+              <FieldLabel htmlFor="nv-tags">{t("tags")}</FieldLabel>
               <Input
                 id="nv-tags"
-                placeholder="Comma-separated, e.g. critical, cloud"
+                placeholder={t("tagsPlaceholder")}
                 value={tags}
                 onChange={(event) => setTags(event.target.value)}
                 className="bg-surface-page h-8 text-[12px]"
@@ -207,7 +210,7 @@ export function NewVendorDialog({ open, onOpenChange }: NewVendorDialogProps) {
               {createVendor.isPending ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : null}
-              Add Vendor
+              {t("submit")}
             </Button>
           </DialogFooter>
         </form>

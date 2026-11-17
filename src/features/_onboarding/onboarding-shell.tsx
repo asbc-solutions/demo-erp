@@ -1,3 +1,7 @@
+import { Suspense } from "react";
+import { useTranslations } from "next-intl";
+
+import { LocaleSwitcher } from "@/src/shared/components/locale-switcher";
 import { cn } from "@/src/shared/lib/utils/utils";
 
 type OnboardingShellProps = Readonly<{
@@ -12,6 +16,8 @@ export function OnboardingShell({
   className,
   blobRotation = -64,
 }: OnboardingShellProps) {
+  const t = useTranslations("Onboarding");
+
   return (
     <main className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-surface-page">
       <div
@@ -27,6 +33,12 @@ export function OnboardingShell({
         />
       </div>
 
+      {/* The switcher reads the query string, which a statically rendered page
+          only has on the client. */}
+      <Suspense fallback={null}>
+        <LocaleSwitcher className="absolute top-4 inset-e-4 z-10" />
+      </Suspense>
+
       <div
         className={cn(
           "relative flex w-full max-w-[672px] flex-col items-stretch gap-6 px-6 py-10",
@@ -36,10 +48,13 @@ export function OnboardingShell({
         {children}
 
         <p className="text-content-quaternary text-center text-[11px] leading-[15.4px] font-normal">
-          Powered by{" "}
-          <span className="bg-gradient-to-br from-indigo-500 to-violet-500 bg-clip-text font-medium text-transparent">
-            Nucleus
-          </span>
+          {t.rich("poweredBy", {
+            brand: (chunks) => (
+              <span className="bg-gradient-to-br from-indigo-500 to-violet-500 bg-clip-text font-medium text-transparent">
+                {chunks}
+              </span>
+            ),
+          })}
         </p>
       </div>
     </main>

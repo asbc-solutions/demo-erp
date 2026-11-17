@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
+import { useRouter } from "@/src/i18n/navigation"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -12,52 +13,56 @@ import { FilterBar, FilterSearch, ResultCount } from "../../../components/shared
 import { FinancePageBody, FinancePageHeader } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
 import { useLedgerAccounts } from "../../lib/queries/ledger"
-import type { LedgerAccount } from "../../lib/types/ledger"
+import type { LedgerAccount, LedgerTranslator } from "../../lib/types/ledger"
 
-const INDENT = ["pl-0", "pl-4", "pl-8", "pl-12"]
+const INDENT = ["ps-0", "ps-4", "ps-8", "ps-12"]
 
-const COLUMNS: FinanceColumn<LedgerAccount>[] = [
-  {
-    id: "code",
-    header: "Code",
-    cell: (row) => (
-      <span className={cn("font-mono text-xs", INDENT[row.level], row.is_group && "text-content-primary font-semibold")}>
-        {row.code}
-      </span>
-    ),
-  },
-  {
-    id: "name",
-    header: "Account name",
-    cell: (row) => (
-      <span className={cn(INDENT[row.level], row.is_group ? "text-content-primary font-semibold" : "text-content-primary")}>
-        {row.name}
-      </span>
-    ),
-  },
-  { id: "type", header: "Type", cell: (row) => <span className="text-content-secondary">{row.type}</span> },
-  {
-    id: "routing",
-    header: "Routing",
-    cell: (row) =>
-      row.is_group ? null : (
-        <StatusPill
-          status={`routing-${row.routing}`}
-          label={row.routing === "auto" ? "Auto" : "Manual"}
-          tone={row.routing === "auto" ? "info" : "neutral"}
-        />
+function buildColumns(t: LedgerTranslator): FinanceColumn<LedgerAccount>[] {
+  return [
+    {
+      id: "code",
+      header: t("code"),
+      cell: (row) => (
+        <span className={cn("font-mono text-xs", INDENT[row.level], row.is_group && "text-content-primary font-semibold")}>
+          {row.code}
+        </span>
       ),
-  },
-  { id: "debit", header: "Debit (EGP)", align: "end", cell: (row) => <Amount value={row.debit} emphasis={row.is_group ? "strong" : "default"} /> },
-  { id: "credit", header: "Credit (EGP)", align: "end", cell: (row) => <Amount value={row.credit} emphasis={row.is_group ? "strong" : "default"} /> },
-  { id: "balance", header: "Balance (EGP)", align: "end", cell: (row) => <Amount value={row.balance} emphasis={row.is_group ? "strong" : "default"} /> },
-]
+    },
+    {
+      id: "name",
+      header: t("accountName"),
+      cell: (row) => (
+        <span className={cn(INDENT[row.level], row.is_group ? "text-content-primary font-semibold" : "text-content-primary")}>
+          {row.name}
+        </span>
+      ),
+    },
+    { id: "type", header: t("type"), cell: (row) => <span className="text-content-secondary">{t(`accountType.${row.type}`)}</span> },
+    {
+      id: "routing",
+      header: t("routing"),
+      cell: (row) =>
+        row.is_group ? null : (
+          <StatusPill
+            status={`routing-${row.routing}`}
+            label={row.routing === "auto" ? t("auto") : t("manual")}
+            tone={row.routing === "auto" ? "info" : "neutral"}
+          />
+        ),
+    },
+    { id: "debit", header: t("debitEgp"), align: "end", cell: (row) => <Amount value={row.debit} emphasis={row.is_group ? "strong" : "default"} /> },
+    { id: "credit", header: t("creditEgp"), align: "end", cell: (row) => <Amount value={row.credit} emphasis={row.is_group ? "strong" : "default"} /> },
+    { id: "balance", header: t("balanceEgp"), align: "end", cell: (row) => <Amount value={row.balance} emphasis={row.is_group ? "strong" : "default"} /> },
+  ]
+}
 
 /** 05.01 · Chart of accounts — every account with its debits, credits and balance, groups rolled up. */
 function ChartOfAccountsPage() {
+  const t = useTranslations("FinanceLedger")
   const router = useRouter()
   const { data, isError, refetch } = useLedgerAccounts()
   const [query, setQuery] = React.useState("")
+  const columns = React.useMemo(() => buildColumns(t), [t])
 
   const rows = React.useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -67,25 +72,25 @@ function ChartOfAccountsPage() {
 
   return (
     <>
-      <FinancePageHeader title="Chart of accounts" />
+      <FinancePageHeader title={t("chartOfAccounts")} />
       <FinancePageBody>
         <FilterBar>
-          <FilterSearch placeholder="Search by code or name" value={query} onChange={(event) => setQuery(event.target.value)} />
+          <FilterSearch placeholder={t("searchCodeOrName")} value={query} onChange={(event) => setQuery(event.target.value)} />
           <ResultCount>
-            {data ? `${data.filter((row) => !row.is_group).length} postable accounts` : null}
+            {data ? t("postableAccounts", { count: data.filter((row) => !row.is_group).length }) : null}
           </ResultCount>
         </FilterBar>
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : (
           <FinanceTable
-            caption="Chart of accounts"
-            columns={COLUMNS}
+            caption={t("chartOfAccounts")}
+            columns={columns}
             rows={rows}
             loading={!data}
             getRowId={(row) => row.code}
             onRowClick={(row) => (row.is_group ? undefined : router.push(`/finance/ledger?account=${row.code}`))}
-            empty={<p className="text-content-tertiary py-8 text-center text-sm">No account matches “{query}”.</p>}
+            empty={<p className="text-content-tertiary py-8 text-center text-sm">{t("noAccountMatches", { query })}</p>}
           />
         )}
       </FinancePageBody>

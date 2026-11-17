@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { Field, FieldError, FieldLabel } from "@/src/shared/components/ui/field"
 import { Input } from "@/src/shared/components/ui/input"
 import {
@@ -11,6 +13,7 @@ import {
 } from "@/src/shared/components/ui/select"
 import { Textarea } from "@/src/shared/components/ui/textarea"
 
+import { useFieldError } from "../../../lib/hooks/use-field-error"
 import type { ContractType, NewEmployeeDraft } from "../../../types/employee"
 import { StepShell } from "../step-shell"
 
@@ -42,20 +45,23 @@ export function CompensationStep({
   onChange,
   errors = {},
 }: CompensationStepProps) {
+  const t = useTranslations("HrAddEmployee")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   return (
     <StepShell
-      title="Step 3: Compensation"
-      description="Set compensation and contract details"
+      title={t("compensationStepTitle")}
+      description={t("compensationStepDescription")}
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="grossAnnual">
-            <RequiredLabel>Gross Salary (Annual EGP)</RequiredLabel>
+            <RequiredLabel>{t("grossSalaryAnnual")}</RequiredLabel>
           </FieldLabel>
           <div className="relative">
             <span
               aria-hidden
-              className="text-content-quaternary pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm"
+              className="text-content-quaternary pointer-events-none absolute top-1/2 inset-s-3 -translate-y-1/2 text-sm"
             >
               EGP
             </span>
@@ -64,7 +70,7 @@ export function CompensationStep({
               type="number"
               min={0}
               placeholder="950000"
-              className="pl-12"
+              className="ps-12"
               aria-invalid={Boolean(errors.grossAnnual)}
               aria-describedby={
                 errors.grossAnnual ? "grossAnnual-error" : undefined
@@ -83,13 +89,13 @@ export function CompensationStep({
           </div>
           {errors.grossAnnual && (
             <FieldError id="grossAnnual-error">
-              {errors.grossAnnual}
+              {fieldError(errors.grossAnnual)}
             </FieldError>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="contractType">
-            <RequiredLabel>Contract Type</RequiredLabel>
+            <RequiredLabel>{t("contractType")}</RequiredLabel>
           </FieldLabel>
           <Select
             value={value.contractType}
@@ -104,23 +110,23 @@ export function CompensationStep({
                 errors.contractType ? "contractType-error" : undefined
               }
             >
-              <SelectValue placeholder="Select type..." />
+              <SelectValue placeholder={t("selectType")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="PERMANENT">Permanent</SelectItem>
-              <SelectItem value="FIXED_TERM">Fixed term</SelectItem>
-              <SelectItem value="PROBATION">Probation</SelectItem>
+              <SelectItem value="PERMANENT">{t("contractPermanent")}</SelectItem>
+              <SelectItem value="FIXED_TERM">{t("contractFixedTerm")}</SelectItem>
+              <SelectItem value="PROBATION">{t("contractProbation")}</SelectItem>
             </SelectContent>
           </Select>
           {errors.contractType && (
             <FieldError id="contractType-error">
-              {errors.contractType}
+              {fieldError(errors.contractType)}
             </FieldError>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="contractStart">
-            <RequiredLabel>Contract Start Date</RequiredLabel>
+            <RequiredLabel>{t("contractStartDate")}</RequiredLabel>
           </FieldLabel>
           <Input
             id="contractStart"
@@ -136,12 +142,12 @@ export function CompensationStep({
           />
           {errors.contractStart && (
             <FieldError id="contractStart-error">
-              {errors.contractStart}
+              {fieldError(errors.contractStart)}
             </FieldError>
           )}
         </Field>
         <Field>
-          <FieldLabel htmlFor="contractEnd">Contract End Date</FieldLabel>
+          <FieldLabel htmlFor="contractEnd">{t("contractEndDate")}</FieldLabel>
           <Input
             id="contractEnd"
             type="date"
@@ -154,11 +160,11 @@ export function CompensationStep({
       </div>
 
       <Field>
-        <FieldLabel htmlFor="notes">Notes</FieldLabel>
+        <FieldLabel htmlFor="notes">{tCommon("notes")}</FieldLabel>
         <Textarea
           id="notes"
           rows={3}
-          placeholder="Additional notes..."
+          placeholder={t("additionalNotesPlaceholder")}
           value={value.notes ?? ""}
           onChange={(event) =>
             onChange({ ...value, notes: event.target.value })

@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -30,6 +31,7 @@ import {
   departmentSchema,
   type DepartmentFormValues,
 } from "../../lib/schema/department"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
 type EditDepartmentDialogProps = Readonly<{
   department: Department | null
@@ -42,6 +44,10 @@ export function EditDepartmentDialog({
   open,
   onOpenChange,
 }: EditDepartmentDialogProps) {
+  const t = useTranslations("HrOrganization")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const updateDepartment = useUpdateDepartment()
   const { data: branchData } = useActiveBranchOptions({ enabled: open })
   const branches = branchData?.data ?? []
@@ -114,7 +120,7 @@ export function EditDepartmentDialog({
       { id: department.id, payload: values },
       {
         onSuccess: (updated) => {
-          toast.success(`Department "${updated.dept_name}" updated`)
+          toast.success(t("deptUpdated", { name: updated.dept_name }))
           handleOpenChange(false)
         },
         onError: (err) => {
@@ -140,12 +146,12 @@ export function EditDepartmentDialog({
             ? Object.values(fieldErrors).flat().join(" ")
             : (apiErr.message ??
               (isCodeConflict
-                ? `Code "${values.dept_code}" is already in use. Please enter a unique code.`
-                : "Please check your details and try again."))
+                ? t("codeInUse", { code: values.dept_code })
+                : t("checkDetails")))
           if (isCodeConflict && !fieldErrors) {
             setError("dept_code", { type: "server", message: description })
           }
-          toast.error("Failed to update department", { description })
+          toast.error(t("updateDeptFailed"), { description })
         },
       },
     )
@@ -161,35 +167,35 @@ export function EditDepartmentDialog({
           className="flex flex-col gap-4 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
-              Edit Department
+              {t("editDepartment")}
             </DialogTitle>
             <p className="text-content-quaternary text-sm leading-5">
-              Edit a department
+              {t("editDeptSubtitle")}
             </p>
           </div>
 
           <div className="flex flex-col gap-4 pt-1">
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Name <span className="text-brand-danger">*</span>
+                {t("fieldName")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("dept_name")}
-                placeholder="Department name"
+                placeholder={t("phDepartmentName")}
                 className="placeholder:text-content-quaternary h-9 rounded-md border-stroke-default bg-surface-white text-sm"
               />
               {errors.dept_name && (
                 <p className="text-brand-danger text-xs">
-                  {errors.dept_name.message}
+                  {fieldError(errors.dept_name.message)}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Code <span className="text-brand-danger">*</span>
+                {t("fieldCode")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("dept_code")}
@@ -202,14 +208,14 @@ export function EditDepartmentDialog({
               />
               {errors.dept_code && (
                 <p className="text-brand-danger text-xs">
-                  {errors.dept_code.message}
+                  {fieldError(errors.dept_code.message)}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Branch <span className="text-brand-danger">*</span>
+                {t("fieldBranch")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={watch("branch_id") || undefined}
@@ -218,7 +224,7 @@ export function EditDepartmentDialog({
                 }
               >
                 <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
-                  <SelectValue placeholder="Select…" />
+                  <SelectValue placeholder={t("phSelect")} />
                 </SelectTrigger>
                 <SelectContent>
                   {branches.map((b) => (
@@ -230,7 +236,7 @@ export function EditDepartmentDialog({
               </Select>
               {errors.branch_id && (
                 <p className="text-brand-danger text-xs">
-                  {errors.branch_id.message}
+                  {fieldError(errors.branch_id.message)}
                 </p>
               )}
             </div>
@@ -244,7 +250,7 @@ export function EditDepartmentDialog({
               className="text-content-primary h-9 rounded-md border-stroke-default bg-surface-white px-4 text-sm font-semibold"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -253,7 +259,7 @@ export function EditDepartmentDialog({
               disabled={updateDepartment.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {updateDepartment.isPending ? "Saving…" : "Save"}
+              {updateDepartment.isPending ? tShared("saving") : tCommon("save")}
             </Button>
           </div>
         </form>

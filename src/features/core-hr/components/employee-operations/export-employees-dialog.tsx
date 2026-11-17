@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Download } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -69,6 +70,8 @@ export function ExportEmployeesDialog({
   onOpenChange,
   employees,
 }: ExportEmployeesDialogProps) {
+  const t = useTranslations("HrEmployeeOperations")
+  const tCommon = useTranslations("Common")
   const [format, setFormat] = useState<ExportFormat>("csv")
   const [scope, setScope] = useState<ExportScope>("filtered")
   const [filename, setFilename] = useState("Employees_export")
@@ -84,12 +87,12 @@ export function ExportEmployeesDialog({
   const exportEmployees = useExportEmployees()
 
   const COLUMN_DEFS: { key: ColumnKey; label: string }[] = [
-    { key: "name", label: "Name" },
-    { key: "employee_number", label: "Employee #" },
-    { key: "employment_type", label: "Type" },
-    { key: "employment_status", label: "Status" },
-    { key: "hire_date", label: "Hire Date" },
-    { key: "department", label: "Department" },
+    { key: "name", label: tCommon("name") },
+    { key: "employee_number", label: t("colEmployeeNumber") },
+    { key: "employment_type", label: tCommon("type") },
+    { key: "employment_status", label: tCommon("status") },
+    { key: "hire_date", label: t("colHireDate") },
+    { key: "department", label: t("department") },
   ]
 
   const toggle = (key: ColumnKey) =>
@@ -99,7 +102,7 @@ export function ExportEmployeesDialog({
 
   const handleExport = () => {
     if (selectedCols.length === 0) {
-      toast.error("Select at least one column")
+      toast.error(t("selectAtLeastOneColumn"))
       return
     }
     exportEmployees.mutate(
@@ -116,16 +119,15 @@ export function ExportEmployeesDialog({
       {
         onSuccess: (result) => {
           triggerDownload(result)
-          toast.success("Export ready", {
-            description: `Downloading ${result.filename}.`,
+          toast.success(t("exportReady"), {
+            description: t("downloadingFile", { filename: result.filename }),
           })
           onOpenChange(false)
         },
         onError: (err) => {
-          toast.error("Export failed", {
+          toast.error(t("exportFailed"), {
             description:
-              (err as { message?: string }).message ??
-              "Please try again or narrow the scope.",
+              (err as { message?: string }).message ?? t("exportRetryHint"),
           })
         },
       },
@@ -136,19 +138,19 @@ export function ExportEmployeesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg gap-0 p-0">
         <div className="flex flex-col gap-5 p-6">
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
-              Export Employees
+              {t("exportTitle")}
             </DialogTitle>
             <p className="text-content-tertiary text-sm leading-5">
-              Choose format and scope for your export
+              {t("exportSubtitle")}
             </p>
           </div>
 
           {/* Format */}
           <div className="flex flex-col gap-2">
             <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-              Format
+              {t("format")}
             </Label>
             <RadioGroup
               value={format}
@@ -167,7 +169,7 @@ export function ExportEmployeesDialog({
           {/* Scope */}
           <div className="flex flex-col gap-2">
             <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-              Scope
+              {t("scope")}
             </Label>
             <RadioGroup
               value={scope}
@@ -176,11 +178,11 @@ export function ExportEmployeesDialog({
             >
               <label className="flex items-center gap-2 text-sm">
                 <RadioGroupItem value="all" />
-                All records
+                {t("scopeAll")}
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <RadioGroupItem value="filtered" />
-                Current filters only
+                {t("scopeFiltered")}
               </label>
               <label
                 className={cn(
@@ -189,7 +191,7 @@ export function ExportEmployeesDialog({
                 )}
               >
                 <RadioGroupItem value="selected" disabled />
-                Selected records (none selected)
+                {t("scopeSelectedNone")}
               </label>
             </RadioGroup>
           </div>
@@ -197,7 +199,7 @@ export function ExportEmployeesDialog({
           {/* Columns */}
           <div className="flex flex-col gap-2">
             <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-              Columns
+              {t("columns")}
             </Label>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2">
               {COLUMN_DEFS.map((c) => (
@@ -215,7 +217,7 @@ export function ExportEmployeesDialog({
           {/* Filename */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-              Filename
+              {t("filename")}
             </Label>
             <div className="flex items-center gap-2">
               <Input
@@ -235,7 +237,7 @@ export function ExportEmployeesDialog({
               className="rounded-[10px]"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               variant="primary"
@@ -244,7 +246,7 @@ export function ExportEmployeesDialog({
               onClick={handleExport}
             >
               <Download />
-              {exportEmployees.isPending ? "Exporting..." : "Export"}
+              {exportEmployees.isPending ? t("exporting") : tCommon("export")}
             </Button>
           </div>
         </div>

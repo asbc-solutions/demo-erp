@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Check, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { FormProvider, useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -17,7 +18,7 @@ import {
 } from "@/src/shared/components/ui/dialog"
 import { Switch } from "@/src/shared/components/ui/switch"
 
-import { toastMutationError } from "../../components/shared/sales-error-state"
+import { useToastMutationError } from "../../components/shared/sales-error-state"
 import { useCreateCustomer } from "../../lib/mutations/customers"
 import { useActiveSalespeople } from "../../lib/queries/salespeople"
 import { useCustomerDirectory } from "../../lib/queries/customers"
@@ -25,6 +26,7 @@ import {
   buildBillingAddress,
   CUSTOMER_FORM_DEFAULT_VALUES,
   customerFormSchema,
+  type CustomerFormErrorKey,
   type CustomerFormValues,
 } from "../../lib/schema/customer"
 import type { CreateCustomerPayload } from "../../lib/types"
@@ -37,6 +39,9 @@ export function NewCustomerDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }>) {
+  const t = useTranslations("SalesCustomers")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const { data: salespeople = [] } = useActiveSalespeople({ enabled: open })
   const createCustomer = useCreateCustomer()
   const { data: customerDirectory = [], isLoading: isDirectoryLoading } = useCustomerDirectory({ enabled: open })
@@ -58,7 +63,7 @@ export function NewCustomerDialog({
         (customer) => customer.email.trim().toLocaleLowerCase() === normalizedEmail
       )
     ) {
-      form.setError("email", { message: "This email address is already in use." }, { shouldFocus: true })
+      form.setError("email", { message: "emailInUse" satisfies CustomerFormErrorKey }, { shouldFocus: true })
       return
     }
 
@@ -74,10 +79,10 @@ export function NewCustomerDialog({
 
     createCustomer.mutate(payload, {
       onSuccess: () => {
-        toast.success("Customer added.")
+        toast.success(t("addedToast"))
         handleOpenChange(false)
       },
-      onError: (err) => toastMutationError(err, "Failed to add customer"),
+      onError: (err) => toastMutationError(err, t("addFailed")),
     })
   }
 
@@ -87,24 +92,24 @@ export function NewCustomerDialog({
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <DialogHeader>
-              <DialogTitle>New Customer</DialogTitle>
+              <DialogTitle>{t("newCustomer")}</DialogTitle>
               <DialogDescription>
-                Create a customer profile to begin creating quotations and orders.
+                {t("newCustomerDescription")}
               </DialogDescription>
             </DialogHeader>
             <DialogBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <CustomerFormFields salespeople={salespeople} />
               <div className="flex flex-col gap-1.5 sm:col-span-2">
-                <span className="text-xs font-medium text-content-secondary">Status</span>
+                <span className="text-xs font-medium text-content-secondary">{tCommon("status")}</span>
                 <div className="flex items-center gap-2">
-                  <Switch checked disabled aria-label="New customers start active" />
-                  <span className="text-sm text-content-primary">Active</span>
+                  <Switch checked disabled aria-label={t("startsActive")} />
+                  <span className="text-sm text-content-primary">{t("tabActive")}</span>
                 </div>
               </div>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button
                 type="submit"
@@ -116,7 +121,7 @@ export function NewCustomerDialog({
                 ) : (
                   <Check aria-hidden />
                 )}
-                Save Customer
+                {t("saveCustomer")}
               </Button>
             </DialogFooter>
           </form>

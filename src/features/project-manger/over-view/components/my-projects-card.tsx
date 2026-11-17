@@ -1,7 +1,8 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { ChevronRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -9,6 +10,7 @@ import { cn } from "@/src/shared/lib/utils/utils"
 import { formatMoney } from "../../lib/mappers/cost-budget-mapper"
 import { initialsFromName } from "../../lib/mappers/project-mapper"
 import { useMyProjects } from "../../lib/queries/my-work"
+import { HEALTH_STATE_KEY } from "../../all-project/data/project-detail-data"
 
 const HEALTH_STYLE: Record<string, { badge: string; dot: string }> = {
   "On Track": {
@@ -41,6 +43,9 @@ function avatarStyleForId(id: string): string {
 }
 
 export function MyProjectsCard() {
+  const t = useTranslations("ProjectsOverview")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
   const { data, isLoading, isError } = useMyProjects({ per_page: 5 })
   const projects = data ?? []
 
@@ -55,19 +60,23 @@ export function MyProjectsCard() {
       <div className="border-stroke-default flex items-center justify-between border-b px-5 py-3.5">
         <div className="flex flex-col gap-0.5">
           <h2 className="text-content-primary text-base leading-6 font-semibold">
-            My Projects
+            {t("myProjects")}
           </h2>
           <p className="text-content-tertiary text-[12px] leading-[17px]">
             {isLoading
-              ? "Loading…"
-              : `${projects.length} active · ${formatMoney(totalBudget)} total · ${formatMoney(totalSpent)} spent`}
+              ? tCommon("loading")
+              : t("myProjectsSummary", {
+                  count: projects.length,
+                  budget: formatMoney(totalBudget),
+                  spent: formatMoney(totalSpent),
+                })}
           </p>
         </div>
         <Link
           href="/my-project"
           className="text-brand-primary hover:text-brand-primary-hover text-[12px] leading-[18px] font-medium transition-colors"
         >
-          View all →
+          {t("viewAllLink")}
         </Link>
       </div>
 
@@ -82,17 +91,18 @@ export function MyProjectsCard() {
         </div>
       ) : isError ? (
         <p className="text-content-tertiary px-5 py-10 text-center text-sm">
-          Couldn&apos;t load your projects.
+          {t("myProjectsLoadFailed")}
         </p>
       ) : projects.length === 0 ? (
         <p className="text-content-tertiary px-5 py-10 text-center text-sm">
-          You aren&apos;t assigned to any projects yet.
+          {t("myProjectsEmpty")}
         </p>
       ) : (
         <ul className="flex flex-col">
           {projects.map((project) => {
             const status =
               HEALTH_STYLE[project.health_status] ?? HEALTH_STYLE["On Track"]
+            const healthKey = HEALTH_STATE_KEY[project.health_status]
             return (
               <li key={project.id}>
                 <Link
@@ -124,7 +134,9 @@ export function MyProjectsCard() {
                           className={cn("size-1.5 rounded-full", status.dot)}
                           aria-hidden
                         />
-                        {project.health_status}
+                        {healthKey
+                          ? tShared(`health.${healthKey}`)
+                          : project.health_status}
                       </span>
                     </div>
                     <span className="text-content-tertiary truncate text-[12px] leading-[17px]">
@@ -145,7 +157,7 @@ export function MyProjectsCard() {
                   </div>
 
                   <ChevronRight
-                    className="text-content-quaternary size-4 shrink-0"
+                    className="text-content-quaternary size-4 shrink-0 rtl:rotate-180"
                     aria-hidden
                   />
                 </Link>

@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { useBranch } from "../../lib/queries/branches"
 import { useDepartment } from "../../lib/queries/departments"
 import { useJobGrade } from "../../lib/queries/job-grades"
@@ -17,6 +19,7 @@ export function useEmployeeEmploymentLabels(
   employment: Employee["employment"],
   options: EmploymentLabelOptions = {},
 ) {
+  const t = useTranslations("HrEmployeeDetail")
   const branchId = options.branch === false ? "" : (employment.branch_id ?? "")
   const departmentId =
     options.department === false ? "" : (employment.dept_id ?? "")
@@ -35,7 +38,10 @@ export function useEmployeeEmploymentLabels(
     departmentName: department?.dept_name ?? null,
     positionName: position?.position_title ?? null,
     jobGradeName: jobGrade
-      ? `${jobGrade.grade_name} (Level ${jobGrade.grade_level})`
+      ? t("gradeWithLevel", {
+          name: jobGrade.grade_name,
+          level: jobGrade.grade_level,
+        })
       : null,
   }
 }

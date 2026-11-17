@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Copy, Download, ListFilter, Loader2, MoreHorizontal, Search } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Button } from "@/src/shared/components/ui/button"
@@ -26,7 +27,7 @@ import {
 } from "@/src/shared/components/ui/table"
 import { cn } from "@/src/shared/lib/utils/utils"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesPageSpinner } from "../../components/shared/sales-loading"
 import { SalesTablePagination } from "../../components/shared/sales-table-pagination"
 import { formatCurrency } from "../../lib/utils/currency"
@@ -34,16 +35,22 @@ import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
 import { SALES_RESOURCES } from "../../lib/constants/permissions"
 import { useExportInvoices } from "../../lib/mutations/invoices"
 import { useInvoices } from "../../lib/queries/invoices"
-import type { InvoiceListItem, InvoiceStatus, InvoiceTab } from "../../lib/types"
+import type {
+  InvoiceListItem,
+  InvoicePaymentStatus,
+  InvoiceStatus,
+  InvoiceTab,
+} from "../../lib/types"
 import { InvoiceNumber, invoiceLabel } from "./invoice-number"
 
-const INVOICE_TABS: { value: InvoiceTab; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "draft", label: "Draft" },
-  { value: "posted", label: "Posted" },
-  { value: "sent", label: "Sent" },
-  { value: "closed", label: "Closed" },
-  { value: "cancelled", label: "Cancelled" },
+/** Labels come from `Common.all` and the `SalesShared.invoiceStatus` enum map. */
+const INVOICE_TABS: { value: InvoiceTab }[] = [
+  { value: "all" },
+  { value: "draft" },
+  { value: "posted" },
+  { value: "sent" },
+  { value: "closed" },
+  { value: "cancelled" },
 ]
 
 const PAGE_SIZE = 20
@@ -66,18 +73,22 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
   return debounced
 }
 
-function StatusPill({ status, label }: Readonly<{ status: InvoiceStatus; label: string }>) {
+function StatusPill({ status }: Readonly<{ status: InvoiceStatus }>) {
+  const tShared = useTranslations("SalesShared")
+
   return (
     <Badge
       variant="neutral"
       className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap", STATUS_STYLE[status])}
     >
-      {label}
+      {tShared(`invoiceStatus.${status}`)}
     </Badge>
   )
 }
 
-function PaymentStatusPill({ label, status }: Readonly<{ label: string; status: string }>) {
+function PaymentStatusPill({ status }: Readonly<{ status: InvoicePaymentStatus }>) {
+  const tShared = useTranslations("SalesShared")
+
   return (
     <span
       className={cn(
@@ -87,7 +98,7 @@ function PaymentStatusPill({ label, status }: Readonly<{ label: string; status: 
         status === "unpaid" && "text-content-tertiary",
       )}
     >
-      {label}
+      {tShared(`paymentStatus.${status}`)}
     </span>
   )
 }
@@ -95,6 +106,10 @@ function PaymentStatusPill({ label, status }: Readonly<{ label: string; status: 
 export function InvoicesListView({
   onSelectInvoice,
 }: Readonly<{ onSelectInvoice: (id: string) => void }>) {
+  const t = useTranslations("SalesInvoices")
+  const tCommon = useTranslations("Common")
+  const tShared = useTranslations("SalesShared")
+  const toastMutationError = useToastMutationError()
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const [activeTab, setActiveTab] = React.useState<InvoiceTab>("all")
@@ -135,26 +150,26 @@ export function InvoicesListView({
       },
       {
         onSuccess: (url) => window.open(url, "_blank"),
-        onError: (err) => toastMutationError(err, "Failed to export invoices"),
+        onError: (err) => toastMutationError(err, t("exportFailed")),
       },
     )
   }
 
   return (
     <div className="flex flex-1 flex-col gap-5 bg-surface-page p-4 sm:p-6">
-      <section aria-label="Invoice controls" className="flex flex-col gap-2 sm:flex-row">
+      <section aria-label={t("controlsLabel")} className="flex flex-col gap-2 sm:flex-row">
         <label className="relative min-w-0 flex-1">
-          <span className="sr-only">Search invoices</span>
+          <span className="sr-only">{t("searchLabel")}</span>
           <Search
             aria-hidden
-            className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-content-quaternary"
+            className="absolute top-1/2 inset-s-3.5 size-4 -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
           />
           <Input
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
-            placeholder="Search by invoice # or customer…"
-            className="h-10 rounded-lg border-stroke-input pl-10 text-[13px] shadow-none"
+            placeholder={t("searchPlaceholder")}
+            className="h-10 rounded-lg border-stroke-input ps-10 text-[13px] shadow-none"
           />
         </label>
 
@@ -163,17 +178,17 @@ export function InvoicesListView({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" className="h-10 flex-1 gap-2 px-3.5 text-[13px] sm:flex-none">
                 <ListFilter className="size-4" strokeWidth={1.75} />
-                Filter
+                {tCommon("filter")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>Invoice status</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("invoiceStatus")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuRadioGroup value={activeTab} onValueChange={(v) => handleTabChange(v as InvoiceTab)}>
                 {INVOICE_TABS.map((tab) => (
                   <DropdownMenuRadioItem key={tab.value} value={tab.value}>
-                    {tab.label}
-                    <span className="ml-auto text-xs text-content-quaternary">{meta?.tabs[tab.value] ?? 0}</span>
+                    {tab.value === "all" ? tCommon("all") : tShared(`invoiceStatus.${tab.value}`)}
+                    <span className="ms-auto text-xs text-content-quaternary">{meta?.tabs[tab.value] ?? 0}</span>
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
@@ -192,14 +207,14 @@ export function InvoicesListView({
               ) : (
                 <Download className="size-4" strokeWidth={1.75} />
               )}
-              Export
+              {tCommon("export")}
             </Button>
           ) : null}
         </div>
       </section>
 
       <nav
-        aria-label="Filter invoices by status"
+        aria-label={t("statusTabsLabel")}
         className="thin-scrollbar -mt-1 flex min-w-0 overflow-x-auto border-b border-stroke-default"
       >
         {INVOICE_TABS.map((tab) => {
@@ -211,11 +226,11 @@ export function InvoicesListView({
               aria-pressed={isActive}
               onClick={() => handleTabChange(tab.value)}
               className={cn(
-                "relative flex h-10 shrink-0 items-center gap-2 px-3 text-[13px] font-medium transition-colors first:pl-2",
+                "relative flex h-10 shrink-0 items-center gap-2 px-3 text-[13px] font-medium transition-colors first:ps-2",
                 isActive ? "text-brand-primary" : "text-content-tertiary hover:text-content-primary",
               )}
             >
-              {tab.label}
+              {tab.value === "all" ? tCommon("all") : tShared(`invoiceStatus.${tab.value}`)}
               <span
                 className={cn(
                   "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] leading-4 font-semibold",
@@ -235,31 +250,31 @@ export function InvoicesListView({
       {isLoading ? (
         <SalesPageSpinner />
       ) : isError ? (
-        <SalesErrorState message="Failed to load invoices." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadListFailed")} onRetry={() => void refetch()} />
       ) : (
         <>
           <section
-            aria-label="Invoices"
+            aria-label={t("tableLabel")}
             className="overflow-hidden rounded-[14px] border border-stroke-default bg-surface-white shadow-[0_1px_3px_0_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]"
           >
             <Table className="min-w-[1180px]">
               <TableHeader className="bg-surface-white">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[150px] pl-5">Invoice #</TableHead>
-                  <TableHead className="min-w-[190px]">Customer</TableHead>
-                  <TableHead className="w-[130px]">Invoice Date</TableHead>
-                  <TableHead className="w-[130px]">Due Date</TableHead>
-                  <TableHead className="w-[140px] text-center">Total Due</TableHead>
-                  <TableHead className="w-[130px]">Payment</TableHead>
-                  <TableHead className="w-[150px]">Status</TableHead>
-                  <TableHead className="w-[92px] pr-5 text-right">Actions</TableHead>
+                  <TableHead className="w-[150px] ps-5">{t("invoiceNumber")}</TableHead>
+                  <TableHead className="min-w-[190px]">{t("customer")}</TableHead>
+                  <TableHead className="w-[130px]">{t("invoiceDate")}</TableHead>
+                  <TableHead className="w-[130px]">{t("dueDate")}</TableHead>
+                  <TableHead className="w-[140px] text-center">{t("totalDue")}</TableHead>
+                  <TableHead className="w-[130px]">{t("payment")}</TableHead>
+                  <TableHead className="w-[150px]">{tCommon("status")}</TableHead>
+                  <TableHead className="w-[92px] pe-5 text-end">{tCommon("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.length ? (
                   invoices.map((invoice: InvoiceListItem) => (
                     <TableRow key={invoice.id} className="h-16 cursor-pointer" onClick={() => onSelectInvoice(invoice.id)}>
-                      <TableCell className="py-4 pl-5 font-mono text-[12px] font-medium text-content-primary">
+                      <TableCell className="py-4 ps-5 font-mono text-[12px] font-medium text-content-primary">
                         <InvoiceNumber value={invoice.number} status={invoice.status} />
                       </TableCell>
                       <TableCell className="py-4 text-[13px] font-medium text-content-primary">
@@ -271,31 +286,33 @@ export function InvoicesListView({
                         {formatCurrency(invoice.total_due)}
                       </TableCell>
                       <TableCell className="py-4">
-                        <PaymentStatusPill status={invoice.payment_status} label={invoice.payment_status_label} />
+                        <PaymentStatusPill status={invoice.payment_status} />
                       </TableCell>
                       <TableCell className="py-4">
-                        <StatusPill status={invoice.status} label={invoice.status_label} />
+                        <StatusPill status={invoice.status} />
                       </TableCell>
-                      <TableCell className="py-3 pr-5 text-right" onClick={(event) => event.stopPropagation()}>
+                      <TableCell className="py-3 pe-5 text-end" onClick={(event) => event.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
-                              aria-label={`Actions for ${invoiceLabel(invoice.number, invoice.customer_name)}`}
+                              aria-label={t("actionsFor", {
+                                label: invoiceLabel(invoice.number, invoice.customer_name, t),
+                              })}
                               className="size-8 text-content-tertiary"
                             >
                               <MoreHorizontal className="size-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => onSelectInvoice(invoice.id)}>Open</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => onSelectInvoice(invoice.id)}>{t("open")}</DropdownMenuItem>
                             <DropdownMenuItem
                               disabled={!invoice.number}
                               onSelect={() => invoice.number && copyToClipboard(invoice.number)}
                             >
                               <Copy aria-hidden />
-                              Copy invoice number
+                              {t("copyNumber")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -305,7 +322,7 @@ export function InvoicesListView({
                 ) : (
                   <TableRow className="hover:bg-transparent">
                     <TableCell colSpan={8} className="h-32 text-center text-sm text-content-tertiary">
-                      No invoices match this view.
+                      {t("noMatches")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -326,7 +343,7 @@ export function InvoicesListView({
       )}
 
       <p className="-mt-1 text-center text-[11px] leading-4 text-content-quaternary">
-        Invoices are generated from confirmed sales orders only.
+        {t("generatedFromOrdersHint")}
       </p>
     </div>
   )

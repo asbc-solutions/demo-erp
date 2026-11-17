@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
 import {
@@ -10,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/shared/components/ui/table"
+import { cn } from "@/src/shared/lib/utils/utils"
 
 import type { EmployeeListItem, EmploymentStatus } from "../lib/types"
 import { HrTableSkeleton } from "./shared/hr-loading"
@@ -25,50 +28,35 @@ type HrEmployeeTableProps = Readonly<{
   onTerminate?: (employee: EmployeeListItem) => void
 }>
 
+const STATUS_BADGE_CLASS: Record<"success" | "warning" | "danger" | "muted", string> = {
+  success: "border-brand-success/30 bg-brand-success/10 text-brand-success",
+  warning: "border-brand-warning/30 bg-brand-warning/10 text-brand-warning",
+  danger: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
+  muted: "border-stroke-default bg-surface-hover text-content-tertiary",
+}
+
+function statusTone(status: EmploymentStatus): keyof typeof STATUS_BADGE_CLASS {
+  if (status === "active") return "success"
+  if (status === "on_leave") return "warning"
+  if (status === "terminated" || status === "resigned" || status === "retired") return "danger"
+  return "muted"
+}
+
 function StatusBadge({ status }: Readonly<{ status: EmploymentStatus }>) {
-  if (status === "active") {
-    return (
-      <Badge
-        variant="outline"
-        className="border-brand-success/30 bg-brand-success/10 text-brand-success rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
-      >
-        Active
-      </Badge>
-    )
-  }
-
-  if (status === "on_leave") {
-    return (
-      <Badge
-        variant="outline"
-        className="border-brand-warning/30 bg-brand-warning/10 text-brand-warning rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
-      >
-        On Leave
-      </Badge>
-    )
-  }
-
-  if (status === "terminated" || status === "resigned" || status === "retired") {
-    return (
-      <Badge
-        variant="outline"
-        className="border-brand-danger/30 bg-brand-danger/10 text-brand-danger rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
-      >
-        {status === "resigned"
-          ? "Resigned"
-          : status === "retired"
-            ? "Retired"
-            : "Terminated"}
-      </Badge>
-    )
-  }
+  const t = useTranslations("HrShared")
+  const tone = statusTone(status)
+  // Anything outside the coloured states reads as "Inactive" (e.g. suspended).
+  const labelStatus: EmploymentStatus = tone === "muted" ? "inactive" : status
 
   return (
     <Badge
       variant="outline"
-      className="border-stroke-default bg-surface-hover text-content-tertiary rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
+      className={cn(
+        STATUS_BADGE_CLASS[tone],
+        "rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase",
+      )}
     >
-      Inactive
+      {t(`employmentStatus.${labelStatus}`)}
     </Badge>
   )
 }
@@ -82,17 +70,21 @@ export function HrEmployeeTable({
   onTransfer,
   onTerminate,
 }: HrEmployeeTableProps) {
+  const t = useTranslations("HrEmployees")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+
   return (
     <div className="border-stroke-default bg-surface-white overflow-hidden rounded-[12px] border">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="pl-6">Employee</TableHead>
-            <TableHead>Employee #</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Hire Date</TableHead>
-            <TableHead className="pr-6 text-right">Actions</TableHead>
+            <TableHead className="ps-6">{t("colEmployee")}</TableHead>
+            <TableHead>{t("colEmployeeNumber")}</TableHead>
+            <TableHead>{tCommon("type")}</TableHead>
+            <TableHead>{tCommon("status")}</TableHead>
+            <TableHead>{t("colHireDate")}</TableHead>
+            <TableHead className="pe-6 text-end">{tCommon("actions")}</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -106,7 +98,7 @@ export function HrEmployeeTable({
                   colSpan={6}
                   className="text-content-tertiary py-12 text-center text-sm"
                 >
-                  No employees found.
+                  {t("noEmployees")}
                 </TableCell>
               </TableRow>
             )}
@@ -115,7 +107,7 @@ export function HrEmployeeTable({
                 key={employee.id}
                 role="button"
                 tabIndex={0}
-                aria-label={`View ${employee.full_name}`}
+                aria-label={t("viewEmployee", { name: employee.full_name })}
                 onClick={() => onViewProfile?.(employee)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -125,7 +117,7 @@ export function HrEmployeeTable({
                 }}
                 className="hover:bg-surface-hover focus-visible:ring-brand-primary/30 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset"
               >
-                <TableCell className="pl-6">
+                <TableCell className="ps-6">
                   <div className="flex items-center gap-3">
                     <Avatar
                       size="sm"
@@ -140,8 +132,10 @@ export function HrEmployeeTable({
                 <TableCell className="text-content-tertiary font-mono">
                   {employee.employee_number}
                 </TableCell>
-                <TableCell className="text-content-secondary capitalize">
-                  {employee.employment_type?.replace("_", " ")}
+                <TableCell className="text-content-secondary">
+                  {employee.employment_type
+                    ? tShared(`employmentType.${employee.employment_type}`)
+                    : null}
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={employee.employment_status} />
@@ -150,7 +144,7 @@ export function HrEmployeeTable({
                   {employee.hire_date}
                 </TableCell>
                 <TableCell
-                  className="pr-6 text-right"
+                  className="pe-6 text-end"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <EmployeeRowActions

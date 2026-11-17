@@ -1,3 +1,4 @@
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import type { SalesDeal } from "../data/sales-mock"
@@ -7,11 +8,12 @@ const ownerColor: Record<string, string> = {
   mj: "bg-brand-primary",
 }
 
-const formatAmount = (value: number) => `$${value.toLocaleString("en-US")}`
+const formatAmount = (value: number, locale: string) => `$${value.toLocaleString(locale)}`
 
 export function DealCard({ deal }: { deal: SalesDeal }) {
+  const intlLocale = useIntlLocale()
   return (
-    <div className="bg-surface-white border-stroke-default flex flex-col gap-2 rounded-2xl border border-l-[1.6px] px-3.5 py-4 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.04)]">
+    <div className="bg-surface-white border-stroke-default flex flex-col gap-2 rounded-2xl border border-s-[1.6px] px-3.5 py-4 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.04)]">
       <div className="flex items-start justify-between gap-3">
         <span
           className="ring-stroke-default flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary to-violet-500 text-[10px] leading-[10px] font-medium text-white ring-2"
@@ -20,7 +22,7 @@ export function DealCard({ deal }: { deal: SalesDeal }) {
           {deal.companyInitials}
         </span>
         <span className="font-mono text-[12px] leading-[18px] text-content-primary">
-          {formatAmount(deal.amount)}
+          {formatAmount(deal.amount, intlLocale)}
         </span>
       </div>
       <div className="flex flex-col gap-0.5">

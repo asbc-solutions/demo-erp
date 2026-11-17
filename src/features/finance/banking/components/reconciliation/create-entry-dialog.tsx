@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -27,11 +28,11 @@ import {
 import { KeyValueList } from "../../../components/shared/key-value-list"
 import { useFinanceAccounts } from "../../../lib/queries/master-data"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount } from "../../../lib/utils/money"
 import { DEFAULT_COUNTER_ACCOUNT } from "../../lib/constants/reconciliation"
 import { useReconciliationActions } from "../../lib/mutations/banking"
-import { counterAccountSchema, type CounterAccountFormValues } from "../../lib/schema/banking"
+import { counterAccountSchema, type BankingErrorKey, type CounterAccountFormValues } from "../../lib/schema/banking"
 import type { StatementLine } from "../../lib/types/banking"
 
 /** Cash and bank accounts: the bank side is already fixed by the statement. */
@@ -45,6 +46,10 @@ type CreateEntryDialogProps = {
 
 /** Create an entry from this line? — a real posting, matched to the line straight away. */
 function CreateEntryDialog({ treasuryId, line, onOpenChange }: CreateEntryDialogProps) {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
+  const tShared = useTranslations("FinanceShared")
+  const { formatDate } = useFinanceDateFormat()
   const { data: accounts = [] } = useFinanceAccounts()
   const { createEntry } = useReconciliationActions(treasuryId)
   const {
@@ -69,10 +74,10 @@ function CreateEntryDialog({ treasuryId, line, onOpenChange }: CreateEntryDialog
       { lineId: line.id, counterAccount: counter_account },
       {
         onSuccess: (result) => {
-          toast.success(`${result.entry} was posted and matched to ${line.reference}.`)
+          toast.success(t("entryPostedMatched", { entry: result.entry, reference: line.reference }))
           onOpenChange(false)
         },
-        onError: (error) => toast.error(errorMessage(error, "The entry could not be created. Try again.")),
+        onError: (error) => toast.error(errorMessage(error, t("entryCreateFailed"))),
       },
     )
   }
@@ -82,37 +87,30 @@ function CreateEntryDialog({ treasuryId, line, onOpenChange }: CreateEntryDialog
       <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit(submit)} noValidate>
           <DialogHeader>
-            <DialogTitle>Create an entry from this line?</DialogTitle>
-            <DialogDescription>
-              This posts a balanced entry: the bank side comes from the statement line, the other side from
-              the account you choose. The new entry is matched to the line straight away. It is a real
-              posting, so it is reversible but not deletable.
-            </DialogDescription>
+            <DialogTitle>{t("createEntryTitle")}</DialogTitle>
+            <DialogDescription>{t("createEntryDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             {line ? (
               <KeyValueList
                 items={[
-                  { term: "Date", value: formatDate(line.date) },
-                  { term: "Amount", value: formatAmount(line.amount) },
-                  { term: "Description", value: line.description },
-                  { term: "Source", value: <span className="font-mono">{line.reference}</span> },
+                  { term: t("colDate"), value: formatDate(line.date) },
+                  { term: t("colAmount"), value: formatAmount(line.amount) },
+                  { term: t("colDescription"), value: line.description },
+                  { term: t("colSource"), value: <span className="font-mono">{line.reference}</span> },
                 ]}
               />
             ) : null}
-            <p className="text-content-secondary text-[13px] leading-5">
-              This statement line has no match in the ledger, so it needs an entry. The bank side is fixed by
-              the statement; choose the account for the other side.
-            </p>
+            <p className="text-content-secondary text-[13px] leading-5">{t("createEntryNote")}</p>
             <Field>
-              <FieldLabel htmlFor="counter-account">Counter account</FieldLabel>
+              <FieldLabel htmlFor="counter-account">{t("counterAccount")}</FieldLabel>
               <Controller
                 control={control}
                 name="counter_account"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="counter-account" aria-invalid={Boolean(errors.counter_account)}>
-                      <SelectValue placeholder="Choose an account" />
+                      <SelectValue placeholder={tShared("chooseAccount")} />
                     </SelectTrigger>
                     <SelectContent>
                       {options.map((account) => (
@@ -124,15 +122,17 @@ function CreateEntryDialog({ treasuryId, line, onOpenChange }: CreateEntryDialog
                   </Select>
                 )}
               />
-              {errors.counter_account ? <FieldError>{errors.counter_account.message}</FieldError> : null}
+              {errors.counter_account?.message ? (
+                <FieldError>{t(errors.counter_account.message as BankingErrorKey)}</FieldError>
+              ) : null}
             </Field>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={createEntry.isPending}>
-              Create and match
+              {t("createAndMatch")}
             </Button>
           </DialogFooter>
         </form>

@@ -1,3 +1,13 @@
+import type { Messages, useTranslations } from "next-intl"
+
+export type ReportsTranslator = ReturnType<typeof useTranslations<"FinanceReports">>
+
+type ReportsMessages = Messages["FinanceReports"]
+/** A flat (non-enum-map) key of the `FinanceReports` namespace. */
+export type ReportsMessageKey = {
+  [K in keyof ReportsMessages]: ReportsMessages[K] extends string ? K : never
+}[keyof ReportsMessages]
+
 export type TrialBalanceRow = {
   id: string
   code: string

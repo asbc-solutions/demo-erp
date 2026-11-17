@@ -1,7 +1,8 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { Banknote, Landmark } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { KpiCard, type KpiAccent } from "@/src/shared/components/ui/kpi-card"
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
@@ -23,6 +24,7 @@ const CURRENCY_ACCENTS: readonly KpiAccent[] = ["indigo", "teal", "amber", "blue
 
 /** A cash account with its share of the largest balance, in the base currency. */
 function TreasuryRow({ treasury, largest }: { treasury: TreasuryPosition; largest: number }) {
+  const t = useTranslations("FinanceOverview")
   const Icon = treasury.kind === "bank" ? Landmark : Banknote
   const share = largest > 0 ? Math.max(2, (treasury.base_amount / largest) * 100) : 0
   const foreign = treasury.base_amount !== treasury.balance
@@ -40,7 +42,7 @@ function TreasuryRow({ treasury, largest }: { treasury: TreasuryPosition; larges
         <span className="flex items-center gap-2">
           <span className="text-content-secondary font-mono text-xs leading-4">{treasury.currency}</span>
           {treasury.unmatched_lines > 0 ? (
-            <StatusPill status="unreconciled" label={`${treasury.unmatched_lines} unmatched`} />
+            <StatusPill status="unreconciled" label={t("unmatchedCount", { count: treasury.unmatched_lines })} />
           ) : null}
         </span>
       </div>
@@ -62,16 +64,17 @@ function TreasuryRow({ treasury, largest }: { treasury: TreasuryPosition; larges
 
 /** 01.02 · Cash position — every bank and treasury, restated in EGP. */
 function CashPositionPage() {
+  const t = useTranslations("FinanceOverview")
   const { data, isError, refetch } = useCashPosition()
   const largest = Math.max(0, ...(data?.treasuries ?? []).map((row) => row.base_amount))
 
   return (
     <>
       <FinancePageHeader
-        title="Cash position"
+        title={t("cashPositionTitle")}
         figure={
           data ? (
-            <HeaderFigure size="lg" label={`Total cash · ${data.base_currency} equivalent`}>
+            <HeaderFigure size="lg" label={t("totalCashEquivalent", { currency: data.base_currency })}>
               {formatAmount(data.total)}
             </HeaderFigure>
           ) : null
@@ -81,7 +84,7 @@ function CashPositionPage() {
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : !data ? (
-          <div aria-busy aria-label="Loading cash position" className="flex flex-col gap-6">
+          <div aria-busy aria-label={t("loadingCashPosition")} className="flex flex-col gap-6">
             <FinanceTilesSkeleton count={4} className="md:grid-cols-4" />
             <Skeleton className="h-72 rounded-[14px]" />
           </div>
@@ -91,32 +94,32 @@ function CashPositionPage() {
               <KpiCard
                 layout="bar"
                 accent="indigo"
-                label={`Bank balances (${data.base_currency} eq.)`}
+                label={t("bankBalances", { currency: data.base_currency })}
                 value={formatAmount(data.banks.amount)}
-                caption={`${data.banks.count} accounts`}
+                caption={t("accountsCount", { count: data.banks.count })}
               />
               <KpiCard
                 layout="bar"
                 accent="teal"
-                label={`Cash on hand (${data.base_currency} eq.)`}
+                label={t("cashOnHandEq", { currency: data.base_currency })}
                 value={formatAmount(data.cash_on_hand.amount)}
-                caption={`${data.cash_on_hand.count} treasuries`}
+                caption={t("treasuriesCount", { count: data.cash_on_hand.count })}
               />
               <KpiCard
                 layout="bar"
                 accent="amber"
-                label="Currencies held"
+                label={t("currenciesHeld")}
                 value={data.currencies.length}
               />
               <KpiCard
                 layout="bar"
                 accent="blue"
-                label="Unreconciled lines"
+                label={t("unreconciledLines")}
                 value={data.unreconciled_lines}
               />
             </div>
 
-            <FinanceSection title="By currency">
+            <FinanceSection title={t("byCurrency")}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5">
                 {data.currencies.map((currency, index) => (
                   <KpiCard
@@ -135,7 +138,7 @@ function CashPositionPage() {
               </div>
             </FinanceSection>
 
-            <FinanceSection title="Treasuries">
+            <FinanceSection title={t("treasuries")}>
               <div className="flex flex-col gap-2">
                 {data.treasuries.map((treasury) => (
                   <TreasuryRow key={treasury.id} treasury={treasury} largest={largest} />

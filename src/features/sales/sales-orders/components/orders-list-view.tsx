@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Copy, Download, ListFilter, Loader2, MoreHorizontal, Search } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Button } from "@/src/shared/components/ui/button"
@@ -26,7 +27,7 @@ import {
 } from "@/src/shared/components/ui/table"
 import { cn } from "@/src/shared/lib/utils/utils"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesPageSpinner } from "../../components/shared/sales-loading"
 import { SalesTablePagination } from "../../components/shared/sales-table-pagination"
 import { formatCurrency } from "../../lib/utils/currency"
@@ -38,14 +39,15 @@ import { useActiveSalespeople } from "../../lib/queries/salespeople"
 import type { OrderListItem, OrderStatus, OrderTab } from "../../lib/types"
 import { DeliveryDate } from "./delivery-date"
 
-const ORDER_TABS: { value: OrderTab; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "draft", label: "Draft" },
-  { value: "pending_confirmation", label: "Pending Confirmation" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "invoiced", label: "Invoiced" },
-  { value: "closed", label: "Closed" },
-  { value: "cancelled", label: "Cancelled" },
+/** Labels come from `Common.all` and the `SalesShared.orderStatus` enum map. */
+const ORDER_TABS: { value: OrderTab }[] = [
+  { value: "all" },
+  { value: "draft" },
+  { value: "pending_confirmation" },
+  { value: "confirmed" },
+  { value: "invoiced" },
+  { value: "closed" },
+  { value: "cancelled" },
 ]
 
 const PAGE_SIZE = 20
@@ -69,13 +71,15 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
   return debounced
 }
 
-function StatusPill({ status, label }: Readonly<{ status: OrderStatus; label: string }>) {
+function StatusPill({ status }: Readonly<{ status: OrderStatus }>) {
+  const tShared = useTranslations("SalesShared")
+
   return (
     <Badge
       variant="neutral"
       className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-medium whitespace-nowrap", STATUS_STYLE[status])}
     >
-      {label}
+      {tShared(`orderStatus.${status}`)}
     </Badge>
   )
 }
@@ -83,6 +87,10 @@ function StatusPill({ status, label }: Readonly<{ status: OrderStatus; label: st
 export function OrdersListView({
   onSelectOrder,
 }: Readonly<{ onSelectOrder: (id: string) => void }>) {
+  const t = useTranslations("SalesOrders")
+  const tCommon = useTranslations("Common")
+  const tShared = useTranslations("SalesShared")
+  const toastMutationError = useToastMutationError()
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const [activeTab, setActiveTab] = React.useState<OrderTab>("all")
@@ -134,26 +142,26 @@ export function OrdersListView({
       },
       {
         onSuccess: (url) => window.open(url, "_blank"),
-        onError: (err) => toastMutationError(err, "Failed to export orders"),
+        onError: (err) => toastMutationError(err, t("exportFailed")),
       },
     )
   }
 
   return (
     <div className="flex flex-1 flex-col gap-5 bg-surface-page p-4 sm:p-6">
-      <section aria-label="Sales order controls" className="flex flex-col gap-2 sm:flex-row">
+      <section aria-label={t("controlsLabel")} className="flex flex-col gap-2 sm:flex-row">
         <label className="relative min-w-0 flex-1">
-          <span className="sr-only">Search sales orders</span>
+          <span className="sr-only">{t("searchLabel")}</span>
           <Search
             aria-hidden
-            className="absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-content-quaternary"
+            className="absolute top-1/2 inset-s-3.5 size-4 -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
           />
           <Input
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
-            placeholder="Search by order # or customer…"
-            className="h-10 rounded-lg border-stroke-input pl-10 text-[13px] shadow-none"
+            placeholder={t("searchPlaceholder")}
+            className="h-10 rounded-lg border-stroke-input ps-10 text-[13px] shadow-none"
           />
         </label>
 
@@ -162,14 +170,14 @@ export function OrdersListView({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" className="h-10 flex-1 gap-2 px-3.5 text-[13px] sm:flex-none">
                 <ListFilter className="size-4" strokeWidth={1.75} />
-                Filter
+                {tCommon("filter")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>Salesperson</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("salesperson")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuRadioGroup value={salespersonFilter} onValueChange={handleSalespersonChange}>
-                <DropdownMenuRadioItem value="all">All salespeople</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="all">{t("allSalespeople")}</DropdownMenuRadioItem>
                 {salespeople.map((person) => (
                   <DropdownMenuRadioItem key={person.id} value={person.id}>
                     {person.name}
@@ -191,14 +199,14 @@ export function OrdersListView({
               ) : (
                 <Download className="size-4" strokeWidth={1.75} />
               )}
-              Export
+              {tCommon("export")}
             </Button>
           ) : null}
         </div>
       </section>
 
       <nav
-        aria-label="Filter orders by status"
+        aria-label={t("statusTabsLabel")}
         className="thin-scrollbar -mt-1 flex min-w-0 overflow-x-auto border-b border-stroke-default"
       >
         {ORDER_TABS.map((tab) => {
@@ -210,11 +218,11 @@ export function OrdersListView({
               aria-pressed={isActive}
               onClick={() => handleTabChange(tab.value)}
               className={cn(
-                "relative flex h-10 shrink-0 items-center gap-2 px-3 text-[13px] font-medium transition-colors first:pl-2",
+                "relative flex h-10 shrink-0 items-center gap-2 px-3 text-[13px] font-medium transition-colors first:ps-2",
                 isActive ? "text-brand-primary" : "text-content-tertiary hover:text-content-primary",
               )}
             >
-              {tab.label}
+              {tab.value === "all" ? tCommon("all") : tShared(`orderStatus.${tab.value}`)}
               <span
                 className={cn(
                   "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] leading-4 font-semibold",
@@ -234,30 +242,30 @@ export function OrdersListView({
       {isLoading ? (
         <SalesPageSpinner />
       ) : isError ? (
-        <SalesErrorState message="Failed to load sales orders." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadListFailed")} onRetry={() => void refetch()} />
       ) : (
         <>
           <section
-            aria-label="Sales orders"
+            aria-label={t("tableLabel")}
             className="overflow-hidden rounded-[14px] border border-stroke-default bg-surface-white shadow-[0_1px_3px_0_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]"
           >
             <Table className="min-w-[1000px]">
               <TableHeader className="bg-surface-white">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[150px] pl-5">Order #</TableHead>
-                  <TableHead className="min-w-[230px]">Customer</TableHead>
-                  <TableHead className="w-[150px]">Delivery Date</TableHead>
-                  <TableHead className="w-[150px] text-center">Total</TableHead>
-                  <TableHead className="w-[190px]">Status</TableHead>
-                  <TableHead className="w-[190px]">Salesperson</TableHead>
-                  <TableHead className="w-[92px] pr-5 text-right">Actions</TableHead>
+                  <TableHead className="w-[150px] ps-5">{t("orderNumber")}</TableHead>
+                  <TableHead className="min-w-[230px]">{t("customer")}</TableHead>
+                  <TableHead className="w-[150px]">{t("deliveryDate")}</TableHead>
+                  <TableHead className="w-[150px] text-center">{tCommon("total")}</TableHead>
+                  <TableHead className="w-[190px]">{tCommon("status")}</TableHead>
+                  <TableHead className="w-[190px]">{t("salesperson")}</TableHead>
+                  <TableHead className="w-[92px] pe-5 text-end">{tCommon("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders.length ? (
                   orders.map((order: OrderListItem) => (
                     <TableRow key={order.id} className="h-16 cursor-pointer" onClick={() => onSelectOrder(order.id)}>
-                      <TableCell className="py-4 pl-5 font-mono text-[12px] font-medium text-content-primary">
+                      <TableCell className="py-4 ps-5 font-mono text-[12px] font-medium text-content-primary">
                         {order.number}
                       </TableCell>
                       <TableCell className="py-4 text-[13px] font-medium text-content-primary">
@@ -270,28 +278,28 @@ export function OrdersListView({
                         {formatCurrency(order.grand_total)}
                       </TableCell>
                       <TableCell className="py-4">
-                        <StatusPill status={order.status} label={order.status_label} />
+                        <StatusPill status={order.status} />
                       </TableCell>
                       <TableCell className="py-4 text-[12px] text-content-secondary">
                         {order.salesperson_name}
                       </TableCell>
-                      <TableCell className="py-3 pr-5 text-right" onClick={(event) => event.stopPropagation()}>
+                      <TableCell className="py-3 pe-5 text-end" onClick={(event) => event.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
-                              aria-label={`Actions for ${order.number}`}
+                              aria-label={t("actionsFor", { number: order.number })}
                               className="size-8 text-content-tertiary"
                             >
                               <MoreHorizontal className="size-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => onSelectOrder(order.id)}>Open</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => onSelectOrder(order.id)}>{t("open")}</DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => copyToClipboard(order.number)}>
                               <Copy aria-hidden />
-                              Copy order number
+                              {t("copyNumber")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -301,7 +309,7 @@ export function OrdersListView({
                 ) : (
                   <TableRow className="hover:bg-transparent">
                     <TableCell colSpan={7} className="h-32 text-center text-sm text-content-tertiary">
-                      No sales orders match this view.
+                      {t("noMatches")}
                     </TableCell>
                   </TableRow>
                 )}

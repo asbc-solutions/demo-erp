@@ -1,6 +1,7 @@
 "use client"
 
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -14,7 +15,7 @@ import {
 } from "@/src/shared/components/ui/alert-dialog"
 import { Button } from "@/src/shared/components/ui/button"
 
-import { toastMutationError } from "../../components/shared/sales-error-state"
+import { useToastMutationError } from "../../components/shared/sales-error-state"
 import { useUnblockCustomer } from "../../lib/mutations/customers"
 import type { CustomerListItem } from "../../lib/types"
 
@@ -22,16 +23,19 @@ export function UnblockCustomerDialog({
   customer,
   onOpenChange,
 }: Readonly<{ customer: CustomerListItem | null; onOpenChange: (open: boolean) => void }>) {
+  const t = useTranslations("SalesCustomers")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const unblockCustomer = useUnblockCustomer()
 
   const handleConfirm = () => {
     if (!customer) return
     unblockCustomer.mutate(customer.id, {
       onSuccess: () => {
-        toast.success(`${customer.name} unblocked.`)
+        toast.success(t("unblockedToast", { name: customer.name }))
         onOpenChange(false)
       },
-      onError: (err) => toastMutationError(err, "Failed to unblock customer"),
+      onError: (err) => toastMutationError(err, t("unblockFailed")),
     })
   }
 
@@ -39,14 +43,13 @@ export function UnblockCustomerDialog({
     <AlertDialog open={customer !== null} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Unblock {customer?.name}?</AlertDialogTitle>
+          <AlertDialogTitle>{t("unblockTitle", { name: customer?.name ?? "" })}</AlertDialogTitle>
           <AlertDialogDescription>
-            This customer will be set back to Active and new sales orders can be confirmed for
-            their account.
+            {t("unblockDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
           <Button
             type="button"
             variant="primary"
@@ -56,7 +59,7 @@ export function UnblockCustomerDialog({
             {unblockCustomer.isPending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : null}
-            Unblock Customer
+            {t("unblockCustomer")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

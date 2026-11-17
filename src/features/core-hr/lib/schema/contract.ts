@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { vk } from "./validation-key"
+
 export const CONTRACT_TYPES = [
   "permanent",
   "fixed_term",
@@ -19,7 +21,7 @@ export const END_DATE_REQUIRED_CONTRACT_TYPES = [
 
 const dateString = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
+  .regex(/^\d{4}-\d{2}-\d{2}$/, vk("dateFormat"))
 
 const optionalDate = z.preprocess(
   (value) => (value === "" ? undefined : value),
@@ -31,11 +33,11 @@ const optionalPositiveInt = (min: number, message: string) =>
     if (value === "" || value === null || value === undefined) return undefined
     if (typeof value === "number" && Number.isNaN(value)) return undefined
     return value
-  }, z.coerce.number().int("Must be a whole number").min(min, message).optional())
+  }, z.coerce.number().int(vk("mustBeWholeNumber")).min(min, message).optional())
 
 export const contractSchema = z
   .object({
-    employee_id: z.string().min(1, "Employee is required"),
+    employee_id: z.string().min(1, vk("employeeRequired")),
     contract_type: z.enum(CONTRACT_TYPES),
     start_date: dateString,
     end_date: optionalDate,
@@ -44,13 +46,13 @@ export const contractSchema = z
     work_schedule: z
       .string()
       .trim()
-      .min(1, "Work schedule is required")
-      .max(80, "Work schedule must be 80 characters or less"),
-    weekly_hours: optionalPositiveInt(1, "Weekly hours must be at least 1"),
-    probation_days: optionalPositiveInt(0, "Probation days cannot be negative"),
+      .min(1, vk("workScheduleRequired"))
+      .max(80, vk("workScheduleMax")),
+    weekly_hours: optionalPositiveInt(1, vk("weeklyHoursMin")),
+    probation_days: optionalPositiveInt(0, vk("probationNonNegative")),
     notice_period_days: optionalPositiveInt(
       0,
-      "Notice period cannot be negative"
+      vk("noticeNonNegative")
     ),
     notice_period_unit: z.enum(["day", "week", "month"]).optional(),
   })
@@ -63,7 +65,7 @@ export const contractSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["end_date"],
-        message: "Open-ended contracts cannot have an end date",
+        message: vk("openEndedNoEndDate"),
       })
     }
 
@@ -71,7 +73,7 @@ export const contractSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["end_date"],
-        message: "End date is required for this contract type",
+        message: vk("endDateRequiredForType"),
       })
     }
 
@@ -79,7 +81,7 @@ export const contractSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["end_date"],
-        message: "End date must be on or after start date",
+        message: vk("endAfterStart"),
       })
     }
   })

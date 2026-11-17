@@ -1,13 +1,15 @@
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
 import { Slot } from "radix-ui"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
+  const t = useTranslations("Ui")
   return (
     <nav
-      aria-label="breadcrumb"
+      aria-label={t("breadcrumb")}
       data-slot="breadcrumb"
       {...props}
     />
@@ -99,7 +101,7 @@ function BreadcrumbSeparator({
       )}
       {...props}
     >
-      {children ?? <ChevronRight />}
+      {children ?? <ChevronRight className="rtl:rotate-180" />}
     </li>
   )
 }
@@ -108,6 +110,7 @@ function BreadcrumbEllipsis({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  const t = useTranslations("Common")
   return (
     <span
       aria-hidden
@@ -119,7 +122,7 @@ function BreadcrumbEllipsis({
       {...props}
     >
       <MoreHorizontal className="size-4" />
-      <span className="sr-only">More</span>
+      <span className="sr-only">{t("more")}</span>
     </span>
   )
 }

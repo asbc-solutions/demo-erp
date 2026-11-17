@@ -1,5 +1,7 @@
 "use client"
 
+import { useLocale, useTranslations } from "next-intl"
+
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import { useSalesMasterData } from "../../lib/queries/master-data"
@@ -45,7 +47,7 @@ export function MasterDataSelect({
   value,
   onValueChange,
   emptyMessage,
-  placeholder = "Select an option…",
+  placeholder,
   className,
 }: Readonly<{
   field: MasterDataField
@@ -57,6 +59,8 @@ export function MasterDataSelect({
   placeholder?: string
   className?: string
 }>) {
+  const t = useTranslations("SalesShared")
+  const locale = useLocale()
   const { data, isPending, isError, refetch } = useSalesMasterData()
   const entries: MasterDataEntry[] = data?.[field] ?? []
 
@@ -74,23 +78,23 @@ export function MasterDataSelect({
         onChange={(event) => onValueChange(event.target.value)}
       >
         <option value="" disabled>
-          {isPending ? "Loading…" : placeholder}
+          {isPending ? t("loading") : (placeholder ?? t("selectOption"))}
         </option>
         {entries.map((entry) => (
           <option key={entry.id} value={entry.id}>
-            {entry.name_en}
+            {locale === "ar" ? entry.name_ar : entry.name_en}
           </option>
         ))}
       </select>
       {isError ? (
         <span className="flex items-center gap-2 text-xs text-brand-danger">
-          Couldn&apos;t load this list.
+          {t("listLoadFailed")}
           <button
             type="button"
             className="underline underline-offset-2"
             onClick={() => void refetch()}
           >
-            Retry
+            {t("retry")}
           </button>
         </span>
       ) : null}

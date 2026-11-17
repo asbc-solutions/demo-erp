@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -19,6 +20,7 @@ import type { JobGradeListItem } from "../../lib/types"
 import { useUpdateJobGrade } from "../../lib/mutations/job-grades"
 import { jobGradeSchema, type JobGradeFormValues } from "../../lib/schema/job-grade"
 import { apiErrorMessage } from "../../lib/utils/api-error"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
 type EditJobGradeDialogProps = Readonly<{
   grade: JobGradeListItem | null
@@ -31,6 +33,10 @@ export function EditJobGradeDialog({
   open,
   onOpenChange,
 }: EditJobGradeDialogProps) {
+  const t = useTranslations("HrJobGrades")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const updateJobGrade = useUpdateJobGrade()
 
   const form = useForm<JobGradeFormValues>({
@@ -91,25 +97,20 @@ export function EditJobGradeDialog({
       { id: grade.id, payload: { ...values, currency_code: "EGP" } },
       {
         onSuccess: (updated) => {
-          toast.success(`Grade "${updated.grade_name}" updated`)
+          toast.success(t("gradeUpdated", { name: updated.grade_name }))
           // The backend warns (doesn't block) when the new band leaves employees
           // outside it — surface that so HR is aware of the impact.
           const outside = (
             updated as { impact_warning?: { employees_outside_band?: number } }
           ).impact_warning?.employees_outside_band
           if (outside && outside > 0) {
-            toast.warning(
-              `${outside} employee${outside === 1 ? "" : "s"} now fall outside this band`,
-            )
+            toast.warning(t("employeesOutsideBand", { count: outside }))
           }
           handleOpenChange(false)
         },
         onError: (err) => {
-          toast.error("Failed to update job grade", {
-            description: apiErrorMessage(
-              err,
-              "Please check the details and try again.",
-            ),
+          toast.error(t("updateFailed"), {
+            description: apiErrorMessage(err, t("checkDetails")),
           })
         },
       },
@@ -126,12 +127,12 @@ export function EditJobGradeDialog({
           className="flex flex-col gap-5 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
-              Edit Job Grade
+              {t("editTitle")}
             </DialogTitle>
             <p className="text-content-quaternary text-sm leading-5">
-              Set grade name, level, and salary range
+              {t("editSubtitle")}
             </p>
           </div>
 
@@ -139,22 +140,22 @@ export function EditJobGradeDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Name <span className="text-brand-danger">*</span>
+                {t("fieldName")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("grade_name")}
-                placeholder="e.g. Junior"
+                placeholder={t("phGradeNameShort")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white text-sm"
               />
               {errors.grade_name && (
                 <p className="text-brand-danger text-xs">
-                  {errors.grade_name.message}
+                  {fieldError(errors.grade_name.message)}
                 </p>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Level <span className="text-brand-danger">*</span>
+                {t("fieldLevel")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("grade_level", { valueAsNumber: true })}
@@ -165,7 +166,7 @@ export function EditJobGradeDialog({
               />
               {errors.grade_level && (
                 <p className="text-brand-danger text-xs">
-                  {errors.grade_level.message}
+                  {fieldError(errors.grade_level.message)}
                 </p>
               )}
             </div>
@@ -175,7 +176,7 @@ export function EditJobGradeDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Min Salary <span className="text-brand-danger">*</span>
+                {t("fieldMinSalary")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("min_salary", { valueAsNumber: true })}
@@ -186,13 +187,13 @@ export function EditJobGradeDialog({
               />
               {errors.min_salary && (
                 <p className="text-brand-danger text-xs">
-                  {errors.min_salary.message}
+                  {fieldError(errors.min_salary.message)}
                 </p>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Midpoint <span className="text-brand-danger">*</span>
+                {t("fieldMidpoint")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("mid_salary", { valueAsNumber: true })}
@@ -203,13 +204,13 @@ export function EditJobGradeDialog({
               />
               {errors.mid_salary && (
                 <p className="text-brand-danger text-xs">
-                  {errors.mid_salary.message}
+                  {fieldError(errors.mid_salary.message)}
                 </p>
               )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Max Salary <span className="text-brand-danger">*</span>
+                {t("fieldMaxSalary")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("max_salary", { valueAsNumber: true })}
@@ -220,7 +221,7 @@ export function EditJobGradeDialog({
               />
               {errors.max_salary && (
                 <p className="text-brand-danger text-xs">
-                  {errors.max_salary.message}
+                  {fieldError(errors.max_salary.message)}
                 </p>
               )}
             </div>
@@ -229,11 +230,11 @@ export function EditJobGradeDialog({
           {/* Description */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-content-primary text-sm font-semibold">
-              Description
+              {tCommon("description")}
             </Label>
             <Textarea
               {...register("description")}
-              placeholder="Scope, expectations, or notes…"
+              placeholder={t("phDescription")}
               rows={2}
               className="placeholder:text-content-quaternary max-h-28 min-h-16 w-full resize-none rounded-md border-stroke-default bg-surface-white text-sm"
             />
@@ -247,7 +248,7 @@ export function EditJobGradeDialog({
               className="text-content-primary h-9 rounded-md border-stroke-default bg-surface-white px-4 text-sm font-semibold"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -256,7 +257,7 @@ export function EditJobGradeDialog({
               disabled={updateJobGrade.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {updateJobGrade.isPending ? "Saving…" : "Update"}
+              {updateJobGrade.isPending ? tShared("saving") : tCommon("update")}
             </Button>
           </div>
         </form>

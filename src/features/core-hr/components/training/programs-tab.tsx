@@ -11,12 +11,14 @@ import {
   Trophy,
   Users,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
 import { Input } from "@/src/shared/components/ui/input"
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { useCertifications, usePrograms } from "../../lib/queries/training"
 import type { ProgramStatus, TrainingProgram } from "../../lib/types"
@@ -27,21 +29,21 @@ import { categoryBadge } from "./training-format"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<
+const STATUS_VARIANT: Record<
   ProgramStatus,
-  { label: string; variant: "success" | "info" | "warning" | "neutral" }
+  "success" | "info" | "warning" | "neutral"
 > = {
-  active: { label: "Active", variant: "success" },
-  completed: { label: "Completed", variant: "info" },
-  paused: { label: "Paused", variant: "warning" },
-  draft: { label: "Draft", variant: "neutral" },
-  archived: { label: "Archived", variant: "neutral" },
+  active: "success",
+  completed: "info",
+  paused: "warning",
+  draft: "neutral",
+  archived: "neutral",
 }
 
-function formatCost(program: TrainingProgram) {
+function formatCost(program: TrainingProgram, intlLocale: string) {
   if (program.cost_per_seat == null) return null
   const currency = program.currency_code ? `${program.currency_code} ` : "£"
-  return `${currency}${program.cost_per_seat.toLocaleString()}`
+  return `${currency}${program.cost_per_seat.toLocaleString(intlLocale)}`
 }
 
 // ─── Program card ─────────────────────────────────────────────────────────────
@@ -64,9 +66,12 @@ function ProgramCard({
   program,
   onView,
 }: Readonly<{ program: TrainingProgram; onView: () => void }>) {
-  const cat = categoryBadge(program.category)
-  const st = STATUS_CFG[program.status] ?? STATUS_CFG.draft
-  const cost = formatCost(program)
+  const t = useTranslations("HrTraining")
+  const tCommon = useTranslations("Common")
+  const cat = categoryBadge(program.category, t)
+  const status = program.status in STATUS_VARIANT ? program.status : "draft"
+  const intlLocale = useIntlLocale()
+  const cost = formatCost(program, intlLocale)
 
   return (
     <Card variant="elevated" className="gap-0 p-6">
@@ -77,7 +82,9 @@ function ProgramCard({
         </h3>
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge className={cat.className}>{cat.label}</Badge>
-          <Badge variant={st.variant}>{st.label}</Badge>
+          <Badge variant={STATUS_VARIANT[status]}>
+            {t(`programStatus.${status}`)}
+          </Badge>
         </div>
       </div>
 
@@ -92,7 +99,7 @@ function ProgramCard({
       <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
         {program.total_duration_hours != null && (
           <MetaItem icon={<Clock strokeWidth={1.75} />}>
-            {program.total_duration_hours} hours
+            {t("hoursCount", { count: program.total_duration_hours })}
           </MetaItem>
         )}
         {program.provider && (
@@ -102,13 +109,15 @@ function ProgramCard({
         )}
         {program.enrolled_count != null && (
           <MetaItem icon={<Users strokeWidth={1.75} />}>
-            {program.enrolled_count} enrolled
+            {t("enrolledCount", { count: program.enrolled_count })}
           </MetaItem>
         )}
         {cost && (
           <span className="text-sm text-content-primary">
             <span className="font-semibold">{cost}</span>
-            <span className="ml-1 text-xs text-content-tertiary">/seat</span>
+            <span className="ms-1 text-xs text-content-tertiary">
+              {t("perSeat")}
+            </span>
           </span>
         )}
       </div>
@@ -120,7 +129,7 @@ function ProgramCard({
           {program.program_code}
         </span>
         <Button variant="ghost-primary" size="sm" onClick={onView}>
-          View
+          {tCommon("view")}
         </Button>
       </div>
     </Card>
@@ -142,6 +151,7 @@ function ProgramsSkeleton() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function ProgramsTab() {
+  const t = useTranslations("HrTraining")
   const [search, setSearch] = useState("")
   const [newOpen, setNewOpen] = useState(false)
   const [viewing, setViewing] = useState<TrainingProgram | null>(null)
@@ -173,7 +183,7 @@ export function ProgramsTab() {
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <HeroStatCard
-          label="Active Programmes"
+          label={t("kpiActiveProgrammes")}
           value={
             <>
               {activeCount}
@@ -186,19 +196,19 @@ export function ProgramsTab() {
           accent="violet"
         />
         <HeroStatCard
-          label="Total Enrolled"
+          label={t("kpiTotalEnrolled")}
           value={totalEnrolled}
           icon={<Users strokeWidth={1.75} />}
           accent="blue"
         />
         <HeroStatCard
-          label="Avg. Pass Rate"
+          label={t("kpiAvgPassRate")}
           value="—"
           icon={<Trophy strokeWidth={1.75} />}
           accent="emerald"
         />
         <HeroStatCard
-          label="Certifications at Risk"
+          label={t("kpiCertsAtRisk")}
           value={atRisk}
           icon={<AlertTriangle strokeWidth={1.75} />}
           accent="amber"
@@ -209,19 +219,19 @@ export function ProgramsTab() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative w-full max-w-96">
           <Search
-            className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-content-quaternary"
+            className="absolute top-1/2 inset-s-3 size-4 -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
           />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search programmes..."
-            className="pl-9"
+            placeholder={t("searchProgrammes")}
+            className="ps-9"
           />
         </div>
         <Button variant="primary" size="sm" onClick={() => setNewOpen(true)}>
           <Plus strokeWidth={2} />
-          New Program
+          {t("newProgramme")}
         </Button>
       </div>
 
@@ -234,7 +244,7 @@ export function ProgramsTab() {
           className="min-h-48 items-center justify-center p-6 text-center"
         >
           <span className="text-sm text-content-tertiary">
-            Couldn&apos;t load programmes. Please try again.
+            {t("programmesLoadError")}
           </span>
         </Card>
       ) : filtered.length === 0 ? (
@@ -244,8 +254,8 @@ export function ProgramsTab() {
         >
           <span className="text-sm text-content-tertiary">
             {programs.length === 0
-              ? "No training programmes yet."
-              : "No programmes match your search."}
+              ? t("programmesEmpty")
+              : t("programmesNoMatch")}
           </span>
         </Card>
       ) : (

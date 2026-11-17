@@ -15,6 +15,7 @@ import type {
   Task,
   Timeline,
 } from "../types"
+import type { ProjectsSharedT } from "../utils/translator"
 import { formatMoney } from "./cost-budget-mapper"
 import { formatApiDate, initialsFromName } from "./project-mapper"
 
@@ -90,11 +91,14 @@ export type OverviewStat = {
   caption: string
 }
 
-export function buildOverviewStats(args: {
-  nodeCost: NodeCost | undefined
-  evm: EvmMetrics | undefined
-  progress: OverviewProgress
-}): OverviewStat[] {
+export function buildOverviewStats(
+  args: {
+    nodeCost: NodeCost | undefined
+    evm: EvmMetrics | undefined
+    progress: OverviewProgress
+  },
+  t: ProjectsSharedT,
+): OverviewStat[] {
   const { nodeCost, evm, progress } = args
   const stats: OverviewStat[] = []
 
@@ -102,30 +106,33 @@ export function buildOverviewStats(args: {
     const spent = nodeCost.committed + nodeCost.actual
     stats.push({
       id: "budget",
-      label: "Budget Consumed",
+      label: t("overviewStatBudget"),
       value: formatMoney(spent),
-      caption: `of ${formatMoney(nodeCost.planned)}`,
+      caption: t("ofTotal", { total: formatMoney(nodeCost.planned) }),
     })
   }
 
   stats.push({
     id: "tasks",
-    label: "Tasks Completed",
+    label: t("overviewStatTasks"),
     value: String(progress.tasksDone),
-    caption: `of ${progress.tasksTotal}`,
+    caption: t("ofTotal", { total: String(progress.tasksTotal) }),
   })
 
   stats.push({
     id: "days",
-    label: "Days Remaining",
+    label: t("overviewStatDays"),
     value: progress.daysRemaining == null ? "—" : String(progress.daysRemaining),
-    caption: progress.daysRemaining == null ? "no end date" : "until completion",
+    caption:
+      progress.daysRemaining == null
+        ? t("overviewStatNoEndDate")
+        : t("overviewStatUntilCompletion"),
   })
 
   if (evm) {
     stats.push({
       id: "cpi",
-      label: "Cost Performance",
+      label: t("overviewStatCpi"),
       value: evm.cpi == null ? "—" : evm.cpi.toFixed(2),
       caption: "CPI",
     })
@@ -166,13 +173,14 @@ function indexHealth(label: string, v: number | null | undefined): HealthItem | 
 export function buildHealthSummary(
   evm: EvmMetrics | undefined,
   nodeCost: NodeCost | undefined,
+  t: ProjectsSharedT,
 ): HealthItem[] {
   const items: HealthItem[] = []
 
   if (evm) {
-    const cost = indexHealth("Cost Health", evm.cpi)
+    const cost = indexHealth(t("costHealth"), evm.cpi)
     if (cost) items.push(cost)
-    const schedule = indexHealth("Schedule Health", evm.spi)
+    const schedule = indexHealth(t("scheduleHealth"), evm.spi)
     if (schedule) items.push(schedule)
   }
 
@@ -181,7 +189,7 @@ export function buildHealthSummary(
     const state: HealthState =
       consumed <= 90 ? "On Track" : consumed <= 100 ? "At Risk" : "Critical"
     items.push({
-      label: "Budget Health",
+      label: t("budgetHealth"),
       state,
       // The bar shows remaining budget, so a fuller bar reads as healthier.
       value: Math.max(0, Math.min(100, Math.round(100 - consumed))),
@@ -206,6 +214,8 @@ export type UpcomingMilestone = {
 
 export function buildUpcomingMilestones(
   milestones: Milestone[],
+  t: ProjectsSharedT,
+  locale?: string,
 ): UpcomingMilestone[] {
   return milestones
     .filter((m) => m.status === "pending")
@@ -216,11 +226,14 @@ export function buildUpcomingMilestones(
     .slice(0, 5)
     .map((m) => {
       const days = daysUntil(m.target_date)
-      const when = days == null ? m.type_label : `in ${days} days · ${m.type_label}`
+      const when =
+        days == null
+          ? m.type_label
+          : t("milestoneDueIn", { count: days, type: m.type_label })
       return {
         id: m.id,
         title: m.name,
-        date: formatApiDate(m.target_date),
+        date: formatApiDate(m.target_date, locale),
         meta: when,
         kind: m.type,
       }
@@ -247,14 +260,18 @@ const AVATAR_COLORS: AvatarColor[] = [
   "warning",
 ]
 
-export function buildTeam(rows: ProjectUtilizationRow[]): TeamMember[] {
+export function buildTeam(
+  rows: ProjectUtilizationRow[],
+  t: ProjectsSharedT,
+): TeamMember[] {
   return rows.map((row, i) => ({
     id: row.employee_id,
     name: row.name,
     initials: initialsFromName(row.name),
     color: AVATAR_COLORS[i % AVATAR_COLORS.length],
-    caption: `${Math.round(row.total_allocation_pct)}% allocated · ${
-      row.assignment_count
-    } task${row.assignment_count === 1 ? "" : "s"}`,
+    caption: t("teamMemberCaption", {
+      pct: Math.round(row.total_allocation_pct),
+      count: row.assignment_count,
+    }),
   }))
 }

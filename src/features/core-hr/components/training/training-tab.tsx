@@ -1,6 +1,7 @@
 "use client"
 
 import { Award, BarChart3, BookOpen, GraduationCap, Users } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import {
   Tabs,
@@ -16,28 +17,30 @@ import { ProgramsTab } from "./programs-tab"
 import { SkillMatrixTab } from "./skill-matrix-tab"
 
 export function TrainingTab() {
+  const t = useTranslations("HrTraining")
+
   return (
     <Tabs defaultValue="programs" variant="pill" className="gap-6">
       <TabsList>
         <TabsTrigger value="programs">
           <GraduationCap strokeWidth={1.75} />
-          Programs
+          {t("tabPrograms")}
         </TabsTrigger>
         <TabsTrigger value="courses">
           <BookOpen strokeWidth={1.75} />
-          Course Catalog
+          {t("tabCourses")}
         </TabsTrigger>
         <TabsTrigger value="certifications">
           <Award strokeWidth={1.75} />
-          Certifications
+          {t("tabCertifications")}
         </TabsTrigger>
         <TabsTrigger value="skills">
           <BarChart3 strokeWidth={1.75} />
-          Skills Matrix
+          {t("tabSkills")}
         </TabsTrigger>
         <TabsTrigger value="completions">
           <Users strokeWidth={1.75} />
-          Completions
+          {t("tabCompletions")}
         </TabsTrigger>
       </TabsList>
 

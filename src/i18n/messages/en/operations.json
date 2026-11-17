@@ -1,0 +1,132 @@
+{
+  "OperationsModule": {
+    "accessDenied": "Ask an admin to grant your role access to this Operations section.",
+    "description": "Manage projects, tasks, and vendor relationships in one place.",
+    "newProject": "New Project",
+    "newTask": "New Task",
+    "newVendor": "New Vendor",
+    "tabProjects": "Projects",
+    "tabTasks": "Tasks",
+    "tabVendors": "Vendors",
+    "title": "Operations"
+  },
+  "OperationsShared": {
+    "checkDetails": "Please check the details and try again.",
+    "loadFailed": "Failed to load.",
+    "validationFailed": "Validation failed"
+  },
+  "OperationsProjects": {
+    "empty": "No projects yet.",
+    "kpiActiveProjects": "Active Projects",
+    "kpiOverdueTasks": "Overdue Tasks",
+    "kpiTotalBudget": "Total Budget",
+    "kpiTotalSpent": "Total Spent",
+    "loadError": "Failed to load projects.",
+    "noDescription": "No description provided.",
+    "progress": "Progress",
+    "spentOfBudget": "{spent} / {budget}",
+    "status": {
+      "active": "Active",
+      "completed": "Completed",
+      "on_hold": "On Hold",
+      "planning": "Planning"
+    },
+    "unassigned": "Unassigned"
+  },
+  "OperationsTasks": {
+    "empty": "No tasks match the current filters.",
+    "loadError": "Failed to load tasks.",
+    "noDueDate": "No due date",
+    "noProject": "No project",
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "low": "Low",
+      "medium": "Medium"
+    },
+    "searchPlaceholder": "Search tasks by title or assignee...",
+    "status": {
+      "blocked": "Blocked",
+      "done": "Done",
+      "in_progress": "In Progress",
+      "review": "Review",
+      "to_do": "To Do"
+    },
+    "unassigned": "Unassigned",
+    "updateFailed": "Failed to update task"
+  },
+  "OperationsVendors": {
+    "activate": "Activate",
+    "activateFailed": "Failed to activate vendor",
+    "activated": "{name} activated.",
+    "contractEnd": "Contract End",
+    "contractEndFuture": "Contract end date must be in the future.",
+    "empty": "No vendors match the current filters.",
+    "kpiActiveVendors": "Active Vendors",
+    "kpiExpiringSoon": "Contracts Expiring Soon",
+    "kpiMonthlySpend": "Monthly Vendor Spend",
+    "loadError": "Failed to load vendors.",
+    "manage": "Manage",
+    "monthlySpend": "Monthly Spend",
+    "newContractEnd": "New Contract End Date",
+    "noContact": "No contact on file",
+    "renew": "Renew",
+    "renewContract": "Renew Contract",
+    "renewFailed": "Failed to renew vendor contract",
+    "renewTitle": "Renew {name}'s contract",
+    "renewed": "{name}'s contract renewed.",
+    "searchPlaceholder": "Search vendors...",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending"
+    },
+    "viewContract": "View contract"
+  },
+  "OperationsNewProject": {
+    "budget": "Budget",
+    "createFailed": "Failed to create project",
+    "created": "Project created.",
+    "description": "Description",
+    "descriptionPlaceholder": "Brief project description...",
+    "endDate": "End Date",
+    "lead": "Lead",
+    "leadPlaceholder": "Select a lead",
+    "name": "Project Name",
+    "namePlaceholder": "e.g. Website Redesign",
+    "startDate": "Start Date",
+    "submit": "Add Project",
+    "title": "New Project"
+  },
+  "OperationsNewTask": {
+    "assignee": "Assignee",
+    "assigneePlaceholder": "Select an assignee",
+    "createFailed": "Failed to create task",
+    "created": "Task created.",
+    "dueDate": "Due Date",
+    "priority": "Priority",
+    "project": "Project",
+    "projectPlaceholder": "Select a project",
+    "submit": "Add Task",
+    "taskTitle": "Task Title",
+    "taskTitlePlaceholder": "e.g. Reconcile opening stock balances",
+    "title": "New Task"
+  },
+  "OperationsNewVendor": {
+    "category": "Category",
+    "categoryPlaceholder": "e.g. Infrastructure, Design, Payments",
+    "contactEmail": "Contact Email",
+    "contactName": "Contact Name",
+    "contactNamePlaceholder": "Account manager name",
+    "contractEnd": "Contract End Date",
+    "createFailed": "Failed to add vendor",
+    "created": "Vendor added.",
+    "monthlySpend": "Monthly Spend",
+    "name": "Vendor Name",
+    "namePlaceholder": "e.g. Vercel",
+    "submit": "Add Vendor",
+    "tags": "Tags",
+    "tagsPlaceholder": "Comma-separated, e.g. critical, cloud",
+    "title": "New Vendor"
+  }
+}

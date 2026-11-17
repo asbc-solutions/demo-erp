@@ -12,6 +12,7 @@ import {
   ShieldQuestion,
   Trash2,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -45,7 +46,7 @@ import {
 import { Textarea } from "@/src/shared/components/ui/textarea"
 import { cn } from "@/src/shared/lib/utils/utils"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesPageSpinner } from "../../components/shared/sales-loading"
 import {
   MasterDataSelect,
@@ -79,7 +80,8 @@ import type {
   QuotationStatus,
 } from "../../lib/types"
 
-function StatusBadge({ status, label }: Readonly<{ status: QuotationStatus; label: string }>) {
+function StatusBadge({ status }: Readonly<{ status: QuotationStatus }>) {
+  const tShared = useTranslations("SalesShared")
   const className = cn(
     "rounded-full px-3 font-normal",
     status === "accepted" && "bg-emerald-50 text-emerald-600",
@@ -91,7 +93,7 @@ function StatusBadge({ status, label }: Readonly<{ status: QuotationStatus; labe
   )
   return (
     <Badge variant="neutral" className={className}>
-      {label}
+      {tShared(`quotationStatus.${status}`)}
     </Badge>
   )
 }
@@ -105,10 +107,16 @@ function StatusBadge({ status, label }: Readonly<{ status: QuotationStatus; labe
  * things at once: what the server thinks it is, and that its validity lapsed.
  */
 function ExpiredBadge({ validity }: Readonly<{ validity: QuotationValidity }>) {
+  const tShared = useTranslations("SalesShared")
+
   return (
-    <Badge variant="danger" className="rounded-full px-3 font-normal" title={validity.label}>
+    <Badge
+      variant="danger"
+      className="rounded-full px-3 font-normal"
+      title={tShared(`validity.${validity.label.key}`, { count: validity.label.count })}
+    >
       <AlertTriangle aria-hidden />
-      Expired
+      {tShared("validity.expired")}
     </Badge>
   )
 }
@@ -126,6 +134,8 @@ function LineEditorFields({
   quantityError: string | null
   onQuantityChange: () => void
 }>) {
+  const t = useTranslations("SalesQuotations")
+  const tCommon = useTranslations("Common")
   const [manualMode, setManualMode] = React.useState(!defaultLine?.product_id)
   const [selectedProductId, setSelectedProductId] = React.useState(defaultLine?.product_id ?? "")
   const { data: results = [] } = useProductSearch(productQuery)
@@ -135,10 +145,10 @@ function LineEditorFields({
       <input type="hidden" name="productId" value={manualMode ? "" : selectedProductId} />
       <div className="flex flex-col gap-1.5 sm:col-span-2">
         <span className="text-xs font-medium text-content-secondary">
-          {manualMode ? "Description" : "Product"}
+          {manualMode ? tCommon("description") : t("product")}
         </span>
         {manualMode ? (
-          <Input name="description" defaultValue={defaultLine?.description} required placeholder="Line description" />
+          <Input name="description" defaultValue={defaultLine?.description} required placeholder={t("lineDescriptionPlaceholder")} />
         ) : (
           <div className="relative">
             <Input
@@ -147,7 +157,7 @@ function LineEditorFields({
                 setProductQuery(event.target.value)
                 setSelectedProductId("")
               }}
-              placeholder="Search products by name or SKU…"
+              placeholder={t("searchProductsPlaceholder")}
               required={!selectedProductId}
             />
             {productQuery && !selectedProductId && results.length > 0 ? (
@@ -156,7 +166,7 @@ function LineEditorFields({
                   <button
                     key={product.id}
                     type="button"
-                    className="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm hover:bg-surface-hover"
+                    className="flex w-full flex-col gap-0.5 px-3 py-2 text-start text-sm hover:bg-surface-hover"
                     onClick={() => {
                       setSelectedProductId(product.id)
                       setProductQuery(product.name)
@@ -181,11 +191,11 @@ function LineEditorFields({
             setProductQuery("")
           }}
         >
-          {manualMode ? "Search a product instead" : "Enter a custom line instead"}
+          {manualMode ? t("searchProductInstead") : t("customLineInstead")}
         </button>
       </div>
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-content-secondary">Quantity</span>
+        <span className="text-xs font-medium text-content-secondary">{t("quantity")}</span>
         <Input
           name="quantity"
           type="number"
@@ -204,7 +214,7 @@ function LineEditorFields({
         ) : null}
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-content-secondary">Unit price</span>
+        <span className="text-xs font-medium text-content-secondary">{t("unitPrice")}</span>
         <Input
           name="unitPrice"
           type="number"
@@ -212,22 +222,22 @@ function LineEditorFields({
           step="0.01"
           defaultValue={defaultLine?.unit_price}
           required={manualMode}
-          placeholder={manualMode ? undefined : "From product"}
+          placeholder={manualMode ? undefined : t("fromProduct")}
         />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-content-secondary">Discount %</span>
+        <span className="text-xs font-medium text-content-secondary">{t("discountPercent")}</span>
         <Input name="discountPercent" type="number" min="0" max="100" defaultValue={defaultLine?.discount_percent ?? 0} />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-content-secondary">Tax %</span>
+        <span className="text-xs font-medium text-content-secondary">{t("taxPercent")}</span>
         <Input
           name="taxPercent"
           type="number"
           min="0"
           max="100"
           defaultValue={defaultLine?.tax_percent}
-          placeholder={manualMode ? undefined : "From product/settings"}
+          placeholder={manualMode ? undefined : t("fromProductSettings")}
         />
       </label>
     </>
@@ -245,6 +255,9 @@ function LineDialog({
   quotationId: string
   line: QuotationLine | null
 }>) {
+  const t = useTranslations("SalesQuotations")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [productQuery, setProductQuery] = React.useState(line ? "" : "")
   const [quantityError, setQuantityError] = React.useState<string | null>(null)
   const addLine = useAddQuotationLine()
@@ -270,7 +283,7 @@ function LineDialog({
     // throughout Sales — reject fractions here rather than let them skew line totals.
     const quantity = Number(String(formData.get("quantity") ?? ""))
     if (!Number.isInteger(quantity) || quantity < 1) {
-      setQuantityError("Quantity must be a whole number of 1 or more.")
+      setQuantityError(t("quantityWhole"))
       return
     }
     setQuantityError(null)
@@ -286,10 +299,10 @@ function LineDialog({
 
     const onSettled = {
       onSuccess: () => {
-        toast.success(line ? "Line updated" : "Line added")
+        toast.success(line ? t("lineUpdated") : t("lineAdded"))
         handleOpenChange(false)
       },
-      onError: (err: unknown) => toastMutationError(err, "Failed to save line"),
+      onError: (err: unknown) => toastMutationError(err, t("saveLineFailed")),
     }
 
     if (line) {
@@ -304,7 +317,7 @@ function LineDialog({
       <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{line ? "Edit Line" : "Add Line"}</DialogTitle>
+            <DialogTitle>{line ? t("editLineTitle") : t("addLineTitle")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <LineEditorFields
@@ -317,11 +330,11 @@ function LineDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={isPending}>
               {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              {line ? "Save changes" : "Add line"}
+              {line ? tCommon("saveChanges") : t("addLineSubmit")}
             </Button>
           </DialogFooter>
         </form>
@@ -341,6 +354,9 @@ function RequestDiscountApprovalDialog({
   quotationId: string
   lineId: string | null
 }>) {
+  const t = useTranslations("SalesQuotations")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [justification, setJustification] = React.useState("")
   const requestApproval = useRequestDiscountApproval()
 
@@ -356,10 +372,10 @@ function RequestDiscountApprovalDialog({
       { quotationId, lineId, payload: { justification } },
       {
         onSuccess: () => {
-          toast.success("Discount approval requested")
+          toast.success(t("approvalRequested"))
           handleOpenChange(false)
         },
-        onError: (err) => toastMutationError(err, "Failed to request discount approval"),
+        onError: (err) => toastMutationError(err, t("requestApprovalFailed")),
       },
     )
   }
@@ -369,12 +385,12 @@ function RequestDiscountApprovalDialog({
       <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Request discount approval</DialogTitle>
+            <DialogTitle>{t("requestDiscountApproval")}</DialogTitle>
           </DialogHeader>
           <DialogBody>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-content-secondary">
-                Justification (min. 20 characters)
+                {t("justificationLabel")}
               </span>
               <Textarea
                 value={justification}
@@ -387,7 +403,7 @@ function RequestDiscountApprovalDialog({
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -395,7 +411,7 @@ function RequestDiscountApprovalDialog({
               disabled={justification.trim().length < 20 || requestApproval.isPending}
             >
               {requestApproval.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              Request approval
+              {t("requestApproval")}
             </Button>
           </DialogFooter>
         </form>
@@ -413,6 +429,9 @@ function LinesTable({
   onEditLine: (line: QuotationLine) => void
   onRequestApproval: (lineId: string) => void
 }>) {
+  const t = useTranslations("SalesQuotations")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const removeLine = useRemoveQuotationLine()
   const isEditable = quotation.actions_available.includes("edit")
 
@@ -421,13 +440,13 @@ function LinesTable({
       <Table className="min-w-[900px] table-fixed">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="px-5">Description</TableHead>
-            <TableHead className="w-[90px] text-right">Qty</TableHead>
-            <TableHead className="w-[120px] text-right">Unit Price</TableHead>
-            <TableHead className="w-[100px] text-right">Discount</TableHead>
-            <TableHead className="w-[90px] text-right">Tax</TableHead>
-            <TableHead className="w-[130px] text-right">Line Total</TableHead>
-            {isEditable ? <TableHead className="w-[140px] px-5 text-right">Actions</TableHead> : null}
+            <TableHead className="px-5">{tCommon("description")}</TableHead>
+            <TableHead className="w-[90px] text-end">{t("qty")}</TableHead>
+            <TableHead className="w-[120px] text-end">{t("unitPriceColumn")}</TableHead>
+            <TableHead className="w-[100px] text-end">{t("discount")}</TableHead>
+            <TableHead className="w-[90px] text-end">{t("tax")}</TableHead>
+            <TableHead className="w-[130px] text-end">{t("lineTotal")}</TableHead>
+            {isEditable ? <TableHead className="w-[140px] px-5 text-end">{tCommon("actions")}</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -437,22 +456,22 @@ function LinesTable({
                 <TableCell className="px-5 py-3 font-medium text-content-primary">
                   {line.description}
                 </TableCell>
-                <TableCell className="py-3 text-right">{line.quantity}</TableCell>
-                <TableCell className="py-3 text-right">{formatCurrency(line.unit_price)}</TableCell>
-                <TableCell className="py-3 text-right">{line.discount_percent}%</TableCell>
-                <TableCell className="py-3 text-right">{line.tax_percent}%</TableCell>
-                <TableCell className="py-3 text-right font-semibold">
+                <TableCell className="py-3 text-end">{line.quantity}</TableCell>
+                <TableCell className="py-3 text-end">{formatCurrency(line.unit_price)}</TableCell>
+                <TableCell className="py-3 text-end">{line.discount_percent}%</TableCell>
+                <TableCell className="py-3 text-end">{line.tax_percent}%</TableCell>
+                <TableCell className="py-3 text-end font-semibold">
                   {formatCurrency(line.line_total)}
                 </TableCell>
                 {isEditable ? (
-                  <TableCell className="px-5 py-3 text-right">
+                  <TableCell className="px-5 py-3 text-end">
                     <div className="flex items-center justify-end gap-1">
                       {line.discount_percent > 0 ? (
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon-sm"
-                          aria-label="Request discount approval"
+                          aria-label={t("requestDiscountApproval")}
                           onClick={() => onRequestApproval(line.id)}
                         >
                           <ShieldQuestion aria-hidden />
@@ -462,7 +481,7 @@ function LinesTable({
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        aria-label="Edit line"
+                        aria-label={t("editLine")}
                         onClick={() => onEditLine(line)}
                       >
                         <Pencil aria-hidden />
@@ -471,13 +490,13 @@ function LinesTable({
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        aria-label="Remove line"
+                        aria-label={t("removeLine")}
                         className="text-brand-danger"
                         disabled={removeLine.isPending}
                         onClick={() =>
                           removeLine.mutate(
                             { id: quotation.id, lineId: line.id },
-                            { onError: (err) => toastMutationError(err, "Failed to remove line") },
+                            { onError: (err) => toastMutationError(err, t("removeLineFailed")) },
                           )
                         }
                       >
@@ -491,7 +510,7 @@ function LinesTable({
           ) : (
             <TableRow>
               <TableCell colSpan={isEditable ? 7 : 6} className="h-24 text-center text-content-tertiary">
-                No line items yet.
+                {t("noLines")}
               </TableCell>
             </TableRow>
           )}
@@ -499,19 +518,19 @@ function LinesTable({
       </Table>
       <div className="flex flex-col items-end gap-1 border-t border-stroke-light px-5 py-4 text-sm">
         <div className="flex w-56 justify-between text-content-tertiary">
-          <span>Subtotal</span>
+          <span>{t("subtotal")}</span>
           <span>{formatCurrency(quotation.subtotal)}</span>
         </div>
         <div className="flex w-56 justify-between text-content-tertiary">
-          <span>Discount</span>
+          <span>{t("discount")}</span>
           <span>-{formatCurrency(quotation.discount_total)}</span>
         </div>
         <div className="flex w-56 justify-between text-content-tertiary">
-          <span>Tax</span>
+          <span>{t("tax")}</span>
           <span>{formatCurrency(quotation.tax_total)}</span>
         </div>
         <div className="flex w-56 justify-between text-base font-bold text-content-primary">
-          <span>Grand Total</span>
+          <span>{t("grandTotal")}</span>
           <span>{formatCurrency(quotation.grand_total)}</span>
         </div>
       </div>
@@ -524,6 +543,9 @@ function EditHeaderDialog({
   onOpenChange,
   quotation,
 }: Readonly<{ open: boolean; onOpenChange: (open: boolean) => void; quotation: Quotation }>) {
+  const t = useTranslations("SalesQuotations")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const { data: salespeople = [] } = useActiveSalespeople()
   const updateQuotation = useUpdateQuotation()
 
@@ -542,7 +564,7 @@ function EditHeaderDialog({
 
     const salespersonId = String(formData.get("salesperson") ?? "")
     if (!salespersonId) {
-      toast.error("Select a salesperson before saving")
+      toast.error(t("selectSalespersonBeforeSaving"))
       return
     }
 
@@ -563,10 +585,10 @@ function EditHeaderDialog({
       },
       {
         onSuccess: () => {
-          toast.success("Quotation updated")
+          toast.success(t("updatedToast"))
           onOpenChange(false)
         },
-        onError: (err) => toastMutationError(err, "Failed to update quotation"),
+        onError: (err) => toastMutationError(err, t("updateFailed")),
       },
     )
   }
@@ -576,11 +598,11 @@ function EditHeaderDialog({
       <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Edit Quotation Details</DialogTitle>
+            <DialogTitle>{t("editDetailsTitle")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-xs font-medium text-content-secondary">Salesperson</span>
+              <span className="text-xs font-medium text-content-secondary">{t("salesperson")}</span>
               <select name="salesperson" className={SALES_SELECT_CLASS_NAME} defaultValue={quotation.salesperson_id}>
                 {salespersonOptions.map((person) => (
                   <option key={person.id} value={person.id}>
@@ -590,25 +612,25 @@ function EditHeaderDialog({
               </select>
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Quotation date</span>
+              <span className="text-xs font-medium text-content-secondary">{t("quotationDate")}</span>
               <Input name="quotationDate" type="date" defaultValue={quotation.quotation_date} />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Validity (days)</span>
+              <span className="text-xs font-medium text-content-secondary">{t("validityDays")}</span>
               <Input name="validityDays" type="number" min="1" defaultValue={quotation.validity_days} />
             </label>
             <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-xs font-medium text-content-secondary">Terms &amp; conditions</span>
+              <span className="text-xs font-medium text-content-secondary">{t("termsAndConditions")}</span>
               <Textarea name="terms" defaultValue={quotation.terms_and_conditions ?? ""} />
             </label>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={updateQuotation.isPending}>
               {updateQuotation.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              Save changes
+              {tCommon("saveChanges")}
             </Button>
           </DialogFooter>
         </form>
@@ -618,6 +640,9 @@ function EditHeaderDialog({
 }
 
 function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBack: () => void }>) {
+  const t = useTranslations("SalesQuotations")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [sendOpen, setSendOpen] = React.useState(false)
   const [acceptOpen, setAcceptOpen] = React.useState(false)
   const [rejectOpen, setRejectOpen] = React.useState(false)
@@ -646,8 +671,8 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
 
   const handleDuplicate = () => {
     duplicateQuotation.mutate(quotation.id, {
-      onSuccess: (dup) => toast.success(`Duplicated as ${dup.number}`),
-      onError: (err) => toastMutationError(err, "Failed to duplicate quotation"),
+      onSuccess: (dup) => toast.success(t("duplicatedAs", { number: dup.number })),
+      onError: (err) => toastMutationError(err, t("duplicateFailed")),
     })
   }
 
@@ -656,7 +681,7 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
       { id: quotation.id },
       {
         onSuccess: (url) => window.open(url, "_blank"),
-        onError: (err) => toastMutationError(err, "Failed to generate PDF"),
+        onError: (err) => toastMutationError(err, t("pdfFailed")),
       },
     )
   }
@@ -664,14 +689,14 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button type="button" variant="ghost" onClick={onBack}>
-        <ArrowLeft aria-hidden />
-        Back
+        <ArrowLeft className="rtl:rotate-180" aria-hidden />
+        {tCommon("back")}
       </Button>
-      <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="ms-auto flex flex-wrap items-center gap-2">
         {allows("delete") ? (
           <Button type="button" variant="secondary" onClick={() => setDeleteOpen(true)}>
             <Trash2 aria-hidden />
-            Delete
+            {tCommon("delete")}
           </Button>
         ) : null}
         {allows("send") ? (
@@ -681,40 +706,40 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
             disabled={blockSend}
             title={
               awaitingDiscountApproval
-                ? "An excess discount on this quotation is awaiting approval."
+                ? t("sendBlockedApproval")
                 : validity.isExpired
-                  ? `Validity lapsed on ${quotation.validity_date} — update the quotation date or validity days before sending.`
+                  ? t("sendBlockedExpired", { date: quotation.validity_date })
                   : undefined
             }
             onClick={() => setSendOpen(true)}
           >
-            Send
+            {t("send")}
           </Button>
         ) : null}
         {allows("reject") ? (
           <Button type="button" variant="secondary" onClick={() => setRejectOpen(true)}>
-            Reject
+            {tCommon("reject")}
           </Button>
         ) : null}
         {allows("accept") ? (
           <Button type="button" variant="primary" onClick={() => setAcceptOpen(true)}>
-            Accept
+            {t("accept")}
           </Button>
         ) : null}
         {allows("convert") ? (
           <Button type="button" variant="primary" onClick={() => setConvertOpen(true)}>
-            Convert to Sales Order
+            {t("convertToOrder")}
           </Button>
         ) : null}
         {allows("duplicate") ? (
           <Button type="button" variant="secondary" disabled={duplicateQuotation.isPending} onClick={handleDuplicate}>
             <Copy aria-hidden />
-            Duplicate
+            {t("duplicate")}
           </Button>
         ) : null}
         <Button type="button" variant="secondary" disabled={getPdf.isPending} onClick={handlePdf}>
           {getPdf.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Download aria-hidden />}
-          PDF
+          {t("pdf")}
         </Button>
       </div>
 
@@ -729,33 +754,33 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
                 { id: quotation.id, payload: { sent_via: sentVia } },
                 {
                   onSuccess: () => {
-                    toast.success("Quotation sent")
+                    toast.success(t("sentToast"))
                     setSendOpen(false)
                   },
-                  onError: (err) => toastMutationError(err, "Failed to send quotation"),
+                  onError: (err) => toastMutationError(err, t("sendFailed")),
                 },
               )
             }}
           >
             <DialogHeader>
-              <DialogTitle>Send quotation</DialogTitle>
+              <DialogTitle>{t("sendTitle")}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-content-secondary">Sent via</span>
+                <span className="text-xs font-medium text-content-secondary">{t("sentVia")}</span>
                 <select name="sentVia" className={SALES_SELECT_CLASS_NAME} defaultValue="email">
-                  <option value="email">Email</option>
+                  <option value="email">{t("sentViaEmail")}</option>
                   <option value="whatsapp">WhatsApp</option>
-                  <option value="manual">Manual</option>
+                  <option value="manual">{t("sentViaManual")}</option>
                 </select>
               </label>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setSendOpen(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={sendQuotation.isPending}>
-                Send
+                {t("send")}
               </Button>
             </DialogFooter>
           </form>
@@ -773,31 +798,31 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
                 { id: quotation.id, payload: { acceptance_reference: reference || undefined } },
                 {
                   onSuccess: () => {
-                    toast.success("Quotation accepted")
+                    toast.success(t("acceptedToast"))
                     setAcceptOpen(false)
                   },
-                  onError: (err) => toastMutationError(err, "Failed to accept quotation"),
+                  onError: (err) => toastMutationError(err, t("acceptFailed")),
                 },
               )
             }}
           >
             <DialogHeader>
-              <DialogTitle>Accept quotation</DialogTitle>
+              <DialogTitle>{t("acceptTitle")}</DialogTitle>
             </DialogHeader>
             <DialogBody>
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-content-secondary">
-                  Customer PO / acceptance reference (optional)
+                  {t("acceptReference")}
                 </span>
-                <Input name="reference" placeholder="e.g. PO-9981" />
+                <Input name="reference" placeholder={t("acceptReferencePlaceholder")} />
               </label>
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setAcceptOpen(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" variant="primary" disabled={acceptQuotation.isPending}>
-                Accept
+                {t("accept")}
               </Button>
             </DialogFooter>
           </form>
@@ -827,36 +852,36 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
                 },
                 {
                   onSuccess: () => {
-                    toast.success("Quotation rejected")
+                    toast.success(t("rejectedToast"))
                     setRejectOpen(false)
                     setRejectReasonId("")
                   },
-                  onError: (err) => toastMutationError(err, "Failed to reject quotation"),
+                  onError: (err) => toastMutationError(err, t("rejectFailed")),
                 },
               )
             }}
           >
             <DialogHeader>
-              <DialogTitle>Reject quotation</DialogTitle>
+              <DialogTitle>{t("rejectTitle")}</DialogTitle>
             </DialogHeader>
             <DialogBody className="flex flex-col gap-4">
               <MasterDataSelect
                 field="rejection_reasons"
                 name="reason"
-                label="Reason"
+                label={t("reason")}
                 value={rejectReasonId}
                 onValueChange={setRejectReasonId}
-                placeholder="Select a reason…"
-                emptyMessage="No rejection reasons are configured yet, so this quotation can’t be rejected. Ask an administrator to add them to the sales master data."
+                placeholder={t("selectReason")}
+                emptyMessage={t("noRejectionReasons")}
               />
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-content-secondary">
                   {selectedRejectReason?.requires_note ? (
                     <>
-                      Note <span className="text-brand-danger">*</span>
+                      {t("note")} <span className="text-brand-danger">*</span>
                     </>
                   ) : (
-                    "Note (optional)"
+                    t("noteOptional")
                   )}
                 </span>
                 <Textarea name="note" required={selectedRejectReason?.requires_note ?? false} />
@@ -864,7 +889,7 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setRejectOpen(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button
                 type="submit"
@@ -874,7 +899,7 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
                 {rejectQuotation.isPending ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                 ) : null}
-                Reject
+                {tCommon("reject")}
               </Button>
             </DialogFooter>
           </form>
@@ -884,26 +909,26 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
       {/* Convert */}
       <AlertDialog open={convertOpen} onOpenChange={setConvertOpen}>
         <AlertDialogContent className="max-w-md">
-          <AlertDialogTitle>Convert to Sales Order?</AlertDialogTitle>
+          <AlertDialogTitle>{t("convertTitle")}</AlertDialogTitle>
           <AlertDialogDescription>
-            This creates a new Sales Order with the same customer, lines, and totals.
+            {t("convertDescription")}
           </AlertDialogDescription>
           <div className="mt-4 flex items-center justify-end gap-2">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={convertQuotation.isPending}
               onClick={(event) => {
                 event.preventDefault()
                 convertQuotation.mutate(quotation.id, {
                   onSuccess: () => {
-                    toast.success("Converted to a new Sales Order")
+                    toast.success(t("convertedToast"))
                     setConvertOpen(false)
                   },
-                  onError: (err) => toastMutationError(err, "Failed to convert quotation"),
+                  onError: (err) => toastMutationError(err, t("convertFailed")),
                 })
               }}
             >
-              Convert
+              {t("convert")}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
@@ -912,24 +937,24 @@ function ActionBar({ quotation, onBack }: Readonly<{ quotation: Quotation; onBac
       {/* Delete */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="max-w-md">
-          <AlertDialogTitle>Delete this draft?</AlertDialogTitle>
-          <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+          <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("deleteDescription")}</AlertDialogDescription>
           <div className="mt-4 flex items-center justify-end gap-2">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={deleteQuotation.isPending}
               onClick={(event) => {
                 event.preventDefault()
                 deleteQuotation.mutate(quotation.id, {
                   onSuccess: () => {
-                    toast.success("Draft deleted")
+                    toast.success(t("draftDeleted"))
                     onBack()
                   },
-                  onError: (err) => toastMutationError(err, "Failed to delete quotation"),
+                  onError: (err) => toastMutationError(err, t("deleteFailed")),
                 })
               }}
             >
-              Delete
+              {tCommon("delete")}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
@@ -942,6 +967,8 @@ export function QuotationDetailView({
   quotationId,
   onBack,
 }: Readonly<{ quotationId: string; onBack: () => void }>) {
+  const t = useTranslations("SalesQuotations")
+  const tShared = useTranslations("SalesShared")
   const { data: quotation, isLoading, isError, refetch } = useQuotation(quotationId)
   const [lineDialog, setLineDialog] = React.useState<{ open: boolean; line: QuotationLine | null }>({
     open: false,
@@ -952,7 +979,7 @@ export function QuotationDetailView({
 
   if (isLoading) return <SalesPageSpinner />
   if (isError || !quotation) {
-    return <SalesErrorState message="Failed to load quotation." onRetry={() => void refetch()} />
+    return <SalesErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
   }
 
   const isEditable = quotation.actions_available.includes("edit")
@@ -967,7 +994,7 @@ export function QuotationDetailView({
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <h1 className="font-mono text-lg font-semibold text-content-primary">{quotation.number}</h1>
-              <StatusBadge status={quotation.status} label={quotation.status_label} />
+              <StatusBadge status={quotation.status} />
               {validity.isExpired ? <ExpiredBadge validity={validity} /> : null}
             </div>
             <p className="text-sm text-content-secondary">{quotation.customer_name}</p>
@@ -975,32 +1002,32 @@ export function QuotationDetailView({
           {isEditable ? (
             <Button type="button" variant="secondary" size="sm" onClick={() => setEditHeaderOpen(true)}>
               <Pencil aria-hidden />
-              Edit Details
+              {t("editDetails")}
             </Button>
           ) : null}
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <div>
-            <p className="text-xs text-content-quaternary">Salesperson</p>
+            <p className="text-xs text-content-quaternary">{t("salesperson")}</p>
             <p className="font-medium text-content-primary">{quotation.salesperson_name}</p>
           </div>
           <div>
-            <p className="text-xs text-content-quaternary">Quotation Date</p>
+            <p className="text-xs text-content-quaternary">{t("quotationDateLabel")}</p>
             <p className="font-mono font-medium text-content-primary">{quotation.quotation_date}</p>
           </div>
           <div>
-            <p className="text-xs text-content-quaternary">Validity Date</p>
+            <p className="text-xs text-content-quaternary">{t("validityDate")}</p>
             <p className="font-mono font-medium text-content-primary">{quotation.validity_date}</p>
           </div>
           <div>
-            <p className="text-xs text-content-quaternary">Days Left</p>
+            <p className="text-xs text-content-quaternary">{t("daysLeft")}</p>
             <p
               className={cn(
                 "font-medium text-content-primary",
                 validity.isExpired && "text-brand-danger",
               )}
             >
-              {validity.label}
+              {tShared(`validity.${validity.label.key}`, { count: validity.label.count })}
             </p>
           </div>
         </div>
@@ -1013,13 +1040,13 @@ export function QuotationDetailView({
         <div className="flex items-start gap-2 rounded-xl border border-brand-danger/30 bg-brand-danger/10 px-4 py-3 text-xs text-brand-danger">
           <AlertTriangle className="size-4 shrink-0" aria-hidden />
           <span>
-            This quotation&apos;s validity date, {quotation.validity_date}, has passed.{" "}
+            {t("expiredBannerPassed", { date: quotation.validity_date })}{" "}
             {quotation.status === "draft"
-              ? "It is still listed as a draft because the validity countdown only starts once a quotation is sent."
-              : `It is still listed as ${quotation.status_label} because it has not been expired on the server yet.`}
-            {isEditable
-              ? " Edit the quotation date or validity days to make it current again."
-              : ""}
+              ? t("expiredBannerDraft")
+              : t("expiredBannerStatus", {
+                  status: tShared(`quotationStatus.${quotation.status}`),
+                })}
+            {isEditable ? ` ${t("expiredBannerEditHint")}` : ""}
           </span>
         </div>
       ) : null}
@@ -1036,14 +1063,14 @@ export function QuotationDetailView({
           <ShieldQuestion className="size-4 shrink-0" aria-hidden />
           <span>
             {quotation.discount_approved
-              ? "The excess discount on this quotation has been approved."
-              : "An excess discount on this quotation is awaiting approval — it can’t be sent until that is decided."}
+              ? t("discountApproved")
+              : t("discountAwaiting")}
           </span>
         </div>
       ) : null}
 
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-content-primary">Line Items</h2>
+        <h2 className="text-sm font-semibold text-content-primary">{t("lineItems")}</h2>
         {isEditable ? (
           <Button
             type="button"
@@ -1052,7 +1079,7 @@ export function QuotationDetailView({
             onClick={() => setLineDialog({ open: true, line: null })}
           >
             <Plus aria-hidden />
-            Add Line
+            {t("addLineTitle")}
           </Button>
         ) : null}
       </div>

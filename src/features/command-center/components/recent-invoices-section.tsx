@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronRight, Receipt } from "lucide-react"
+import { useLocale, useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Button } from "@/src/shared/components/ui/button"
@@ -47,7 +48,17 @@ function statusBadgeVariant(status: string): BadgeVariant {
   }
 }
 
+const KNOWN_STATUSES = ["draft", "sent", "paid", "partial", "overdue", "void"] as const
+type KnownStatus = (typeof KNOWN_STATUSES)[number]
+
+function isKnownStatus(status: string): status is KnownStatus {
+  return (KNOWN_STATUSES as readonly string[]).includes(status)
+}
+
 export function RecentInvoicesSection() {
+  const t = useTranslations("CommandCenterInvoices")
+  const tCommon = useTranslations("Common")
+  const locale = useLocale()
   const { data, isLoading, isError, refetch } = useRecentInvoices({ limit: 3 })
   const invoices = data ?? []
 
@@ -59,7 +70,7 @@ export function RecentInvoicesSection() {
       <div className="flex items-center justify-between px-6 pb-4">
         <div className="flex items-center gap-2">
           <Receipt className="size-4 text-content-secondary" />
-          <p className="text-sm font-semibold text-content-primary">Recent Invoices</p>
+          <p className="text-sm font-semibold text-content-primary">{t("title")}</p>
         </div>
         <Button
           type="button"
@@ -67,8 +78,8 @@ export function RecentInvoicesSection() {
           size="xs"
           className="h-auto gap-1 px-1 text-[11px] font-medium"
         >
-          View all
-          <ChevronRight className="size-3" />
+          {tCommon("viewAll")}
+          <ChevronRight className="size-3 rtl:rotate-180" />
         </Button>
       </div>
       <div className="px-6 pb-2">
@@ -76,21 +87,21 @@ export function RecentInvoicesSection() {
           <CommandCenterSectionSpinner />
         ) : isError ? (
           <CommandCenterErrorState
-            message="Failed to load recent invoices."
+            message={t("loadFailed")}
             onRetry={() => void refetch()}
           />
         ) : invoices.length === 0 ? (
           <p className="py-6 text-center text-xs text-content-quaternary">
-            No invoices yet.
+            {t("empty")}
           </p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="border-stroke-default hover:bg-transparent">
-                <TableHead>Invoice #</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Status</TableHead>
+                <TableHead>{t("invoiceNumber")}</TableHead>
+                <TableHead>{t("client")}</TableHead>
+                <TableHead className="text-end">{t("amount")}</TableHead>
+                <TableHead className="text-end">{t("statusHeader")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -102,10 +113,10 @@ export function RecentInvoicesSection() {
                   <TableCell className="text-xs text-content-tertiary">
                     {invoice.client_name}
                   </TableCell>
-                  <TableCell className="text-right font-mono text-xs text-content-primary">
-                    {formatCurrency(invoice.total_amount, invoice.currency_code)}
+                  <TableCell className="text-end font-mono text-xs text-content-primary">
+                    {formatCurrency(invoice.total_amount, invoice.currency_code, locale)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <Badge
                       variant={statusBadgeVariant(invoice.status)}
                       className={cn(
@@ -114,7 +125,9 @@ export function RecentInvoicesSection() {
                           "bg-surface-hover text-content-tertiary",
                       )}
                     >
-                      {invoice.status}
+                      {isKnownStatus(invoice.status)
+                        ? t(`status.${invoice.status}`)
+                        : invoice.status}
                     </Badge>
                   </TableCell>
                 </TableRow>

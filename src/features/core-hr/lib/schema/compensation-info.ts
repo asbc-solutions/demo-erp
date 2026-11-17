@@ -1,19 +1,21 @@
 import { z } from "zod"
 
+import { vk } from "./validation-key"
+
 /** Required fields on the Compensation step of the add/edit employee stepper. */
 export const compensationInfoSchema = z.object({
   grossAnnual: z
     .number({
-      required_error: "Gross Salary is required.",
-      invalid_type_error: "Gross Salary is required.",
+      required_error: vk("grossSalaryRequired"),
+      invalid_type_error: vk("grossSalaryRequired"),
     })
-    .positive("Gross Salary must be greater than 0."),
+    .positive(vk("grossSalaryPositive")),
   contractType: z.enum(["PERMANENT", "FIXED_TERM", "PROBATION"], {
-    errorMap: () => ({ message: "Contract Type is required." }),
+    errorMap: () => ({ message: vk("contractTypeRequired") }),
   }),
   contractStart: z
-    .string({ required_error: "Contract Start Date is required." })
-    .min(1, "Contract Start Date is required."),
+    .string({ required_error: vk("contractStartRequired") })
+    .min(1, vk("contractStartRequired")),
 })
 
 /**
@@ -30,7 +32,7 @@ export const contractStartSchema = z
     ({ hireDate, contractStart }) =>
       !hireDate || !contractStart || contractStart < hireDate,
     {
-      message: "Contract start date must be before the hiring date.",
+      message: vk("contractStartBeforeHire"),
       path: ["contractStart"],
     },
   )

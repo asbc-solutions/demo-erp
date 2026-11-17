@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { X } from "lucide-react"
 
@@ -55,6 +56,7 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const t = useTranslations("Common")
   const {
     "aria-describedby": ariaDescribedBy,
     ...restProps
@@ -79,10 +81,10 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close-icon"
-            className="text-content-tertiary hover:text-content-primary hover:bg-surface-hover focus-visible:ring-brand-primary/30 absolute top-4 right-6 inline-flex size-7 items-center justify-center rounded-lg outline-none transition-colors focus-visible:ring-[3px] disabled:pointer-events-none"
+            className="text-content-tertiary hover:text-content-primary hover:bg-surface-hover focus-visible:ring-brand-primary/30 absolute top-4 inset-e-6 inline-flex size-7 items-center justify-center rounded-lg outline-none transition-colors focus-visible:ring-[3px] disabled:pointer-events-none"
           >
             <X className="size-4" aria-hidden />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t("close")}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>

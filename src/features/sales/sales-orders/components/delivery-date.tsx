@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl"
+
 import { cn } from "@/src/shared/lib/utils/utils"
 
 /**
@@ -13,22 +15,22 @@ import { cn } from "@/src/shared/lib/utils/utils"
  * thing instead: nothing records it. See
  * `docs/backend-sales-quotation-expiry-and-delivery-date.md` §2.
  */
-const NOT_CAPTURED_HINT =
-  "No delivery date is recorded for sales orders — the API has no field to set one."
 
 export function DeliveryDate({
   value,
   className,
 }: Readonly<{ value: string | null; className?: string }>) {
+  const t = useTranslations("SalesOrders")
+
   if (value) return <span className={className}>{value}</span>
 
   return (
     <span
       className={cn("text-content-quaternary", className)}
-      title={NOT_CAPTURED_HINT}
-      aria-label={NOT_CAPTURED_HINT}
+      title={t("deliveryNotCapturedHint")}
+      aria-label={t("deliveryNotCapturedHint")}
     >
-      Not captured
+      {t("deliveryNotCaptured")}
     </span>
   )
 }

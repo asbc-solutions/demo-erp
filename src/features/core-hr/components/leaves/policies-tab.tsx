@@ -1,103 +1,99 @@
 "use client"
 
 import { Info } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import { useLeavePolicies, useLeaveTypes } from "../../lib/queries/leave"
 import type { LeavePolicy, LeaveType } from "../../lib/types"
-import {
-  ACCRUAL_METHOD_LABELS,
-  getLeaveCategoryStyle,
-} from "../../lib/utils/leave-style"
+import { getLeaveCategoryStyle } from "../../lib/utils/leave-style"
 
-const SCOPE_LABEL: Record<LeavePolicy["scope"], string> = {
-  all: "Applies to all employees",
-  grade: "Grade-specific policy",
-  dept: "Department-specific policy",
-}
+type LeavesTranslator = ReturnType<typeof useTranslations<"HrLeaves">>
 
 type Metric = { label: string; value: string; hint?: string }
 
-function buildMetrics(policy: LeavePolicy): Metric[] {
+function buildMetrics(policy: LeavePolicy, t: LeavesTranslator): Metric[] {
   const metrics: Metric[] = [
     {
-      label: "Entitlement",
-      value: `${policy.annual_entitlement_days} days`,
-      hint: "per year",
+      label: t("policyEntitlement"),
+      value: t("daysCount", { count: policy.annual_entitlement_days }),
+      hint: t("perYear"),
     },
   ]
 
   if (policy.max_carry_forward_days && policy.max_carry_forward_days > 0) {
     metrics.push({
-      label: "Max Carry-Over",
-      value: `${policy.max_carry_forward_days} days`,
-      hint: "into next year",
+      label: t("policyMaxCarryOver"),
+      value: t("daysCount", { count: policy.max_carry_forward_days }),
+      hint: t("intoNextYear"),
     })
   }
 
   metrics.push({
-    label: "Accrual Method",
-    value: ACCRUAL_METHOD_LABELS[policy.accrual_method],
+    label: t("policyAccrualMethod"),
+    value: t(`accrualMethod.${policy.accrual_method}`),
     hint:
       policy.accrual_method === "monthly" && policy.accrual_rate
-        ? `${policy.accrual_rate} days per month`
+        ? t("daysPerMonth", { count: policy.accrual_rate })
         : undefined,
   })
 
   if (policy.notice_days > 0) {
     metrics.push({
-      label: "Notice Required",
-      value: `${policy.notice_days} days`,
-      hint: "advance notice",
+      label: t("policyNoticeRequired"),
+      value: t("daysCount", { count: policy.notice_days }),
+      hint: t("advanceNotice"),
     })
   }
 
   if (policy.min_service_months > 0) {
     metrics.push({
-      label: "Min. Service",
-      value: `${policy.min_service_months} months`,
-      hint: "before eligible",
+      label: t("policyMinService"),
+      value: t("monthsCount", { count: policy.min_service_months }),
+      hint: t("beforeEligible"),
     })
   }
 
   if (policy.max_consecutive_days) {
     metrics.push({
-      label: "Max Consecutive",
-      value: `${policy.max_consecutive_days} days`,
-      hint: "per request",
+      label: t("policyMaxConsecutive"),
+      value: t("daysCount", { count: policy.max_consecutive_days }),
+      hint: t("perRequest"),
     })
   }
 
   return metrics
 }
 
-function buildNote(policy: LeavePolicy, type?: LeaveType): string {
+function buildNote(
+  policy: LeavePolicy,
+  t: LeavesTranslator,
+  type?: LeaveType,
+): string {
   const parts: string[] = []
   if (policy.max_carry_forward_days && policy.max_carry_forward_days > 0) {
     parts.push(
-      `Unused leave of up to ${policy.max_carry_forward_days} days can be carried over to the next year.`,
+      t("noteCarryOver", { count: policy.max_carry_forward_days }),
     )
   }
   if (type?.requires_document) {
-    parts.push("A supporting document is required when requesting this leave.")
+    parts.push(t("noteDocumentRequired"))
   }
   if (policy.gender_eligibility === "male") {
-    parts.push("Available to male employees only.")
+    parts.push(t("noteMaleOnly"))
   } else if (policy.gender_eligibility === "female") {
-    parts.push("Available to female employees only.")
+    parts.push(t("noteFemaleOnly"))
   }
   if (policy.min_service_months > 0) {
-    parts.push(
-      `Employees become eligible after ${policy.min_service_months} months of service.`,
-    )
+    parts.push(t("noteMinService", { count: policy.min_service_months }))
   }
   if (type && type.is_paid === false) {
-    parts.push("This leave is unpaid.")
+    parts.push(t("noteUnpaid"))
   }
   if (parts.length === 0) {
-    return "Refer to the employee handbook for full details of this policy."
+    return t("noteHandbook")
   }
   return parts.slice(0, 2).join(" ")
 }
@@ -106,9 +102,10 @@ function PolicyCard({
   policy,
   type,
 }: Readonly<{ policy: LeavePolicy; type?: LeaveType }>) {
+  const t = useTranslations("HrLeaves")
   const style = getLeaveCategoryStyle(type?.category)
-  const metrics = buildMetrics(policy)
-  const note = buildNote(policy, type)
+  const metrics = buildMetrics(policy, t)
+  const note = buildNote(policy, t, type)
 
   return (
     <div
@@ -129,10 +126,10 @@ function PolicyCard({
         </span>
         <div className="flex flex-col">
           <h3 className="text-base font-semibold text-content-primary">
-            {type?.name ?? "Leave Policy"}
+            {type?.name ?? t("leavePolicyFallback")}
           </h3>
           <p className="text-sm text-content-tertiary">
-            {SCOPE_LABEL[policy.scope]}
+            {t(`policyScope.${policy.scope}`)}
           </p>
         </div>
       </div>
@@ -172,6 +169,7 @@ function PolicyCard({
 }
 
 export function PoliciesTab() {
+  const t = useTranslations("HrLeaves")
   const { data: policiesData, isLoading: policiesLoading } = useLeavePolicies({
     per_page: 100,
   })
@@ -181,7 +179,7 @@ export function PoliciesTab() {
     (policy) => policy.is_active !== false,
   )
   const types = typesData?.data ?? []
-  const typeMap = new Map(types.map((t) => [t.id, t]))
+  const typeMap = new Map(types.map((type) => [type.id, type]))
   const resolveType = (policy: LeavePolicy) =>
     policy.leave_type ?? typeMap.get(policy.leave_type_id)
 
@@ -199,7 +197,7 @@ export function PoliciesTab() {
     return (
       <div className="flex min-h-40 items-center justify-center rounded-[14px] border border-stroke-default bg-surface-white">
         <span className="text-sm text-content-tertiary">
-          No leave policies have been configured yet.
+          {t("noPolicies")}
         </span>
       </div>
     )

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 
 import { Field, FieldDescription, FieldLabel } from "@/src/shared/components/ui/field"
 import { Input } from "@/src/shared/components/ui/input"
@@ -25,35 +26,36 @@ import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../compo
 import { errorMessage } from "../../../lib/utils/api"
 import { formatAmount } from "../../../lib/utils/money"
 import { usePostingMap, useSimulation } from "../../lib/queries/configuration"
-import type { SimulatedEntry } from "../../lib/types/configuration"
+import type { ConfigTranslator, SimulatedEntry } from "../../lib/types/configuration"
 
 type Line = SimulatedEntry["lines"][number]
 
-function entryColumns(entry: SimulatedEntry): FinanceColumn<Line>[] {
+function entryColumns(t: ConfigTranslator, entry: SimulatedEntry): FinanceColumn<Line>[] {
   return [
     {
       id: "account",
-      header: "Account",
+      header: t("account"),
       cell: (row) => (
         <span className="flex items-baseline gap-2">
           <span className="font-mono text-xs">{row.account_code}</span>
           <span className="text-content-primary">{row.name}</span>
         </span>
       ),
-      footer: "Total",
+      footer: t("total"),
     },
-    { id: "debit", header: "Total debit", align: "end", cell: (row) => (row.debit ? <Amount value={row.debit} /> : null), footer: <Amount value={entry.debit ?? 0} emphasis="strong" /> },
-    { id: "credit", header: "Total credit", align: "end", cell: (row) => (row.credit ? <Amount value={row.credit} /> : null), footer: <Amount value={entry.credit ?? 0} emphasis="strong" /> },
+    { id: "debit", header: t("totalDebit"), align: "end", cell: (row) => (row.debit ? <Amount value={row.debit} /> : null), footer: <Amount value={entry.debit ?? 0} emphasis="strong" /> },
+    { id: "credit", header: t("totalCredit"), align: "end", cell: (row) => (row.credit ? <Amount value={row.credit} /> : null), footer: <Amount value={entry.credit ?? 0} emphasis="strong" /> },
   ]
 }
 
 function EntryTable({ title, entry }: { title: string; entry: SimulatedEntry }) {
+  const t = useTranslations("FinanceConfiguration")
   return (
     <FinanceSection title={title}>
       {entry.refused ? (
         <FinanceAlert tone="danger">{entry.refused}</FinanceAlert>
       ) : (
-        <FinanceTable caption={`${title} entry`} columns={entryColumns(entry)} rows={entry.lines} getRowId={(row) => `${row.account_code}-${row.debit}-${row.credit}`} />
+        <FinanceTable caption={t("entryCaption", { title })} columns={entryColumns(t, entry)} rows={entry.lines} getRowId={(row) => `${row.account_code}-${row.debit}-${row.credit}`} />
       )}
     </FinanceSection>
   )
@@ -61,6 +63,7 @@ function EntryTable({ title, entry }: { title: string; entry: SimulatedEntry }) 
 
 /** 11.04 · Posting simulator — the exact entry a document would post, before or after staged changes. */
 function PostingSimulatorPage() {
+  const t = useTranslations("FinanceConfiguration")
   const { data: map, isError: mapError, refetch } = usePostingMap()
   const [ruleId, setRuleId] = React.useState("sale.local")
   const [amountText, setAmountText] = React.useState("100000")
@@ -79,14 +82,14 @@ function PostingSimulatorPage() {
   return (
     <>
       <FinancePageHeader
-        title="Posting simulator"
-        figure={<HeaderFigure label="Simulated amount (EGP)" size="lg">{formatAmount(amount)}</HeaderFigure>}
+        title={t("postingSimulator")}
+        figure={<HeaderFigure label={t("simulatedAmountEgp")} size="lg">{formatAmount(amount)}</HeaderFigure>}
         actions={
-          <div role="group" aria-label="Result view" className="bg-surface-hover border-stroke-default flex rounded-lg border p-1">
+          <div role="group" aria-label={t("resultView")} className="bg-surface-hover border-stroke-default flex rounded-lg border p-1">
             {(
               [
-                ["result", "Resulting entry"],
-                ["compare", "Current vs staged entry"],
+                ["result", t("resultingEntry")],
+                ["compare", t("currentVsStagedEntry")],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -114,7 +117,7 @@ function PostingSimulatorPage() {
           <>
             <div className="grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-3">
               <Field>
-                <FieldLabel htmlFor="sim-event">Document event</FieldLabel>
+                <FieldLabel htmlFor="sim-event">{t("documentEvent")}</FieldLabel>
                 <Select value={ruleId} onValueChange={setRuleId}>
                   <SelectTrigger id="sim-event">
                     <SelectValue />
@@ -129,64 +132,64 @@ function PostingSimulatorPage() {
                 </Select>
               </Field>
               <Field>
-                <FieldLabel htmlFor="sim-amount">Amount (EGP)</FieldLabel>
-                <Input id="sim-amount" inputMode="decimal" className="text-right tabular-nums" value={amountText} onChange={(event) => setAmountText(event.target.value)} />
+                <FieldLabel htmlFor="sim-amount">{t("amountEgp")}</FieldLabel>
+                <Input id="sim-amount" inputMode="decimal" className="text-end tabular-nums" value={amountText} onChange={(event) => setAmountText(event.target.value)} />
                 <FieldDescription>{rule?.description}</FieldDescription>
               </Field>
               <Field>
-                <FieldLabel htmlFor="sim-inclusive">Tax code {side?.tax_code ? `· ${side.tax_code}` : ""}</FieldLabel>
+                <FieldLabel htmlFor="sim-inclusive">{t("taxCode")} {side?.tax_code ? `· ${side.tax_code}` : ""}</FieldLabel>
                 <div className="flex h-9 items-center gap-2.5">
                   <Switch id="sim-inclusive" checked={inclusive} disabled={!side?.tax_rate} onCheckedChange={setInclusive} />
                   <Label htmlFor="sim-inclusive" className="text-content-secondary text-[13px] font-normal">
-                    Tax-inclusive amount
+                    {t("taxInclusiveAmount")}
                   </Label>
                 </div>
-                <FieldDescription>{side?.tax_rate ? `${side.tax_rate}%` : "No tax on this event"}</FieldDescription>
+                <FieldDescription>{side?.tax_rate ? `${side.tax_rate}%` : t("noTaxOnEvent")}</FieldDescription>
               </Field>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-content-primary text-[13px] leading-5 font-medium">Simulate against staged map</span>
+              <span className="text-content-primary text-[13px] leading-5 font-medium">{t("simulateAgainstStaged")}</span>
               <div className="flex items-center gap-2.5">
                 <Switch id="sim-staged" checked={useStaged} onCheckedChange={setUseStaged} />
                 <Label htmlFor="sim-staged" className="text-content-secondary text-[13px] font-normal">
-                  {useStaged ? "Staged map" : "Current map"}
+                  {useStaged ? t("stagedMap") : t("currentMap")}
                 </Label>
               </div>
               <p className="text-content-tertiary max-w-md text-xs leading-4">
-                Off simulates the map as published today. On simulates what the map would do after you publish.
-                {useStaged && !rule?.staged ? " This event has no staged change, so both maps post the same entry." : ""}
+                {t("simulateHint")}
+                {useStaged && !rule?.staged ? ` ${t("noStagedChangeSame")}` : ""}
               </p>
             </div>
 
-            {error ? <FinanceAlert tone="danger">{errorMessage(error, "The simulation could not run. Try again.")}</FinanceAlert> : null}
+            {error ? <FinanceAlert tone="danger">{errorMessage(error, t("errorSimulation"))}</FinanceAlert> : null}
 
             {entry ? (
               view === "result" ? (
                 <>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-                    <KpiCard layout="bar" accent="indigo" label="Total debit (EGP)" value={formatAmount(entry.debit ?? 0)} />
-                    <KpiCard layout="bar" accent="teal" label="Total credit (EGP)" value={formatAmount(entry.credit ?? 0)} />
+                    <KpiCard layout="bar" accent="indigo" label={t("totalDebitEgp")} value={formatAmount(entry.debit ?? 0)} />
+                    <KpiCard layout="bar" accent="teal" label={t("totalCreditEgp")} value={formatAmount(entry.credit ?? 0)} />
                     <KpiCard
                       layout="bar"
                       accent={entry.refused ? "danger" : balanced ? "success" : "danger"}
-                      label="Difference"
-                      value={entry.refused ? "Refused" : formatAmount(entry.difference ?? 0)}
-                      caption={entry.refused ? "No entry would be created" : balanced ? "In balance" : "Out of balance"}
+                      label={t("difference")}
+                      value={entry.refused ? t("refused") : formatAmount(entry.difference ?? 0)}
+                      caption={entry.refused ? t("noEntryCreated") : balanced ? t("inBalance") : t("outOfBalance")}
                     />
                   </div>
                   <p className="text-content-secondary text-[13px] leading-5">
-                    This is the exact entry the posting engine would create. It balances or the document is refused.
+                    {t("exactEntryNote")}
                   </p>
-                  <EntryTable title={useStaged && data?.staged ? "Staged" : "Current"} entry={entry} />
+                  <EntryTable title={useStaged && data?.staged ? t("staged") : t("current")} entry={entry} />
                 </>
               ) : data ? (
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                  <EntryTable title="Current" entry={data.current} />
+                  <EntryTable title={t("current")} entry={data.current} />
                   {data.staged ? (
-                    <EntryTable title="Staged" entry={data.staged} />
+                    <EntryTable title={t("staged")} entry={data.staged} />
                   ) : (
-                    <FinanceSection title="Staged">
-                      <p className="text-content-secondary text-sm leading-5">No staged change for this event — both maps post the same entry.</p>
+                    <FinanceSection title={t("staged")}>
+                      <p className="text-content-secondary text-sm leading-5">{t("noStagedChangeEvent")}</p>
                     </FinanceSection>
                   )}
                 </div>

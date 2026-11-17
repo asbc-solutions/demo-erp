@@ -1,6 +1,7 @@
 "use client"
 
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -22,16 +23,19 @@ export function DeactivateMemberDialog({
   member,
   onOpenChange,
 }: Readonly<{ member: TeamMember | null; onOpenChange: (open: boolean) => void }>) {
+  const t = useTranslations("SettingsDeactivateMember")
+  const tShared = useTranslations("SettingsShared")
+  const tCommon = useTranslations("Common")
   const deactivateMember = useDeactivateMember()
 
   const handleConfirm = () => {
     if (!member) return
     deactivateMember.mutate(member.id, {
       onSuccess: () => {
-        toast.success(`${member.name} deactivated.`)
+        toast.success(t("success", { name: member.name }))
         onOpenChange(false)
       },
-      onError: (err) => toastMutationError(err, "Failed to deactivate member"),
+      onError: (err) => toastMutationError(err, t("failed"), tShared),
     })
   }
 
@@ -39,15 +43,11 @@ export function DeactivateMemberDialog({
     <AlertDialog open={member !== null} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Deactivate {member?.name}?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Their account will be marked inactive and every active session or API token they
-            hold is revoked immediately. This does not delete their history — audit, invoice,
-            and approval records referencing them are preserved.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{t("title", { name: member?.name ?? "" })}</AlertDialogTitle>
+          <AlertDialogDescription>{t("description")}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
           <Button
             type="button"
             variant="danger"
@@ -57,7 +57,7 @@ export function DeactivateMemberDialog({
             {deactivateMember.isPending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : null}
-            Deactivate
+            {t("confirm")}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

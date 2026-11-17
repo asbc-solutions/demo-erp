@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Calendar } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import { Card } from "@/src/shared/components/ui/card"
@@ -18,24 +19,23 @@ import type { RevenueTrendRange } from "../lib/types/revenue-trend"
 import { CommandCenterSectionSpinner } from "./shared/command-center-loading"
 import { CommandCenterErrorState } from "./shared/command-center-error-state"
 
-const revenueChartConfig = {
-  cash_in: { label: "Cash In", color: "var(--brand-primary)" },
-  cash_out: { label: "Cash Out", color: "var(--brand-danger)" },
-} satisfies ChartConfig
-
-const RANGE_OPTIONS: { key: RevenueTrendRange; label: string; pillLabel: string }[] = [
-  { key: "6m", label: "6 Months", pillLabel: "6 Months" },
-  { key: "12m", label: "12 Months", pillLabel: "12 Months" },
-  { key: "ytd", label: "Year to Date", pillLabel: "Year to Date" },
-  { key: "all", label: "All", pillLabel: "All Time" },
-]
+const RANGE_OPTIONS: readonly RevenueTrendRange[] = ["6m", "12m", "ytd", "all"]
 
 export function RevenueTrendSection() {
+  const t = useTranslations("CommandCenterRevenue")
   const [range, setRange] = React.useState<RevenueTrendRange>("12m")
   const { data, isLoading, isError, refetch } = useRevenueTrend(range)
 
-  const activeLabel =
-    RANGE_OPTIONS.find((option) => option.key === range)?.pillLabel ?? "12 Months"
+  const revenueChartConfig = React.useMemo(
+    () =>
+      ({
+        cash_in: { label: t("cashIn"), color: "var(--brand-primary)" },
+        cash_out: { label: t("cashOut"), color: "var(--brand-danger)" },
+      }) satisfies ChartConfig,
+    [t],
+  )
+
+  const activeLabel = t(`rangePills.${range}`)
 
   return (
     <Card
@@ -47,7 +47,7 @@ export function RevenueTrendSection() {
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold text-content-primary">
-                Revenue Overview
+                {t("title")}
               </p>
               <span className="inline-flex items-center gap-2 rounded-lg border border-stroke-default bg-surface-hover px-2 py-0.5 text-[11px] text-content-tertiary">
                 <Calendar className="size-3" />
@@ -55,11 +55,11 @@ export function RevenueTrendSection() {
               </span>
             </div>
             <p className="text-xs text-content-quaternary">
-              Cash in vs. cash out, historical only
+              {t("subtitle")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1">
-            {RANGE_OPTIONS.map(({ key, label }) => (
+            {RANGE_OPTIONS.map((key) => (
               <button
                 key={key}
                 type="button"
@@ -71,7 +71,7 @@ export function RevenueTrendSection() {
                     : "text-content-tertiary hover:bg-surface-hover",
                 )}
               >
-                {label}
+                {t(`ranges.${key}`)}
               </button>
             ))}
           </div>
@@ -82,7 +82,7 @@ export function RevenueTrendSection() {
           <CommandCenterSectionSpinner />
         ) : isError ? (
           <CommandCenterErrorState
-            message="Failed to load revenue trend."
+            message={t("loadFailed")}
             onRetry={() => void refetch()}
           />
         ) : (
@@ -108,7 +108,7 @@ export function RevenueTrendSection() {
                   tickLine={false}
                   axisLine={false}
                   width={44}
-                  tickFormatter={(v) => `${Math.round(v / 1000)}k`}
+                  tickFormatter={(v) => t("thousandsTick", { value: String(Math.round(v / 1000)) })}
                   className="text-[11px] text-content-quaternary"
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
@@ -132,11 +132,11 @@ export function RevenueTrendSection() {
             <div className="mt-4 flex flex-wrap items-center justify-center gap-6 text-[11px] text-content-tertiary">
               <div className="flex items-center gap-2">
                 <span className="bg-brand-primary h-0.5 w-5 rounded-sm" />
-                Cash In
+                {t("cashIn")}
               </div>
               <div className="flex items-center gap-2">
                 <span className="bg-brand-danger h-0.5 w-5 rounded-sm border-t border-dotted border-brand-danger" />
-                Cash Out
+                {t("cashOut")}
               </div>
             </div>
           </>

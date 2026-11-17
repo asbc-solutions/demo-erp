@@ -11,8 +11,10 @@ import {
   Upload,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button } from "@/src/shared/components/ui/button"
 import { Card } from "@/src/shared/components/ui/card"
 import {
@@ -35,18 +37,22 @@ import {
 } from "../../../lib/mutations/documents"
 import { useNodeDocuments } from "../../../lib/queries/documents"
 import type { DocumentCategory } from "../../../lib/types"
-import { DOC_FOLDERS, DOC_TAGS } from "../../data/project-detail-data"
+import {
+  DOC_FOLDERS,
+  DOC_TAGS,
+  type DocFolderKey,
+} from "../../data/project-detail-data"
 
 import { StatusPill } from "./status-pill"
 
 /** Maps the library folders to a backend document_category (null = all). */
-const FOLDER_CATEGORY: Record<string, DocumentCategory | null> = {
-  "All Documents": null,
-  Contracts: "contract",
-  Drawings: "drawing",
-  Specifications: "specification",
-  Approvals: "permit",
-  Reports: "report",
+const FOLDER_CATEGORY: Record<DocFolderKey, DocumentCategory | null> = {
+  all: null,
+  contracts: "contract",
+  drawings: "drawing",
+  specifications: "specification",
+  approvals: "permit",
+  reports: "report",
 }
 
 const TYPE_TILE: Record<string, { icon: LucideIcon; tone: string }> = {
@@ -67,8 +73,13 @@ const FALLBACK_TILE = {
 
 export function DocumentsTab({ projectId }: { projectId: string }) {
   // The project's root node id is the project id for node-scoped endpoints.
+  const t = useTranslations("ProjectsProjectDetail")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const nodeId = projectId
-  const [activeFolder, setActiveFolder] = useState(DOC_FOLDERS[0])
+  const [activeFolder, setActiveFolder] = useState<DocFolderKey>(DOC_FOLDERS[0])
+  const activeFolderLabel = t(`docFolder.${activeFolder}`)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data, isLoading, isError } = useNodeDocuments(nodeId)
@@ -95,9 +106,9 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
         file,
       },
       {
-        onSuccess: () => toast.success("Document uploaded"),
+        onSuccess: () => toast.success(t("docUploaded")),
         onError: (err) =>
-          toast.error("Couldn't upload document", {
+          toast.error(t("docUploadFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
@@ -109,7 +120,7 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
       const res = await documentsApi.downloadUrl(id)
       window.open(res.data.data.download_url, "_blank", "noopener")
     } catch (err) {
-      toast.error("Couldn't get download link", {
+      toast.error(t("docDownloadFailed"), {
         description: (err as ApiError).message,
       })
     }
@@ -117,9 +128,9 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
 
   const handleApprove = (id: string) =>
     approve.mutate(id, {
-      onSuccess: () => toast.success("Document approved"),
+      onSuccess: () => toast.success(t("docApproved")),
       onError: (err) =>
-        toast.error("Couldn't approve", {
+        toast.error(t("docApproveFailed"), {
           description: (err as unknown as ApiError).message,
         }),
     })
@@ -128,20 +139,20 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
     reject.mutate(
       { id, payload: {} },
       {
-        onSuccess: () => toast.success("Document rejected"),
+        onSuccess: () => toast.success(t("docRejected")),
         onError: (err) =>
-          toast.error("Couldn't reject", {
+          toast.error(t("docRejectFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
     )
 
   const handleDelete = (id: string) => {
-    if (!window.confirm("Delete this document?")) return
+    if (!window.confirm(t("docDeleteConfirm"))) return
     remove.mutate(id, {
-      onSuccess: () => toast.success("Document deleted"),
+      onSuccess: () => toast.success(t("docDeleted")),
       onError: (err) =>
-        toast.error("Couldn't delete", {
+        toast.error(t("docDeleteFailed"), {
           description: (err as unknown as ApiError).message,
         }),
     })
@@ -162,7 +173,7 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
       <Card className="h-fit shrink-0 gap-4 p-4 lg:w-56">
         <div className="flex flex-col gap-1">
           <span className="text-content-tertiary mb-1 text-[10px] font-semibold tracking-wide uppercase">
-            Library
+            {t("library")}
           </span>
           {DOC_FOLDERS.map((folder) => {
             const isActive = folder === activeFolder
@@ -180,14 +191,14 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
                 )}
               >
                 <Icon className="size-4" aria-hidden />
-                {folder}
+                {t(`docFolder.${folder}`)}
               </button>
             )
           })}
         </div>
         <div className="flex flex-col gap-2">
           <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-            Tags
+            {t("tags")}
           </span>
           <div className="flex flex-wrap gap-1.5">
             {DOC_TAGS.map((tag) => (
@@ -206,11 +217,9 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
             <h2 className="text-content-primary text-xl leading-7 font-bold tracking-tight">
-              {activeFolder}
+              {activeFolderLabel}
             </h2>
-            <p className="text-content-tertiary text-sm">
-              All project documents, versions, and approvals
-            </p>
+            <p className="text-content-tertiary text-sm">{t("docsSubtitle")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -220,7 +229,7 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
               disabled={upload.isPending}
             >
               <Upload className="size-3.5" aria-hidden />
-              {upload.isPending ? "Uploading…" : "Upload"}
+              {upload.isPending ? t("uploading") : tCommon("upload")}
             </Button>
           </div>
         </div>
@@ -237,13 +246,15 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
         ) : isError ? (
           <Card className="flex h-48 items-center justify-center p-6">
             <p className="text-content-tertiary text-sm">
-              Couldn&apos;t load documents.
+              {t("docsLoadFailed")}
             </p>
           </Card>
         ) : docs.length === 0 ? (
           <Card className="flex h-48 items-center justify-center p-6">
             <p className="text-content-tertiary text-sm">
-              No documents in {activeFolder.toLowerCase()} yet.
+              {t("noDocumentsInFolder", {
+                folder: activeFolderLabel.toLocaleLowerCase(locale),
+              })}
             </p>
           </Card>
         ) : (
@@ -264,8 +275,8 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          aria-label="Document options"
-                          className="text-content-tertiary hover:text-content-primary absolute top-2 right-2"
+                          aria-label={t("docOptions")}
+                          className="text-content-tertiary hover:text-content-primary absolute top-2 inset-e-2"
                         >
                           <MoreHorizontal className="size-4" aria-hidden />
                         </button>
@@ -274,24 +285,24 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
                         <DropdownMenuItem
                           onClick={() => handleDownload(doc.document_id)}
                         >
-                          Download
+                          {tCommon("download")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleApprove(doc.document_id)}
                         >
-                          Approve
+                          {tCommon("approve")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleReject(doc.document_id)}
                         >
-                          Reject
+                          {tCommon("reject")}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-brand-danger"
                           onClick={() => handleDelete(doc.document_id)}
                         >
-                          Delete
+                          {tCommon("delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -301,11 +312,19 @@ export function DocumentsTab({ projectId }: { projectId: string }) {
                       {doc.title}
                     </span>
                     <span className="text-content-tertiary text-[11px]">
-                      v{doc.current_version} · {formatApiDate(doc.created_at)} ·{" "}
-                      {doc.document_category_label}
+                      {t("docMeta", {
+                        version: doc.current_version,
+                        date: formatApiDate(doc.created_at, locale),
+                        category: tShared(
+                          `documentCategory.${doc.document_category}`,
+                        ),
+                      })}
                     </span>
                   </div>
-                  <StatusPill status={doc.status_label} />
+                  <StatusPill
+                    status={doc.status_label}
+                    label={tShared(`documentStatus.${doc.status}`)}
+                  />
                 </Card>
               )
             })}

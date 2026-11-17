@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -24,8 +25,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/shared/components/ui/tooltip"
-import { TRACKED_MODULES, getModuleLabel } from "@/src/shared/lib/constants/modules"
-import { industryLabel, teamSizeLabel } from "@/src/features/_onboarding/options"
+import {
+  TRACKED_MODULES,
+  getModuleLabelKey,
+} from "@/src/shared/lib/constants/modules"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import type { VisitorRecord } from "../lib/types"
@@ -37,6 +40,7 @@ import {
   modulesExplored,
   topModule,
 } from "../lib/format"
+import { useOnboardingLabels } from "../lib/use-onboarding-labels"
 
 type VisitorsTableProps = {
   visitors: VisitorRecord[]
@@ -49,6 +53,8 @@ type VisitorsTableProps = {
  * needing nine numeric columns.
  */
 function ModuleHeatStrip({ visitor }: { visitor: VisitorRecord }) {
+  const t = useTranslations("MarketingTrackingVisitors")
+  const tNav = useTranslations("Nav")
   const max = Math.max(
     1,
     ...TRACKED_MODULES.map((module) => visitor.modules[module.id]?.views ?? 0),
@@ -78,7 +84,7 @@ function ModuleHeatStrip({ visitor }: { visitor: VisitorRecord }) {
               />
             </TooltipTrigger>
             <TooltipContent>
-              {getModuleLabel(module.id)} · {views} view{views === 1 ? "" : "s"}
+              {t("heatTooltip", { module: tNav(module.labelKey), count: views })}
             </TooltipContent>
           </Tooltip>
         )
@@ -88,34 +94,40 @@ function ModuleHeatStrip({ visitor }: { visitor: VisitorRecord }) {
 }
 
 export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
+  const t = useTranslations("MarketingTrackingVisitors")
+  const tFormat = useTranslations("MarketingTrackingFormat")
+  const tNav = useTranslations("Nav")
+  const onboardingLabels = useOnboardingLabels()
   return (
     <Card variant="elevated" className="p-6">
       <CardHeader className="flex flex-col items-start gap-1 p-0 pb-5">
-        <CardTitle className="text-base leading-6 font-semibold">Visitors</CardTitle>
+        <CardTitle className="text-base leading-6 font-semibold">
+          {t("title")}
+        </CardTitle>
         <CardDescription className="text-xs leading-4">
-          Every person who opened the demo — select a row for the full profile
+          {t("description")}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="p-0">
         {visitors.length === 0 ? (
           <p className="text-content-tertiary py-16 text-center text-sm leading-5">
-            No visitors match these filters.
+            {t("empty")}
           </p>
         ) : (
           <div className="thin-scrollbar overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-stroke-default hover:bg-transparent">
-                  <TableHead>Visitor</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Profile</TableHead>
-                  <TableHead>Top module</TableHead>
-                  <TableHead>Modules</TableHead>
-                  <TableHead className="text-right">Views</TableHead>
-                  <TableHead className="text-right">Time</TableHead>
-                  <TableHead className="text-right">Last active</TableHead>
+                  <TableHead>{t("colVisitor")}</TableHead>
+                  <TableHead>{t("colPhone")}</TableHead>
+                  <TableHead>{t("colCompany")}</TableHead>
+                  <TableHead>{t("colProfile")}</TableHead>
+                  <TableHead>{t("colTopModule")}</TableHead>
+                  <TableHead>{t("colModules")}</TableHead>
+                  <TableHead className="text-end">{t("colViews")}</TableHead>
+                  <TableHead className="text-end">{t("colTime")}</TableHead>
+                  <TableHead className="text-end">{t("colLastActive")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -140,14 +152,14 @@ export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
                             size="sm"
                             color={visitor.email ? "primary" : "neutral"}
                             fallback={initialsFor(visitor)}
-                            alt={displayName(visitor)}
+                            alt={displayName(visitor, tFormat)}
                           />
                           <div className="flex min-w-0 flex-col">
                             <span className="text-content-primary truncate text-xs leading-4 font-medium">
-                              {displayName(visitor)}
+                              {displayName(visitor, tFormat)}
                             </span>
                             <span className="text-content-quaternary truncate text-[11px] leading-[15.4px]">
-                              {visitor.email ?? "anonymous"}
+                              {visitor.email ?? t("anonymous")}
                             </span>
                           </div>
                         </div>
@@ -167,10 +179,10 @@ export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
                       <TableCell className="text-content-tertiary text-xs leading-4">
                         {visitor.onboarding?.industry ? (
                           <span className="flex flex-col">
-                            <span>{industryLabel(visitor.onboarding.industry)}</span>
+                            <span>{onboardingLabels.industry(visitor.onboarding.industry)}</span>
                             {visitor.onboarding.teamSize && (
                               <span className="text-content-quaternary text-[11px] leading-[15.4px]">
-                                {teamSizeLabel(visitor.onboarding.teamSize)}
+                                {onboardingLabels.teamSize(visitor.onboarding.teamSize)}
                               </span>
                             )}
                           </span>
@@ -182,7 +194,7 @@ export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
                       <TableCell>
                         {best ? (
                           <Badge variant="primary">
-                            {getModuleLabel(best.moduleId)}
+                            {tNav(getModuleLabelKey(best.moduleId))}
                           </Badge>
                         ) : (
                           <span className="text-content-quaternary text-xs leading-4">
@@ -200,16 +212,16 @@ export function VisitorsTable({ visitors, onSelect }: VisitorsTableProps) {
                         </div>
                       </TableCell>
 
-                      <TableCell className="text-content-secondary text-right font-mono text-xs leading-4">
+                      <TableCell className="text-content-secondary text-end font-mono text-xs leading-4">
                         {visitor.totalViews}
                       </TableCell>
 
-                      <TableCell className="text-content-secondary text-right font-mono text-xs leading-4">
-                        {formatDuration(visitor.totalMs)}
+                      <TableCell className="text-content-secondary text-end font-mono text-xs leading-4">
+                        {formatDuration(visitor.totalMs, tFormat)}
                       </TableCell>
 
-                      <TableCell className="text-content-tertiary text-right text-xs leading-4">
-                        {formatRelative(visitor.lastSeenAt)}
+                      <TableCell className="text-content-tertiary text-end text-xs leading-4">
+                        {formatRelative(visitor.lastSeenAt, tFormat)}
                       </TableCell>
                     </TableRow>
                   )

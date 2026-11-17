@@ -7,6 +7,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import {
@@ -17,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/shared/components/ui/table"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import { StatusPill } from "../../all-project/components/project-detail/status-pill"
@@ -29,6 +31,9 @@ import {
 
 /** "All projects" scope of Billing & Revenue — portfolio roll-up. */
 export function PortfolioBillingView() {
+  const t = useTranslations("ProjectsBillingRevenue")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const revenue = usePortfolioRevenueSummary()
   const milestonesQ = usePortfolioBillingMilestones()
 
@@ -39,7 +44,7 @@ export function PortfolioBillingView() {
     return (
       <Card className="flex h-48 items-center justify-center p-6">
         <p className="text-content-tertiary text-sm">
-          Couldn&apos;t load the portfolio revenue summary.
+          {t("portfolioLoadError")}
         </p>
       </Card>
     )
@@ -56,38 +61,38 @@ export function PortfolioBillingView() {
   }[] = [
     {
       id: "contract",
-      label: "Contract Value",
+      label: t("statLabel.contract"),
       value: formatMoney(summary.total_contract_value),
-      caption: "All active projects",
+      caption: t("portfolioCaption.contract"),
       icon: Wallet,
-      accent: "border-l-brand-primary",
+      accent: "border-s-brand-primary",
       tile: "bg-brand-primary/10 text-brand-primary",
     },
     {
       id: "invoiced",
-      label: "Invoiced",
+      label: t("invoiced"),
       value: formatMoney(summary.total_invoiced),
-      caption: "Billed to date",
+      caption: t("portfolioCaption.invoiced"),
       icon: Receipt,
-      accent: "border-l-brand-success",
+      accent: "border-s-brand-success",
       tile: "bg-brand-success/10 text-brand-success",
     },
     {
       id: "recognized",
-      label: "Recognized",
+      label: t("recognized"),
       value: formatMoney(summary.total_recognized),
-      caption: "POC revenue recognition",
+      caption: t("portfolioCaption.recognized"),
       icon: CheckCircle2,
-      accent: "border-l-brand-info",
+      accent: "border-s-brand-info",
       tile: "bg-brand-info/10 text-brand-info",
     },
     {
       id: "unbilled",
-      label: "Unbilled",
+      label: t("unbilled"),
       value: formatMoney(summary.unbilled),
-      caption: "Recognized minus invoiced",
+      caption: t("portfolioCaption.unbilled"),
       icon: BadgeDollarSign,
-      accent: "border-l-brand-warning",
+      accent: "border-s-brand-warning",
       tile: "bg-brand-warning/10 text-brand-warning",
     },
   ]
@@ -103,7 +108,7 @@ export function PortfolioBillingView() {
             <Card
               key={card.id}
               variant="elevated"
-              className={cn("flex-row items-center gap-3 border-l-4 p-4", card.accent)}
+              className={cn("flex-row items-center gap-3 border-s-4 p-4", card.accent)}
             >
               <div
                 className={cn(
@@ -133,16 +138,16 @@ export function PortfolioBillingView() {
         <Card className="overflow-hidden p-0">
           <div className="px-5 pt-5 pb-3">
             <h2 className="text-content-primary text-base leading-6 font-semibold">
-              Revenue by Project
+              {t("revenueByProject")}
             </h2>
           </div>
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Project</TableHead>
-                <TableHead>Contract</TableHead>
-                <TableHead>Invoiced</TableHead>
-                <TableHead>Recognized</TableHead>
+                <TableHead>{t("colProject")}</TableHead>
+                <TableHead>{t("colContract")}</TableHead>
+                <TableHead>{t("invoiced")}</TableHead>
+                <TableHead>{t("recognized")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -152,7 +157,7 @@ export function PortfolioBillingView() {
                     colSpan={4}
                     className="text-content-tertiary py-10 text-center text-sm"
                   >
-                    No projects with billing data.
+                    {t("noBillingProjects")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -180,18 +185,18 @@ export function PortfolioBillingView() {
         <Card className="overflow-hidden p-0">
           <div className="px-5 pt-5 pb-3">
             <h2 className="text-content-primary text-base leading-6 font-semibold">
-              Billing Milestones
+              {t("billingMilestones")}
             </h2>
           </div>
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Code</TableHead>
-                <TableHead>Milestone</TableHead>
-                <TableHead>Project</TableHead>
-                <TableHead>Due</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t("colCode")}</TableHead>
+                <TableHead>{t("colMilestone")}</TableHead>
+                <TableHead>{t("colProject")}</TableHead>
+                <TableHead>{t("colDue")}</TableHead>
+                <TableHead>{tCommon("amount")}</TableHead>
+                <TableHead>{tCommon("status")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -201,7 +206,7 @@ export function PortfolioBillingView() {
                     colSpan={6}
                     className="text-content-tertiary py-10 text-center text-sm"
                   >
-                    Loading billing milestones…
+                    {t("milestonesLoading")}
                   </TableCell>
                 </TableRow>
               ) : milestones.length === 0 ? (
@@ -210,7 +215,7 @@ export function PortfolioBillingView() {
                     colSpan={6}
                     className="text-content-tertiary py-10 text-center text-sm"
                   >
-                    No billing milestones yet.
+                    {t("milestonesEmpty")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -226,7 +231,7 @@ export function PortfolioBillingView() {
                       {m.project_name}
                     </TableCell>
                     <TableCell className="text-content-secondary text-[13px] tabular-nums">
-                      {formatApiDate(m.due_date)}
+                      {formatApiDate(m.due_date, locale)}
                     </TableCell>
                     <TableCell className="text-content-primary text-[13px] font-semibold tabular-nums">
                       {formatMoney(m.amount)}

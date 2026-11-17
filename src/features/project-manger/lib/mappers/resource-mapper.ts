@@ -66,11 +66,11 @@ export function currentMonthRange(): { from: string; to: string } {
   return { from: iso(from), to: iso(to) }
 }
 
-/** `2026-06-29` → `Jun 29`. */
-function shortDate(value: string): string {
+/** `2026-06-29` → `Jun 29` (localised by `locale`). */
+function shortDate(value: string, locale: string): string {
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric" })
 }
 
 export type PlannerStat = {
@@ -128,7 +128,10 @@ export type ResourceRow = {
   color: AvatarColor
   skills: string[]
   billable: boolean
+  /** Display rate (`120/hr`, or via `formatRate`). */
   rate: string
+  /** Raw hourly bill rate (rounded), `null` when unset — format it yourself to localise. */
+  rateValue: number | null
   availabilityPct: number | null
 }
 
@@ -147,11 +150,14 @@ function allocationByEmployee(heatmap: ResourceHeatmapRow[]): Map<string, number
 export function buildResourceDirectory(
   pool: ResourcePoolItem[],
   heatmap: ResourceHeatmapRow[] = [],
+  /** Formats a rounded hourly rate, e.g. `(rate) => t("ratePerHour", { rate })`. */
+  formatRate: (rate: number) => string = (rate) => `${rate}/hr`,
 ): ResourceRow[] {
   const allocation = allocationByEmployee(heatmap)
   return pool.map((item) => {
     const name = `${item.first_name} ${item.last_name}`.trim()
-    const rate = item.bill_rate == null ? null : Number(item.bill_rate)
+    const rate =
+      item.bill_rate == null ? null : Math.round(Number(item.bill_rate))
     return {
       id: item.employee_id,
       name,
@@ -159,7 +165,8 @@ export function buildResourceDirectory(
       color: avatarColorFor(item.employee_id),
       skills: item.pm_skills ?? [],
       billable: item.billable_default,
-      rate: rate == null ? "—" : `${Math.round(rate)}/hr`,
+      rate: rate == null ? "—" : formatRate(rate),
+      rateValue: rate,
       availabilityPct: allocation.get(item.employee_id) ?? null,
     }
   })
@@ -178,6 +185,8 @@ export type HeatmapView = {
 
 export function buildHeatmapView(
   heatmap: ResourceHeatmapRow[] | undefined,
+  /** `Intl` locale for the week column labels (`useIntlLocale()`). */
+  locale = "en-US",
 ): HeatmapView {
   if (!heatmap || !heatmap.length) return { weeks: [], rows: [] }
   // Column labels come from the row with the most weeks (covers the full period).
@@ -185,7 +194,7 @@ export function buildHeatmapView(
     (max, r) => (r.weeks.length > max.weeks.length ? r : max),
     heatmap[0],
   )
-  const weeks = widest.weeks.map((w) => shortDate(w.week_start))
+  const weeks = widest.weeks.map((w) => shortDate(w.week_start, locale))
   const rows = heatmap.map((r) => ({
     id: r.employee_id,
     name: r.name,

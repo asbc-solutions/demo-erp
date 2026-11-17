@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowLeft, TrendingUp, TriangleAlert } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -26,6 +27,7 @@ import {
 } from "@/src/shared/components/ui/select"
 import { Textarea } from "@/src/shared/components/ui/textarea"
 import type { ApiError } from "@/src/shared/lib/types/api"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import {
   usePreviewEmployeePromotion,
@@ -51,14 +53,18 @@ type PromoteEmployeeDialogProps = Readonly<{
   onViewProfile?: (employeeId: string) => void
 }>
 
-const STEPS = ["New Position", "Review Details", "Result"]
+const STEP_KEYS = ["stepNewPosition", "stepReviewDetails", "stepResult"] as const
 
 function today() {
   return new Date().toISOString().slice(0, 10)
 }
 
-function money(value: number | null | undefined, currency = "EGP") {
-  return `${currency} ${(value ?? 0).toLocaleString("en-US")}`
+function money(
+  value: number | null | undefined,
+  currency: string,
+  locale: string,
+) {
+  return `${currency} ${(value ?? 0).toLocaleString(locale)}`
 }
 
 export function PromoteEmployeeDialog({
@@ -67,6 +73,10 @@ export function PromoteEmployeeDialog({
   onOpenChange,
   onViewProfile,
 }: PromoteEmployeeDialogProps) {
+  const t = useTranslations("HrEmployeeOperations")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const intlLocale = useIntlLocale()
   const [step, setStep] = useState(0)
   const [targetPositionId, setTargetPositionId] = useState("")
   const [newJobGradeId, setNewJobGradeId] = useState("")
@@ -153,7 +163,7 @@ export function PromoteEmployeeDialog({
 
   const goReview = () => {
     if (!employee || !canContinue) {
-      toast.error("Complete the promotion details first")
+      toast.error(t("promoteIncomplete"))
       return
     }
     previewPromotion.mutate(
@@ -164,7 +174,7 @@ export function PromoteEmployeeDialog({
           setStep(1)
         },
         onError: (err) =>
-          toast.error("Promotion preview failed", {
+          toast.error(t("promotePreviewFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
@@ -178,7 +188,7 @@ export function PromoteEmployeeDialog({
       {
         onSuccess: () => setStep(2),
         onError: (err) =>
-          toast.error("Promotion failed", {
+          toast.error(t("promoteFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
@@ -194,20 +204,21 @@ export function PromoteEmployeeDialog({
     salaryChange.change_pct != null
   const salaryRowNext = salaryChange
     ? hasSalaryDelta
-      ? `${money(salaryChange.new_basic, currency)} (+${money(
-          salaryChange.change_amount,
-          currency,
-        )}, ${salaryChange.change_pct!.toFixed(1)}%)`
-      : money(salaryChange.new_basic, currency)
-    : money(newSalaryNum, currency)
+      ? t("salaryWithDelta", {
+          amount: money(salaryChange.new_basic, currency, intlLocale),
+          delta: money(salaryChange.change_amount, currency, intlLocale),
+          pct: salaryChange.change_pct!.toFixed(1),
+        })
+      : money(salaryChange.new_basic, currency, intlLocale)
+    : money(newSalaryNum, currency, intlLocale)
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl gap-0 p-0">
         <div className="flex flex-col gap-5 p-6">
-          <div className="flex flex-col gap-3 pr-8">
+          <div className="flex flex-col gap-3 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
-              Promote Employee
+              {t("promoteTitle")}
             </DialogTitle>
             <EmployeeChip
               initials={employee.avatar_initials}
@@ -216,17 +227,21 @@ export function PromoteEmployeeDialog({
             />
           </div>
 
-          <OperationStepper steps={STEPS} current={step} accent="primary" />
+          <OperationStepper
+            steps={STEP_KEYS.map((key) => t(key))}
+            current={step}
+            accent="primary"
+          />
 
           {step === 0 && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  New Position
+                  {t("stepNewPosition")}
                 </Label>
                 <Select value={targetPositionId} onValueChange={setTargetPositionId}>
                   <SelectTrigger className="h-10 rounded-md text-sm">
-                    <SelectValue placeholder="Select a position" />
+                    <SelectValue placeholder={t("selectPosition")} />
                   </SelectTrigger>
                   <SelectContent>
                     {selectablePositions.map((p) => (
@@ -240,11 +255,11 @@ export function PromoteEmployeeDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  New Job Grade
+                  {t("newJobGrade")}
                 </Label>
                 <Select value={newJobGradeId} onValueChange={setNewJobGradeId}>
                   <SelectTrigger className="h-10 rounded-md text-sm">
-                    <SelectValue placeholder="Select a grade" />
+                    <SelectValue placeholder={t("selectGrade")} />
                   </SelectTrigger>
                   <SelectContent>
                     {grades.map((g) => (
@@ -258,11 +273,11 @@ export function PromoteEmployeeDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  Salary Adjustment
+                  {t("salaryAdjustment")}
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
-                    <span className="text-content-quaternary absolute top-1/2 left-3 -translate-y-1/2 font-mono text-xs">
+                    <span className="text-content-quaternary absolute top-1/2 inset-s-3 -translate-y-1/2 font-mono text-xs">
                       {currency}
                     </span>
                     <Input
@@ -271,7 +286,7 @@ export function PromoteEmployeeDialog({
                       value={newBasicSalary}
                       onChange={(e) => setNewBasicSalary(e.target.value)}
                       placeholder="40000"
-                      className="h-10 rounded-md pl-12 font-mono text-sm"
+                      className="h-10 rounded-md ps-12 font-mono text-sm"
                     />
                   </div>
                   {deltaPct !== null && (
@@ -290,17 +305,21 @@ export function PromoteEmployeeDialog({
                 </div>
                 {currentBasic != null && (
                   <p className="text-content-tertiary text-xs">
-                    Current salary:{" "}
-                    <span className="text-content-primary font-medium">
-                      {money(currentBasic, currency)}
-                    </span>
+                    {t.rich("currentSalary", {
+                      amount: money(currentBasic, currency, intlLocale),
+                      strong: (chunks) => (
+                        <span className="text-content-primary font-medium">
+                          {chunks}
+                        </span>
+                      ),
+                    })}
                   </p>
                 )}
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  Effective Date
+                  {t("effectiveDate")}
                 </Label>
                 <Input
                   type="date"
@@ -312,12 +331,12 @@ export function PromoteEmployeeDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  Reason
+                  {t("reason")}
                 </Label>
                 <Textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="Reason for promotion…"
+                  placeholder={t("promoteReasonPlaceholder")}
                   rows={2}
                   className="resize-none rounded-md text-sm"
                 />
@@ -328,18 +347,18 @@ export function PromoteEmployeeDialog({
           {step === 1 && (
             <div className="flex flex-col gap-4">
               <p className="text-content-tertiary text-sm">
-                Review promotion details
+                {t("promoteReview")}
               </p>
               <ComparisonTable
-                nextLabel="After Promotion"
+                nextLabel={t("afterPromotion")}
                 rows={[
                   {
-                    label: "Position",
+                    label: t("rowPosition"),
                     current: currentPositionName,
                     next: selectedPosition?.position_title ?? "—",
                   },
                   {
-                    label: "Grade",
+                    label: t("rowGrade"),
                     current: currentGradeName,
                     next:
                       preview?.band?.grade_name ??
@@ -348,10 +367,11 @@ export function PromoteEmployeeDialog({
                         : "—"),
                   },
                   {
-                    label: "Salary",
+                    label: t("rowSalary"),
                     current: money(
                       preview?.salary_change?.previous_basic ?? currentBasic,
                       currency,
+                      intlLocale,
                     ),
                     next: salaryRowNext,
                   },
@@ -360,9 +380,9 @@ export function PromoteEmployeeDialog({
               {preview?.warnings && preview.warnings.length > 0 && (
                 <Alert variant="warning">
                   <TriangleAlert />
-                  <AlertTitle>Review before submitting</AlertTitle>
+                  <AlertTitle>{t("reviewBeforeSubmitting")}</AlertTitle>
                   <AlertDescription>
-                    <ul className="list-disc space-y-1 pl-4">
+                    <ul className="list-disc space-y-1 ps-4">
                       {preview.warnings.map((w) => (
                         <li key={w}>{w}</li>
                       ))}
@@ -375,7 +395,7 @@ export function PromoteEmployeeDialog({
 
           {step === 2 && (
             <OperationResult
-              title="Promotion completed"
+              title={t("promoteCompleted")}
               onViewProfile={
                 onViewProfile ? () => onViewProfile(employee.id) : undefined
               }
@@ -386,17 +406,16 @@ export function PromoteEmployeeDialog({
                   { operationId, employeeId: employee.id },
                   {
                     onSuccess: () => {
-                      toast.success("Promotion undone", {
-                        description:
-                          "The employee's previous position, grade, and salary have been restored.",
+                      toast.success(t("promoteUndone"), {
+                        description: t("promoteUndoneDescription"),
                       })
                       handleOpenChange(false)
                     },
                     onError: (err) => {
                       const apiErr = err as Partial<ApiError>
-                      toast.error("Unable to undo promotion", {
+                      toast.error(t("promoteUndoFailed"), {
                         description:
-                          apiErr.message ?? "Please try again.",
+                          apiErr.message ?? tShared("pleaseTryAgain"),
                       })
                     },
                   },
@@ -405,9 +424,12 @@ export function PromoteEmployeeDialog({
               undoing={undoOperation.isPending}
               onDone={() => handleOpenChange(false)}
             >
-              Promotion for <strong>{employee.full_name}</strong> to{" "}
-              <strong>{selectedPosition?.position_title}</strong> has been applied
-              effective <strong>{effectiveDate}</strong>.
+              {t.rich("promoteResult", {
+                name: employee.full_name,
+                position: selectedPosition?.position_title ?? "—",
+                date: effectiveDate,
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </OperationResult>
           )}
 
@@ -419,7 +441,7 @@ export function PromoteEmployeeDialog({
                   className="rounded-[10px]"
                   onClick={() => handleOpenChange(false)}
                 >
-                  Cancel
+                  {tCommon("cancel")}
                 </Button>
               ) : (
                 <Button
@@ -427,8 +449,8 @@ export function PromoteEmployeeDialog({
                   className="rounded-[10px]"
                   onClick={() => setStep(0)}
                 >
-                  <ArrowLeft />
-                  Back
+                  <ArrowLeft className="rtl:rotate-180" />
+                  {tCommon("back")}
                 </Button>
               )}
 
@@ -439,7 +461,7 @@ export function PromoteEmployeeDialog({
                   disabled={!canContinue || previewPromotion.isPending}
                   onClick={goReview}
                 >
-                  {previewPromotion.isPending ? "Checking…" : "Next"}
+                  {previewPromotion.isPending ? t("checking") : tCommon("next")}
                 </Button>
               ) : (
                 <Button
@@ -448,7 +470,7 @@ export function PromoteEmployeeDialog({
                   disabled={promoteEmployee.isPending}
                   onClick={submit}
                 >
-                  {promoteEmployee.isPending ? "Submitting…" : "Confirm Promotion"}
+                  {promoteEmployee.isPending ? t("submitting") : t("confirmPromotion")}
                 </Button>
               )}
             </div>

@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import {
   Pagination,
   PaginationButton,
@@ -43,6 +45,8 @@ export function HrTablePagination({
   onPageChange,
   className,
 }: HrTablePaginationProps) {
+  const t = useTranslations("HrShared")
+
   if (total === 0) return null
 
   const from = (page - 1) * pageSize + 1
@@ -56,11 +60,14 @@ export function HrTablePagination({
       )}
     >
       <p className="text-content-tertiary text-sm">
-        Showing{" "}
-        <span className="text-content-primary font-medium">{from}</span>–
-        <span className="text-content-primary font-medium">{to}</span> of{" "}
-        <span className="text-content-primary font-medium">{total}</span>{" "}
-        employees
+        {t.rich("showingEmployees", {
+          from,
+          to,
+          total,
+          strong: (chunks) => (
+            <span className="text-content-primary font-medium">{chunks}</span>
+          ),
+        })}
       </p>
 
       {pageCount > 1 && (

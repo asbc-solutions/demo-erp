@@ -44,7 +44,7 @@ export function OnboardingButton({
       {withArrow && (
         <ArrowRight
           aria-hidden
-          className="size-4 transition-transform group-enabled:group-hover:translate-x-0.5"
+          className="size-4 transition-transform group-enabled:group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-enabled:group-hover:-translate-x-0.5"
           strokeWidth={2}
           suppressHydrationWarning
         />

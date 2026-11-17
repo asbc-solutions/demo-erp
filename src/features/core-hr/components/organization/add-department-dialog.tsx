@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -28,24 +29,21 @@ import {
   deptTypeValues,
   type DepartmentFormValues,
 } from "../../lib/schema/department"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
 type AddDepartmentDialogProps = Readonly<{
   open: boolean
   onOpenChange: (open: boolean) => void
 }>
 
-const DEPT_TYPE_LABEL: Record<typeof deptTypeValues[number], string> = {
-  operational: "Operational",
-  administrative: "Administrative",
-  support: "Support",
-  technical: "Technical",
-  management: "Management",
-}
-
 export function AddDepartmentDialog({
   open,
   onOpenChange,
 }: AddDepartmentDialogProps) {
+  const t = useTranslations("HrOrganization")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const createDepartment = useCreateDepartment()
   const { data: branchData } = useActiveBranchOptions({ enabled: open })
   const branches = branchData?.data ?? []
@@ -71,7 +69,7 @@ export function AddDepartmentDialog({
   const onSubmit = (values: DepartmentFormValues) => {
     createDepartment.mutate(values, {
       onSuccess: (dept) => {
-        toast.success(`Department "${dept.dept_name}" created`)
+        toast.success(t("deptCreated", { name: dept.dept_name }))
         handleOpenChange(false)
       },
       onError: (err, variables) => {
@@ -99,13 +97,13 @@ export function AddDepartmentDialog({
           ? Object.values(fieldErrors).flat().join(" ")
           : (apiErr.message ??
             (isCodeConflict
-              ? `Code "${variables.dept_code}" is already in use. Please enter a unique code.`
-              : "Please check your details and try again."))
+              ? t("codeInUse", { code: variables.dept_code })
+              : t("checkDetails")))
         // Pin a conflict to the offending Code field so it's clear what to fix.
         if (isCodeConflict && !fieldErrors) {
           setError("dept_code", { type: "server", message: description })
         }
-        toast.error("Failed to create department", { description })
+        toast.error(t("createDeptFailed"), { description })
       },
     })
   }
@@ -128,12 +126,12 @@ export function AddDepartmentDialog({
           className="flex flex-col gap-4 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
-              Add Department
+              {t("addDepartment")}
             </DialogTitle>
             <p className="text-content-quaternary text-sm leading-5">
-              Create a new department
+              {t("addDeptSubtitle")}
             </p>
           </div>
 
@@ -141,22 +139,22 @@ export function AddDepartmentDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Name <span className="text-brand-danger">*</span>
+                  {t("fieldName")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("dept_name")}
-                  placeholder="Department name"
+                  placeholder={t("phDepartmentName")}
                   className="h-9 rounded-md border-stroke-default bg-surface-white text-sm placeholder:text-content-quaternary"
                 />
                 {errors.dept_name && (
                   <p className="text-brand-danger text-xs">
-                    {errors.dept_name.message}
+                    {fieldError(errors.dept_name.message)}
                   </p>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Code <span className="text-brand-danger">*</span>
+                  {t("fieldCode")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("dept_code")}
@@ -169,7 +167,7 @@ export function AddDepartmentDialog({
                 />
                 {errors.dept_code && (
                   <p className="text-brand-danger text-xs">
-                    {errors.dept_code.message}
+                    {fieldError(errors.dept_code.message)}
                   </p>
                 )}
               </div>
@@ -177,7 +175,7 @@ export function AddDepartmentDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Branch <span className="text-brand-danger">*</span>
+                {t("fieldBranch")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={watch("branch_id") || undefined}
@@ -186,7 +184,7 @@ export function AddDepartmentDialog({
                 }
               >
                 <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
-                  <SelectValue placeholder="Select branch…" />
+                  <SelectValue placeholder={t("phSelectBranch")} />
                 </SelectTrigger>
                 <SelectContent>
                   {branches.map((b) => (
@@ -198,14 +196,14 @@ export function AddDepartmentDialog({
               </Select>
               {errors.branch_id && (
                 <p className="text-brand-danger text-xs">
-                  {errors.branch_id.message}
+                  {fieldError(errors.branch_id.message)}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Type <span className="text-brand-danger">*</span>
+                {t("fieldType")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={watch("dept_type")}
@@ -218,19 +216,19 @@ export function AddDepartmentDialog({
                 }
               >
                 <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
-                  <SelectValue placeholder="Select type…" />
+                  <SelectValue placeholder={t("phSelectType")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {deptTypeValues.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {DEPT_TYPE_LABEL[t]}
+                  {deptTypeValues.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {tShared(`deptType.${type}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {errors.dept_type && (
                 <p className="text-brand-danger text-xs">
-                  {errors.dept_type.message}
+                  {fieldError(errors.dept_type.message)}
                 </p>
               )}
             </div>
@@ -238,7 +236,7 @@ export function AddDepartmentDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Headcount Budget <span className="text-brand-danger">*</span>
+                  {t("fieldHeadcountBudget")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("headcount_budget", { valueAsNumber: true })}
@@ -249,13 +247,13 @@ export function AddDepartmentDialog({
                 />
                 {errors.headcount_budget && (
                   <p className="text-brand-danger text-xs">
-                    {errors.headcount_budget.message}
+                    {fieldError(errors.headcount_budget.message)}
                   </p>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Effective Date <span className="text-brand-danger">*</span>
+                  {t("fieldEffectiveDate")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("effective_date")}
@@ -264,7 +262,7 @@ export function AddDepartmentDialog({
                 />
                 {errors.effective_date && (
                   <p className="text-brand-danger text-xs">
-                    {errors.effective_date.message}
+                    {fieldError(errors.effective_date.message)}
                   </p>
                 )}
               </div>
@@ -279,7 +277,7 @@ export function AddDepartmentDialog({
               className="h-9 rounded-md border-stroke-default bg-surface-white px-4 text-sm font-semibold text-content-primary"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -288,7 +286,7 @@ export function AddDepartmentDialog({
               disabled={createDepartment.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {createDepartment.isPending ? "Saving…" : "Save"}
+              {createDepartment.isPending ? tShared("saving") : tCommon("save")}
             </Button>
           </div>
         </form>

@@ -1,4 +1,14 @@
+import type { Messages, useTranslations } from "next-intl"
+
 import type { AccountType, CurrencyCode } from "../../../lib/types/common"
+
+export type LedgerTranslator = ReturnType<typeof useTranslations<"FinanceLedger">>
+
+type LedgerMessages = Messages["FinanceLedger"]
+/** A flat (non-enum-map) key of the `FinanceLedger` namespace. */
+export type LedgerMessageKey = {
+  [K in keyof LedgerMessages]: LedgerMessages[K] extends string ? K : never
+}[keyof LedgerMessages]
 
 export type LedgerAccount = {
   id: string

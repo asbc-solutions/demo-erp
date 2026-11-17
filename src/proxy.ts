@@ -1,9 +1,10 @@
-import { NextResponse, type NextRequest } from "next/server";
+import createMiddleware from "next-intl/middleware"
 
-export function proxy(_request: NextRequest) {
-  return NextResponse.next();
-}
+import { routing } from "./i18n/routing"
+
+export const proxy = createMiddleware(routing)
 
 export const config = {
-  matcher: [],
-};
+  // Every route except API handlers, Next internals and files with an extension.
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+}

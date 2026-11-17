@@ -1,7 +1,8 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
+import { usePathname } from "@/src/i18n/navigation"
 
 import { AccessDeniedCard } from "@/src/shared/components/ui/access-denied-card"
 import { Spinner } from "@/src/shared/components/ui/spinner"
@@ -15,6 +16,7 @@ import { matchFinanceNav } from "../../lib/utils/nav"
  * gate themselves. Each section is independently grantable.
  */
 function FinanceSectionGate({ children }: Readonly<{ children: ReactNode }>) {
+  const t = useTranslations("FinanceShared")
   const pathname = usePathname()
   const { accessState, isLoading } = usePermissions()
   const match = matchFinanceNav(pathname)
@@ -33,7 +35,7 @@ function FinanceSectionGate({ children }: Readonly<{ children: ReactNode }>) {
   if (accessState(resource) === "no_access") {
     return (
       <div className="p-6">
-        <AccessDeniedCard description="Ask an admin to grant your role access to this Finance section." />
+        <AccessDeniedCard description={t("sectionAccessDenied")} />
       </div>
     )
   }

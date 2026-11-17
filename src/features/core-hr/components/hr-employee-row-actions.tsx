@@ -8,6 +8,7 @@ import {
   TrendingUp,
   UserMinus,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -35,6 +36,8 @@ export function EmployeeRowActions({
   onTransfer,
   onTerminate,
 }: EmployeeRowActionsProps) {
+  const t = useTranslations("HrEmployees")
+
   return (
     // modal={false} so the wizard dialog this opens stays interactive (Radix gotcha).
     <DropdownMenu modal={false}>
@@ -42,7 +45,7 @@ export function EmployeeRowActions({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={`Actions for ${employeeName}`}
+          aria-label={t("actionsFor", { name: employeeName })}
           className="text-content-tertiary hover:text-content-primary mx-auto flex"
         >
           <MoreHorizontal />
@@ -52,24 +55,24 @@ export function EmployeeRowActions({
       <DropdownMenuContent align="end" className="min-w-[170px]">
         <DropdownMenuItem onSelect={onViewProfile}>
           <Eye />
-          View Profile
+          {t("viewProfile")}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={onEditDetails}>
           <Pencil />
-          Edit Details
+          {t("editDetails")}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={onPromote}>
           <TrendingUp />
-          Promote
+          {t("promote")}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={onTransfer}>
           <ArrowLeftRight />
-          Transfer
+          {t("transfer")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="danger" onSelect={onTerminate}>
           <UserMinus />
-          Terminate
+          {t("terminate")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

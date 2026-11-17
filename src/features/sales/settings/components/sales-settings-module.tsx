@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -34,7 +35,7 @@ import {
 import { Textarea } from "@/src/shared/components/ui/textarea"
 import { cn } from "@/src/shared/lib/utils/utils"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesPageSpinner, SalesSectionSpinner } from "../../components/shared/sales-loading"
 import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
 import { SALES_RESOURCES } from "../../lib/constants/permissions"
@@ -101,8 +102,8 @@ function CompactSwitch({
     >
       <span
         className={cn(
-          "bg-surface-white pointer-events-none absolute top-px left-px size-[17px] rounded-full shadow-sm transition-transform",
-          checked && "translate-x-[15px]",
+          "bg-surface-white pointer-events-none absolute top-px inset-s-px size-[17px] rounded-full shadow-sm transition-transform",
+          checked && "translate-x-[15px] rtl:-translate-x-[15px]",
         )}
       />
     </button>
@@ -122,6 +123,8 @@ function NumberingRow({
   onChange: (value: string) => void
   preview: string
 }>) {
+  const t = useTranslations("SalesSettings")
+
   return (
     <div className="grid items-end gap-3 lg:grid-cols-[minmax(0,1fr)_182px]">
       <div className="flex min-w-0 flex-col gap-1.5">
@@ -135,7 +138,7 @@ function NumberingRow({
       </div>
       <div className="border-stroke-light bg-[#f1f5f9] flex min-h-10 flex-col justify-center gap-0.5 rounded-[9px] border px-3 py-2 dark:bg-surface-hover">
         <span className="text-[10px] leading-4 font-semibold tracking-[0.6px] text-content-quaternary uppercase">
-          Next number (saved format)
+          {t("nextNumber")}
         </span>
         <span className="font-mono text-[15px] leading-[23px] font-medium text-content-primary">
           {preview}
@@ -145,12 +148,8 @@ function NumberingRow({
   )
 }
 
-const APPLIES_TO_LABEL: Record<TermsTemplateAppliesTo, string> = {
-  quotation: "Quotation",
-  order: "Order",
-  invoice: "Invoice",
-  all: "All Documents",
-}
+/** Option order for the "Applies to" select; labels come from `SalesShared.appliesTo`. */
+const APPLIES_TO_OPTIONS: TermsTemplateAppliesTo[] = ["quotation", "order", "invoice", "all"]
 
 function TermsTemplateDialog({
   open,
@@ -161,6 +160,10 @@ function TermsTemplateDialog({
   onOpenChange: (open: boolean) => void
   template: TermsTemplate | null
 }>) {
+  const t = useTranslations("SalesSettings")
+  const tCommon = useTranslations("Common")
+  const tShared = useTranslations("SalesShared")
+  const toastMutationError = useToastMutationError()
   const createTemplate = useCreateTermsTemplate()
   const updateTemplate = useUpdateTermsTemplate()
   const isPending = createTemplate.isPending || updateTemplate.isPending
@@ -179,10 +182,10 @@ function TermsTemplateDialog({
 
     const onSettled = {
       onSuccess: () => {
-        toast.success(template ? "Template updated" : "Template created")
+        toast.success(template ? t("templateUpdated") : t("templateCreated"))
         onOpenChange(false)
       },
-      onError: (err: unknown) => toastMutationError(err, "Failed to save template"),
+      onError: (err: unknown) => toastMutationError(err, t("saveTemplateFailed")),
     }
 
     if (template) {
@@ -197,23 +200,23 @@ function TermsTemplateDialog({
       <DialogContent className="max-w-lg">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{template ? "Edit Template" : "New Terms Template"}</DialogTitle>
+            <DialogTitle>{template ? t("editTemplate") : t("newTemplate")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-xs font-medium text-content-secondary">Name</span>
+              <span className="text-xs font-medium text-content-secondary">{tCommon("name")}</span>
               <Input name="name" defaultValue={template?.name} required autoFocus />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Applies to</span>
+              <span className="text-xs font-medium text-content-secondary">{t("appliesTo")}</span>
               <select
                 name="appliesTo"
                 defaultValue={template?.applies_to ?? "all"}
                 className="border-stroke-default bg-surface-white text-content-primary focus-visible:border-brand-primary focus-visible:ring-brand-primary/15 h-10 w-full rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px]"
               >
-                {Object.entries(APPLIES_TO_LABEL).map(([value, label]) => (
+                {APPLIES_TO_OPTIONS.map((value) => (
                   <option key={value} value={value}>
-                    {label}
+                    {tShared(`appliesTo.${value}`)}
                   </option>
                 ))}
               </select>
@@ -226,7 +229,7 @@ function TermsTemplateDialog({
                   defaultChecked={template?.is_active ?? true}
                   className="size-4 rounded border-stroke-default accent-brand-primary"
                 />
-                Active
+                {t("active")}
               </label>
               <label className="flex items-center gap-2 text-sm text-content-secondary">
                 <input
@@ -235,25 +238,25 @@ function TermsTemplateDialog({
                   defaultChecked={template?.is_default ?? false}
                   className="size-4 rounded border-stroke-default accent-brand-primary"
                 />
-                Default
+                {t("default")}
               </label>
             </div>
             <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-xs font-medium text-content-secondary">Terms (English)</span>
+              <span className="text-xs font-medium text-content-secondary">{t("termsEnglish")}</span>
               <Textarea name="bodyEn" defaultValue={template?.body_en ?? ""} />
             </label>
             <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className="text-xs font-medium text-content-secondary">Terms (Arabic)</span>
+              <span className="text-xs font-medium text-content-secondary">{t("termsArabic")}</span>
               <Textarea name="bodyAr" defaultValue={template?.body_ar ?? ""} dir="rtl" />
             </label>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={isPending}>
               {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              {template ? "Save changes" : "Create template"}
+              {template ? tCommon("saveChanges") : t("createTemplate")}
             </Button>
           </DialogFooter>
         </form>
@@ -263,6 +266,10 @@ function TermsTemplateDialog({
 }
 
 function TermsTemplatesSection() {
+  const t = useTranslations("SalesSettings")
+  const tCommon = useTranslations("Common")
+  const tShared = useTranslations("SalesShared")
+  const toastMutationError = useToastMutationError()
   const { data: templates, isLoading, isError, refetch } = useTermsTemplates()
   const deleteTemplate = useDeleteTermsTemplate()
   const [dialogState, setDialogState] = React.useState<{ open: boolean; template: TermsTemplate | null }>({
@@ -276,23 +283,23 @@ function TermsTemplatesSection() {
     if (!deletingId) return
     deleteTemplate.mutate(deletingId, {
       onSuccess: () => {
-        toast.success("Template deleted")
+        toast.success(t("templateDeleted"))
         setDeletingId(null)
       },
       onError: (err) => {
-        toastMutationError(err, "Failed to delete template")
+        toastMutationError(err, t("deleteTemplateFailed"))
         setDeletingId(null)
       },
     })
   }
 
   return (
-    <SettingsSection title="Terms & Conditions Templates">
+    <SettingsSection title={t("termsTemplates")}>
       <div className="flex max-w-[1072px] flex-col gap-4">
         {isLoading ? (
           <SalesSectionSpinner />
         ) : isError ? (
-          <SalesErrorState message="Failed to load templates." onRetry={() => void refetch()} />
+          <SalesErrorState message={t("loadTemplatesFailed")} onRetry={() => void refetch()} />
         ) : (
           <div className="flex flex-col divide-y divide-stroke-light rounded-lg border border-stroke-light">
             {templates && templates.length > 0 ? (
@@ -302,21 +309,21 @@ function TermsTemplatesSection() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-content-primary">{template.name}</span>
                       <Badge variant="neutral" className="rounded-full font-normal">
-                        {template.applies_to_label}
+                        {tShared(`appliesTo.${template.applies_to}`)}
                       </Badge>
                       {template.is_default ? (
                         <Badge variant="success" className="rounded-full font-normal">
-                          Default
+                          {t("default")}
                         </Badge>
                       ) : null}
                       {!template.is_active ? (
                         <Badge variant="neutral" className="rounded-full font-normal opacity-70">
-                          Inactive
+                          {t("inactive")}
                         </Badge>
                       ) : null}
                     </div>
                     <p className="truncate text-xs text-content-tertiary">
-                      {template.body_en || template.body_ar || "No terms text."}
+                      {template.body_en || template.body_ar || t("noTermsText")}
                     </p>
                   </div>
                   {can.write(SALES_RESOURCES.settings) ? (
@@ -325,7 +332,7 @@ function TermsTemplatesSection() {
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Edit ${template.name}`}
+                        aria-label={t("editNamed", { name: template.name })}
                         onClick={() => setDialogState({ open: true, template })}
                       >
                         <Pencil aria-hidden />
@@ -334,7 +341,7 @@ function TermsTemplatesSection() {
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Delete ${template.name}`}
+                        aria-label={t("deleteNamed", { name: template.name })}
                         className="text-brand-danger"
                         onClick={() => setDeletingId(template.id)}
                       >
@@ -346,7 +353,7 @@ function TermsTemplatesSection() {
               ))
             ) : (
               <p className="px-4 py-6 text-center text-xs text-content-tertiary">
-                No terms templates yet.
+                {t("noTemplates")}
               </p>
             )}
           </div>
@@ -360,7 +367,7 @@ function TermsTemplatesSection() {
             onClick={() => setDialogState({ open: true, template: null })}
           >
             <Plus aria-hidden />
-            Add Template
+            {t("addTemplate")}
           </Button>
         ) : null}
       </div>
@@ -373,10 +380,10 @@ function TermsTemplatesSection() {
 
       <AlertDialog open={deletingId !== null} onOpenChange={(open) => !open && setDeletingId(null)}>
         <AlertDialogContent className="max-w-md">
-          <AlertDialogTitle>Delete template?</AlertDialogTitle>
-          <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+          <AlertDialogTitle>{t("deleteTemplateTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("cannotUndo")}</AlertDialogDescription>
           <div className="mt-4 flex items-center justify-end gap-2">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               disabled={deleteTemplate.isPending}
               onClick={(event) => {
@@ -384,7 +391,7 @@ function TermsTemplatesSection() {
                 handleDelete()
               }}
             >
-              Delete
+              {tCommon("delete")}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
@@ -394,6 +401,8 @@ function TermsTemplatesSection() {
 }
 
 function CompanyProfileSection({ profile }: Readonly<{ profile: CompanyProfile }>) {
+  const t = useTranslations("SalesSettings")
+  const toastMutationError = useToastMutationError()
   const [name, setName] = React.useState(profile.company_name)
   const [taxNumber, setTaxNumber] = React.useState(profile.company_tax_number)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
@@ -407,8 +416,8 @@ function CompanyProfileSection({ profile }: Readonly<{ profile: CompanyProfile }
     updateProfile.mutate(
       { company_name: name, company_tax_number: taxNumber },
       {
-        onSuccess: () => toast.success("Company profile saved"),
-        onError: (err) => toastMutationError(err, "Failed to save company profile"),
+        onSuccess: () => toast.success(t("profileSaved")),
+        onError: (err) => toastMutationError(err, t("saveProfileFailed")),
       },
     )
   }
@@ -417,18 +426,18 @@ function CompanyProfileSection({ profile }: Readonly<{ profile: CompanyProfile }
     const file = event.target.files?.[0]
     if (!file) return
     uploadLogo.mutate(file, {
-      onSuccess: () => toast.success("Logo uploaded"),
-      onError: (err) => toastMutationError(err, "Failed to upload logo"),
+      onSuccess: () => toast.success(t("logoUploaded")),
+      onError: (err) => toastMutationError(err, t("uploadLogoFailed")),
     })
     event.target.value = ""
   }
 
   return (
-    <SettingsSection title="Company Profile">
+    <SettingsSection title={t("companyProfile")}>
       <div className="flex max-w-[1072px] flex-col gap-[18px]">
         <div className="grid gap-[18px] sm:grid-cols-2">
           <div className="flex min-w-0 flex-col gap-1.5">
-            <FieldLabel htmlFor="company-name">Company Name</FieldLabel>
+            <FieldLabel htmlFor="company-name">{t("companyName")}</FieldLabel>
             <Input
               id="company-name"
               value={name}
@@ -437,7 +446,7 @@ function CompanyProfileSection({ profile }: Readonly<{ profile: CompanyProfile }
             />
           </div>
           <div className="flex min-w-0 flex-col gap-1.5">
-            <FieldLabel htmlFor="company-tax-number">Tax Number</FieldLabel>
+            <FieldLabel htmlFor="company-tax-number">{t("taxNumber")}</FieldLabel>
             <Input
               id="company-tax-number"
               value={taxNumber}
@@ -452,12 +461,12 @@ function CompanyProfileSection({ profile }: Readonly<{ profile: CompanyProfile }
             // eslint-disable-next-line @next/next/no-img-element -- dynamic signed URL, not a static asset
             <img
               src={logoUrl}
-              alt="Company logo"
+              alt={t("companyLogo")}
               className="size-16 rounded-lg border border-stroke-light object-contain"
             />
           ) : (
             <div className="flex size-16 items-center justify-center rounded-lg border border-dashed border-stroke-light text-[10px] text-content-quaternary">
-              No logo
+              {t("noLogo")}
             </div>
           )}
           <div className="flex flex-col gap-1.5">
@@ -479,10 +488,10 @@ function CompanyProfileSection({ profile }: Readonly<{ profile: CompanyProfile }
               ) : (
                 <Upload aria-hidden />
               )}
-              Upload Logo
+              {t("uploadLogo")}
             </Button>
             <span className="text-[11px] text-content-quaternary">
-              PNG, JPG, or SVG — max 2MB.
+              {t("logoHint")}
             </span>
           </div>
         </div>
@@ -491,7 +500,7 @@ function CompanyProfileSection({ profile }: Readonly<{ profile: CompanyProfile }
           <div>
             <Button type="button" variant="primary" disabled={updateProfile.isPending} onClick={handleSave}>
               {updateProfile.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              Save Company Profile
+              {t("saveProfile")}
             </Button>
           </div>
         ) : null}
@@ -501,6 +510,9 @@ function CompanyProfileSection({ profile }: Readonly<{ profile: CompanyProfile }
 }
 
 function GeneralSettingsForm({ settings }: Readonly<{ settings: SalesSettings }>) {
+  const t = useTranslations("SalesSettings")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [quotationFormat, setQuotationFormat] = React.useState(settings.quotation_number_format)
   const [salesOrderFormat, setSalesOrderFormat] = React.useState(settings.order_number_format)
   const [invoiceFormat, setInvoiceFormat] = React.useState(settings.invoice_number_format)
@@ -525,48 +537,47 @@ function GeneralSettingsForm({ settings }: Readonly<{ settings: SalesSettings }>
         auto_expire_quotations: autoExpire,
       },
       {
-        onSuccess: () => toast.success("Sales settings saved"),
-        onError: (err) => toastMutationError(err, "Failed to save sales settings"),
+        onSuccess: () => toast.success(t("settingsSaved")),
+        onError: (err) => toastMutationError(err, t("saveSettingsFailed")),
       },
     )
   }
 
   return (
     <>
-      <SettingsSection title="Document Numbering">
+      <SettingsSection title={t("documentNumbering")}>
         <div className="flex max-w-[1072px] flex-col gap-[18px]">
           <NumberingRow
             id="quotation-format"
-            label="Quotation Format"
+            label={t("quotationFormat")}
             value={quotationFormat}
             onChange={setQuotationFormat}
             preview={preview?.quotation ?? "—"}
           />
           <NumberingRow
             id="sales-order-format"
-            label="Sales Order Format"
+            label={t("orderFormat")}
             value={salesOrderFormat}
             onChange={setSalesOrderFormat}
             preview={preview?.order ?? "—"}
           />
           <NumberingRow
             id="invoice-format"
-            label="Invoice Format"
+            label={t("invoiceFormat")}
             value={invoiceFormat}
             onChange={setInvoiceFormat}
             preview={preview?.invoice ?? "—"}
           />
           <p className="text-xs leading-[18px] text-content-tertiary">
-            Tokens: {"{YYYY}"} = year, {"{####}"} = zero-padded sequence. Preview is the
-            next number under the currently saved format (advisory only).
+            {t("tokensHint", { year: "{YYYY}", sequence: "{####}" })}
           </p>
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Tax Configuration">
+      <SettingsSection title={t("taxConfiguration")}>
         <div className="grid max-w-[1072px] gap-[18px] sm:grid-cols-2">
           <div className="flex min-w-0 flex-col gap-1.5">
-            <FieldLabel htmlFor="default-tax-rate">Default Tax Rate (%)</FieldLabel>
+            <FieldLabel htmlFor="default-tax-rate">{t("defaultTaxRate")}</FieldLabel>
             <Input
               id="default-tax-rate"
               type="number"
@@ -578,27 +589,27 @@ function GeneralSettingsForm({ settings }: Readonly<{ settings: SalesSettings }>
             />
           </div>
           <div className="flex flex-col items-start gap-1.5">
-            <FieldLabel>Tax Mode</FieldLabel>
+            <FieldLabel>{t("taxMode")}</FieldLabel>
             <Select value={taxMode} onValueChange={(value) => setTaxMode(value as TaxMode)}>
               <SelectTrigger
-                aria-label="Tax Mode"
+                aria-label={t("taxMode")}
                 className="h-10 w-auto min-w-[138px] rounded-[9px] text-[14px]"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="exclusive">Tax Exclusive</SelectItem>
-                <SelectItem value="inclusive">Tax Inclusive</SelectItem>
+                <SelectItem value="exclusive">{t("taxExclusive")}</SelectItem>
+                <SelectItem value="inclusive">{t("taxInclusive")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Quotation Validity">
+      <SettingsSection title={t("quotationValidity")}>
         <div className="flex max-w-[1072px] flex-col gap-[18px]">
           <div className="flex max-w-[364px] flex-col gap-1.5">
-            <FieldLabel htmlFor="default-validity">Default Validity (days)</FieldLabel>
+            <FieldLabel htmlFor="default-validity">{t("defaultValidity")}</FieldLabel>
             <Input
               id="default-validity"
               type="number"
@@ -612,10 +623,10 @@ function GeneralSettingsForm({ settings }: Readonly<{ settings: SalesSettings }>
             <CompactSwitch
               checked={autoExpire}
               onCheckedChange={setAutoExpire}
-              label="Auto-expire quotations past validity"
+              label={t("autoExpire")}
             />
             <span className="text-[15px] leading-[23px] font-medium text-content-secondary">
-              Auto-expire quotations past validity
+              {t("autoExpire")}
             </span>
           </div>
         </div>
@@ -625,7 +636,7 @@ function GeneralSettingsForm({ settings }: Readonly<{ settings: SalesSettings }>
         <div>
           <Button type="button" variant="primary" disabled={updateSettings.isPending} onClick={handleSave}>
             {updateSettings.isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Save Changes
+            {tCommon("saveChanges")}
           </Button>
         </div>
       ) : null}
@@ -634,6 +645,7 @@ function GeneralSettingsForm({ settings }: Readonly<{ settings: SalesSettings }>
 }
 
 export function SalesSettingsModule() {
+  const t = useTranslations("SalesSettings")
   const settingsQuery = useSalesSettings()
   const companyProfileQuery = useCompanyProfile()
 
@@ -644,7 +656,7 @@ export function SalesSettingsModule() {
   if (settingsQuery.isError || !settingsQuery.data || companyProfileQuery.isError || !companyProfileQuery.data) {
     return (
       <SalesErrorState
-        message="Failed to load sales settings."
+        message={t("loadFailed")}
         onRetry={() => {
           void settingsQuery.refetch()
           void companyProfileQuery.refetch()
@@ -660,35 +672,34 @@ export function SalesSettingsModule() {
       <SalespeopleSection />
       <TermsTemplatesSection />
 
-      <SettingsSection title="Discount Rules" unavailableNote="Not yet available from backend">
+      <SettingsSection title={t("discountRules")} unavailableNote={t("notYetAvailable")}>
         <div className="flex max-w-[509px] flex-col gap-[18px] opacity-60">
           <div className="flex flex-col gap-1.5">
-            <FieldLabel htmlFor="max-discount">Max Discount % before approval</FieldLabel>
+            <FieldLabel htmlFor="max-discount">{t("maxDiscount")}</FieldLabel>
             <Input id="max-discount" type="number" min="0" max="100" value="15" disabled />
             <p className="text-xs leading-[22px] text-content-tertiary">
-              No backend endpoint exists yet to configure the discount-approval matrix
-              (see docs/sales.md §4.7) — this section is a preview of the intended UI.
+              {t("discountRulesHint")}
             </p>
           </div>
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Approval Workflows" unavailableNote="Not yet available from backend">
+      <SettingsSection title={t("approvalWorkflows")} unavailableNote={t("notYetAvailable")}>
         <div className="flex max-w-[1072px] flex-col gap-[18px] opacity-60">
           <div className="flex items-center gap-3">
-            <CompactSwitch checked disabled onCheckedChange={() => {}} label="Require manager approval for over-limit discounts" />
+            <CompactSwitch checked disabled onCheckedChange={() => {}} label={t("requireManagerApproval")} />
             <span className="text-[15px] leading-[23px] font-medium text-content-secondary">
-              Require manager approval for over-limit discounts
+              {t("requireManagerApproval")}
             </span>
           </div>
           <div className="flex max-w-[509px] flex-col gap-1.5">
-            <FieldLabel>Approver role / person</FieldLabel>
+            <FieldLabel>{t("approverRole")}</FieldLabel>
             <Select value="Sales Manager" disabled>
-              <SelectTrigger aria-label="Approver role or person" className="h-10 rounded-[9px] text-[14px]">
+              <SelectTrigger aria-label={t("approverRoleLabel")} className="h-10 rounded-[9px] text-[14px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Sales Manager">Sales Manager</SelectItem>
+                <SelectItem value="Sales Manager">{t("salesManager")}</SelectItem>
               </SelectContent>
             </Select>
           </div>

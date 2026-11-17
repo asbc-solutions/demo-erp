@@ -1,6 +1,9 @@
  "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -14,7 +17,7 @@ import {
 
 import { DealCard } from "./deal-card"
 
-const formatAmount = (value: number) => `$${value.toLocaleString("en-US")}`
+const formatAmount = (value: number, locale: string) => `$${value.toLocaleString(locale)}`
 
 function StageColumn({
   stage,
@@ -35,6 +38,8 @@ function StageColumn({
   onStageDragOver: (stage: SalesStage | null) => void
   onStageDrop: (stage: SalesStage) => void
 }) {
+  const t = useTranslations("SalesShared")
+  const intlLocale = useIntlLocale()
   const accent = STAGE_ACCENT[stage]
   const total = deals.reduce((sum, deal) => sum + deal.amount, 0)
   const isDropActive = activeDropStage === stage
@@ -70,7 +75,7 @@ function StageColumn({
       <div className="flex items-center gap-2 px-1 pt-2">
         <span className={cn("size-2 rounded-full", accent.dot)} aria-hidden />
         <span className="text-[12px] leading-[18px] font-medium text-content-primary">
-          {stage}
+          {t(`stageName.${stage}`)}
         </span>
         <span className="bg-[#f4f4f5] border-stroke-default flex items-center justify-center rounded-lg border px-1.5 py-px text-[10px] leading-[15px] font-medium text-content-quaternary">
           {deals.length}
@@ -80,7 +85,7 @@ function StageColumn({
       <div className="flex flex-col gap-2 pt-3">
         {deals.length === 0 ? (
           <div className="border-stroke-default flex h-[88px] items-center justify-center rounded-2xl border border-dashed text-[12px] leading-[18px] text-content-quaternary">
-            No deals — drop here
+            {t("noDealsDropHere")}
           </div>
         ) : (
           deals.map((deal) => (
@@ -106,7 +111,7 @@ function StageColumn({
 
       <div className="px-1 pt-2">
         <p className="text-[11px] leading-[15.4px] text-content-quaternary">
-          {formatAmount(total)}
+          {formatAmount(total, intlLocale)}
         </p>
       </div>
     </div>

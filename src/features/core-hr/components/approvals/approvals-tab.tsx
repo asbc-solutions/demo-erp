@@ -10,6 +10,7 @@ import {
   Timer,
   X,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
@@ -44,6 +45,7 @@ import {
 import { Textarea } from "@/src/shared/components/ui/textarea"
 import type { ApiError } from "@/src/shared/lib/types/api"
 import { cn } from "@/src/shared/lib/utils/utils"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import {
   useApproveRequest,
@@ -77,23 +79,15 @@ import { ApprovalRequestDetailSheet } from "./approval-request-detail-sheet"
 const EMPTY_APPROVALS: ApprovalRequestSummary[] = []
 const EMPTY_EMPLOYEES: EmployeeListItem[] = []
 
-const TYPE_LABEL: Record<ApprovalRequestType, string> = {
-  TRANSFER: "Transfer",
-  PROMOTION: "Promotion",
-  LEAVE: "Leave",
-  SALARY_CHANGE: "Salary Change",
-  CONTRACT: "Contract",
-  TERMINATION: "Termination",
-  GENERAL: "General",
-}
+type ApprovalsTranslator = ReturnType<typeof useTranslations<"HrApprovals">>
 
-const TYPE_FILTERS: { value: ApprovalRequestType | "ALL"; label: string }[] = [
-  { value: "ALL", label: "All types" },
-  { value: "TRANSFER", label: "Transfer" },
-  { value: "PROMOTION", label: "Promotion" },
-  { value: "TERMINATION", label: "Termination" },
-  { value: "SALARY_CHANGE", label: "Salary Change" },
-  { value: "GENERAL", label: "General" },
+const TYPE_FILTERS: (ApprovalRequestType | "ALL")[] = [
+  "ALL",
+  "TRANSFER",
+  "PROMOTION",
+  "TERMINATION",
+  "SALARY_CHANGE",
+  "GENERAL",
 ]
 
 const TYPE_BADGE_CLASS: Record<ApprovalRequestType, string> = {
@@ -115,24 +109,13 @@ const STATUS_BADGE_CLASS: Record<ApprovalRequestStatus, string> = {
   RETURNED: "border-transparent bg-brand-info/15 text-brand-info",
 }
 
-const STATUS_LABEL: Record<ApprovalRequestStatus, string> = {
-  DRAFT: "Draft",
-  PENDING: "Pending",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
-  RETURNED: "Returned",
-}
-
-const STATUS_FILTERS: {
-  value: ApprovalRequestStatus | "ALL"
-  label: string
-}[] = [
-  { value: "ALL", label: "All statuses" },
-  { value: "PENDING", label: "Pending" },
-  { value: "APPROVED", label: "Approved" },
-  { value: "REJECTED", label: "Rejected" },
-  { value: "RETURNED", label: "Returned" },
-  { value: "DRAFT", label: "Draft" },
+const STATUS_FILTERS: (ApprovalRequestStatus | "ALL")[] = [
+  "ALL",
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "RETURNED",
+  "DRAFT",
 ]
 
 const API_TYPE_TO_UI: Record<ApprovalApiRequestType, ApprovalRequestType> = {
@@ -222,7 +205,7 @@ function ApprovalTableSkeleton() {
     <TableBody>
       {Array.from({ length: 5 }).map((_, index) => (
         <TableRow key={index} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <Skeleton className="h-4 w-24" />
           </TableCell>
           <TableCell>
@@ -249,8 +232,8 @@ function ApprovalTableSkeleton() {
           <TableCell>
             <Skeleton className="h-5 w-20 rounded-md" />
           </TableCell>
-          <TableCell className="pr-6">
-            <Skeleton className="ml-auto h-8 w-32 rounded-md" />
+          <TableCell className="pe-6">
+            <Skeleton className="ms-auto h-8 w-32 rounded-md" />
           </TableCell>
         </TableRow>
       ))}
@@ -268,21 +251,21 @@ function dateKey(iso: string | null | undefined) {
   return iso ? iso.slice(0, 10) : null
 }
 
-function formatSubmitted(iso: string | null | undefined) {
+function formatSubmitted(iso: string | null | undefined, intlLocale: string) {
   const date = dateFromIso(iso)
   if (!date) return iso ?? "—"
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(intlLocale, {
     month: "short",
     day: "numeric",
     year: "numeric",
   })
 }
 
-function formatTimestamp(iso: string | null | undefined) {
+function formatTimestamp(iso: string | null | undefined, intlLocale: string) {
   if (!iso) return undefined
   const date = dateFromIso(iso)
   if (!date) return iso
-  return date.toLocaleString("en-US", {
+  return date.toLocaleString(intlLocale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -363,32 +346,43 @@ function stepVariant(
   return step.step_number === currentStep ? "current" : "pending"
 }
 
+type MapContext = Readonly<{
+  t: ApprovalsTranslator
+  intlLocale: string
+}>
+
 function mapWorkflowStep(
   step: ApprovalStepHistoryItem,
-  currentStep: number
+  currentStep: number,
+  { t, intlLocale }: MapContext
 ): ApprovalWorkflowStep {
   const roleLabel = step.approver_role
     ? labelize(step.approver_role)
     : undefined
   const assignee = step.approver_user_id
-    ? `User #${step.approver_user_id}`
+    ? t("userRef", { id: step.approver_user_id })
     : roleLabel
 
   return {
     id: `${step.step_number}-${step.status}-${step.approver_user_id ?? "role"}`,
-    title: roleLabel ?? `Step ${step.step_number}`,
+    title: roleLabel ?? t("stepNumber", { number: step.step_number }),
     assignee: step.delegated_to
-      ? `${assignee ?? "Approver"} -> User #${step.delegated_to}`
+      ? t("delegatedTo", {
+          assignee: assignee ?? t("approverFallback"),
+          id: step.delegated_to,
+        })
       : assignee,
-    completedAt: formatTimestamp(step.decision_date),
+    completedAt: formatTimestamp(step.decision_date, intlLocale),
     variant: stepVariant(step, currentStep),
   }
 }
 
 function mapApprovalRequest(
   request: ApprovalRequestSummary | ApprovalRequestDetail,
-  employeesById: Map<string, EmployeeListItem>
+  employeesById: Map<string, EmployeeListItem>,
+  ctx: MapContext
 ): ApprovalRequest {
+  const { t } = ctx
   const type = API_TYPE_TO_UI[request.request_type] ?? "GENERAL"
   const status = API_STATUS_TO_UI[request.status] ?? "PENDING"
   const context =
@@ -401,15 +395,16 @@ function mapApprovalRequest(
     employee?.full_name ??
     contextText(context, ["employee_name", "target_name", "name"]) ??
     (request.target_id
-      ? `Employee ${request.target_id.slice(0, 8)}`
-      : "General request")
-  const summary =
-    contextSummary(context, notes ?? `${request.request_type_label} request`) ??
-    `${request.request_type_label} request`
+      ? t("employeeRef", { id: request.target_id.slice(0, 8) })
+      : t("generalRequest"))
+  const typeSummary = t("typeRequestSummary", {
+    type: request.request_type_label,
+  })
+  const summary = contextSummary(context, notes ?? typeSummary) ?? typeSummary
   const workflowSteps =
     "step_history" in request && request.step_history?.length
       ? request.step_history.map((step) =>
-          mapWorkflowStep(step, request.current_step)
+          mapWorkflowStep(step, request.current_step, ctx)
         )
       : undefined
   const decisionNotes =
@@ -430,9 +425,9 @@ function mapApprovalRequest(
       employee?.employee_number ??
       (request.target_id
         ? request.target_id.slice(0, 8).toUpperCase()
-        : "No target"),
+        : t("noTarget")),
     employeeAvatarTone: deriveTone(employee?.full_name ?? request.id),
-    requestedBy: `User #${request.requested_by}`,
+    requestedBy: t("userRef", { id: request.requested_by }),
     dateSubmitted: request.requested_at,
     completedAt: request.completed_at,
     detailsSummary: summary,
@@ -471,7 +466,7 @@ function mapApprovalRequest(
     workflowSteps,
     impactSummaryLines:
       status === "REJECTED" && decisionNotes?.length
-        ? decisionNotes.map((note) => `Decision notes: ${note}`)
+        ? decisionNotes.map((note) => t("decisionNotes", { note }))
         : undefined,
   }
 }
@@ -505,6 +500,9 @@ function isCurrentMonth(iso: string | null | undefined) {
 }
 
 export function ApprovalsTab() {
+  const t = useTranslations("HrApprovals")
+  const tCommon = useTranslations("Common")
+  const intlLocale = useIntlLocale()
   const [typeFilter, setTypeFilter] = useState<ApprovalRequestType | "ALL">(
     "ALL"
   )
@@ -546,9 +544,9 @@ export function ApprovalsTab() {
   const rows = useMemo(
     () =>
       (data?.data ?? EMPTY_APPROVALS).map((request) =>
-        mapApprovalRequest(request, employeesById)
+        mapApprovalRequest(request, employeesById, { t, intlLocale })
       ),
-    [data?.data, employeesById]
+    [data?.data, employeesById, t, intlLocale]
   )
 
   const selectedRow = useMemo(
@@ -559,9 +557,9 @@ export function ApprovalsTab() {
   const selectedRequest = useMemo(
     () =>
       selectedDetail
-        ? mapApprovalRequest(selectedDetail, employeesById)
+        ? mapApprovalRequest(selectedDetail, employeesById, { t, intlLocale })
         : selectedRow,
-    [employeesById, selectedDetail, selectedRow]
+    [employeesById, selectedDetail, selectedRow, t, intlLocale]
   )
 
   const liveStats = useMemo(
@@ -595,13 +593,13 @@ export function ApprovalsTab() {
       { id: row.id, payload: { notes: "Approved from HR approvals inbox." } },
       {
         onSuccess: () => {
-          toast.success(`${row.requestNumber} approved`)
+          toast.success(t("approvedToast", { number: row.requestNumber }))
           setSelectedId(null)
         },
         onError: (err) => {
           const apiErr = err as unknown as ApiError
-          toast.error("Approval failed", {
-            description: apiErr.message ?? "Could not approve this request.",
+          toast.error(t("approveFailed"), {
+            description: apiErr.message ?? t("approveFailedDescription"),
           })
         },
       }
@@ -618,8 +616,8 @@ export function ApprovalsTab() {
 
     const reason = rejectReason.trim()
     if (!reason) {
-      toast.error("Rejection reason required", {
-        description: "Add a short reason before rejecting this request.",
+      toast.error(t("rejectReasonRequired"), {
+        description: t("rejectReasonRequiredDescription"),
       })
       return
     }
@@ -628,15 +626,15 @@ export function ApprovalsTab() {
       { id: rejectTarget.id, payload: { reason } },
       {
         onSuccess: () => {
-          toast.success(`${rejectTarget.requestNumber} rejected`)
+          toast.success(t("rejectedToast", { number: rejectTarget.requestNumber }))
           setRejectTarget(null)
           setRejectReason("")
           setSelectedId(null)
         },
         onError: (err) => {
           const apiErr = err as unknown as ApiError
-          toast.error("Reject failed", {
-            description: apiErr.message ?? "Could not reject this request.",
+          toast.error(t("rejectFailed"), {
+            description: apiErr.message ?? t("rejectFailedDescription"),
           })
         },
       }
@@ -647,30 +645,30 @@ export function ApprovalsTab() {
     <div className="flex flex-col gap-4">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Pending"
+          label={t("statPending")}
           value={liveStats.pending}
-          description="Awaiting your action"
+          description={t("statPendingDescription")}
           tone="rose"
           icon={<Clock className="size-4" strokeWidth={1.75} />}
         />
         <StatCard
-          label="Approved this month"
+          label={t("statApprovedThisMonth")}
           value={liveStats.approvedThisMonth}
-          description="Successfully processed"
+          description={t("statApprovedDescription")}
           tone="violet"
           icon={<Check className="size-4" strokeWidth={1.75} />}
         />
         <StatCard
-          label="Rejected this month"
+          label={t("statRejectedThisMonth")}
           value={liveStats.rejectedThisMonth}
-          description="Declined requests"
+          description={t("statRejectedDescription")}
           tone="violet"
           icon={<X className="size-4" strokeWidth={1.75} />}
         />
         <StatCard
-          label="Avg. response time"
-          value={`${liveStats.avgResponseHours}h`}
-          description="Across loaded requests"
+          label={t("statAvgResponseTime")}
+          value={t("hoursShort", { hours: liveStats.avgResponseHours })}
+          description={t("statAvgResponseDescription")}
           tone="violet"
           icon={<Timer className="size-4" strokeWidth={1.75} />}
         />
@@ -679,7 +677,7 @@ export function ApprovalsTab() {
       <div className="flex flex-wrap items-center gap-3 rounded-[14px] border border-stroke-default bg-surface-white px-5 py-3">
         <span className="inline-flex items-center gap-2 text-sm font-medium text-content-secondary">
           <SlidersHorizontal className="size-4" strokeWidth={1.75} />
-          Filters:
+          {t("filtersLabel")}
         </span>
         <Select
           value={typeFilter}
@@ -688,12 +686,12 @@ export function ApprovalsTab() {
           }
         >
           <SelectTrigger className="h-9 w-[160px] rounded-[10px]">
-            <SelectValue placeholder="All types" />
+            <SelectValue placeholder={t("allTypes")} />
           </SelectTrigger>
           <SelectContent>
             {TYPE_FILTERS.map((filter) => (
-              <SelectItem key={filter.value} value={filter.value}>
-                {filter.label}
+              <SelectItem key={filter} value={filter}>
+                {filter === "ALL" ? t("allTypes") : t(`type.${filter}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -705,12 +703,12 @@ export function ApprovalsTab() {
           }
         >
           <SelectTrigger className="h-9 w-[160px] rounded-[10px]">
-            <SelectValue placeholder="All statuses" />
+            <SelectValue placeholder={t("allStatuses")} />
           </SelectTrigger>
           <SelectContent>
             {STATUS_FILTERS.map((filter) => (
-              <SelectItem key={filter.value} value={filter.value}>
-                {filter.label}
+              <SelectItem key={filter} value={filter}>
+                {filter === "ALL" ? t("allStatuses") : t(`status.${filter}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -722,15 +720,15 @@ export function ApprovalsTab() {
             value={fromDate}
             onChange={(event) => setFromDate(event.target.value)}
             className="h-9 w-[150px] rounded-[10px] border-transparent bg-surface-page"
-            aria-label="From date"
+            aria-label={t("fromDate")}
           />
-          <span>to</span>
+          <span>{t("dateRangeTo")}</span>
           <Input
             type="date"
             value={toDate}
             onChange={(event) => setToDate(event.target.value)}
             className="h-9 w-[150px] rounded-[10px] border-transparent bg-surface-page"
-            aria-label="To date"
+            aria-label={t("toDate")}
           />
         </div>
       </div>
@@ -739,14 +737,14 @@ export function ApprovalsTab() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Request #</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Employee</TableHead>
-              <TableHead>Requested by</TableHead>
-              <TableHead>Date submitted</TableHead>
-              <TableHead>Details summary</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="pr-6 text-right">Actions</TableHead>
+              <TableHead className="ps-6">{t("colRequestNumber")}</TableHead>
+              <TableHead>{t("colType")}</TableHead>
+              <TableHead>{t("colEmployee")}</TableHead>
+              <TableHead>{t("requestedBy")}</TableHead>
+              <TableHead>{t("colDateSubmitted")}</TableHead>
+              <TableHead>{t("colDetailsSummary")}</TableHead>
+              <TableHead>{t("colStatus")}</TableHead>
+              <TableHead className="pe-6 text-end">{tCommon("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           {isLoading ? (
@@ -759,7 +757,7 @@ export function ApprovalsTab() {
                     colSpan={8}
                     className="h-32 text-center text-sm text-content-tertiary"
                   >
-                    Failed to load approval requests.
+                    {t("loadError")}
                   </TableCell>
                 </TableRow>
               )}
@@ -770,7 +768,7 @@ export function ApprovalsTab() {
                     colSpan={8}
                     className="h-32 text-center text-sm text-content-tertiary"
                   >
-                    No approval requests match the current filters.
+                    {t("empty")}
                   </TableCell>
                 </TableRow>
               )}
@@ -781,7 +779,7 @@ export function ApprovalsTab() {
                     key={row.id}
                     className="cursor-pointer border-b border-stroke-default hover:bg-surface-hover/50"
                     tabIndex={0}
-                    aria-label={`Open approval ${row.requestNumber}`}
+                    aria-label={t("openApproval", { number: row.requestNumber })}
                     onClick={() => setSelectedId(row.id)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -790,10 +788,10 @@ export function ApprovalsTab() {
                       }
                     }}
                   >
-                    <TableCell className="pl-6">
+                    <TableCell className="ps-6">
                       <span className="inline-flex items-center gap-0.5 font-mono text-sm font-medium text-content-primary">
                         {row.requestNumber}
-                        <ChevronRight className="size-3.5 text-content-quaternary" />
+                        <ChevronRight className="size-3.5 text-content-quaternary rtl:rotate-180" />
                       </span>
                     </TableCell>
                     <TableCell>
@@ -804,7 +802,7 @@ export function ApprovalsTab() {
                           TYPE_BADGE_CLASS[row.type]
                         )}
                       >
-                        {TYPE_LABEL[row.type]}
+                        {t(`type.${row.type}`)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -831,7 +829,7 @@ export function ApprovalsTab() {
                       {row.requestedBy}
                     </TableCell>
                     <TableCell className="text-sm text-content-secondary">
-                      {formatSubmitted(row.dateSubmitted)}
+                      {formatSubmitted(row.dateSubmitted, intlLocale)}
                     </TableCell>
                     <TableCell className="max-w-[220px] truncate text-sm text-content-primary">
                       {row.detailsSummary}
@@ -844,10 +842,10 @@ export function ApprovalsTab() {
                           STATUS_BADGE_CLASS[row.status]
                         )}
                       >
-                        {STATUS_LABEL[row.status]}
+                        {t(`status.${row.status}`)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="pr-6 text-right">
+                    <TableCell className="pe-6 text-end">
                       {row.status === "PENDING" ? (
                         <div className="flex justify-end gap-2">
                           <Button
@@ -860,7 +858,7 @@ export function ApprovalsTab() {
                               handleApprove(row)
                             }}
                           >
-                            Approve
+                            {tCommon("approve")}
                           </Button>
                           <Button
                             variant="outline"
@@ -872,7 +870,7 @@ export function ApprovalsTab() {
                               handleReject(row)
                             }}
                           >
-                            Reject
+                            {tCommon("reject")}
                           </Button>
                         </div>
                       ) : (
@@ -909,18 +907,20 @@ export function ApprovalsTab() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject Approval</DialogTitle>
+            <DialogTitle>{t("rejectDialogTitle")}</DialogTitle>
             <DialogDescription>
               {rejectTarget
-                ? `${rejectTarget.requestNumber} requires a rejection reason.`
-                : "A rejection reason is required."}
+                ? t("rejectDialogDescription", {
+                    number: rejectTarget.requestNumber,
+                  })
+                : t("rejectDialogDescriptionFallback")}
             </DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Textarea
               value={rejectReason}
               onChange={(event) => setRejectReason(event.target.value)}
-              placeholder="Reason"
+              placeholder={t("reason")}
               maxLength={1000}
               autoFocus
             />
@@ -934,7 +934,7 @@ export function ApprovalsTab() {
                 setRejectReason("")
               }}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -942,7 +942,7 @@ export function ApprovalsTab() {
               disabled={rejectRequest.isPending}
               onClick={submitReject}
             >
-              Reject
+              {tCommon("reject")}
             </Button>
           </DialogFooter>
         </DialogContent>

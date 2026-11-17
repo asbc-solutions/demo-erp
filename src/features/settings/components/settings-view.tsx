@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -13,21 +14,22 @@ import { RolesTab } from "./roles-tab"
 import { TeamTab } from "./team-tab"
 
 export function SettingsView() {
+  const t = useTranslations("SettingsView")
   const [tab, setTab] = useState<SettingsTab>("profile")
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-content-primary text-2xl leading-8 font-semibold tracking-tight">
-          Settings
+          {t("title")}
         </h1>
         <p className="text-content-tertiary text-sm leading-5">
-          Manage your workspace, team, billing, and notification preferences.
+          {t("description")}
         </p>
       </header>
 
       <div className="bg-surface-white border-stroke-default flex h-9 w-fit flex-wrap items-center gap-1 rounded-xl border p-1">
-        {SETTINGS_TABS.map(({ id, label }) => {
+        {SETTINGS_TABS.map(({ id, labelKey }) => {
           const isActive = id === tab
           return (
             <button
@@ -41,7 +43,7 @@ export function SettingsView() {
                   : "text-content-tertiary hover:text-content-primary",
               )}
             >
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
               {isActive ? (
                 <span
                   className="bg-brand-primary absolute -bottom-px left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full"

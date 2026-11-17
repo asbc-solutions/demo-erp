@@ -71,7 +71,11 @@ export type BoardColumn = {
 }
 
 /** Group the flat cross-project task list into Kanban columns by status. */
-export function tasksToBoard(tasks: TaskListItem[]): BoardColumn[] {
+export function tasksToBoard(
+  tasks: TaskListItem[],
+  /** `Intl` locale for `dueDate` (`useIntlLocale()`). */
+  locale?: string,
+): BoardColumn[] {
   const byColumn = new Map<KanbanColumnId, BoardTask[]>()
   for (const meta of COLUMN_META) byColumn.set(meta.id, [])
 
@@ -83,7 +87,7 @@ export function tasksToBoard(tasks: TaskListItem[]): BoardColumn[] {
       priority: PRIORITY_LABEL[task.priority] ?? "Medium",
       projectId: task.project_id,
       phaseName: task.phase_name,
-      dueDate: formatApiDate(task.due_date),
+      dueDate: formatApiDate(task.due_date, locale),
       percent: task.percent_complete,
       status: task.status,
       assignee: task.assignee ?? null,

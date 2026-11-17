@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -33,35 +34,36 @@ import { useCostCenters } from "../../../planning/lib/queries/planning"
 import { errorMessage } from "../../../lib/utils/api"
 import { formatAmount } from "../../../lib/utils/money"
 import { useDisposeAsset, useEditAsset, useWriteOffAsset } from "../../lib/mutations/assets"
-import type { Asset } from "../../lib/types/assets"
+import type { Asset, AssetsMessageKey } from "../../lib/types/assets"
 
 type DialogProps = { asset: Asset; open: boolean; onOpenChange: (open: boolean) => void }
 
-const SESSION_NOTE =
-  "Saved records live in this session only. The seeded data is never modified, so a reload returns the prototype to its known state."
+/** Messages are `FinanceAssets` keys, translated where the error is rendered. */
+const msg = (key: AssetsMessageKey) => key
 
-const amountText = (label: string) =>
+const amountText = (message: AssetsMessageKey) =>
   z
     .string()
     .trim()
-    .refine((value) => value === "" || (Number.isFinite(Number(value)) && Number(value) >= 0), `${label} must be zero or more.`)
+    .refine((value) => value === "" || (Number.isFinite(Number(value)) && Number(value) >= 0), message)
 
 // ─── Dispose ─────────────────────────────────────────────────────────────────
 
 const disposeSchema = z
   .object({
-    proceeds: amountText("Proceeds"),
+    proceeds: amountText("errProceeds"),
     treasury_id: z.string(),
-    date: z.string().min(1, "Enter the disposal date."),
+    date: z.string().min(1, msg("errDisposalDate")),
     reason: z.string().trim(),
   })
   .refine((values) => Number(values.proceeds || 0) === 0 || values.treasury_id !== "", {
-    message: "Choose the treasury the proceeds were paid into.",
+    message: msg("errProceedsTreasury"),
     path: ["treasury_id"],
   })
 type DisposeValues = z.infer<typeof disposeSchema>
 
 function DisposeDialog({ asset, open, onOpenChange }: DialogProps) {
+  const t = useTranslations("FinanceAssets")
   const dispose = useDisposeAsset()
   const { data: banking } = useBankingOverview()
   const treasuries = banking?.treasuries.filter((row) => row.currency === "EGP") ?? []
@@ -95,26 +97,22 @@ function DisposeDialog({ asset, open, onOpenChange }: DialogProps) {
               },
               {
                 onSuccess: (retired) => {
-                  toast.success(`${retired.number} is disposed. Entry ${retired.entry} posted.`)
+                  toast.success(t("toastDisposed", { number: retired.number, entry: retired.entry }))
                   onOpenChange(false)
                 },
-                onError: (error) => toast.error(errorMessage(error, "The disposal could not be recorded. Try again.")),
+                onError: (error) => toast.error(errorMessage(error, t("errorDispose"))),
               },
             ),
           )}
         >
           <DialogHeader>
-            <DialogTitle>Dispose of this asset?</DialogTitle>
-            <DialogDescription>
-              Disposal removes the asset from service, clears its cost and accumulated depreciation, and books the gain or
-              loss against the proceeds. The asset stops depreciating from the disposal date. The entry is posted
-              immediately.
-            </DialogDescription>
+            <DialogTitle>{t("disposeTitle")}</DialogTitle>
+            <DialogDescription>{t("disposeDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="dispose-proceeds">Proceeds (EGP)</FieldLabel>
+                <FieldLabel htmlFor="dispose-proceeds">{t("proceedsEgp")}</FieldLabel>
                 <Input
                   id="dispose-proceeds"
                   inputMode="decimal"
@@ -123,23 +121,23 @@ function DisposeDialog({ asset, open, onOpenChange }: DialogProps) {
                   aria-invalid={Boolean(errors.proceeds)}
                   {...register("proceeds")}
                 />
-                {errors.proceeds ? <FieldError>{errors.proceeds.message}</FieldError> : null}
+                {errors.proceeds ? <FieldError>{t(errors.proceeds.message as AssetsMessageKey)}</FieldError> : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="dispose-date">Disposal date *</FieldLabel>
+                <FieldLabel htmlFor="dispose-date">{t("disposalDateRequired")}</FieldLabel>
                 <Input id="dispose-date" type="date" aria-invalid={Boolean(errors.date)} {...register("date")} />
-                {errors.date ? <FieldError>{errors.date.message}</FieldError> : null}
+                {errors.date ? <FieldError>{t(errors.date.message as AssetsMessageKey)}</FieldError> : null}
               </Field>
             </div>
             <Field>
-              <FieldLabel htmlFor="dispose-treasury">Paid into</FieldLabel>
+              <FieldLabel htmlFor="dispose-treasury">{t("paidInto")}</FieldLabel>
               <Controller
                 control={control}
                 name="treasury_id"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange} disabled={proceeds === 0}>
                     <SelectTrigger id="dispose-treasury" aria-invalid={Boolean(errors.treasury_id)}>
-                      <SelectValue placeholder={proceeds === 0 ? "No proceeds" : "Choose a treasury"} />
+                      <SelectValue placeholder={proceeds === 0 ? t("noProceeds") : t("chooseTreasury")} />
                     </SelectTrigger>
                     <SelectContent>
                       {treasuries.map((row) => (
@@ -151,22 +149,27 @@ function DisposeDialog({ asset, open, onOpenChange }: DialogProps) {
                   </Select>
                 )}
               />
-              {errors.treasury_id ? <FieldError>{errors.treasury_id.message}</FieldError> : null}
+              {errors.treasury_id ? <FieldError>{t(errors.treasury_id.message as AssetsMessageKey)}</FieldError> : null}
             </Field>
             <Field>
-              <FieldLabel htmlFor="dispose-reason">Note</FieldLabel>
-              <Input id="dispose-reason" placeholder="e.g. Sold to a scrap dealer" {...register("reason")} />
+              <FieldLabel htmlFor="dispose-reason">{t("note")}</FieldLabel>
+              <Input id="dispose-reason" placeholder={t("disposeNotePlaceholder")} {...register("reason")} />
             </Field>
             <FinanceAlert tone={result < 0 ? "warning" : "info"}>
-              Book value is {formatAmount(asset.nbv)} EGP. {result === 0 ? "No gain or loss." : result > 0 ? `Gain on disposal of ${formatAmount(result)} EGP.` : `Loss on disposal of ${formatAmount(-result)} EGP.`}
+              {t("bookValueIs", { amount: formatAmount(asset.nbv) })}{" "}
+              {result === 0
+                ? t("noGainOrLoss")
+                : result > 0
+                  ? t("gainOnDisposal", { amount: formatAmount(result) })
+                  : t("lossOnDisposal", { amount: formatAmount(-result) })}
             </FinanceAlert>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="danger" disabled={dispose.isPending}>
-              Record disposal
+              {t("recordDisposal")}
             </Button>
           </DialogFooter>
         </form>
@@ -178,11 +181,12 @@ function DisposeDialog({ asset, open, onOpenChange }: DialogProps) {
 // ─── Write off ───────────────────────────────────────────────────────────────
 
 const writeOffSchema = z.object({
-  reason: z.string().trim().min(1, "Record why the asset is being written off. The reason is kept on the asset's history."),
+  reason: z.string().trim().min(1, msg("errWriteOffReason")),
 })
 type WriteOffValues = z.infer<typeof writeOffSchema>
 
 function WriteOffDialog({ asset, open, onOpenChange }: DialogProps) {
+  const t = useTranslations("FinanceAssets")
   const writeOff = useWriteOffAsset()
   const {
     register,
@@ -204,35 +208,31 @@ function WriteOffDialog({ asset, open, onOpenChange }: DialogProps) {
               { id: asset.id, reason: values.reason },
               {
                 onSuccess: (retired) => {
-                  toast.success(`${retired.number} is written off. Entry ${retired.entry} posted.`)
+                  toast.success(t("toastWrittenOff", { number: retired.number, entry: retired.entry }))
                   onOpenChange(false)
                 },
-                onError: (error) => toast.error(errorMessage(error, "The write-off could not be posted. Try again.")),
+                onError: (error) => toast.error(errorMessage(error, t("errorWriteOff"))),
               },
             ),
           )}
         >
           <DialogHeader>
-            <DialogTitle>Write off this asset?</DialogTitle>
-            <DialogDescription>
-              A write-off charges the whole remaining book value to expense in this period. There are no proceeds, so the
-              loss is the full carrying amount of {formatAmount(asset.nbv)} EGP. This is reported separately from a
-              disposal.
-            </DialogDescription>
+            <DialogTitle>{t("writeOffTitle")}</DialogTitle>
+            <DialogDescription>{t("writeOffDescription", { amount: formatAmount(asset.nbv) })}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Field>
-              <FieldLabel htmlFor="write-off-reason">Reason *</FieldLabel>
+              <FieldLabel htmlFor="write-off-reason">{t("reasonRequired")}</FieldLabel>
               <Textarea id="write-off-reason" rows={3} aria-invalid={Boolean(errors.reason)} {...register("reason")} />
-              {errors.reason ? <FieldError>{errors.reason.message}</FieldError> : null}
+              {errors.reason ? <FieldError>{t(errors.reason.message as AssetsMessageKey)}</FieldError> : null}
             </Field>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="danger" disabled={writeOff.isPending}>
-              Write off asset
+              {t("writeOffAsset")}
             </Button>
           </DialogFooter>
         </form>
@@ -245,21 +245,22 @@ function WriteOffDialog({ asset, open, onOpenChange }: DialogProps) {
 
 function editSchema(cost: number) {
   return z.object({
-    name: z.string().trim().min(1, "The asset needs a name."),
-    cost_center_id: z.string().min(1, "Choose a cost center."),
+    name: z.string().trim().min(1, msg("errAssetName")),
+    cost_center_id: z.string().min(1, msg("errCostCenter")),
     life: z
       .string()
       .trim()
-      .refine((value) => Number.isInteger(Number(value)) && Number(value) > 0, "Useful life is a whole number of months above zero."),
+      .refine((value) => Number.isInteger(Number(value)) && Number(value) > 0, msg("errUsefulLife")),
     salvage: z
       .string()
       .trim()
-      .refine((value) => value !== "" && Number(value) >= 0 && Number(value) < cost, "Salvage must be zero or more and below the asset's cost."),
+      .refine((value) => value !== "" && Number(value) >= 0 && Number(value) < cost, msg("errSalvage")),
   })
 }
 type EditValues = z.infer<ReturnType<typeof editSchema>>
 
 function EditAssetDialog({ asset, open, onOpenChange }: DialogProps) {
+  const t = useTranslations("FinanceAssets")
   const edit = useEditAsset()
   const { data: centers } = useCostCenters()
   const schema = React.useMemo(() => editSchema(asset.cost), [asset.cost])
@@ -288,29 +289,26 @@ function EditAssetDialog({ asset, open, onOpenChange }: DialogProps) {
               { id: asset.id, input: { name: values.name, cost_center_id: values.cost_center_id, life: Number(values.life), salvage: Number(values.salvage) } },
               {
                 onSuccess: (saved) => {
-                  toast.success(`${saved.number} saved. The next run charges ${formatAmount(saved.monthly_charge)} EGP.`)
+                  toast.success(t("toastAssetSaved", { number: saved.number, amount: formatAmount(saved.monthly_charge) }))
                   onOpenChange(false)
                 },
-                onError: (error) => toast.error(errorMessage(error, "The asset could not be saved. Try again.")),
+                onError: (error) => toast.error(errorMessage(error, t("errorSaveAsset"))),
               },
             ),
           )}
         >
           <DialogHeader>
-            <DialogTitle>Edit · {asset.number}</DialogTitle>
-            <DialogDescription>
-              Editing changes how the asset depreciates from the next run onward. Depreciation already posted is not
-              restated.
-            </DialogDescription>
+            <DialogTitle>{t("editAssetTitle", { number: asset.number })}</DialogTitle>
+            <DialogDescription>{t("editAssetDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Field>
-              <FieldLabel htmlFor="asset-edit-name">Name *</FieldLabel>
+              <FieldLabel htmlFor="asset-edit-name">{t("nameRequired")}</FieldLabel>
               <Input id="asset-edit-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-              {errors.name ? <FieldError>{errors.name.message}</FieldError> : null}
+              {errors.name ? <FieldError>{t(errors.name.message as AssetsMessageKey)}</FieldError> : null}
             </Field>
             <Field>
-              <FieldLabel htmlFor="asset-edit-center">Cost center *</FieldLabel>
+              <FieldLabel htmlFor="asset-edit-center">{t("costCenterRequired")}</FieldLabel>
               <Controller
                 control={control}
                 name="cost_center_id"
@@ -332,28 +330,28 @@ function EditAssetDialog({ asset, open, onOpenChange }: DialogProps) {
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="asset-edit-life">Useful life *</FieldLabel>
+                <FieldLabel htmlFor="asset-edit-life">{t("usefulLifeRequired")}</FieldLabel>
                 <Input id="asset-edit-life" inputMode="numeric" className="tabular-nums" aria-invalid={Boolean(errors.life)} {...register("life")} />
                 {errors.life ? (
-                  <FieldError>{errors.life.message}</FieldError>
+                  <FieldError>{t(errors.life.message as AssetsMessageKey)}</FieldError>
                 ) : (
-                  <FieldDescription>Months. Changing the life re-spreads the remaining net book value.</FieldDescription>
+                  <FieldDescription>{t("usefulLifeHint")}</FieldDescription>
                 )}
               </Field>
               <Field>
-                <FieldLabel htmlFor="asset-edit-salvage">Salvage (EGP) *</FieldLabel>
+                <FieldLabel htmlFor="asset-edit-salvage">{t("salvageEgpRequired")}</FieldLabel>
                 <Input id="asset-edit-salvage" inputMode="decimal" className="tabular-nums" aria-invalid={Boolean(errors.salvage)} {...register("salvage")} />
-                {errors.salvage ? <FieldError>{errors.salvage.message}</FieldError> : null}
+                {errors.salvage ? <FieldError>{t(errors.salvage.message as AssetsMessageKey)}</FieldError> : null}
               </Field>
             </div>
-            <p className="text-content-tertiary text-[13px] leading-5">{SESSION_NOTE}</p>
+            <p className="text-content-tertiary text-[13px] leading-5">{t("sessionNote")}</p>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={edit.isPending}>
-              Save
+              {t("save")}
             </Button>
           </DialogFooter>
         </form>
@@ -362,4 +360,4 @@ function EditAssetDialog({ asset, open, onOpenChange }: DialogProps) {
   )
 }
 
-export { DisposeDialog, EditAssetDialog, SESSION_NOTE, WriteOffDialog }
+export { DisposeDialog, EditAssetDialog, WriteOffDialog }

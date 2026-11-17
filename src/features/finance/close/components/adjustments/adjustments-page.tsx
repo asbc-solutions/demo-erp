@@ -1,8 +1,8 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Link, useRouter } from "@/src/i18n/navigation"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { KpiCard } from "@/src/shared/components/ui/kpi-card"
@@ -14,36 +14,41 @@ import { FinanceErrorState, FinanceTilesSkeleton } from "../../../components/sha
 import { FinanceTable, type FinanceColumn } from "../../../components/shared/finance-table"
 import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount } from "../../../lib/utils/money"
 import { useAdjustments } from "../../lib/queries/close"
 import type { Adjustment } from "../../lib/types/close"
 
-function columns(total: number): FinanceColumn<Adjustment>[] {
+type CloseT = ReturnType<typeof useTranslations<"FinanceClose">>
+
+function columns(total: number, t: CloseT, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<Adjustment>[] {
   return [
-    { id: "number", header: "Entry no.", cell: (row) => <DocNumber>{row.number}</DocNumber>, footer: "Total" },
-    { id: "date", header: "Date", cell: (row) => formatDate(row.date) },
-    { id: "description", header: "Description", cell: (row) => <span className="block max-w-96 truncate">{row.description}</span> },
-    { id: "amount", header: "Amount (EGP)", align: "end", cell: (row) => <Amount value={row.amount} />, footer: <Amount value={total} emphasis="strong" /> },
-    { id: "status", header: "Status", cell: (row) => <StatusPill status={row.status} /> },
+    { id: "number", header: t("colEntryNo"), cell: (row) => <DocNumber>{row.number}</DocNumber>, footer: t("total") },
+    { id: "date", header: t("colDate"), cell: (row) => formatDate(row.date) },
+    { id: "description", header: t("colDescription"), cell: (row) => <span className="block max-w-96 truncate">{row.description}</span> },
+    { id: "amount", header: t("amountEgp"), align: "end", cell: (row) => <Amount value={row.amount} />, footer: <Amount value={total} emphasis="strong" /> },
+    { id: "status", header: t("colStatus"), cell: (row) => <StatusPill status={row.status} /> },
   ]
 }
 
 /** 06.04 · Adjustments — the manual entries booked during the close. */
 function AdjustmentsPage() {
+  const t = useTranslations("FinanceClose")
+  const { formatDate } = useFinanceDateFormat()
   const router = useRouter()
   const { data, isError, refetch } = useAdjustments()
 
   return (
     <>
       <FinancePageHeader
-        title="Adjustments"
-        figure={data ? <HeaderFigure label="Adjusting entries (EGP)">{formatAmount(data.total_base)}</HeaderFigure> : null}
+        title={t("adjustmentsTitle")}
+        figure={data ? <HeaderFigure label={t("adjustingEntriesEgp")}>{formatAmount(data.total_base)}</HeaderFigure> : null}
         actions={
           <Button variant="primary" asChild>
             <Link href="/finance/journals/new">
               <Plus aria-hidden />
-              New adjustment
+              {t("newAdjustment")}
             </Link>
           </Button>
         }
@@ -56,21 +61,18 @@ function AdjustmentsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Adjusting entries" value={data.count} />
-              <KpiCard layout="bar" accent="teal" label="Total value (EGP)" value={formatAmount(data.total_base)} />
-              <KpiCard layout="bar" accent="amber" label="Period" value={data.period.label} caption="Adjusting window" />
+              <KpiCard layout="bar" accent="indigo" label={t("adjustingEntries")} value={data.count} />
+              <KpiCard layout="bar" accent="teal" label={t("totalValueEgp")} value={formatAmount(data.total_base)} />
+              <KpiCard layout="bar" accent="amber" label={t("period")} value={data.period.label} caption={t("adjustingWindow")} />
             </div>
-            <FinanceAlert tone="info">
-              Adjustments are manual entries booked during the close — accruals, provisions, and reclassifications. They
-              post to the adjusting window of an otherwise closed period and are tagged for the audit trail.
-            </FinanceAlert>
+            <FinanceAlert tone="info">{t("adjustmentsNote")}</FinanceAlert>
             <FinanceTable
-              caption="Adjusting entries"
-              columns={columns(data.total_base)}
+              caption={t("adjustingEntries")}
+              columns={columns(data.total_base, t, formatDate)}
               rows={data.items}
               getRowId={(row) => row.number}
               onRowClick={(row) => router.push(`/finance/journals/${row.number}`)}
-              empty={<p className="text-content-tertiary py-8 text-center text-sm">No adjusting entries yet.</p>}
+              empty={<p className="text-content-tertiary py-8 text-center text-sm">{t("noAdjustments")}</p>}
             />
           </>
         )}

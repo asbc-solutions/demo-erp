@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { ArrowRight, Copy, Sparkles } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -14,11 +15,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/shared/components/ui/table"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import { KeyValueList } from "../../../components/shared/key-value-list"
 import { StatusPill } from "../../../components/shared/status-pill"
-import { formatTime } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import type { AssistantAnswer } from "../../lib/types/assistant"
 
 function AnswerTable({ table }: { table: NonNullable<AssistantAnswer["table"]> }) {
@@ -28,7 +30,7 @@ function AnswerTable({ table }: { table: NonNullable<AssistantAnswer["table"]> }
         <TableHeader className="bg-surface-white">
           <TableRow className="hover:bg-transparent">
             {table.columns.map((column) => (
-              <TableHead key={column.id} className={cn(column.align === "end" && "text-right")}>
+              <TableHead key={column.id} className={cn(column.align === "end" && "text-end")}>
                 {column.label}
               </TableHead>
             ))}
@@ -42,7 +44,7 @@ function AnswerTable({ table }: { table: NonNullable<AssistantAnswer["table"]> }
                 return (
                   <TableCell
                     key={column.id}
-                    className={cn("text-content-primary", column.align === "end" && "text-right tabular-nums")}
+                    className={cn("text-content-primary", column.align === "end" && "text-end tabular-nums")}
                   >
                     {column.id === "href" ? (
                       <Link
@@ -69,16 +71,17 @@ function AnswerTable({ table }: { table: NonNullable<AssistantAnswer["table"]> }
 }
 
 function ProposalCard({ proposal }: { proposal: NonNullable<AssistantAnswer["proposal"]> }) {
+  const t = useTranslations("FinanceAssistant")
   const [dismissed, setDismissed] = React.useState(false)
   return (
     <section
-      aria-label="Proposed action"
+      aria-label={t("proposedAction")}
       className="border-brand-primary/40 bg-brand-primary/5 flex flex-col gap-3 rounded-xl border p-4"
     >
       <div className="flex flex-wrap items-center gap-2">
         <Sparkles aria-hidden className="text-brand-primary size-4" />
         <span className="text-content-primary text-sm leading-5 font-medium">
-          Proposed action — review required
+          {t("proposedActionReview")}
         </span>
         <StatusPill status="opened_in_screen" label={proposal.badge} />
       </div>
@@ -92,7 +95,7 @@ function ProposalCard({ proposal }: { proposal: NonNullable<AssistantAnswer["pro
             <Link href={proposal.action.href}>{proposal.action.label}</Link>
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setDismissed(true)}>
-            Dismiss
+            {t("dismiss")}
           </Button>
         </div>
       )}
@@ -117,33 +120,40 @@ function answerAsText(answer: AssistantAnswer): string {
  * the source screens and — never applied by the assistant — a proposed action.
  */
 function AssistantAnswerView({ answer }: { answer: AssistantAnswer }) {
+  const t = useTranslations("FinanceAssistant")
+  const { formatTime } = useFinanceDateFormat()
+  const locale = useIntlLocale()
   const [panel, setPanel] = React.useState<"why" | "sources" | null>(null)
   const panelId = React.useId()
+  const sourceList = new Intl.ListFormat(locale, { type: "conjunction" }).format(
+    answer.grounding.map((source) => source.label),
+  )
+  const notReadList = new Intl.ListFormat(locale, { type: "disjunction" }).format(answer.not_read)
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(answerAsText(answer))
-      toast.success("Answer copied.")
+      toast.success(t("answerCopied"))
     } catch {
-      toast.error("The answer could not be copied. Select the text and copy it instead.")
+      toast.error(t("answerCopyFailed"))
     }
   }
 
   return (
     <article
-      aria-label="Assistant answer"
+      aria-label={t("assistantAnswer")}
       data-slot="assistant-answer"
-      className="border-brand-primary flex flex-col gap-3 border-l-2 pl-4"
+      className="border-brand-primary flex flex-col gap-3 border-s-2 ps-4"
     >
       <div className="text-content-tertiary flex items-center gap-1.5 text-[13px] leading-5">
         <Sparkles aria-hidden className="size-3.5" />
-        Assistant · {formatTime(answer.answered_at)}
+        {t("assistantAt", { time: formatTime(answer.answered_at) })}
       </div>
       <p className="text-content-primary text-base leading-6 font-semibold">{answer.headline}</p>
       {answer.matches ? (
-        <StatusPill status="matched" label={`Matches ${answer.matches}`} className="w-fit" />
+        <StatusPill status="matched" label={t("matches", { screen: answer.matches })} className="w-fit" />
       ) : answer.limited ? (
-        <StatusPill status="expired" label="Limited access" className="w-fit" />
+        <StatusPill status="expired" label={t("limitedAccess")} className="w-fit" />
       ) : null}
 
       {answer.table ? <AnswerTable table={answer.table} /> : null}
@@ -154,7 +164,7 @@ function AssistantAnswerView({ answer }: { answer: AssistantAnswer }) {
             <Button key={link.href + link.label} variant="secondary" size="sm" asChild>
               <Link href={link.href}>
                 {link.label}
-                <ArrowRight aria-hidden />
+                <ArrowRight aria-hidden className="rtl:rotate-180" />
               </Link>
             </Button>
           ))}
@@ -171,7 +181,7 @@ function AssistantAnswerView({ answer }: { answer: AssistantAnswer }) {
           aria-controls={panelId}
           onClick={() => setPanel((current) => (current === "why" ? null : "why"))}
         >
-          Why this answer?
+          {t("whyThisAnswer")}
         </Button>
         <Button
           variant="ghost"
@@ -180,11 +190,11 @@ function AssistantAnswerView({ answer }: { answer: AssistantAnswer }) {
           aria-controls={panelId}
           onClick={() => setPanel((current) => (current === "sources" ? null : "sources"))}
         >
-          Sources ({answer.sources})
+          {t("sourcesCount", { count: answer.sources })}
         </Button>
         <Button variant="ghost" size="sm" onClick={copy}>
           <Copy aria-hidden />
-          Copy
+          {t("copy")}
         </Button>
       </div>
 
@@ -196,18 +206,16 @@ function AssistantAnswerView({ answer }: { answer: AssistantAnswer }) {
           {panel === "why" ? (
             answer.grounding.length > 0 ? (
               <p>
-                Every figure above was read from{" "}
-                {answer.grounding.map((source) => source.label).join(", ")}
                 {answer.not_read.length > 0
-                  ? `. It did not read ${answer.not_read.join(" or ")}.`
-                  : "."}
+                  ? t("whyReadNotRead", { sources: sourceList, notRead: notReadList })
+                  : t("whyRead", { sources: sourceList })}
               </p>
             ) : (
-              <p>No finance screen could answer this, so nothing was read.</p>
+              <p>{t("whyNothingRead")}</p>
             )
           ) : (
             <ul className="flex flex-col gap-1">
-              {answer.grounding.length === 0 ? <li>No sources were read.</li> : null}
+              {answer.grounding.length === 0 ? <li>{t("noSourcesRead")}</li> : null}
               {answer.grounding.map((source) => (
                 <li key={source.label} className="flex justify-between gap-4">
                   <span>{source.label}</span>

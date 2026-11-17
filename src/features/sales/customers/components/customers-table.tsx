@@ -1,4 +1,5 @@
 import { Building2, UserRound } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import {
   Table,
@@ -28,18 +29,22 @@ export function CustomersTable({
   onBlock: (customer: CustomerListItem) => void
   onUnblock: (customer: CustomerListItem) => void
 }>) {
+  const t = useTranslations("SalesCustomers")
+  const tShared = useTranslations("SalesShared")
+  const tCommon = useTranslations("Common")
+
   return (
     <div className="overflow-hidden rounded-2xl border border-stroke-default bg-surface-white shadow-sm">
       <Table className="min-w-7xl table-fixed">
         <TableHeader className="bg-surface-white">
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-90 px-5">Customer Name</TableHead>
-            <TableHead className="w-35">Type</TableHead>
-            <TableHead className="w-45">Phone</TableHead>
-            <TableHead className="w-62.5">Email</TableHead>
-            <TableHead className="w-47.5">Salesperson</TableHead>
-            <TableHead className="w-30">Status</TableHead>
-            <TableHead className="w-18 px-5 text-right">Actions</TableHead>
+            <TableHead className="w-90 px-5">{t("customerName")}</TableHead>
+            <TableHead className="w-35">{tCommon("type")}</TableHead>
+            <TableHead className="w-45">{t("phone")}</TableHead>
+            <TableHead className="w-62.5">{t("email")}</TableHead>
+            <TableHead className="w-47.5">{t("salesperson")}</TableHead>
+            <TableHead className="w-30">{tCommon("status")}</TableHead>
+            <TableHead className="w-18 px-5 text-end">{tCommon("actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -67,7 +72,7 @@ export function CustomersTable({
                     ) : (
                       <UserRound className="size-4" strokeWidth={1.75} aria-hidden />
                     )}
-                    {customer.customer_type_label}
+                    {tShared(`customerType.${customer.customer_type}`)}
                   </span>
                 </TableCell>
                 <TableCell className="py-3">{customer.phone}</TableCell>
@@ -76,10 +81,10 @@ export function CustomersTable({
                   {customer.assigned_salesperson_name}
                 </TableCell>
                 <TableCell className="py-3">
-                  <CustomerStatusBadge status={customer.status} label={customer.status_label} />
+                  <CustomerStatusBadge status={customer.status} />
                 </TableCell>
                 <TableCell
-                  className="px-5 py-3 text-right"
+                  className="px-5 py-3 text-end"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <CustomerActions
@@ -96,7 +101,7 @@ export function CustomersTable({
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="h-32 text-center text-content-tertiary">
-                No customers match the current filters.
+                {t("noMatches")}
               </TableCell>
             </TableRow>
           )}

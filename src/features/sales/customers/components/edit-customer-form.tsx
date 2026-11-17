@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMemo } from "react"
 import { Check, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { FormProvider, useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -14,7 +15,7 @@ import {
   DialogTitle,
 } from "@/src/shared/components/ui/dialog"
 
-import { toastMutationError } from "../../components/shared/sales-error-state"
+import { useToastMutationError } from "../../components/shared/sales-error-state"
 import { useUpdateCustomer } from "../../lib/mutations/customers"
 import { useActiveSalespeople } from "../../lib/queries/salespeople"
 import { withCurrentSalesperson } from "../../lib/utils/salespeople"
@@ -22,6 +23,7 @@ import { useCustomerDirectory } from "../../lib/queries/customers"
 import {
   buildBillingAddress,
   customerFormSchema,
+  type CustomerFormErrorKey,
   type CustomerFormValues,
 } from "../../lib/schema/customer"
 import type { Customer, UpdateCustomerPayload } from "../../lib/types"
@@ -46,6 +48,9 @@ export function EditCustomerForm({
   customer,
   onOpenChange,
 }: Readonly<{ customer: Customer; onOpenChange: (open: boolean) => void }>) {
+  const t = useTranslations("SalesCustomers")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const { data: salespeople = [] } = useActiveSalespeople()
   const updateCustomer = useUpdateCustomer()
   const salespersonOptions = useMemo(
@@ -75,7 +80,7 @@ export function EditCustomerForm({
           entry.email.trim().toLocaleLowerCase() === normalizedEmail
       )
     ) {
-      form.setError("email", { message: "This email address is already in use." }, { shouldFocus: true })
+      form.setError("email", { message: "emailInUse" satisfies CustomerFormErrorKey }, { shouldFocus: true })
       return
     }
 
@@ -93,10 +98,10 @@ export function EditCustomerForm({
       { id: customer.id, payload },
       {
         onSuccess: () => {
-          toast.success("Customer updated.")
+          toast.success(t("updatedToast"))
           onOpenChange(false)
         },
-        onError: (err) => toastMutationError(err, "Failed to update customer"),
+        onError: (err) => toastMutationError(err, t("updateFailed")),
       }
     )
   }
@@ -105,14 +110,14 @@ export function EditCustomerForm({
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <DialogHeader>
-          <DialogTitle>Edit Customer — {customer.name}</DialogTitle>
+          <DialogTitle>{t("editTitle", { name: customer.name })}</DialogTitle>
         </DialogHeader>
         <DialogBody className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <CustomerFormFields salespeople={salespersonOptions} />
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             type="submit"
@@ -124,7 +129,7 @@ export function EditCustomerForm({
             ) : (
               <Check aria-hidden />
             )}
-            Save Changes
+            {tCommon("saveChanges")}
           </Button>
         </DialogFooter>
       </form>

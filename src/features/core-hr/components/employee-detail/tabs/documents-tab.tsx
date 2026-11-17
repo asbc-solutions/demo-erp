@@ -1,6 +1,7 @@
 "use client"
 
 import { Clock, FileText, ShieldCheck, XCircle } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 
@@ -14,6 +15,7 @@ type DocumentsTabProps = Readonly<{
 }>
 
 function DocumentStatusBadge({ status }: Readonly<{ status: DocumentStatus }>) {
+  const t = useTranslations("HrEmployeeDetail")
   if (status === "VERIFIED") {
     return (
       <Badge
@@ -21,7 +23,7 @@ function DocumentStatusBadge({ status }: Readonly<{ status: DocumentStatus }>) {
         className="border-brand-success/30 bg-brand-success/10 text-brand-success rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
       >
         <ShieldCheck className="size-3" />
-        Verified
+        {t("docVerified")}
       </Badge>
     )
   }
@@ -32,7 +34,7 @@ function DocumentStatusBadge({ status }: Readonly<{ status: DocumentStatus }>) {
         className="border-brand-warning/30 bg-brand-warning/10 text-brand-warning rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
       >
         <Clock className="size-3" />
-        Pending
+        {t("docPending")}
       </Badge>
     )
   }
@@ -42,24 +44,25 @@ function DocumentStatusBadge({ status }: Readonly<{ status: DocumentStatus }>) {
       className="border-brand-danger/30 bg-brand-danger/10 text-brand-danger rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
     >
       <XCircle className="size-3" />
-      Rejected
+      {t("docRejected")}
     </Badge>
   )
 }
 
 export function DocumentsTab({ employeeId }: DocumentsTabProps) {
+  const t = useTranslations("HrEmployeeDetail")
   const { data: documents = [], isLoading } = useEmployeeDocuments(employeeId)
 
   return (
     <SectionCard
-      title="Documents"
-      description="Uploaded documents and verification status"
+      title={t("documentsTitle")}
+      description={t("documentsDescription")}
       bodyClassName="px-6 pb-6 pt-1 flex flex-col gap-3"
     >
       {isLoading && <HrSectionSpinner />}
       {!isLoading && documents.length === 0 && (
         <p className="text-content-tertiary py-8 text-center text-sm">
-          No documents uploaded yet.
+          {t("documentsEmpty")}
         </p>
       )}
       {documents.map((doc) => (
@@ -79,7 +82,8 @@ export function DocumentsTab({ employeeId }: DocumentsTabProps) {
             </span>
             <span className="text-content-tertiary text-xs leading-4">
               {doc.document_type_label}
-              {doc.expiry_date && ` · Expires ${doc.expiry_date}`}
+              {doc.expiry_date &&
+                ` · ${t("expiresOn", { date: doc.expiry_date })}`}
             </span>
           </div>
           <DocumentStatusBadge status={doc.status_label} />

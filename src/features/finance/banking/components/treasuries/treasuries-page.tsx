@@ -1,7 +1,8 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { CircleAlert, Landmark, Vault } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { KpiCard } from "@/src/shared/components/ui/kpi-card"
@@ -16,11 +17,13 @@ import {
 } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
 import type { FinanceTreasury } from "../../../lib/types/common"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount } from "../../../lib/utils/money"
 import { useBankingOverview } from "../../lib/queries/banking"
 
 function TreasuryCard({ treasury }: { treasury: FinanceTreasury }) {
+  const t = useTranslations("FinanceBanking")
+  const { formatDate } = useFinanceDateFormat()
   const Icon = treasury.kind === "bank" ? Landmark : Vault
   return (
     <Link
@@ -34,7 +37,10 @@ function TreasuryCard({ treasury }: { treasury: FinanceTreasury }) {
       <span className="flex items-center gap-2">
         <StatusPill status="prepared" label={treasury.currency} />
         {treasury.account_last4 ? (
-          <span className="text-content-secondary font-mono text-xs" aria-label={`Account ending ${treasury.account_last4}`}>
+          <span
+            className="text-content-secondary font-mono text-xs"
+            aria-label={t("accountEnding", { last4: treasury.account_last4 })}
+          >
             •••• {treasury.account_last4}
           </span>
         ) : null}
@@ -54,15 +60,17 @@ function TreasuryCard({ treasury }: { treasury: FinanceTreasury }) {
       />
       <span className="border-stroke-light mt-auto flex items-center justify-between gap-3 border-t pt-3 text-xs leading-4">
         <span className="text-content-tertiary">
-          {treasury.last_reconciled ? `Reconciled ${formatDate(treasury.last_reconciled)}` : "Never reconciled"}
+          {treasury.last_reconciled
+            ? t("reconciledOn", { date: formatDate(treasury.last_reconciled) })
+            : t("neverReconciled")}
         </span>
         {treasury.unmatched_lines > 0 ? (
           <span className="text-status-danger-fg flex items-center gap-1">
             <CircleAlert className="size-3.5" aria-hidden />
-            {treasury.unmatched_lines} unmatched
+            {t("unmatchedCount", { count: treasury.unmatched_lines })}
           </span>
         ) : (
-          <StatusPill status="reconciled" label="Clean" />
+          <StatusPill status="reconciled" label={t("clean")} />
         )}
       </span>
     </Link>
@@ -71,16 +79,17 @@ function TreasuryCard({ treasury }: { treasury: FinanceTreasury }) {
 
 /** 04.01 · Treasuries & banks — every cash account, its balance and whether it is reconciled. */
 function TreasuriesPage() {
+  const t = useTranslations("FinanceBanking")
   const { data, isError, refetch } = useBankingOverview()
 
   return (
     <>
       <FinancePageHeader
-        title="Treasuries & banks"
-        figure={data ? <HeaderFigure label="Cash on hand (EGP)">{formatAmount(data.total_base)}</HeaderFigure> : null}
+        title={t("treasuriesTitle")}
+        figure={data ? <HeaderFigure label={t("cashOnHandEgp")}>{formatAmount(data.total_base)}</HeaderFigure> : null}
         actions={
           <Button variant="primary" asChild>
-            <Link href="/finance/transfers">New transfer</Link>
+            <Link href="/finance/transfers">{t("newTransfer")}</Link>
           </Button>
         }
       />
@@ -88,7 +97,7 @@ function TreasuriesPage() {
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : !data ? (
-          <div aria-busy aria-label="Loading treasuries" className="flex flex-col gap-6">
+          <div aria-busy aria-label={t("loadingTreasuries")} className="flex flex-col gap-6">
             <FinanceTilesSkeleton />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }, (_, index) => (
@@ -102,21 +111,21 @@ function TreasuriesPage() {
               <KpiCard
                 layout="bar"
                 accent="indigo"
-                label="Accounts"
+                label={t("accounts")}
                 value={data.accounts}
-                caption={`${data.banks} bank · ${data.tills} cash`}
+                caption={t("bankCashSplit", { banks: data.banks, tills: data.tills })}
               />
               <KpiCard
                 layout="bar"
                 accent="teal"
-                label="Unmatched bank lines"
+                label={t("unmatchedBankLines")}
                 value={data.unmatched_lines}
-                caption={data.unmatched_lines > 0 ? "Awaiting reconciliation" : "All matched"}
+                caption={data.unmatched_lines > 0 ? t("awaitingReconciliation") : t("allMatched")}
               />
               <KpiCard
                 layout="bar"
                 accent="amber"
-                label="Currencies"
+                label={t("currencies")}
                 value={data.currencies.length}
                 caption={data.currencies.join(" · ")}
               />

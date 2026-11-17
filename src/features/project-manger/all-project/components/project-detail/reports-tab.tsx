@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { Card } from "@/src/shared/components/ui/card"
 import { Progress } from "@/src/shared/components/ui/progress"
 import {
@@ -18,6 +20,9 @@ import {
 import { useProjects } from "../../../lib/queries/projects"
 
 export function ReportsTab() {
+  const t = useTranslations("ProjectsProjectDetail")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
   // Portfolio-wide analytics — derived from the full projects list.
   const { data, isLoading, isError } = useProjects()
   const projects = data?.data ?? []
@@ -28,11 +33,9 @@ export function ReportsTab() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-content-primary text-xl leading-7 font-bold tracking-tight">
-          Reports &amp; Analytics
+          {t("reportsTitle")}
         </h2>
-        <p className="text-content-tertiary text-sm">
-          Portfolio-wide delivery insights across all projects
-        </p>
+        <p className="text-content-tertiary text-sm">{t("reportsSubtitle")}</p>
       </div>
 
       {isLoading ? (
@@ -47,12 +50,12 @@ export function ReportsTab() {
       ) : isError ? (
         <Card className="flex h-48 items-center justify-center p-6">
           <p className="text-content-tertiary text-sm">
-            Couldn&apos;t load portfolio analytics.
+            {t("reportsLoadFailed")}
           </p>
         </Card>
       ) : projects.length === 0 ? (
         <Card className="flex h-48 items-center justify-center p-6">
-          <p className="text-content-tertiary text-sm">No projects yet.</p>
+          <p className="text-content-tertiary text-sm">{tShared("noProjectsTitle")}</p>
         </Card>
       ) : (
         <>
@@ -60,7 +63,7 @@ export function ReportsTab() {
             {kpis.map((kpi) => (
               <Card key={kpi.id} className="gap-1 p-4">
                 <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-                  {kpi.label}
+                  {t(`reportKpi.${kpi.id}`)}
                 </span>
                 <span className="text-content-primary text-2xl leading-7 font-bold">
                   {kpi.value}
@@ -72,25 +75,25 @@ export function ReportsTab() {
           <Card className="gap-3 p-5">
             <div className="flex flex-col gap-0.5">
               <h3 className="text-content-primary text-sm font-semibold">
-                Portfolio by Type
+                {t("portfolioByType")}
               </h3>
               <p className="text-content-tertiary text-xs">
-                Project count and share of the portfolio
+                {t("portfolioByTypeSubtitle")}
               </p>
             </div>
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead>Type</TableHead>
-                  <TableHead>Projects</TableHead>
-                  <TableHead>Share</TableHead>
+                  <TableHead>{tCommon("type")}</TableHead>
+                  <TableHead>{t("colProjects")}</TableHead>
+                  <TableHead>{t("colShare")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {byType.map((row) => (
                   <TableRow key={row.type}>
                     <TableCell className="text-content-primary text-[13px] font-medium">
-                      {row.type}
+                      {tShared(`projectType.${row.type}`)}
                     </TableCell>
                     <TableCell className="text-content-secondary text-[13px]">
                       {row.projects}

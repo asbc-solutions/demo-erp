@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { Link } from "@/src/i18n/navigation"
 import { toast } from "sonner"
 
 import {
@@ -33,7 +34,7 @@ import { FinanceSection } from "../../../components/shared/finance-section"
 import { FinanceTable, type FinanceColumn } from "../../../components/shared/finance-table"
 import { FinancePageBody, FinancePageHeader } from "../../../components/shared/page-header"
 import { useFinanceContacts, useFinanceTreasuries } from "../../../lib/queries/master-data"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount, round2 } from "../../../lib/utils/money"
 import { usePostReceipt, useUnallocateReceipt } from "../../lib/mutations/receivables"
 import { useOpenInvoices } from "../../lib/queries/receivables"
@@ -54,6 +55,9 @@ function parseAmount(value: string): number {
  * clears the invoices; anything left over stays on account as unallocated.
  */
 function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: string }) {
+  const t = useTranslations("FinanceMoneyIn")
+  const tCommon = useTranslations("Common")
+  const { formatDate } = useFinanceDateFormat()
   const { data: customers = [] } = useFinanceContacts("customer")
   const { data: treasuries = [] } = useFinanceTreasuries()
   const [customerId, setCustomerId] = React.useState(initialCustomerId ?? "C-0101")
@@ -80,11 +84,11 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
 
   const error =
     receipt <= 0
-      ? "Enter the receipt amount. The amount must be greater than zero. Type how much was received before posting."
+      ? t("errorReceiptAmount")
       : allocated > receipt
-        ? `The allocations total ${formatAmount(allocated)}, more than the receipt of ${formatAmount(receipt)}. Reduce an allocation or raise the receipt amount.`
+        ? t("errorOverAllocated", { allocated: formatAmount(allocated), receipt: formatAmount(receipt) })
         : overLine
-          ? `${overLine.number} only has ${formatAmount(overLine.outstanding)} outstanding. Allocate no more than that, then post.`
+          ? t("errorLineOver", { number: overLine.number, outstanding: formatAmount(overLine.outstanding) })
           : null
 
   const changeCustomer = (id: string) => {
@@ -125,42 +129,46 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
           setShowErrors(false)
           toast.success(
             posted.unapplied > 0
-              ? `${posted.number} posted. ${formatAmount(posted.unapplied)} ${posted.currency} stays on account.`
-              : `${posted.number} posted and fully applied.`,
+              ? t("postedOnAccount", {
+                  number: posted.number,
+                  amount: formatAmount(posted.unapplied),
+                  currency: posted.currency,
+                })
+              : t("postedFullyApplied", { number: posted.number }),
           )
         },
-        onError: () => toast.error("The receipt could not be posted. Try again."),
+        onError: () => toast.error(t("postFailed")),
       },
     )
   }
 
   const columns: FinanceColumn<SubledgerDocument>[] = [
-    { id: "invoice", header: "Invoice", cell: (row) => <DocNumber>{row.number}</DocNumber> },
+    { id: "invoice", header: t("colInvoice"), cell: (row) => <DocNumber>{row.number}</DocNumber> },
     {
       id: "due",
-      header: "Due",
+      header: t("colDue"),
       cell: (row) => (row.due_date ? <DueCell date={formatDate(row.due_date)} daysLate={row.days_late} /> : "—"),
     },
     {
       id: "outstanding",
-      header: `Outstanding (${currency})`,
+      header: t("colOutstandingIn", { currency }),
       align: "end",
       cell: (row) => <Amount value={row.outstanding} />,
     },
     {
       id: "allocate",
-      header: `Allocate (${currency})`,
+      header: t("colAllocateIn", { currency }),
       align: "end",
       width: "w-44",
       cell: (row) => (
         <Input
-          aria-label={`Allocate to ${row.number}`}
+          aria-label={t("allocateTo", { number: row.number })}
           inputMode="decimal"
           placeholder="0.00"
           value={allocations[row.id] ?? ""}
           aria-invalid={parseAmount(allocations[row.id] ?? "") > row.outstanding}
           onChange={(event) => setAllocations((current) => ({ ...current, [row.id]: event.target.value }))}
-          className="ml-auto h-8 w-36 text-right tabular-nums"
+          className="ms-auto h-8 w-36 text-end tabular-nums"
         />
       ),
     },
@@ -169,20 +177,20 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
   return (
     <>
       <FinancePageHeader
-        title="Receipt allocation"
+        title={t("allocationTitle")}
         actions={
           <Button variant="primary" disabled={postReceipt.isPending} onClick={post}>
-            Post receipt
+            {t("postReceipt")}
           </Button>
         }
       />
       <FinancePageBody>
         <div className="flex flex-wrap items-end gap-4">
           <Field className="w-64">
-            <FieldLabel htmlFor="allocation-customer">Customer</FieldLabel>
+            <FieldLabel htmlFor="allocation-customer">{t("colCustomer")}</FieldLabel>
             <Select value={customerId} onValueChange={changeCustomer}>
               <SelectTrigger id="allocation-customer" className="h-9">
-                <SelectValue placeholder="Choose a customer" />
+                <SelectValue placeholder={t("chooseCustomer")} />
               </SelectTrigger>
               <SelectContent>
                 {customers.map((row) => (
@@ -194,7 +202,7 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
             </Select>
           </Field>
           <Field className="w-72">
-            <FieldLabel htmlFor="allocation-treasury">Into treasury</FieldLabel>
+            <FieldLabel htmlFor="allocation-treasury">{t("intoTreasury")}</FieldLabel>
             <Select value={treasuryId} onValueChange={setTreasuryId}>
               <SelectTrigger id="allocation-treasury" className="h-9">
                 <SelectValue />
@@ -209,7 +217,7 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
             </Select>
           </Field>
           <Field className="w-56">
-            <FieldLabel htmlFor="allocation-amount">Receipt amount ({currency})</FieldLabel>
+            <FieldLabel htmlFor="allocation-amount">{t("receiptAmountIn", { currency })}</FieldLabel>
             <Input
               id="allocation-amount"
               inputMode="decimal"
@@ -217,7 +225,7 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
               value={amountText}
               aria-invalid={showErrors && receipt <= 0}
               onChange={(event) => setAmountText(event.target.value)}
-              className="h-9 text-right tabular-nums"
+              className="h-9 text-end tabular-nums"
             />
           </Field>
         </div>
@@ -229,39 +237,43 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
             tone="success"
             action={
               <Button variant="secondary" size="sm" asChild>
-                <Link href={`/finance/ar/${lastPosted.contact_id}`}>Open customer</Link>
+                <Link href={`/finance/ar/${lastPosted.contact_id}`}>{t("openCustomer")}</Link>
               </Button>
             }
           >
-            {lastPosted.number} posted into {lastPosted.treasury_name}.{" "}
             {lastPosted.unapplied > 0
-              ? `${formatAmount(lastPosted.unapplied)} ${lastPosted.currency} is unapplied and stays on account.`
-              : "It is fully applied."}
+              ? t("postedIntoUnapplied", {
+                  number: lastPosted.number,
+                  treasury: lastPosted.treasury_name,
+                  amount: formatAmount(lastPosted.unapplied),
+                  currency: lastPosted.currency,
+                })
+              : t("postedIntoApplied", { number: lastPosted.number, treasury: lastPosted.treasury_name })}
           </FinanceAlert>
         ) : null}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-          <KpiCard layout="bar" accent="indigo" label={`Receipt (${currency})`} value={formatAmount(receipt)} />
-          <KpiCard layout="bar" accent="teal" label={`Allocated (${currency})`} value={formatAmount(allocated)} />
+          <KpiCard layout="bar" accent="indigo" label={t("receiptIn", { currency })} value={formatAmount(receipt)} />
+          <KpiCard layout="bar" accent="teal" label={t("allocatedIn", { currency })} value={formatAmount(allocated)} />
           <KpiCard
             layout="bar"
             accent="amber"
-            label={`Unapplied (${currency})`}
+            label={t("unappliedIn", { currency })}
             value={formatAmount(unapplied)}
             caption={
               receipt <= 0
-                ? "Enter a receipt"
+                ? t("enterReceipt")
                 : unapplied === 0
-                  ? "Fully applied"
+                  ? t("fullyApplied")
                   : unapplied > 0
-                    ? "Stays on account"
-                    : "Over-allocated"
+                    ? t("staysOnAccount")
+                    : t("overAllocated")
             }
           />
         </div>
 
         <FinanceSection
-          title="Open invoices"
+          title={t("openInvoices")}
           action={
             <div className="flex items-center gap-2">
               <Button
@@ -270,24 +282,22 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
                 disabled={!lastPosted || unallocate.isPending}
                 onClick={() => setConfirmUndo(true)}
               >
-                Unallocate
+                {t("unallocate")}
               </Button>
               <Button variant="secondary" size="sm" disabled={receipt <= 0} onClick={autoApply}>
-                Auto-apply oldest first
+                {t("autoApply")}
               </Button>
             </div>
           }
         >
           <FinanceTable
-            caption={`Open invoices for ${customer?.name ?? "the customer"}`}
+            caption={t("openInvoicesFor", { name: customer?.name ?? t("theCustomer") })}
             columns={columns}
             rows={invoices}
             loading={invoicesLoading}
             getRowId={(row) => row.id}
             empty={
-              <p className="text-content-tertiary py-8 text-center text-sm">
-                This customer has no open invoices. A receipt posted now stays on account.
-              </p>
+              <p className="text-content-tertiary py-8 text-center text-sm">{t("noOpenInvoices")}</p>
             }
           />
         </FinanceSection>
@@ -296,27 +306,24 @@ function ReceiptAllocationPage({ initialCustomerId }: { initialCustomerId?: stri
       <AlertDialog open={confirmUndo} onOpenChange={setConfirmUndo}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Undo this allocation?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The receipt returns to the unallocated pool and the invoices go back to their previous
-              outstanding amounts. No cash moves. The change is recorded against both documents.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("undoTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("undoDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (!lastPosted) return
                 unallocate.mutate(lastPosted.id, {
                   onSuccess: () => {
-                    toast.success(`${lastPosted.number} is unallocated and back in the pool.`)
+                    toast.success(t("unallocated", { number: lastPosted.number }))
                     setLastPosted(null)
                   },
-                  onError: () => toast.error("The allocation could not be undone. Try again."),
+                  onError: () => toast.error(t("undoFailed")),
                 })
               }}
             >
-              Unallocate
+              {t("unallocate")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

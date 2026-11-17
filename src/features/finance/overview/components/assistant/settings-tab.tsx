@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Card } from "@/src/shared/components/ui/card"
@@ -51,22 +52,23 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
 
 /** Settings — what the assistant may read and how long it keeps things. Admin only. */
 function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) {
+  const t = useTranslations("FinanceAssistant")
   const update = useUpdateAssistantSettings()
   const [name, setName] = React.useState<string | null>(null)
   const nameId = React.useId()
 
-  if (!settings) return <Skeleton aria-busy aria-label="Loading settings" className="h-96 rounded-xl" />
+  if (!settings) return <Skeleton aria-busy aria-label={t("loadingSettings")} className="h-96 rounded-xl" />
 
   const save = (payload: AssistantSettingsPayload, message: string) =>
     update.mutate(payload, {
-      onSuccess: () => toast.success(`${message} The change is in the audit log.`),
-      onError: () => toast.error("The setting could not be saved. Try again."),
+      onSuccess: () => toast.success(t("settingSaved", { message })),
+      onError: () => toast.error(t("settingSaveFailed")),
     })
 
   const toggleGroup = (id: string, checked: boolean) =>
     save(
       { data_groups: { ...settings.data_groups, [id]: checked } },
-      checked ? "The assistant can read this group again." : "The assistant can no longer read this group.",
+      checked ? t("groupReadableAgain") : t("groupNoLongerReadable"),
     )
 
   const groups = settings.groups
@@ -75,26 +77,21 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <p className="text-content-secondary text-sm leading-5">
-          What the assistant may read, how long conversations are kept, and the things it will never
-          do. Every change here is written to the audit log with before and after.
-        </p>
-        <p className="text-content-tertiary text-[13px] leading-5">
-          Admin only · scope is derived from the Role &amp; Authority Matrix at request time, not set here
-        </p>
+        <p className="text-content-secondary text-sm leading-5">{t("settingsIntro")}</p>
+        <p className="text-content-tertiary text-[13px] leading-5">{t("settingsAdminOnly")}</p>
       </div>
 
       <FinanceAlert tone="info">
-        <strong className="text-content-primary font-semibold">Read only by design.</strong> The
-        assistant proposes; people act. Turning a data group off below hides it from the assistant
-        entirely — questions that need it return a limited-access answer.
+        {t.rich("readOnlyByDesign", {
+          strong: (chunks) => <strong className="text-content-primary font-semibold">{chunks}</strong>,
+        })}
       </FinanceAlert>
 
-      <SettingsCard title="Assistant">
+      <SettingsCard title={t("title")}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="flex flex-col gap-1">
             <Label htmlFor={nameId} className="text-content-secondary text-[13px] font-normal">
-              Name shown to users
+              {t("nameShownToUsers")}
             </Label>
             <Input
               id={nameId}
@@ -104,18 +101,18 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
               onBlur={() => {
                 const next = (name ?? "").trim()
                 if (name !== null && next && next !== settings.name) {
-                  save({ name: next }, "The assistant's name was updated.")
+                  save({ name: next }, t("nameUpdated"))
                 }
                 setName(null)
               }}
             />
           </div>
-          <ReadOnlyField label="Model (read only)" value={settings.model} />
-          <ReadOnlyField label="Status" value={settings.status} />
+          <ReadOnlyField label={t("modelReadOnly")} value={settings.model} />
+          <ReadOnlyField label={t("colStatus")} value={settings.status} />
         </div>
       </SettingsCard>
 
-      <SettingsCard title="Data groups the assistant may read">
+      <SettingsCard title={t("dataGroupsMayRead")}>
         <div className="grid grid-cols-1 gap-x-8 gap-y-3 md:grid-cols-2">
           {groups.map((group) => {
             const id = `assistant-group-${group.id}`
@@ -131,12 +128,12 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
                   <Label htmlFor={id} className="text-content-primary text-sm font-normal">
                     {group.label}
                     {!group.available ? (
-                      <span className="text-content-tertiary"> — Module not in this prototype</span>
+                      <span className="text-content-tertiary"> — {t("moduleNotInPrototype")}</span>
                     ) : null}
                   </Label>
                 </div>
                 {group.id === cash?.id ? (
-                  <div className="flex items-start gap-2.5 pl-7">
+                  <div className="flex items-start gap-2.5 ps-7">
                     <Checkbox
                       id="assistant-bank-balances"
                       checked={settings.bank_balances_admin_only}
@@ -144,7 +141,7 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
                       onCheckedChange={(checked) =>
                         save(
                           { bank_balances_admin_only: checked === true },
-                          "Bank and treasury balance visibility was updated.",
+                          t("bankVisibilityUpdated"),
                         )
                       }
                     />
@@ -152,8 +149,7 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
                       htmlFor="assistant-bank-balances"
                       className="text-content-secondary text-[13px] leading-5 font-normal"
                     >
-                      Bank and treasury balances (under Cash &amp; banking) — off for every role except
-                      Finance · Admin
+                      {t("bankBalancesAdminOnly")}
                     </Label>
                   </div>
                 ) : null}
@@ -163,16 +159,16 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
         </div>
       </SettingsCard>
 
-      <SettingsCard title="Retention">
+      <SettingsCard title={t("retention")}>
         <div className="flex flex-wrap items-end gap-8">
           <div className="flex flex-col gap-1">
             <Label htmlFor="assistant-retention" className="text-content-secondary text-[13px] font-normal">
-              Conversation retention
+              {t("conversationRetention")}
             </Label>
             <Select
               value={String(settings.retention_days)}
               onValueChange={(value) =>
-                save({ retention_days: Number(value) }, `Conversations are now kept for ${value} days.`)
+                save({ retention_days: Number(value) }, t("retentionUpdated", { days: Number(value) }))
               }
             >
               <SelectTrigger id="assistant-retention" className="h-9 w-40">
@@ -181,7 +177,7 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
               <SelectContent>
                 {RETENTION_OPTIONS.map((days) => (
                   <SelectItem key={days} value={String(days)}>
-                    {days} days
+                    {t("daysCount", { count: days })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -190,17 +186,17 @@ function SettingsTab({ settings }: { settings: AssistantSettings | undefined }) 
           <div className="flex items-center gap-2.5">
             <Switch id="assistant-keep-proposals" checked disabled />
             <Label htmlFor="assistant-keep-proposals" className="text-content-secondary text-[13px] font-normal">
-              Keep proposals in Drafts — always on, cannot be disabled
+              {t("keepProposals")}
             </Label>
           </div>
         </div>
       </SettingsCard>
 
-      <SettingsCard title="What it will never do">
-        <p className="text-content-primary text-sm leading-5 font-semibold">These are not settings.</p>
-        <ul className="text-content-secondary flex list-disc flex-col gap-1 pl-5 text-sm leading-5">
+      <SettingsCard title={t("neverTitle")}>
+        <p className="text-content-primary text-sm leading-5 font-semibold">{t("notSettings")}</p>
+        <ul className="text-content-secondary flex list-disc flex-col gap-1 ps-5 text-sm leading-5">
           {ASSISTANT_NEVER.map((rule) => (
-            <li key={rule}>{rule}</li>
+            <li key={rule}>{t(rule)}</li>
           ))}
         </ul>
       </SettingsCard>

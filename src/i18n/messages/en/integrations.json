@@ -1,0 +1,29 @@
+{
+  "Integrations": {
+    "accessDeniedDescription": "Ask an admin to grant your role access to Integrations.",
+    "accessDeniedTitle": "You don't have access",
+    "available": "<n>{count}</n> available",
+    "checkDetails": "Please check the details and try again.",
+    "connected": "<n>{count}</n> connected",
+    "loadFailed": "Failed to load.",
+    "listLoadFailed": "Failed to load integrations.",
+    "needsAttention": "<n>{count}</n> needs attention",
+    "subtitle": "Sync your tools with Nucleus",
+    "title": "Connected Apps",
+    "validationFailed": "Validation failed"
+  },
+  "IntegrationsCard": {
+    "connect": "Connect",
+    "connectFailed": "Failed to connect {name}",
+    "connectedToast": "{name} connected",
+    "disconnect": "Disconnect",
+    "disconnectFailed": "Failed to disconnect {name}",
+    "disconnectedToast": "{name} disconnected",
+    "lastSynced": "Last synced {date}",
+    "neverSynced": "Never synced",
+    "syncFailed": "Failed to sync {name}",
+    "syncNeedsAttention": "{name} sync needs attention",
+    "syncNow": "Sync now",
+    "syncedToast": "{name} synced"
+  }
+}

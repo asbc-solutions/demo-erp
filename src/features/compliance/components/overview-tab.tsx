@@ -1,6 +1,7 @@
 "use client"
 
 import { ShieldAlert } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Card } from "@/src/shared/components/ui/card"
@@ -12,13 +13,6 @@ import type { AlertSeverity, ComplianceScoreStatus } from "../lib/types/overview
 import { ComplianceErrorState } from "./shared/compliance-error-state"
 import { CompliancePageSpinner } from "./shared/compliance-loading"
 
-const SCORE_STATUS_LABEL: Record<ComplianceScoreStatus, string> = {
-  strong: "Strong",
-  adequate: "Adequate",
-  at_risk: "At Risk",
-  critical: "Critical",
-  not_assessed: "Not Assessed",
-}
 
 const SCORE_STATUS_COLOR: Record<ComplianceScoreStatus, "emerald" | "blue" | "amber" | "red" | "violet"> = {
   strong: "emerald",
@@ -43,6 +37,8 @@ const SEVERITY_BADGE_VARIANT: Record<AlertSeverity, "danger" | "warning" | "info
 }
 
 export function OverviewTab() {
+  const t = useTranslations("ComplianceOverview")
+  const tCompliance = useTranslations("Compliance")
   const scoreQuery = useComplianceScore()
   const alertsQuery = useCriticalAlerts()
 
@@ -56,7 +52,7 @@ export function OverviewTab() {
   if (isError || !scoreQuery.data) {
     return (
       <ComplianceErrorState
-        message="Failed to load compliance overview."
+        message={t("loadFailed")}
         onRetry={() => {
           void scoreQuery.refetch()
           void alertsQuery.refetch()
@@ -86,28 +82,33 @@ export function OverviewTab() {
             <div className="flex items-center gap-2">
               <ShieldAlert className={cn("size-4", statusTextClass)} />
               <p className="text-content-primary text-[28px] leading-9 font-semibold">
-                Compliance Score
+                {t("title")}
               </p>
             </div>
             <p className={cn("text-[40px] leading-[44px] font-bold", statusTextClass)}>
-              {SCORE_STATUS_LABEL[score.status]}
+              {t(`scoreStatus.${score.status}`)}
             </p>
             <p className="text-content-tertiary text-sm">
-              Based on {score.based_on_rules} applicable rules
+              {t("basedOnRules", {
+                count: score.based_on_rules,
+                value: String(score.based_on_rules),
+              })}
             </p>
           </div>
           <div className="grid min-w-[320px] flex-1 grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-xl bg-emerald-50 px-4 py-3 text-center dark:bg-emerald-950/30">
               <p className="text-brand-success text-3xl font-semibold">{score.compliant}</p>
-              <p className="text-content-tertiary text-xs">Compliant</p>
+              <p className="text-content-tertiary text-xs">{tCompliance("ruleStatus.compliant")}</p>
             </div>
             <div className="rounded-xl bg-amber-50 px-4 py-3 text-center dark:bg-amber-950/30">
               <p className="text-brand-warning text-3xl font-semibold">{score.in_progress}</p>
-              <p className="text-content-tertiary text-xs">In Progress</p>
+              <p className="text-content-tertiary text-xs">{tCompliance("ruleStatus.in_progress")}</p>
             </div>
             <div className="rounded-xl bg-red-50 px-4 py-3 text-center dark:bg-red-950/30">
               <p className="text-brand-danger text-3xl font-semibold">{score.non_compliant}</p>
-              <p className="text-content-tertiary text-xs">Non-compliant</p>
+              <p className="text-content-tertiary text-xs">
+                {tCompliance("ruleStatus.non_compliant")}
+              </p>
             </div>
           </div>
         </div>
@@ -115,11 +116,11 @@ export function OverviewTab() {
 
       <div className="flex flex-col gap-3">
         <p className="text-content-secondary text-sm font-medium">
-          Critical Alerts ({alerts.length})
+          {t("criticalAlerts", { count: String(alerts.length) })}
         </p>
         {alerts.length === 0 ? (
           <Card className="p-6 text-center">
-            <p className="text-content-tertiary text-sm">No critical alerts right now.</p>
+            <p className="text-content-tertiary text-sm">{t("noAlerts")}</p>
           </Card>
         ) : (
           alerts.map((alert) => (
@@ -132,12 +133,14 @@ export function OverviewTab() {
                     </Badge>
                     <Badge variant="neutral">{alert.code}</Badge>
                     <Badge variant="outline">{alert.framework}</Badge>
-                    {alert.is_overdue ? <Badge variant="danger">Overdue</Badge> : null}
+                    {alert.is_overdue ? (
+                      <Badge variant="danger">{tCompliance("overdue")}</Badge>
+                    ) : null}
                   </div>
                   <p className="text-content-primary text-base font-semibold">{alert.title}</p>
                   <p className="text-content-tertiary text-sm">{alert.detail}</p>
                   <p className="text-content-quaternary text-xs">
-                    {alert.owner} · Due {alert.due_date ?? "—"}
+                    {tCompliance("ownerDue", { owner: alert.owner, date: alert.due_date ?? "—" })}
                   </p>
                 </div>
               </div>

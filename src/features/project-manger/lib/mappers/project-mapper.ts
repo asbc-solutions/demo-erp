@@ -19,12 +19,18 @@ export const PROJECT_TYPE_LABEL: Record<ProjectType, ProjectTypeLabel> = {
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-/** `2026-07-01` → `Jul 1, 2026`. Returns the raw string if unparseable. */
-export function formatApiDate(value: string | null | undefined): string {
+/**
+ * `2026-07-01` → `Jul 1, 2026`. Returns the raw string if unparseable. Pass the
+ * active `Intl` locale (`useIntlLocale()`) to localise month names.
+ */
+export function formatApiDate(
+  value: string | null | undefined,
+  locale = "en-US",
+): string {
   if (!value) return "—"
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -73,7 +79,7 @@ export type ProjectRow = {
   health?: HealthStatus
 }
 
-export function mapProjectRow(item: ProjectListItem): ProjectRow {
+export function mapProjectRow(item: ProjectListItem, locale?: string): ProjectRow {
   return {
     id: item.id,
     name: item.name,
@@ -82,8 +88,8 @@ export function mapProjectRow(item: ProjectListItem): ProjectRow {
     typeLabel: PROJECT_TYPE_LABEL[item.project_type] ?? "Internal",
     status: item.status,
     statusLabel: item.status_label,
-    startDate: formatApiDate(item.start_date),
-    endDate: formatApiDate(item.end_date),
+    startDate: formatApiDate(item.start_date, locale),
+    endDate: formatApiDate(item.end_date, locale),
     isActive: item.is_active,
     managerId: item.manager_id,
 

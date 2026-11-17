@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 // Read-only cross-feature import — see new-project-dialog.tsx for the precedent/rationale:
@@ -59,6 +60,9 @@ function FieldLabel({
 }
 
 export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
+  const t = useTranslations("OperationsNewTask")
+  const tTasks = useTranslations("OperationsTasks")
+  const tShared = useTranslations("OperationsShared")
   const [title, setTitle] = React.useState("")
   const [projectId, setProjectId] = React.useState("")
   const [assigneeId, setAssigneeId] = React.useState("")
@@ -100,10 +104,10 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
 
     createTask.mutate(payload, {
       onSuccess: () => {
-        toast.success("Task created.")
+        toast.success(t("created"))
         handleOpenChange(false)
       },
-      onError: (err) => toastMutationError(err, "Failed to create task"),
+      onError: (err) => toastMutationError(err, t("createFailed"), tShared),
     })
   }
 
@@ -112,18 +116,18 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
       <DialogContent className="max-w-[480px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-[18px] leading-7 font-semibold">
-            New Task
+            {t("title")}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <DialogBody className="gap-4">
             <div className="flex flex-col gap-1.5">
               <FieldLabel htmlFor="nt-title" required>
-                Task Title
+                {t("taskTitle")}
               </FieldLabel>
               <Input
                 id="nt-title"
-                placeholder="e.g. Reconcile opening stock balances"
+                placeholder={t("taskTitlePlaceholder")}
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 className="bg-surface-page h-9 text-[13px]"
@@ -131,10 +135,10 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel>Project</FieldLabel>
+              <FieldLabel>{t("project")}</FieldLabel>
               <Select value={projectId} onValueChange={setProjectId}>
                 <SelectTrigger className="bg-surface-page h-9 text-[13px]">
-                  <SelectValue placeholder="Select a project" />
+                  <SelectValue placeholder={t("projectPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {projects.map((project) => (
@@ -147,10 +151,10 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <FieldLabel>Assignee</FieldLabel>
+              <FieldLabel>{t("assignee")}</FieldLabel>
               <Select value={assigneeId} onValueChange={setAssigneeId}>
                 <SelectTrigger className="bg-surface-page h-9 text-[13px]">
-                  <SelectValue placeholder="Select an assignee" />
+                  <SelectValue placeholder={t("assigneePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {employees.map((employee) => (
@@ -164,7 +168,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <FieldLabel>Priority</FieldLabel>
+                <FieldLabel>{t("priority")}</FieldLabel>
                 <Select
                   value={priority}
                   onValueChange={(value) => setPriority(value as TaskPriority)}
@@ -174,15 +178,15 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {TASK_PRIORITY_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                      <SelectItem key={option} value={option}>
+                        {tTasks(`priority.${option}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <FieldLabel htmlFor="nt-due">Due Date</FieldLabel>
+                <FieldLabel htmlFor="nt-due">{t("dueDate")}</FieldLabel>
                 <Input
                   id="nt-due"
                   type="date"
@@ -203,7 +207,7 @@ export function NewTaskDialog({ open, onOpenChange }: NewTaskDialogProps) {
               {createTask.isPending ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : null}
-              Add Task
+              {t("submit")}
             </Button>
           </DialogFooter>
         </form>

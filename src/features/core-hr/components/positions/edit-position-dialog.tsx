@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -31,6 +32,7 @@ import {
   createPositionSchema,
   type CreatePositionFormValues,
 } from "../../lib/schema/position"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
 type EditPositionDialogProps = Readonly<{
   position: PositionListItem | null
@@ -43,6 +45,10 @@ export function EditPositionDialog({
   open,
   onOpenChange,
 }: EditPositionDialogProps) {
+  const t = useTranslations("HrPositions")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const updatePosition = useUpdatePosition()
   const { data: branchData } = useActiveBranchOptions({ enabled: open })
   const { data: deptData } = useActiveDepartmentOptions({ enabled: open })
@@ -99,18 +105,18 @@ export function EditPositionDialog({
       { id: position.id, payload: values },
       {
         onSuccess: (pos) => {
-          toast.success(`"${pos.position_title}" updated`)
+          toast.success(t("updatedToast", { title: pos.position_title }))
           handleOpenChange(false)
         },
         onError: (err) => {
           const apiErr = err as unknown as { code?: string; message?: string }
           if (apiErr.code === "BUSINESS_RULE_VIOLATION") {
-            toast.error("Cannot reduce headcount below filled count", {
+            toast.error(t("cannotReduceHeadcount"), {
               description: apiErr.message,
             })
           } else {
-            toast.error("Failed to update position", {
-              description: apiErr.message ?? "Please check the details and try again.",
+            toast.error(t("updateFailed"), {
+              description: apiErr.message ?? t("checkDetails"),
             })
           }
         },
@@ -128,9 +134,9 @@ export function EditPositionDialog({
           className="flex flex-col gap-4 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
-              Edit Position
+              {t("editPosition")}
             </DialogTitle>
             <p className="text-content-quaternary font-mono text-xs">
               {position.position_code}
@@ -141,16 +147,16 @@ export function EditPositionDialog({
             {/* Title */}
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Title <span className="text-brand-danger">*</span>
+                {t("fieldTitle")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("position_title")}
-                placeholder="e.g. Senior Backend Developer"
+                placeholder={t("phTitle")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white text-sm placeholder:text-content-quaternary"
               />
               {errors.position_title && (
                 <p className="text-brand-danger text-xs">
-                  {errors.position_title.message}
+                  {fieldError(errors.position_title.message)}
                 </p>
               )}
             </div>
@@ -159,7 +165,7 @@ export function EditPositionDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Department
+                  {t("department")}
                 </Label>
                 <Select
                   value={watch("dept_id") ?? ""}
@@ -168,7 +174,7 @@ export function EditPositionDialog({
                   }
                 >
                   <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
-                    <SelectValue placeholder="Select…" />
+                    <SelectValue placeholder={t("phSelect")} />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((d) => (
@@ -181,7 +187,7 @@ export function EditPositionDialog({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Branch
+                  {t("branch")}
                 </Label>
                 <Select
                   value={watch("branch_id") ?? ""}
@@ -190,7 +196,7 @@ export function EditPositionDialog({
                   }
                 >
                   <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
-                    <SelectValue placeholder="Select…" />
+                    <SelectValue placeholder={t("phSelect")} />
                   </SelectTrigger>
                   <SelectContent>
                     {branches.map((b) => (
@@ -207,7 +213,7 @@ export function EditPositionDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Headcount Budget <span className="text-brand-danger">*</span>
+                  {t("fieldHeadcountBudget")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("headcount_budget", { valueAsNumber: true })}
@@ -218,18 +224,18 @@ export function EditPositionDialog({
                 />
                 {errors.headcount_budget && (
                   <p className="text-brand-danger text-xs">
-                    {errors.headcount_budget.message}
+                    {fieldError(errors.headcount_budget.message)}
                   </p>
                 )}
                 {position.headcount_filled > 0 && (
                   <p className="text-content-quaternary text-xs">
-                    Min: {position.headcount_filled} (currently filled)
+                    {t("minFilledHint", { count: position.headcount_filled })}
                   </p>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Effective Date
+                  {t("fieldEffectiveDate")}
                 </Label>
                 <Input
                   {...register("effective_date")}
@@ -248,7 +254,7 @@ export function EditPositionDialog({
               className="h-9 rounded-md border-stroke-default bg-surface-white px-4 text-sm font-semibold text-content-primary"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -257,7 +263,7 @@ export function EditPositionDialog({
               disabled={updatePosition.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {updatePosition.isPending ? "Saving…" : "Save Changes"}
+              {updatePosition.isPending ? tShared("saving") : tCommon("saveChanges")}
             </Button>
           </div>
         </form>

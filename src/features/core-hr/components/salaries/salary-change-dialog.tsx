@@ -4,6 +4,7 @@ import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -27,11 +28,11 @@ import {
   salaryChangeSchema,
   CHANGE_REASONS,
   CHANGE_TYPES,
-  CHANGE_REASON_LABELS,
-  CHANGE_TYPE_LABELS,
   type SalaryChangeFormValues,
 } from "../../lib/schema/salary"
 import type { EmployeeListItem } from "../../lib/types"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
 type SalaryChangeDialogProps = Readonly<{
   open: boolean
@@ -48,7 +49,7 @@ const DEFAULT_VALUES: SalaryChangeFormValues = {
   change_type: "increase",
 }
 
-function apiErrorDescription(err: unknown) {
+function apiErrorDescription(err: unknown, fallback: string) {
   const apiErr = err as ApiError
   const fields = apiErr.details?.fields as Record<string, string[]> | undefined
   if (fields) {
@@ -56,7 +57,7 @@ function apiErrorDescription(err: unknown) {
       .map(([f, msgs]) => `${f.replace(/_/g, " ")}: ${msgs[0]}`)
       .join(" | ")
   }
-  return apiErr.message ?? "Please check the details and try again."
+  return apiErr.message ?? fallback
 }
 
 export function SalaryChangeDialog({
@@ -65,6 +66,11 @@ export function SalaryChangeDialog({
   employees,
   employeesLoading = false,
 }: SalaryChangeDialogProps) {
+  const t = useTranslations("HrSalaries")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
+  const intlLocale = useIntlLocale()
   const salaryChange = useSalaryChange()
 
   const form = useForm<SalaryChangeFormValues>({
@@ -118,22 +124,21 @@ export function SalaryChangeDialog({
       {
         onSuccess: (record) => {
           const employee = employees.find((e) => e.id === values.employee_id)
-          toast.success("Salary updated", {
-            description: `${employee?.full_name ?? "Employee"} · EGP ${record.basic_salary.toLocaleString("en-US")}`,
+          toast.success(t("salaryUpdated"), {
+            description: `${employee?.full_name ?? t("fieldEmployee")} · EGP ${record.basic_salary.toLocaleString(intlLocale)}`,
           })
           handleOpenChange(false)
         },
         onError: (err) => {
           const apiErr = err as unknown as ApiError
           if (apiErr.code === "CONFLICT") {
-            toast.error("No current salary", {
-              description:
-                "This employee has no active salary. Use 'Create Salary' instead.",
+            toast.error(t("noCurrentSalary"), {
+              description: t("noCurrentSalaryDescription"),
             })
             return
           }
-          toast.error("Failed to update salary", {
-            description: apiErrorDescription(err),
+          toast.error(t("updateFailed"), {
+            description: apiErrorDescription(err, t("checkDetails")),
           })
         },
       }
@@ -148,12 +153,12 @@ export function SalaryChangeDialog({
           className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
-              Salary change
+              {t("dialogTitle")}
             </DialogTitle>
             <p className="text-content-tertiary text-sm leading-5">
-              Record a compensation change for payroll
+              {t("dialogSubtitle")}
             </p>
           </div>
 
@@ -161,7 +166,7 @@ export function SalaryChangeDialog({
             {/* Employee */}
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Employee <span className="text-brand-danger">*</span>
+                {t("fieldEmployee")} <span className="text-brand-danger">*</span>
               </Label>
               <Select
                 value={selectedEmployeeId || undefined}
@@ -174,8 +179,8 @@ export function SalaryChangeDialog({
                   <SelectValue
                     placeholder={
                       employeesLoading
-                        ? "Loading employees..."
-                        : "Select employee..."
+                        ? t("loadingEmployees")
+                        : t("selectEmployee")
                     }
                   />
                 </SelectTrigger>
@@ -189,7 +194,7 @@ export function SalaryChangeDialog({
               </Select>
               {errors.employee_id && (
                 <p className="text-xs text-brand-danger">
-                  {errors.employee_id.message}
+                  {fieldError(errors.employee_id.message)}
                 </p>
               )}
             </div>
@@ -200,7 +205,7 @@ export function SalaryChangeDialog({
                 htmlFor="salary-effective"
                 className="text-sm font-semibold text-content-primary"
               >
-                Effective date <span className="text-brand-danger">*</span>
+                {t("fieldEffectiveDate")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 id="salary-effective"
@@ -210,7 +215,7 @@ export function SalaryChangeDialog({
               />
               {errors.effective_date && (
                 <p className="text-xs text-brand-danger">
-                  {errors.effective_date.message}
+                  {fieldError(errors.effective_date.message)}
                 </p>
               )}
             </div>
@@ -219,7 +224,7 @@ export function SalaryChangeDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Reason <span className="text-brand-danger">*</span>
+                  {t("fieldReason")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Select
                   value={selectedReason}
@@ -237,7 +242,7 @@ export function SalaryChangeDialog({
                   <SelectContent>
                     {CHANGE_REASONS.map((r) => (
                       <SelectItem key={r} value={r}>
-                        {CHANGE_REASON_LABELS[r]}
+                        {tShared(`changeReason.${r}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -246,7 +251,7 @@ export function SalaryChangeDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Type <span className="text-brand-danger">*</span>
+                  {tCommon("type")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Select
                   value={selectedType}
@@ -262,9 +267,9 @@ export function SalaryChangeDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CHANGE_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {CHANGE_TYPE_LABELS[t]}
+                    {CHANGE_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {tShared(`changeType.${type}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -278,7 +283,7 @@ export function SalaryChangeDialog({
                 htmlFor="salary-basic"
                 className="text-sm font-semibold text-content-primary"
               >
-                New basic salary (EGP) <span className="text-brand-danger">*</span>
+                {t("fieldNewBasicSalary")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 id="salary-basic"
@@ -286,12 +291,12 @@ export function SalaryChangeDialog({
                 min={1}
                 step={1}
                 {...register("basic_salary", { valueAsNumber: true })}
-                placeholder="e.g. 28000"
+                placeholder={t("phBasicSalary")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white font-mono text-sm"
               />
               {errors.basic_salary && (
                 <p className="text-xs text-brand-danger">
-                  {errors.basic_salary.message}
+                  {fieldError(errors.basic_salary.message)}
                 </p>
               )}
             </div>
@@ -300,18 +305,18 @@ export function SalaryChangeDialog({
             <div className="grid grid-cols-2 gap-3">
               {(
                 [
-                  ["housing_allowance", "Housing"],
-                  ["transport_allowance", "Transport"],
-                  ["food_allowance", "Food"],
-                  ["mobile_allowance", "Mobile"],
+                  ["housing_allowance", "housingAllowance"],
+                  ["transport_allowance", "transportAllowance"],
+                  ["food_allowance", "foodAllowance"],
+                  ["mobile_allowance", "mobileAllowance"],
                 ] as const
-              ).map(([field, label]) => (
+              ).map(([field, labelKey]) => (
                 <div key={field} className="flex flex-col gap-1.5">
                   <Label
                     htmlFor={`salary-${field}`}
                     className="text-sm font-semibold text-content-primary"
                   >
-                    {label} allowance
+                    {t(labelKey)}
                   </Label>
                   <Input
                     id={`salary-${field}`}
@@ -335,7 +340,7 @@ export function SalaryChangeDialog({
               className="h-9 rounded-md px-4 text-sm font-semibold"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -344,7 +349,7 @@ export function SalaryChangeDialog({
               disabled={salaryChange.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {salaryChange.isPending ? "Saving..." : "Submit change"}
+              {salaryChange.isPending ? tShared("saving") : t("submitChange")}
             </Button>
           </div>
         </form>

@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { FileUp, Info } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -41,30 +42,34 @@ import {
 import { StatusPill } from "../../../components/shared/status-pill"
 import { useFinanceTreasuries } from "../../../lib/queries/master-data"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { useImportStatement } from "../../lib/mutations/banking"
 import { useLatestImport } from "../../lib/queries/banking"
 import type { ImportedLine } from "../../lib/types/banking"
 
 const DEFAULT_TREASURY_ID = "bnk-cib-0021"
 
-const MATCH_PILL: Record<ImportedLine["match"], { label: string; tone: "success" | "warning" | "muted" }> = {
-  auto: { label: "Auto-matched", tone: "success" },
-  review: { label: "Needs review", tone: "warning" },
-  duplicate: { label: "Already imported", tone: "muted" },
+type BankingT = ReturnType<typeof useTranslations<"FinanceBanking">>
+
+/** Pill tone per match result; the label is the `FinanceBanking` enum map `importMatch`. */
+const MATCH_TONE: Record<ImportedLine["match"], "success" | "warning" | "muted"> = {
+  auto: "success",
+  review: "warning",
+  duplicate: "muted",
 }
 
-function columns(currency: string): FinanceColumn<ImportedLine>[] {
+function columns(currency: string, t: BankingT, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<ImportedLine>[] {
   return [
-    { id: "date", header: "Date", cell: (row) => formatDate(row.date) },
-    { id: "reference", header: "Reference", cell: (row) => <DocNumber>{row.reference}</DocNumber> },
-    { id: "memo", header: "Memo", cell: (row) => row.memo },
-    { id: "amount", header: `Amount (${currency})`, align: "end", cell: (row) => <Amount value={row.amount} /> },
+    { id: "date", header: t("colDate"), cell: (row) => formatDate(row.date) },
+    { id: "reference", header: t("colReference"), cell: (row) => <DocNumber>{row.reference}</DocNumber> },
+    { id: "memo", header: t("colMemo"), cell: (row) => row.memo },
+    { id: "amount", header: t("amountIn", { currency }), align: "end", cell: (row) => <Amount value={row.amount} /> },
     {
       id: "match",
-      header: "Match",
+      header: t("colMatch"),
       cell: (row) => (
-        <StatusPill status={`import-${row.match}`} label={MATCH_PILL[row.match].label} tone={MATCH_PILL[row.match].tone} />
+        <StatusPill status={`import-${row.match}`} label={t(`importMatch.${row.match}`)} tone={MATCH_TONE[row.match]} />
       ),
     },
   ]
@@ -75,6 +80,9 @@ function columns(currency: string): FinanceColumn<ImportedLine>[] {
  * on the books, and send the rest to the reconciliation workspace.
  */
 function StatementImportPage() {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
+  const { formatDate } = useFinanceDateFormat()
   const { data: treasuries = [] } = useFinanceTreasuries()
   const banks = treasuries.filter((row) => row.kind === "bank")
   const [treasuryId, setTreasuryId] = React.useState(DEFAULT_TREASURY_ID)
@@ -88,21 +96,21 @@ function StatementImportPage() {
       onSuccess: (result) =>
         toast.success(
           result.skipped === result.parsed
-            ? `All ${result.parsed} lines were already imported. Nothing new was added.`
-            : `${result.parsed - result.skipped} lines imported into ${result.treasury_name}.`,
+            ? t("importAllDuplicates", { count: result.parsed })
+            : t("importDone", { count: result.parsed - result.skipped, treasury: result.treasury_name }),
         ),
-      onError: (error) => toast.error(errorMessage(error, "The statement could not be imported. Try again.")),
+      onError: (error) => toast.error(errorMessage(error, t("importFailed"))),
     })
 
   return (
     <>
       <FinancePageHeader
-        title="Bank statement import"
-        figure={<HeaderFigure label="Lines parsed">{latest?.parsed ?? 0}</HeaderFigure>}
+        title={t("importTitle")}
+        figure={<HeaderFigure label={t("linesParsed")}>{latest?.parsed ?? 0}</HeaderFigure>}
         actions={
           latest ? (
             <Button variant="primary" asChild>
-              <Link href={`/finance/reconciliation/${treasuryId}`}>Continue to reconciliation</Link>
+              <Link href={`/finance/reconciliation/${treasuryId}`}>{t("continueToReconciliation")}</Link>
             </Button>
           ) : null
         }
@@ -110,10 +118,10 @@ function StatementImportPage() {
       <FinancePageBody>
         <div className="flex flex-wrap items-end gap-3">
           <Field className="w-72">
-            <FieldLabel htmlFor="import-treasury">Bank treasury</FieldLabel>
+            <FieldLabel htmlFor="import-treasury">{t("bankTreasury")}</FieldLabel>
             <Select value={treasuryId} onValueChange={setTreasuryId}>
               <SelectTrigger id="import-treasury" className="h-9">
-                <SelectValue placeholder="Choose a bank account" />
+                <SelectValue placeholder={t("chooseBankAccount")} />
               </SelectTrigger>
               <SelectContent>
                 {banks.map((row) => (
@@ -126,11 +134,11 @@ function StatementImportPage() {
           </Field>
           <span className="text-content-tertiary flex h-9 items-center gap-1.5 text-[13px] leading-5">
             <Info className="size-3.5" aria-hidden />
-            Reads generated data, not a real source.
+            {t("generatedData")}
           </span>
           <Button variant="secondary" disabled={!treasury || importStatement.isPending} onClick={() => setConfirming(true)}>
             <FileUp aria-hidden />
-            Upload statement (.csv / .ofx)
+            {t("uploadStatement")}
           </Button>
         </div>
 
@@ -140,24 +148,33 @@ function StatementImportPage() {
           <EmptyState
             variant="card"
             icon={<FileUp />}
-            title="Import a bank statement"
-            description="Choose the treasury and upload the bank's file. Nucleus parses each line, auto-matches against posted book entries, and flags the rest for manual reconciliation."
+            title={t("importEmptyTitle")}
+            description={t("importEmptyDescription")}
           />
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Lines parsed" value={latest.parsed} caption={latest.skipped > 0 ? `${latest.skipped} already imported` : undefined} />
-              <KpiCard layout="bar" accent="teal" label="Auto-matched" value={latest.auto_matched} caption={`${latest.review} need review`} />
-              <KpiCard layout="bar" accent="amber" label="Into treasury" value={latest.treasury_name} />
+              <KpiCard
+                layout="bar"
+                accent="indigo"
+                label={t("linesParsed")}
+                value={latest.parsed}
+                caption={latest.skipped > 0 ? t("alreadyImportedCount", { count: latest.skipped }) : undefined}
+              />
+              <KpiCard
+                layout="bar"
+                accent="teal"
+                label={t("importMatch.auto")}
+                value={latest.auto_matched}
+                caption={t("needReviewCount", { count: latest.review })}
+              />
+              <KpiCard layout="bar" accent="amber" label={t("intoTreasury")} value={latest.treasury_name} />
             </div>
-            <FinanceAlert tone="info">
-              Auto-matched lines already correspond to a posted book entry and need no action. The remaining lines
-              open in the reconciliation workspace, where you pair or create the missing entry.
-            </FinanceAlert>
-            <FinanceSection title="Parsed lines">
+            <FinanceAlert tone="info">{t("importNote")}</FinanceAlert>
+            <FinanceSection title={t("parsedLines")}>
               <FinanceTable
-                caption={`Lines parsed from the ${latest.treasury_name} statement`}
-                columns={columns(latest.currency)}
+                caption={t("parsedLinesCaption", { treasury: latest.treasury_name })}
+                columns={columns(latest.currency, t, formatDate)}
                 rows={latest.lines}
                 getRowId={(row) => `${row.reference}-${row.date}`}
               />
@@ -169,16 +186,15 @@ function StatementImportPage() {
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Import this statement?</AlertDialogTitle>
+            <AlertDialogTitle>{t("importConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Imported lines join the unmatched statement list for {treasury?.name ?? "this account"}. Duplicate
-              lines are detected by reference and date and are skipped. Nothing posts to the ledger from an import.
+              {t("importConfirmDescription", { account: treasury?.name ?? t("thisAccount") })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction className={buttonVariants({ variant: "primary" })} onClick={runImport}>
-              Import statement
+              {t("importStatement")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

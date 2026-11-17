@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ChevronRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Checkbox } from "@/src/shared/components/ui/checkbox"
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
@@ -64,8 +65,8 @@ type FinanceTableProps<T> = {
 }
 
 const ALIGN_CLASS = {
-  start: "text-left",
-  end: "text-right",
+  start: "text-start",
+  end: "text-end",
   center: "text-center",
 } as const
 
@@ -95,6 +96,7 @@ function FinanceTable<T>({
   caption,
   className,
 }: FinanceTableProps<T>) {
+  const t = useTranslations("FinanceShared")
   const [expandedIds, setExpandedIds] = React.useState<string[]>([])
   const visibleColumns = columns.filter((column) => !hiddenColumnIds.includes(column.id))
   const allRows = groups ? groups.flatMap((group) => group.rows) : rows
@@ -157,23 +159,23 @@ function FinanceTable<T>({
             <TableCell className="w-10" onClick={(event) => event.stopPropagation()}>
               <Checkbox
                 checked={isSelected}
-                aria-label="Select row"
+                aria-label={t("selectRow")}
                 onCheckedChange={(checked) => toggleRow(id, checked === true)}
               />
             </TableCell>
           ) : null}
           {renderExpanded ? (
-            <TableCell className="w-8 pr-0" onClick={(event) => event.stopPropagation()}>
+            <TableCell className="w-8 pe-0" onClick={(event) => event.stopPropagation()}>
               <button
                 type="button"
-                aria-label={isExpanded ? "Collapse row" : "Expand row"}
+                aria-label={isExpanded ? t("collapseRow") : t("expandRow")}
                 aria-expanded={isExpanded}
                 onClick={() => toggleExpanded(id)}
                 className="text-content-tertiary hover:text-content-primary flex size-5 items-center justify-center rounded"
               >
                 <ChevronRight
                   aria-hidden
-                  className={cn("size-3.5 transition-transform", isExpanded && "rotate-90")}
+                  className={cn("size-3.5 transition-transform rtl:rotate-180", isExpanded && "rotate-90 rtl:rotate-90")}
                 />
               </button>
             </TableCell>
@@ -213,7 +215,7 @@ function FinanceTable<T>({
             {selectable ? (
               <TableHead className="w-10">
                 <Checkbox
-                  aria-label="Select all rows"
+                  aria-label={t("selectAllRows")}
                   checked={
                     selectedCount === 0
                       ? false
@@ -225,7 +227,7 @@ function FinanceTable<T>({
                 />
               </TableHead>
             ) : null}
-            {renderExpanded ? <TableHead className="w-8 pr-0" aria-label="Expand" /> : null}
+            {renderExpanded ? <TableHead className="w-8 pe-0" aria-label={t("expand")} /> : null}
             {visibleColumns.map((column) => (
               <TableHead
                 key={column.id}
@@ -250,7 +252,7 @@ function FinanceTable<T>({
             <TableRow className="hover:bg-transparent">
               <TableCell colSpan={colSpan} className="whitespace-normal">
                 {empty ?? (
-                  <p className="text-content-tertiary py-8 text-center text-sm">Nothing to show.</p>
+                  <p className="text-content-tertiary py-8 text-center text-sm">{t("nothingToShow")}</p>
                 )}
               </TableCell>
             </TableRow>

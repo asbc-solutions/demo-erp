@@ -1,6 +1,7 @@
 "use client"
 
 import { Briefcase, CheckCircle2, XCircle } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import {
@@ -10,10 +11,11 @@ import {
   SheetTitle,
 } from "@/src/shared/components/ui/sheet"
 import { cn } from "@/src/shared/lib/utils/utils"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import type { JobGradeListItem } from "../../lib/types"
 import { useJobGrade } from "../../lib/queries/job-grades"
-import { CATEGORY_BADGE, CATEGORY_LABEL, formatMoney } from "./grade-meta"
+import { CATEGORY_BADGE, formatMoney } from "./grade-meta"
 
 type JobGradeDetailSheetProps = Readonly<{
   grade: JobGradeListItem | null
@@ -48,6 +50,10 @@ export function JobGradeDetailSheet({
   open,
   onOpenChange,
 }: JobGradeDetailSheetProps) {
+  const t = useTranslations("HrJobGrades")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const intlLocale = useIntlLocale()
   // linked_jobs only come from the detail endpoint; the rest is on the list item.
   const { data: detail, isLoading } = useJobGrade(open && grade ? grade.id : "")
 
@@ -82,7 +88,7 @@ export function JobGradeDetailSheet({
                   CATEGORY_BADGE[grade.grade_category],
                 )}
               >
-                {CATEGORY_LABEL[grade.grade_category]}
+                {tShared(`gradeCategory.${grade.grade_category}`)}
               </Badge>
               <Badge
                 variant="outline"
@@ -93,7 +99,7 @@ export function JobGradeDetailSheet({
                     : "border-stroke-default bg-surface-hover text-content-tertiary",
                 )}
               >
-                {grade.is_active ? "Active" : "Inactive"}
+                {grade.is_active ? t("active") : t("inactive")}
               </Badge>
             </div>
           </div>
@@ -102,33 +108,33 @@ export function JobGradeDetailSheet({
         <div className="flex flex-col px-6">
           {/* Grade Information */}
           <section className="border-stroke-default/50 border-b py-4">
-            <SectionTitle>Grade Information</SectionTitle>
-            <Row label="Grade">
+            <SectionTitle>{t("gradeInformation")}</SectionTitle>
+            <Row label={t("rowGrade")}>
               {grade.grade_code} · {grade.grade_name}
             </Row>
-            <Row label="Level">{grade.grade_level}</Row>
-            <Row label="Category">{CATEGORY_LABEL[grade.grade_category]}</Row>
-            <Row label="Employees">{grade.employee_count}</Row>
-            <Row label="Positions">{grade.position_count}</Row>
+            <Row label={t("fieldLevel")}>{grade.grade_level}</Row>
+            <Row label={t("fieldCategory")}>{tShared(`gradeCategory.${grade.grade_category}`)}</Row>
+            <Row label={t("rowEmployees")}>{grade.employee_count}</Row>
+            <Row label={t("rowPositions")}>{grade.position_count}</Row>
           </section>
 
           {/* Salary Band */}
           <section className="border-stroke-default/50 border-b py-4">
-            <SectionTitle>Salary Band</SectionTitle>
-            <Row label="Minimum">
-              <span className="font-mono">{formatMoney(min_salary, currency_code)}</span>
+            <SectionTitle>{t("salaryBand")}</SectionTitle>
+            <Row label={t("rowMinimum")}>
+              <span className="font-mono">{formatMoney(min_salary, currency_code, intlLocale)}</span>
             </Row>
-            <Row label="Midpoint">
-              <span className="font-mono">{formatMoney(mid_salary, currency_code)}</span>
+            <Row label={t("fieldMidpoint")}>
+              <span className="font-mono">{formatMoney(mid_salary, currency_code, intlLocale)}</span>
             </Row>
-            <Row label="Maximum">
-              <span className="font-mono">{formatMoney(max_salary, currency_code)}</span>
+            <Row label={t("rowMaximum")}>
+              <span className="font-mono">{formatMoney(max_salary, currency_code, intlLocale)}</span>
             </Row>
-            <Row label="Range Spread">{rangeSpread}%</Row>
+            <Row label={t("rowRangeSpread")}>{rangeSpread}%</Row>
             <div className="bg-stroke-default relative mt-2 h-2 w-full overflow-hidden rounded-full">
               <span
                 aria-hidden
-                className="bg-brand-primary absolute inset-y-0 left-0 rounded-full transition-all"
+                className="bg-brand-primary absolute inset-y-0 inset-s-0 rounded-full transition-all"
                 style={{ width: `${fillPercent}%` }}
               />
             </div>
@@ -136,19 +142,23 @@ export function JobGradeDetailSheet({
 
           {/* Entitlements */}
           <section className="border-stroke-default/50 border-b py-4">
-            <SectionTitle>Entitlements</SectionTitle>
-            <Row label="Annual Leave">{grade.annual_leave_days} days</Row>
-            <Row label="Sick Leave">{grade.sick_leave_days} days</Row>
-            <Row label="Overtime">
+            <SectionTitle>{t("entitlements")}</SectionTitle>
+            <Row label={t("rowAnnualLeave")}>
+              {t("daysCount", { count: grade.annual_leave_days })}
+            </Row>
+            <Row label={t("rowSickLeave")}>
+              {t("daysCount", { count: grade.sick_leave_days })}
+            </Row>
+            <Row label={t("rowOvertime")}>
               {grade.overtime_eligible ? (
                 <span className="text-brand-success inline-flex items-center gap-1">
                   <CheckCircle2 className="size-3.5" strokeWidth={2} />
-                  Eligible
+                  {t("eligible")}
                 </span>
               ) : (
                 <span className="text-content-tertiary inline-flex items-center gap-1">
                   <XCircle className="size-3.5" strokeWidth={2} />
-                  Not eligible
+                  {t("notEligible")}
                 </span>
               )}
             </Row>
@@ -156,12 +166,12 @@ export function JobGradeDetailSheet({
 
           {/* Linked Jobs */}
           <section className="py-4">
-            <SectionTitle>Linked Jobs</SectionTitle>
+            <SectionTitle>{t("linkedJobs")}</SectionTitle>
             {isLoading ? (
-              <p className="text-content-tertiary py-2 text-sm">Loading…</p>
+              <p className="text-content-tertiary py-2 text-sm">{tCommon("loading")}</p>
             ) : linkedJobs.length === 0 ? (
               <p className="text-content-tertiary py-2 text-sm">
-                No jobs are linked to this grade.
+                {t("noLinkedJobs")}
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
@@ -185,7 +195,7 @@ export function JobGradeDetailSheet({
                       </span>
                     </div>
                     {!job.is_active && (
-                      <span className="text-content-tertiary text-xs">Inactive</span>
+                      <span className="text-content-tertiary text-xs">{t("inactive")}</span>
                     )}
                   </li>
                 ))}

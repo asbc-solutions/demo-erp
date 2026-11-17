@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { BookOpen, Building2, Clock, Monitor, Search, Sparkles } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Button } from "@/src/shared/components/ui/button"
@@ -24,14 +25,14 @@ import { categoryBadge, deliveryFormat } from "./training-format"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const CATEGORY_FILTERS: { id: string; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "technical", label: "Technical" },
-  { id: "leadership", label: "Leadership" },
-  { id: "management", label: "Management" },
-  { id: "compliance", label: "Compliance" },
-  { id: "soft_skills", label: "Soft Skills" },
-]
+const CATEGORY_FILTERS = [
+  { id: "all", labelKey: "category.all" },
+  { id: "technical", labelKey: "category.technical" },
+  { id: "leadership", labelKey: "category.leadership" },
+  { id: "management", labelKey: "category.management" },
+  { id: "compliance", labelKey: "category.compliance" },
+  { id: "soft_skills", labelKey: "category.soft_skills" },
+] as const
 
 const DELIVERY_ICON: Record<DeliveryIconKey, React.ReactNode> = {
   online: <Monitor strokeWidth={1.75} />,
@@ -45,6 +46,7 @@ const HEAD_CLASS =
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function CoursesTab() {
+  const t = useTranslations("HrTraining")
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState("all")
 
@@ -70,14 +72,14 @@ export function CoursesTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative w-full max-w-96">
           <Search
-            className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-content-quaternary"
+            className="absolute top-1/2 inset-s-3 size-4 -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
           />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search courses..."
-            className="pl-9"
+            placeholder={t("searchCourses")}
+            className="ps-9"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -91,7 +93,7 @@ export function CoursesTab() {
                 size="sm"
                 onClick={() => setCategory(f.id)}
               >
-                {f.label}
+                {t(f.labelKey)}
               </Button>
             )
           })}
@@ -102,10 +104,10 @@ export function CoursesTab() {
       <Card variant="elevated" className="gap-0">
         <div className="flex flex-col gap-1 p-6">
           <h3 className="text-lg leading-7 font-semibold text-content-primary">
-            Course Catalog
+            {t("tabCourses")}
           </h3>
           <p className="text-sm leading-5 text-content-tertiary">
-            {courses.length} courses available across all programmes
+            {t("coursesAvailable", { count: courses.length })}
           </p>
         </div>
 
@@ -113,12 +115,12 @@ export function CoursesTab() {
           <Table>
             <TableHeader className="bg-transparent">
               <TableRow className="hover:bg-transparent">
-                <TableHead className={HEAD_CLASS}>Course</TableHead>
-                <TableHead className={HEAD_CLASS}>Programme</TableHead>
-                <TableHead className={HEAD_CLASS}>Category</TableHead>
-                <TableHead className={HEAD_CLASS}>Duration</TableHead>
-                <TableHead className={HEAD_CLASS}>Format</TableHead>
-                <TableHead className={HEAD_CLASS}>Status</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colCourse")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colProgramme")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colCategory")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colDuration")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colFormat")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colStatus")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -138,8 +140,8 @@ export function CoursesTab() {
                     className="h-24 text-center text-sm text-content-tertiary"
                   >
                     {isError
-                      ? "Couldn't load courses. Please try again."
-                      : "No courses match the current filters."}
+                      ? t("coursesLoadError")
+                      : t("coursesEmpty")}
                   </TableCell>
                 </TableRow>
               )}
@@ -147,8 +149,8 @@ export function CoursesTab() {
               {!isLoading &&
                 !isError &&
                 filtered.map((course) => {
-                  const cat = categoryBadge(course.category)
-                  const fmt = deliveryFormat(course.delivery_mode)
+                  const cat = categoryBadge(course.category, t)
+                  const fmt = deliveryFormat(course.delivery_mode, t)
                   return (
                     <TableRow key={course.course_id}>
                       <TableCell>
@@ -173,7 +175,7 @@ export function CoursesTab() {
                             className="size-3.5 text-content-quaternary"
                             strokeWidth={1.75}
                           />
-                          {course.duration_hours}h
+                          {t("hoursShort", { hours: course.duration_hours })}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -184,7 +186,7 @@ export function CoursesTab() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={course.is_active ? "success" : "neutral"}>
-                          {course.is_active ? "Active" : "Inactive"}
+                          {course.is_active ? t("active") : t("inactive")}
                         </Badge>
                       </TableCell>
                     </TableRow>

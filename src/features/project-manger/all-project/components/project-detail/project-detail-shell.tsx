@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { CalendarDays, ChevronLeft } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -22,6 +24,7 @@ import {
   PROJECT_TYPE_LABEL,
   formatApiDate,
 } from "../../../lib/mappers/project-mapper"
+import type { ProjectLifecycleStatus } from "../../../lib/types"
 import { TYPE_STYLE } from "../../data/all-projects-data"
 import { PROJECT_TABS, type ProjectTab } from "../../data/project-detail-data"
 
@@ -38,27 +41,38 @@ import { WbsTab } from "./wbs-tab"
 
 const TAB_CONTENT: Record<ProjectTab, React.ComponentType<{ projectId: string }>> =
   {
-    Overview: OverviewTab,
-    WBS: WbsTab,
-    Schedule: ScheduleTab,
-    Resources: ResourcesTab,
-    Budget: BudgetTab,
-    Tasks: TasksTab,
-    Documents: DocumentsTab,
-    Chat: ChatTab,
-    Reports: ReportsTab,
+    overview: OverviewTab,
+    wbs: WbsTab,
+    schedule: ScheduleTab,
+    resources: ResourcesTab,
+    budget: BudgetTab,
+    tasks: TasksTab,
+    documents: DocumentsTab,
+    chat: ChatTab,
+    reports: ReportsTab,
   }
 
+const KNOWN_LIFECYCLE: ProjectLifecycleStatus[] = [
+  "created",
+  "released",
+  "technically_complete",
+  "closed",
+]
+
 export function ProjectDetailShell({ projectId }: { projectId: string }) {
-  const [tab, setTab] = useState<ProjectTab>("Overview")
+  const t = useTranslations("ProjectsProjectDetail")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
+  const [tab, setTab] = useState<ProjectTab>("overview")
   const { data: project, isLoading, isError } = useProject(projectId)
   const releaseProject = useReleaseProject()
 
   const handleRelease = () => {
     releaseProject.mutate(projectId, {
-      onSuccess: () => toast.success("Project released"),
+      onSuccess: () => toast.success(t("releaseSuccess")),
       onError: (err) =>
-        toast.error("Couldn't release project", {
+        toast.error(t("releaseFailed"), {
           description: (err as unknown as ApiError).message,
         }),
     })
@@ -76,19 +90,22 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-2 p-6 text-center">
         <p className="text-content-secondary text-sm font-medium">
-          Project not found
+          {t("notFound")}
         </p>
         <Link
           href="/all-project"
           className="text-brand-primary text-xs font-medium hover:underline"
         >
-          Back to All Projects
+          {t("backToAll")}
         </Link>
       </div>
     )
   }
 
   const typeLabel = PROJECT_TYPE_LABEL[project.project_type] ?? "Internal"
+  const statusLabel = KNOWN_LIFECYCLE.includes(project.status)
+    ? tShared(`lifecycle.${project.status}`)
+    : project.status_label
 
   return (
     <Tabs
@@ -101,8 +118,8 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
           href="/all-project"
           className="text-content-tertiary hover:text-content-primary inline-flex items-center gap-1 text-xs font-medium transition-colors"
         >
-          <ChevronLeft className="size-3.5" aria-hidden />
-          Back to All Projects
+          <ChevronLeft className="size-3.5 rtl:rotate-180" aria-hidden />
+          {t("backToAll")}
         </Link>
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
@@ -111,11 +128,11 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
               <h1 className="text-content-primary text-2xl leading-7 font-bold tracking-tight">
                 {project.name}
               </h1>
-              <StatusPill status={project.status_label} />
+              <StatusPill status={project.status_label} label={statusLabel} />
               <span
                 className={cn("text-xs font-medium", TYPE_STYLE[typeLabel])}
               >
-                {typeLabel}
+                {tShared(`projectType.${project.project_type}`)}
               </span>
             </div>
             <div className="text-content-tertiary flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
@@ -127,28 +144,34 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
                 >
                   ?
                 </Avatar>
-                {project.manager_id ? "Assigned" : "—"}
+                {project.manager_id ? t("managerAssigned") : "—"}
               </span>
               <span className="flex items-center gap-1.5">
                 <CalendarDays className="size-3.5" aria-hidden />
-                {formatApiDate(project.start_date)} →{" "}
-                {formatApiDate(project.end_date)}
+                {tShared("dateRange", {
+                  start: formatApiDate(project.start_date, locale),
+                  end: formatApiDate(project.end_date, locale),
+                })}
               </span>
               <span>
-                Customer:{" "}
-                <span className="text-content-secondary font-semibold">
-                  {project.customer_id ?? "—"}
-                </span>
+                {t.rich("customer", {
+                  customer: project.customer_id ?? "—",
+                  value: (chunks) => (
+                    <span className="text-content-secondary font-semibold">
+                      {chunks}
+                    </span>
+                  ),
+                })}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <Button variant="outline" className="h-9 px-3 text-[12px]">
-              Share
+              {t("share")}
             </Button>
             <Button variant="outline" className="h-9 px-3 text-[12px]">
-              Edit
+              {tCommon("edit")}
             </Button>
             {project.status === "created" && (
               <Button
@@ -157,7 +180,7 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
                 onClick={handleRelease}
                 disabled={releaseProject.isPending}
               >
-                {releaseProject.isPending ? "Releasing…" : "Release"}
+                {releaseProject.isPending ? t("releasing") : t("release")}
               </Button>
             )}
           </div>
@@ -166,7 +189,7 @@ export function ProjectDetailShell({ projectId }: { projectId: string }) {
         <TabsList className="mt-4 w-full overflow-x-auto">
           {PROJECT_TABS.map((item) => (
             <TabsTrigger key={item} value={item}>
-              {item}
+              {t(`tabs.${item}`)}
             </TabsTrigger>
           ))}
         </TabsList>

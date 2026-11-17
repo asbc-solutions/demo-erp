@@ -1,0 +1,145 @@
+{
+  "SettingsView": {
+    "description": "Manage your workspace, team, billing, and notification preferences.",
+    "tabBilling": "Billing",
+    "tabNotifications": "Notifications",
+    "tabProfile": "Company Profile",
+    "tabRoles": "Roles & Permissions",
+    "tabTeam": "Team & Permissions",
+    "title": "Settings"
+  },
+  "SettingsShared": {
+    "accessDenied": "Ask an admin to grant your role access to this section of Settings.",
+    "checkDetails": "Please check the details and try again.",
+    "loadFailed": "Failed to load.",
+    "validationFailed": "Validation failed"
+  },
+  "SettingsProfile": {
+    "companyName": "Company Name",
+    "industry": "Industry",
+    "industryPlaceholder": "Select industry",
+    "loadError": "Failed to load company profile.",
+    "resetButton": "Reset Data",
+    "resetDescription": "Clear all data across every workspace and restore the original demo defaults. This includes invoices, employees, deals, and company information. This action cannot be undone and will sign everyone out, including you.",
+    "resetTitle": "Reset to Demo Data",
+    "stage": "Current Stage",
+    "stagePlaceholder": "Select stage",
+    "updateFailed": "Failed to update company profile",
+    "updated": "Company profile updated",
+    "website": "Website"
+  },
+  "SettingsResetDemo": {
+    "confirm": "Reset Everything",
+    "confirmLabel": "Type <highlight>{phrase}</highlight> to confirm",
+    "description": "This wipes and reseeds the <strong>entire</strong> database — invoices, employees, deals, and company information — for every user. It cannot be undone, and it will immediately end every active session, including your own. You will be signed out.",
+    "failed": "Failed to reset demo data",
+    "success": "Demo data reset. Signing you out…",
+    "successDescription": "Every session, including yours, was just invalidated.",
+    "title": "Reset all demo data?"
+  },
+  "SettingsTeam": {
+    "cannotDeactivateSelf": "You can't deactivate your own account",
+    "deactivateMember": "Deactivate member",
+    "deactivateNamed": "Deactivate {name}",
+    "description": "Manage access and roles",
+    "inactive": "(inactive)",
+    "invite": "Invite Member",
+    "loadError": "Failed to load team members.",
+    "noRole": "No role",
+    "roleUpdateFailed": "Failed to update member role",
+    "roleUpdated": "{name}'s role updated",
+    "title": "Team Members"
+  },
+  "SettingsDeactivateMember": {
+    "confirm": "Deactivate",
+    "description": "Their account will be marked inactive and every active session or API token they hold is revoked immediately. This does not delete their history — audit, invoice, and approval records referencing them are preserved.",
+    "failed": "Failed to deactivate member",
+    "success": "{name} deactivated.",
+    "title": "Deactivate {name}?"
+  },
+  "SettingsInviteMember": {
+    "description": "They'll get an email to set their own password — no password is generated or shown here.",
+    "failed": "Failed to invite member",
+    "role": "Role",
+    "roleHint": "A role appearing here doesn't guarantee you can grant it — the server still enforces your own permission ceiling.",
+    "rolePlaceholder": "Select a role",
+    "roleRequired": "Select a role for this member",
+    "rolesLoading": "Loading roles…",
+    "submit": "Send Invite",
+    "success": "Invitation sent.",
+    "successDescription": "The new member will receive an email to set their password.",
+    "title": "Invite Team Member"
+  },
+  "SettingsRoles": {
+    "accessDenied": "Only an HR Admin (or a role with roles = write) can view or edit role permissions.",
+    "changedCount": "{count} changed",
+    "colLevel": "Level",
+    "colResource": "Resource",
+    "level": {
+      "approval_required": "Approval Required",
+      "none": "No Access",
+      "read": "Read Only",
+      "write": "Full Access"
+    },
+    "levelTooHigh": "You can't grant a level higher than you have",
+    "saveWithCount": "Save ({count})",
+    "selectRole": "Select a role to view and edit its permission matrix.",
+    "system": "System",
+    "title": "Roles",
+    "tryAgain": "Please try again.",
+    "updateFailed": "Failed to update permissions",
+    "updated": "Role permissions updated",
+    "userCount": "{count, plural, one {# user} other {# users}}"
+  },
+  "SettingsBilling": {
+    "cardEnding": "{brand} ending in {last4}",
+    "cardExpires": "Expires {month}/{year}",
+    "changePlan": "Change Plan",
+    "choosePlan": "Choose a Plan",
+    "colInvoice": "Invoice",
+    "colPeriod": "Period",
+    "downloadFailed": "Failed to download invoice",
+    "downloadInvoice": "Download invoice",
+    "downloadInvoiceNamed": "Download invoice {number}",
+    "invoiceHistory": "Invoice History",
+    "invoiceStatus": {
+      "open": "Open",
+      "paid": "Paid",
+      "void": "Void"
+    },
+    "invoicesLoadError": "Failed to load invoice history.",
+    "loadError": "Failed to load billing information.",
+    "nextBillingDate": "Next billing date",
+    "noDocument": "No document available",
+    "noInvoices": "No invoices yet.",
+    "noPaymentMethod": "No payment method on file.",
+    "noSubscription": "No active subscription. Choose a plan to get started.",
+    "paymentMethod": "Payment Method",
+    "seatsUsed": "Seats used",
+    "storage": "Storage",
+    "storageValue": "{used} GB / {limit} GB",
+    "updatePayment": "Update",
+    "updatePaymentHint": "Requires client-side card tokenization via a payment provider SDK — not wired up yet",
+    "updatePaymentToast": "Payment method updates aren't wired up yet",
+    "updatePaymentToastDescription": "This endpoint only accepts a provider token (Stripe/Paymob/Fawry) — it never accepts a raw card number. Client-side tokenization is out of scope for this change."
+  },
+  "SettingsChangePlan": {
+    "confirm": "Confirm Change",
+    "current": "(current)",
+    "description": "Your next billing date resets to the first of next month on the new plan.",
+    "failed": "Failed to change plan",
+    "noPlans": "No other plans are available.",
+    "seats": "{count, plural, one {# seat} other {# seats}}",
+    "storage": "{size} GB storage",
+    "success": "Plan changed.",
+    "title": "Change Plan"
+  },
+  "SettingsNotifications": {
+    "description": "Choose what you want to be notified about",
+    "loadError": "Failed to load notification preferences.",
+    "save": "Save Preferences",
+    "saveFailed": "Failed to save preferences",
+    "saved": "Notification preferences saved",
+    "title": "Notification Preferences"
+  }
+}

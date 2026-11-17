@@ -29,6 +29,15 @@ function daysBetweenCalendarDates(from: Date, toIsoDate: string): number | null 
   return Math.round((target - today) / MS_PER_DAY)
 }
 
+/**
+ * Message key (in `SalesShared.validity`) plus the day count it interpolates as `{count}`,
+ * so the label is translated where it renders.
+ */
+export type QuotationValidityLabel = {
+  key: "expired" | "unknown" | "expiresToday" | "daysLeft" | "expiredDaysAgo"
+  count: number
+}
+
 export type QuotationValidity = {
   /**
    * Days until `validity_date`, inclusive of the validity date itself:
@@ -38,8 +47,8 @@ export type QuotationValidity = {
   daysLeft: number | null
   /** The validity date is in the past and the quotation is still open. */
   isExpired: boolean
-  /** Ready-to-render text for the "Days Left" field. */
-  label: string
+  /** What the "Days Left" field says, as a `SalesShared.validity` key + count. */
+  label: QuotationValidityLabel
 }
 
 /**
@@ -74,7 +83,7 @@ export function getQuotationValidity(
   const derived = daysBetweenCalendarDates(now, quotation.validity_date)
 
   if (quotation.status === "expired") {
-    return { daysLeft: derived, isExpired: true, label: "Expired" }
+    return { daysLeft: derived, isExpired: true, label: { key: "expired", count: 0 } }
   }
 
   if (derived === null) {
@@ -82,7 +91,7 @@ export function getQuotationValidity(
     return {
       daysLeft: fallback,
       isExpired: false,
-      label: fallback === null ? "—" : formatDaysLeft(fallback),
+      label: fallback === null ? { key: "unknown", count: 0 } : formatDaysLeft(fallback),
     }
   }
 
@@ -96,13 +105,12 @@ export function getQuotationValidity(
   }
 }
 
-function formatDaysLeft(days: number): string {
+function formatDaysLeft(days: number): QuotationValidityLabel {
   if (days < 0) return formatExpiredSince(days)
-  if (days === 0) return "Expires today"
-  return days === 1 ? "1 day" : `${days} days`
+  if (days === 0) return { key: "expiresToday", count: 0 }
+  return { key: "daysLeft", count: days }
 }
 
-function formatExpiredSince(days: number): string {
-  const elapsed = Math.abs(days)
-  return elapsed === 1 ? "Expired 1 day ago" : `Expired ${elapsed} days ago`
+function formatExpiredSince(days: number): QuotationValidityLabel {
+  return { key: "expiredDaysAgo", count: Math.abs(days) }
 }

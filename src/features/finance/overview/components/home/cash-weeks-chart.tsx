@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import {
   Bar,
   CartesianGrid,
@@ -21,45 +22,50 @@ import {
 
 import { Amount } from "../../../components/shared/amount"
 import { ChartTableToggle } from "../../../components/shared/chart-table-toggle"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
+
 import { FinanceTable, type FinanceColumn } from "../../../components/shared/finance-table"
 import { StatusPill } from "../../../components/shared/status-pill"
 import { formatAmount } from "../../../lib/utils/money"
 import type { CashWeek } from "../../lib/types/overview"
 
-const chartConfig = {
-  closing: { label: "Closing balance", color: "var(--series-1)" },
-  netRecorded: { label: "Net movement", color: "var(--series-4)" },
-  netForecast: { label: "Net movement (forecast)", color: "var(--series-4)" },
-} satisfies ChartConfig
+type OverviewT = ReturnType<typeof useTranslations<"FinanceOverview">>
 
-const TABLE_COLUMNS: FinanceColumn<CashWeek>[] = [
-  { id: "week", header: "Week", cell: (row) => row.week, width: "w-24" },
-  {
-    id: "basis",
-    header: "Basis",
-    cell: (row) =>
-      row.forecast ? (
-        <StatusPill status="simulated" label="forecast" />
-      ) : (
-        <StatusPill status="posted" label="recorded" />
-      ),
-  },
-  {
-    id: "closing",
-    header: "Closing balance (EGP)",
-    align: "end",
-    cell: (row) => <Amount value={row.closing} />,
-  },
-  {
-    id: "net",
-    header: "Net movement (EGP)",
-    align: "end",
-    cell: (row) => <Amount value={row.net_movement} />,
-  },
-]
+function chartConfigFor(t: OverviewT) {
+  return {
+    closing: { label: t("closingBalance"), color: "var(--series-1)" },
+    netRecorded: { label: t("netMovement"), color: "var(--series-4)" },
+    netForecast: { label: t("netMovementForecast"), color: "var(--series-4)" },
+  } satisfies ChartConfig
+}
 
-/** Axis ticks read in thousands so the scale stays legible at a glance. */
-const thousands = (value: number) => Math.round(value / 1_000).toLocaleString("en-US")
+function tableColumns(t: OverviewT): FinanceColumn<CashWeek>[] {
+  return [
+    { id: "week", header: t("week"), cell: (row) => row.week, width: "w-24" },
+    {
+      id: "basis",
+      header: t("basis"),
+      cell: (row) =>
+        row.forecast ? (
+          <StatusPill status="simulated" label={t("basisForecast")} />
+        ) : (
+          <StatusPill status="posted" label={t("basisRecorded")} />
+        ),
+    },
+    {
+      id: "closing",
+      header: t("closingBalanceEgp"),
+      align: "end",
+      cell: (row) => <Amount value={row.closing} />,
+    },
+    {
+      id: "net",
+      header: t("netMovementEgp"),
+      align: "end",
+      cell: (row) => <Amount value={row.net_movement} />,
+    },
+  ]
+}
 
 type CashWeeksChartProps = { weeks: CashWeek[] }
 
@@ -69,6 +75,11 @@ type CashWeeksChartProps = { weeks: CashWeek[] }
  * never read as actual figures.
  */
 function CashWeeksChart({ weeks }: CashWeeksChartProps) {
+  const t = useTranslations("FinanceOverview")
+  const locale = useIntlLocale()
+  const chartConfig = chartConfigFor(t)
+  /** Axis ticks read in thousands so the scale stays legible at a glance. */
+  const thousands = (value: number) => Math.round(value / 1_000).toLocaleString(locale)
   const recorded = weeks.filter((week) => !week.forecast).length
   const forecast = weeks.length - recorded
   const firstForecast = weeks.find((week) => week.forecast)?.week
@@ -86,7 +97,7 @@ function CashWeeksChart({ weeks }: CashWeeksChartProps) {
 
   return (
     <ChartTableToggle
-      description={`Thirteen weeks of closing cash. ${recorded} weeks are recorded and ${forecast} are forecast; forecast weeks are shaded and are not actual figures.`}
+      description={t("cashWeeksDescription", { recorded, forecast })}
       chart={
         <ChartContainer config={chartConfig} className="aspect-auto h-64 w-full">
           <ComposedChart data={data} margin={{ top: 16, right: 8, bottom: 0, left: 8 }}>
@@ -98,7 +109,7 @@ function CashWeeksChart({ weeks }: CashWeeksChartProps) {
                 x2={lastWeek}
                 fill="var(--surface-hover)"
                 fillOpacity={0.9}
-                label={{ value: "Forecast", position: "insideTop", fill: "var(--content-tertiary)", fontSize: 12 }}
+                label={{ value: t("forecast"), position: "insideTop", fill: "var(--content-tertiary)", fontSize: 12 }}
               />
             ) : null}
             <XAxis dataKey="week" tickLine={false} axisLine={false} tickMargin={8} />
@@ -109,7 +120,7 @@ function CashWeeksChart({ weeks }: CashWeeksChartProps) {
               width={64}
               tickFormatter={thousands}
               label={{
-                value: "Closing balance (EGP '000)",
+                value: t("closingBalanceAxis"),
                 angle: -90,
                 position: "insideLeft",
                 style: { textAnchor: "middle", fill: "var(--content-tertiary)", fontSize: 12 },
@@ -123,7 +134,7 @@ function CashWeeksChart({ weeks }: CashWeeksChartProps) {
               width={64}
               tickFormatter={thousands}
               label={{
-                value: "Net movement (EGP '000)",
+                value: t("netMovementAxis"),
                 angle: 90,
                 position: "insideRight",
                 style: { textAnchor: "middle", fill: "var(--content-tertiary)", fontSize: 12 },
@@ -176,8 +187,8 @@ function CashWeeksChart({ weeks }: CashWeeksChartProps) {
       }
       table={
         <FinanceTable
-          caption="Closing cash and net movement by week"
-          columns={TABLE_COLUMNS}
+          caption={t("cashWeeksCaption")}
+          columns={tableColumns(t)}
           rows={weeks}
           getRowId={(row) => row.id}
         />

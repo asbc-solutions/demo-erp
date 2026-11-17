@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl"
+
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import type { ProjectLifecycleStatus } from "../../lib/types"
@@ -9,12 +11,14 @@ export function ProjectStatusBadge({
   className,
 }: {
   status: ProjectLifecycleStatus | null | undefined
-  /** Human label from the backend (`status_label`). Falls back to the key. */
+  /** Human label from the backend (`status_label`), shown for statuses the UI doesn't know. */
   label?: string
   className?: string
 }) {
+  const t = useTranslations("ProjectsShared")
   // A row with an unrecognised (or missing) status must still render — this
   // badge sits in every list cell, so throwing here takes the whole page down.
+  const known = !!status && status in LIFECYCLE_STATUS_STYLE
   const style = (status && LIFECYCLE_STATUS_STYLE[status]) || LIFECYCLE_STATUS_STYLE.created
   return (
     <span
@@ -25,7 +29,9 @@ export function ProjectStatusBadge({
       )}
     >
       <span className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
-      {label ?? status?.replace(/_/g, " ") ?? "Unknown"}
+      {known && status
+        ? t(`lifecycle.${status}`)
+        : (label ?? status?.replace(/_/g, " ") ?? t("unknown"))}
     </span>
   )
 }

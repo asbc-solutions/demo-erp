@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import type { ApiError } from "@/src/shared/lib/types/api"
@@ -28,12 +29,12 @@ import { useReviewCycles } from "../../lib/queries/performance"
 import { useRequest360Feedback } from "../../lib/mutations/performance"
 import type { FeedbackRelationship } from "../../lib/types"
 
-const RELATIONSHIPS: { id: FeedbackRelationship; label: string }[] = [
-  { id: "peer", label: "Peer" },
-  { id: "manager", label: "Manager" },
-  { id: "subordinate", label: "Direct report" },
-  { id: "self", label: "Self" },
-  { id: "external", label: "External" },
+const RELATIONSHIPS: FeedbackRelationship[] = [
+  "peer",
+  "manager",
+  "subordinate",
+  "self",
+  "external",
 ]
 
 type RequestFeedbackDialogProps = Readonly<{
@@ -45,6 +46,8 @@ export function RequestFeedbackDialog({
   open,
   onOpenChange,
 }: RequestFeedbackDialogProps) {
+  const t = useTranslations("HrPerformance")
+  const tCommon = useTranslations("Common")
   const [raterEmpId, setRaterEmpId] = useState("")
   const [relationship, setRelationship] = useState<FeedbackRelationship | "">("")
 
@@ -59,7 +62,7 @@ export function RequestFeedbackDialog({
         !["completed", "closed", "archived"].includes(cycle.status),
     ) ?? cycles[0]
   const cycleId = activeCycle?.cycle_id
-  const cycleName = activeCycle?.cycle_name ?? "Active review cycle"
+  const cycleName = activeCycle?.cycle_name ?? t("activeReviewCycle")
 
   const requestFeedback = useRequest360Feedback()
 
@@ -81,13 +84,13 @@ export function RequestFeedbackDialog({
       { cycle_id: cycleId, rater_emp_id: raterEmpId, relationship },
       {
         onSuccess: () => {
-          toast.success("Feedback request sent")
+          toast.success(t("feedbackRequestSent"))
           handleOpenChange(false)
         },
         onError: (err) => {
-          toast.error("Couldn't send request", {
+          toast.error(t("feedbackRequestFailed"), {
             description:
-              (err as unknown as ApiError)?.message ?? "Please try again.",
+              (err as unknown as ApiError)?.message ?? t("pleaseTryAgain"),
           })
         },
       },
@@ -98,32 +101,32 @@ export function RequestFeedbackDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Request 360 feedback</DialogTitle>
+          <DialogTitle>{t("requestFeedbackTitle")}</DialogTitle>
           <DialogDescription>
-            Ask a colleague to provide multi-rater feedback for the current cycle.
+            {t("requestFeedbackDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <DialogBody className="flex flex-col gap-4">
           {/* Cycle (derived, read-only) */}
           <div className="flex flex-col gap-1.5">
-            <Label>Review cycle</Label>
+            <Label>{t("reviewCycle")}</Label>
             <div className="flex h-10 items-center rounded-lg border border-stroke-default bg-surface-hover px-3 text-sm text-content-secondary">
-              {cycleId ? cycleName : "No active review cycle"}
+              {cycleId ? cycleName : t("noActiveReviewCycle")}
             </div>
             {!cycleId && (
               <p className="text-xs text-brand-danger">
-                You need an active appraisal cycle before requesting feedback.
+                {t("needActiveCycle")}
               </p>
             )}
           </div>
 
           {/* Rater */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="rater">Reviewer</Label>
+            <Label htmlFor="rater">{t("reviewer")}</Label>
             <Select value={raterEmpId} onValueChange={setRaterEmpId}>
               <SelectTrigger id="rater">
-                <SelectValue placeholder="Select an employee" />
+                <SelectValue placeholder={t("selectEmployee")} />
               </SelectTrigger>
               <SelectContent>
                 {employees.map((emp) => (
@@ -137,18 +140,18 @@ export function RequestFeedbackDialog({
 
           {/* Relationship */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="relationship">Relationship</Label>
+            <Label htmlFor="relationship">{t("relationshipLabel")}</Label>
             <Select
               value={relationship}
               onValueChange={(v) => setRelationship(v as FeedbackRelationship)}
             >
               <SelectTrigger id="relationship">
-                <SelectValue placeholder="Select relationship" />
+                <SelectValue placeholder={t("selectRelationship")} />
               </SelectTrigger>
               <SelectContent>
                 {RELATIONSHIPS.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.label}
+                  <SelectItem key={r} value={r}>
+                    {t(`relationship.${r}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -162,7 +165,7 @@ export function RequestFeedbackDialog({
             variant="secondary"
             onClick={() => handleOpenChange(false)}
           >
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             type="button"
@@ -170,7 +173,7 @@ export function RequestFeedbackDialog({
             disabled={!canSubmit || requestFeedback.isPending}
             onClick={handleSubmit}
           >
-            {requestFeedback.isPending ? "Sending…" : "Send request"}
+            {requestFeedback.isPending ? t("sending") : t("sendRequest")}
           </Button>
         </DialogFooter>
       </DialogContent>

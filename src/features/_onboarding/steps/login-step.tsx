@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { PasswordInput } from "@/src/shared/components/ui/password-input";
 
@@ -15,6 +16,8 @@ type LoginStepProps = Readonly<{
 }>;
 
 export function LoginStep({ onSuccess, isSubmitting = false }: LoginStepProps) {
+  const t = useTranslations("OnboardingLogin");
+  const tOnboarding = useTranslations("Onboarding");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
@@ -37,14 +40,14 @@ export function LoginStep({ onSuccess, isSubmitting = false }: LoginStepProps) {
       });
 
       if (result?.error) {
-        setError("Invalid email or password. Please try again.");
+        setError(t("invalidCredentials"));
         setIsPending(false);
         return;
       }
 
       await onSuccess();
     } catch {
-      setError("Unable to sign in right now. Please try again.");
+      setError(t("signInUnavailable"));
       setIsPending(false);
     }
   }
@@ -55,17 +58,15 @@ export function LoginStep({ onSuccess, isSubmitting = false }: LoginStepProps) {
 
       <div className="flex flex-col items-center pt-3">
         <h1 className="font-heading text-content-primary text-center text-[39px] leading-[42.9px] font-bold">
-          Your company&apos;s operating
-          <br />
-          system.
+          {tOnboarding.rich("heroTitle", { br: () => <br /> })}
         </h1>
         <p className="text-content-tertiary pt-3 pb-5 text-center text-xl leading-7 font-normal">
-          Built for founders who move fast.
+          {tOnboarding("heroSubtitle")}
         </p>
       </div>
 
       <div className="border-stroke-default bg-surface-white flex w-full flex-col gap-5 rounded-2xl border p-6 shadow-sm">
-        <OnboardingField id="onboarding-email" label="E-mail">
+        <OnboardingField id="onboarding-email" label={tOnboarding("emailLabel")}>
           <input
             id="onboarding-email"
             type="email"
@@ -77,14 +78,14 @@ export function LoginStep({ onSuccess, isSubmitting = false }: LoginStepProps) {
           />
         </OnboardingField>
 
-        <OnboardingField id="onboarding-password" label="Password">
+        <OnboardingField id="onboarding-password" label={tOnboarding("passwordLabel")}>
           <PasswordInput
             id="onboarding-password"
             autoComplete="current-password"
             placeholder="••••••••"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className={`${onboardingInputClass} pr-10`}
+            className={`${onboardingInputClass} pe-10`}
           />
         </OnboardingField>
       </div>
@@ -98,10 +99,10 @@ export function LoginStep({ onSuccess, isSubmitting = false }: LoginStepProps) {
         className="mt-2"
       >
         {isSubmitting
-          ? "Setting up your workspace…"
+          ? tOnboarding("settingUpWorkspace")
           : isPending
-            ? "Signing in…"
-            : "Continue"}
+            ? t("signingIn")
+            : tOnboarding("continue")}
       </OnboardingButton>
     </form>
   );

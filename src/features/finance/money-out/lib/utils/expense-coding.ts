@@ -15,12 +15,24 @@ const RULES: { code: string; words: string[] }[] = [
   { code: "640104", words: ["stationery", "paper", "toner", "printer", "ink", "pens", "office", "supplies", "folders"] },
 ]
 
+/**
+ * Why the account was suggested, as a `FinanceMoneyOut` message key and its
+ * values; the component translates it.
+ */
+export type CodingReason =
+  | { key: "reasonBoth"; values: { merchantWord: string; descriptionWord: string; name: string } }
+  | {
+      key: "reasonDescription" | "reasonMerchant" | "reasonDescriptionConflict" | "reasonMerchantConflict"
+      values: { word: string; name: string }
+    }
+  | { key: "reasonNone"; values?: undefined }
+
 export type CodingSuggestion = {
   code: string
   name: string
   /** 0–100 */
   confidence: number
-  reason: string
+  reason: CodingReason
 }
 
 function firstMatch(text: string): { code: string; word: string } | null {
@@ -51,20 +63,30 @@ export function suggestExpenseAccount(
       code: fromMerchant.code,
       name,
       confidence: 92,
-      reason: `The merchant says “${fromMerchant.word}” and the description says “${fromDescription.word}”. Both usually mean ${name.toLowerCase()}.`,
+      reason: {
+        key: "reasonBoth",
+        values: { merchantWord: fromMerchant.word, descriptionWord: fromDescription.word, name: name.toLowerCase() },
+      },
     }
   }
 
   const match = fromDescription ?? fromMerchant
   if (match) {
     const name = nameOf(match.code)
-    const where = match === fromDescription ? "The description" : "The merchant"
-    const conflict = fromMerchant && fromDescription ? " The other field points elsewhere, so check it." : ""
+    const conflict = Boolean(fromMerchant && fromDescription)
+    const key =
+      match === fromDescription
+        ? conflict
+          ? "reasonDescriptionConflict"
+          : "reasonDescription"
+        : conflict
+          ? "reasonMerchantConflict"
+          : "reasonMerchant"
     return {
       code: match.code,
       name,
       confidence: conflict ? 55 : 74,
-      reason: `${where} says “${match.word}”, which usually means ${name.toLowerCase()}.${conflict}`,
+      reason: { key, values: { word: match.word, name: name.toLowerCase() } },
     }
   }
 
@@ -72,7 +94,7 @@ export function suggestExpenseAccount(
     code: FALLBACK_EXPENSE_ACCOUNT,
     name: nameOf(FALLBACK_EXPENSE_ACCOUNT),
     confidence: 20,
-    reason: "Nothing in the merchant or description points anywhere. This is a guess — check it.",
+    reason: { key: "reasonNone" },
   }
 }
 

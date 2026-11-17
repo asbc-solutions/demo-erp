@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -29,6 +30,7 @@ import {
   createPositionSchema,
   type CreatePositionFormValues,
 } from "../../lib/schema/position"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
 type CreatePositionDialogProps = Readonly<{
   open: boolean
@@ -39,6 +41,9 @@ export function CreatePositionDialog({
   open,
   onOpenChange,
 }: CreatePositionDialogProps) {
+  const t = useTranslations("HrPositions")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const createPosition = useCreatePosition()
   const { data: branchData } = useActiveBranchOptions({ enabled: open })
   const { data: deptData } = useActiveDepartmentOptions({ enabled: open })
@@ -76,13 +81,13 @@ export function CreatePositionDialog({
   const onSubmit = (values: CreatePositionFormValues) => {
     createPosition.mutate(values, {
       onSuccess: (pos) => {
-        toast.success(`Position "${pos.position_title}" created`)
+        toast.success(t("createdToast", { title: pos.position_title }))
         handleOpenChange(false)
       },
       onError: (err) => {
         const apiErr = err as unknown as { message?: string }
-        toast.error("Failed to create position", {
-          description: apiErr.message ?? "Please check the details and try again.",
+        toast.error(t("createFailed"), {
+          description: apiErr.message ?? t("checkDetails"),
         })
       },
     })
@@ -96,12 +101,12 @@ export function CreatePositionDialog({
           className="flex flex-col gap-4 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
-              Create Position
+              {t("createPosition")}
             </DialogTitle>
             <p className="text-content-quaternary text-sm leading-5">
-              Define a new organizational position
+              {t("createSubtitle")}
             </p>
           </div>
 
@@ -109,16 +114,16 @@ export function CreatePositionDialog({
             {/* Title */}
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Title <span className="text-brand-danger">*</span>
+                {t("fieldTitle")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("position_title")}
-                placeholder="e.g. Senior Backend Developer"
+                placeholder={t("phTitle")}
                 className="h-9 rounded-md border-stroke-default bg-surface-white text-sm placeholder:text-content-quaternary"
               />
               {errors.position_title && (
                 <p className="text-brand-danger text-xs">
-                  {errors.position_title.message}
+                  {fieldError(errors.position_title.message)}
                 </p>
               )}
             </div>
@@ -126,9 +131,9 @@ export function CreatePositionDialog({
             {/* Code */}
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-content-primary">
-                Code
-                <span className="text-content-quaternary ml-1.5 text-[11px] font-normal">
-                  auto-generated if blank
+                {t("colCode")}
+                <span className="text-content-quaternary ms-1.5 text-[11px] font-normal">
+                  {t("codeAutoHint")}
                 </span>
               </Label>
               <Input
@@ -142,7 +147,7 @@ export function CreatePositionDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Department
+                  {t("department")}
                 </Label>
                 <Select
                   value={watch("dept_id") ?? ""}
@@ -151,7 +156,7 @@ export function CreatePositionDialog({
                   }
                 >
                   <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
-                    <SelectValue placeholder="Select…" />
+                    <SelectValue placeholder={t("phSelect")} />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((d) => (
@@ -163,13 +168,13 @@ export function CreatePositionDialog({
                 </Select>
                 {errors.dept_id && (
                   <p className="text-brand-danger text-xs">
-                    {errors.dept_id.message}
+                    {fieldError(errors.dept_id.message)}
                   </p>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Branch
+                  {t("branch")}
                 </Label>
                 <Select
                   value={watch("branch_id") ?? ""}
@@ -178,7 +183,7 @@ export function CreatePositionDialog({
                   }
                 >
                   <SelectTrigger className="h-9 rounded-md border-stroke-default bg-surface-white text-sm shadow-xs">
-                    <SelectValue placeholder="Select…" />
+                    <SelectValue placeholder={t("phSelect")} />
                   </SelectTrigger>
                   <SelectContent>
                     {branches.map((b) => (
@@ -195,7 +200,7 @@ export function CreatePositionDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Headcount Budget <span className="text-brand-danger">*</span>
+                  {t("fieldHeadcountBudget")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("headcount_budget", { valueAsNumber: true })}
@@ -207,13 +212,13 @@ export function CreatePositionDialog({
                 />
                 {errors.headcount_budget && (
                   <p className="text-brand-danger text-xs">
-                    {errors.headcount_budget.message}
+                    {fieldError(errors.headcount_budget.message)}
                   </p>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-content-primary">
-                  Effective Date
+                  {t("fieldEffectiveDate")}
                 </Label>
                 <Input
                   {...register("effective_date")}
@@ -222,7 +227,7 @@ export function CreatePositionDialog({
                 />
                 {errors.effective_date && (
                   <p className="text-brand-danger text-xs">
-                    {errors.effective_date.message}
+                    {fieldError(errors.effective_date.message)}
                   </p>
                 )}
               </div>
@@ -237,7 +242,7 @@ export function CreatePositionDialog({
               className="h-9 rounded-md border-stroke-default bg-surface-white px-4 text-sm font-semibold text-content-primary"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -246,7 +251,7 @@ export function CreatePositionDialog({
               disabled={createPosition.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {createPosition.isPending ? "Creating…" : "Create"}
+              {createPosition.isPending ? t("creating") : tCommon("create")}
             </Button>
           </div>
         </form>

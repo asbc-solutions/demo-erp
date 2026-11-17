@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Link, useRouter } from "@/src/i18n/navigation"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { KpiCard } from "@/src/shared/components/ui/kpi-card"
@@ -25,52 +25,66 @@ import {
   FinancePageHeader,
   HeaderFigure,
 } from "../../../components/shared/page-header"
-import { StatusPill } from "../../../components/shared/status-pill"
-import { formatDate } from "../../../lib/utils/date"
+import { StatusPill, useStatusLabel } from "../../../components/shared/status-pill"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount } from "../../../lib/utils/money"
 import { useChequeBooks, useCheques } from "../../lib/queries/banking"
 import type { Cheque, ChequeDirection } from "../../lib/types/banking"
 import { CHEQUE_COPY, ChequeDialog } from "./cheque-dialog"
 
-const GROUP_OPTIONS = [
-  { value: "none", label: "No grouping" },
-  { value: "status", label: "Status" },
-  { value: "party", label: "Customer or supplier" },
-]
+type BankingT = ReturnType<typeof useTranslations<"FinanceBanking">>
 
+const GROUP_OPTIONS = [
+  { value: "none", labelKey: "groupNone" },
+  { value: "status", labelKey: "groupStatus" },
+  { value: "party", labelKey: "groupParty" },
+] as const
+
+/** Per direction: route and `FinanceBanking` keys for the register's copy. */
 const REGISTER_COPY = {
-  received: { title: "Cheques received", problems: "Bounced / returned", href: "/finance/cheques/received" },
-  issued: { title: "Cheques issued", problems: "Bounced / cancelled", href: "/finance/cheques/issued" },
+  received: {
+    title: "chequesReceived",
+    loading: "loadingChequesReceived",
+    problems: "bouncedReturned",
+    href: "/finance/cheques/received",
+  },
+  issued: {
+    title: "chequesIssued",
+    loading: "loadingChequesIssued",
+    problems: "bouncedCancelled",
+    href: "/finance/cheques/issued",
+  },
 } as const
 
-function chequeColumns(direction: ChequeDirection): FinanceColumn<Cheque>[] {
+function chequeColumns(direction: ChequeDirection, t: BankingT, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<Cheque>[] {
   return [
     {
       id: "number",
-      header: "Cheque no.",
+      header: t("colChequeNo"),
       cell: (row) => (
         <Link href={`${REGISTER_COPY[direction].href}/${row.id}`} className="hover:underline">
           <DocNumber>{row.number}</DocNumber>
         </Link>
       ),
     },
-    { id: "party", header: CHEQUE_COPY[direction].party, cell: (row) => row.party_name },
-    { id: "bank", header: "Bank", hideable: true, cell: (row) => row.bank },
-    { id: "issued", header: "Issued", hideable: true, cell: (row) => formatDate(row.issue_date) },
+    { id: "party", header: t(CHEQUE_COPY[direction].party), cell: (row) => row.party_name },
+    { id: "bank", header: t("colBank"), hideable: true, cell: (row) => row.bank },
+    { id: "issued", header: t("colIssued"), hideable: true, cell: (row) => formatDate(row.issue_date) },
     {
       id: "due",
-      header: "Due",
+      header: t("colDue"),
       cell: (row) => (
         <span className="whitespace-nowrap">
           {formatDate(row.due_date)}
           {row.due_soon && row.days_to_due !== null ? (
-            <span className="text-status-warning-fg"> · {row.days_to_due}d</span>
+            <span className="text-status-warning-fg"> · {t("daysShort", { days: row.days_to_due })}</span>
           ) : null}
         </span>
       ),
     },
-    { id: "amount", header: "Amount", align: "end", cell: (row) => <Amount value={row.amount} currency={row.currency} /> },
-    { id: "status", header: "Status", cell: (row) => <StatusPill status={row.status} /> },
+    { id: "amount", header: t("colAmount"), align: "end", cell: (row) => <Amount value={row.amount} currency={row.currency} /> },
+    { id: "status", header: t("colStatus"), cell: (row) => <StatusPill status={row.status} /> },
   ]
 }
 
@@ -79,6 +93,10 @@ function chequeColumns(direction: ChequeDirection): FinanceColumn<Cheque>[] {
  * write cheque) as a dialog over the register.
  */
 function ChequeRegisterPage({ direction, newCheque = false }: { direction: ChequeDirection; newCheque?: boolean }) {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
+  const { formatDate } = useFinanceDateFormat()
+  const statusLabel = useStatusLabel()
   const router = useRouter()
   const copy = REGISTER_COPY[direction]
   const { data, isError, refetch } = useCheques(direction)
@@ -86,7 +104,7 @@ function ChequeRegisterPage({ direction, newCheque = false }: { direction: Chequ
   const [dialogOpen, setDialogOpen] = React.useState(newCheque)
   const [groupBy, setGroupBy] = React.useState("none")
   const [hiddenIds, setHiddenIds] = React.useState<string[]>([])
-  const columns = React.useMemo(() => chequeColumns(direction), [direction])
+  const columns = React.useMemo(() => chequeColumns(direction, t, formatDate), [direction, t, formatDate])
   const nextNumber = books?.find((book) => book.direction === "issued" && book.next_number !== null)?.next_number
 
   const setOpen = (open: boolean) => {
@@ -101,24 +119,24 @@ function ChequeRegisterPage({ direction, newCheque = false }: { direction: Chequ
       const rows = data.items.filter((row) => keyOf(row) === key)
       return {
         id: key,
-        label: groupBy === "status" ? key.replace(/_/g, " ") : key,
+        label: groupBy === "status" ? statusLabel(key) : key,
         rows,
         summary: {
           amount: <Amount value={rows.reduce((sum, row) => sum + row.amount, 0)} currency="EGP" emphasis="strong" />,
         },
       }
     })
-  }, [data, groupBy])
+  }, [data, groupBy, statusLabel])
 
   return (
     <>
       <FinancePageHeader
-        title={copy.title}
-        figure={data ? <HeaderFigure label="In register (EGP)">{formatAmount(data.total_base)}</HeaderFigure> : null}
+        title={t(copy.title)}
+        figure={data ? <HeaderFigure label={t("inRegisterEgp")}>{formatAmount(data.total_base)}</HeaderFigure> : null}
         actions={
           <Button variant="primary" onClick={() => setOpen(true)}>
             <Plus aria-hidden />
-            {CHEQUE_COPY[direction].title}
+            {t(CHEQUE_COPY[direction].title)}
           </Button>
         }
       />
@@ -126,27 +144,31 @@ function ChequeRegisterPage({ direction, newCheque = false }: { direction: Chequ
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : !data ? (
-          <div aria-busy aria-label={`Loading ${copy.title.toLowerCase()}`} className="flex flex-col gap-6">
+          <div aria-busy aria-label={t(copy.loading)} className="flex flex-col gap-6">
             <FinanceTilesSkeleton />
             <Skeleton className="h-96 rounded-lg" />
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Cheques in register" value={data.count} />
+              <KpiCard layout="bar" accent="indigo" label={t("chequesInRegister")} value={data.count} />
               <KpiCard
                 layout="bar"
                 accent="teal"
-                label="Due within 14 days"
+                label={t("dueWithin14")}
                 value={data.due_soon}
-                caption={direction === "received" ? "Present or collect" : "Keep the funds ready"}
+                caption={direction === "received" ? t("presentOrCollect") : t("keepFundsReady")}
               />
-              <KpiCard layout="bar" accent="amber" label={copy.problems} value={data.problems} />
+              <KpiCard layout="bar" accent="amber" label={t(copy.problems)} value={data.problems} />
             </div>
 
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <GroupBySelect value={groupBy} onValueChange={setGroupBy} options={GROUP_OPTIONS} />
+                <GroupBySelect
+                  value={groupBy}
+                  onValueChange={setGroupBy}
+                  options={GROUP_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
+                />
                 <ColumnChooser
                   columns={columns.filter((column) => column.hideable).map((column) => ({ id: column.id, label: columnLabel(column) }))}
                   hiddenIds={hiddenIds}
@@ -154,10 +176,10 @@ function ChequeRegisterPage({ direction, newCheque = false }: { direction: Chequ
                 />
               </div>
               <FinanceTable
-                caption={copy.title}
+                caption={t(copy.title)}
                 columns={columns.map((column) =>
                   column.id === "number"
-                    ? { ...column, footer: "Total" }
+                    ? { ...column, footer: tCommon("total") }
                     : column.id === "amount"
                       ? { ...column, footer: <Amount value={data.total_base} currency="EGP" emphasis="strong" /> }
                       : column,
@@ -169,10 +191,7 @@ function ChequeRegisterPage({ direction, newCheque = false }: { direction: Chequ
                 onRowClick={(row) => router.push(`${copy.href}/${row.id}`)}
               />
             </div>
-            <FinanceAlert tone="info">
-              Cheques post to their treasury automatically as they clear. To see the linked journal, open the
-              cheque and follow the source link.
-            </FinanceAlert>
+            <FinanceAlert tone="info">{t("chequesPostNote")}</FinanceAlert>
           </>
         )}
       </FinancePageBody>

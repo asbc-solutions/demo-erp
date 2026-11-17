@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import {
   Pagination,
   PaginationButton,
@@ -17,10 +19,16 @@ type ComplianceTablePaginationProps = Readonly<{
   total: number
   pageSize: number
   onPageChange: (page: number) => void
-  /** Plural noun for the "Showing X-Y of Z {itemLabel}" line, e.g. "members". */
-  itemLabel: string
+  /** What is being paged, for the "Showing X–Y of Z …" line. */
+  itemKind: "members" | "events" | "policies"
   className?: string
 }>
+
+const SHOWING_KEY = {
+  members: "showingMembers",
+  events: "showingEvents",
+  policies: "showingPolicies",
+} as const
 
 /** Builds the page tokens to render, collapsing long ranges with ellipses. */
 function pageTokens(current: number, total: number): (number | "ellipsis")[] {
@@ -43,9 +51,11 @@ export function ComplianceTablePagination({
   total,
   pageSize,
   onPageChange,
-  itemLabel,
+  itemKind,
   className,
 }: ComplianceTablePaginationProps) {
+  const t = useTranslations("Compliance")
+
   if (total === 0) return null
 
   const from = (page - 1) * pageSize + 1
@@ -59,9 +69,12 @@ export function ComplianceTablePagination({
       )}
     >
       <p className="text-sm text-content-tertiary">
-        Showing <span className="font-medium text-content-primary">{from}</span>–
-        <span className="font-medium text-content-primary">{to}</span> of{" "}
-        <span className="font-medium text-content-primary">{total}</span> {itemLabel}
+        {t.rich(SHOWING_KEY[itemKind], {
+          from: String(from),
+          to: String(to),
+          total: String(total),
+          b: (chunks) => <span className="font-medium text-content-primary">{chunks}</span>,
+        })}
       </p>
 
       {pageCount > 1 && (

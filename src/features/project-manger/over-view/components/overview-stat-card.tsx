@@ -28,10 +28,10 @@ const ICON_MAP: Record<OverviewStat["icon"], LucideIcon> = {
 }
 
 const ACCENT_BORDER: Record<OverviewStatAccent, string> = {
-  indigo: "border-l-brand-primary",
-  amber: "border-l-brand-warning",
-  emerald: "border-l-brand-success",
-  red: "border-l-brand-danger",
+  indigo: "border-s-brand-primary",
+  amber: "border-s-brand-warning",
+  emerald: "border-s-brand-success",
+  red: "border-s-brand-danger",
 }
 
 const ACCENT_TILE: Record<OverviewStatAccent, string> = {
@@ -47,7 +47,7 @@ export function OverviewStatCard({ stat }: { stat: OverviewStat }) {
     <Card
       variant="elevated"
       className={cn(
-        "flex-row items-center gap-3 border-l-4 p-4",
+        "flex-row items-center gap-3 border-s-4 p-4",
         ACCENT_BORDER[stat.accent],
       )}
     >

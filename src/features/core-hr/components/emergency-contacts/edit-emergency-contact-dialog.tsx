@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -15,6 +16,8 @@ import {
 import { Input } from "@/src/shared/components/ui/input"
 import { Label } from "@/src/shared/components/ui/label"
 import type { ApiError } from "@/src/shared/lib/types/api"
+
+import { contactErrorText } from "./contact-form-errors"
 
 import { useUpdateEmergencyContact } from "../../lib/mutations/emergency-contacts"
 import {
@@ -42,7 +45,7 @@ function toFormValues(contact: EmergencyContact): EmergencyContactFormValues {
   }
 }
 
-function apiErrorDescription(err: unknown) {
+function apiErrorDescription(err: unknown, fallback: string) {
   const apiErr = err as ApiError
   const fields = apiErr.details?.fields as Record<string, string[]> | undefined
   if (fields) {
@@ -50,13 +53,15 @@ function apiErrorDescription(err: unknown) {
       .map(([field, messages]) => `${field.replace(/_/g, " ")}: ${messages[0]}`)
       .join(" | ")
   }
-  return apiErr.message ?? "Please check the details and try again."
+  return apiErr.message ?? fallback
 }
 
 export function EditEmergencyContactDialog({
   contact,
   onOpenChange,
 }: EditEmergencyContactDialogProps) {
+  const t = useTranslations("HrEmergencyContacts")
+  const tCommon = useTranslations("Common")
   const updateContact = useUpdateEmergencyContact()
 
   const form = useForm<EmergencyContactFormValues>({
@@ -100,12 +105,12 @@ export function EditEmergencyContactDialog({
       { employeeId: contact.employee_id, id: contact.id, payload },
       {
         onSuccess: (updated) => {
-          toast.success("Contact updated", { description: updated.full_name })
+          toast.success(t("contactUpdated"), { description: updated.full_name })
           handleClose()
         },
         onError: (err) => {
-          toast.error("Failed to update contact", {
-            description: apiErrorDescription(err),
+          toast.error(t("updateFailed"), {
+            description: apiErrorDescription(err, t("checkDetailsRetry")),
           })
         },
       }
@@ -120,15 +125,19 @@ export function EditEmergencyContactDialog({
           className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-lg font-semibold text-content-primary">
-              Edit emergency contact
+              {t("editDialogTitle")}
             </DialogTitle>
             <p className="text-content-tertiary text-sm leading-5">
-              Update contact details for{" "}
-              <span className="font-medium text-content-secondary">
-                {contact?.full_name}
-              </span>
+              {t.rich("editDialogDescription", {
+                name: contact?.full_name ?? "",
+                strong: (chunks) => (
+                  <span className="font-medium text-content-secondary">
+                    {chunks}
+                  </span>
+                ),
+              })}
             </p>
           </div>
 
@@ -138,7 +147,7 @@ export function EditEmergencyContactDialog({
                 htmlFor="ec-edit-name"
                 className="text-sm font-semibold text-content-primary"
               >
-                Name <span className="text-brand-danger">*</span>
+                {tCommon("name")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 id="ec-edit-name"
@@ -147,7 +156,7 @@ export function EditEmergencyContactDialog({
               />
               {errors.full_name && (
                 <p className="text-xs text-brand-danger">
-                  {errors.full_name.message}
+                  {contactErrorText(t, errors.full_name.message)}
                 </p>
               )}
             </div>
@@ -157,7 +166,7 @@ export function EditEmergencyContactDialog({
                 htmlFor="ec-edit-relationship"
                 className="text-sm font-semibold text-content-primary"
               >
-                Relationship <span className="text-brand-danger">*</span>
+                {t("relationship")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 id="ec-edit-relationship"
@@ -166,7 +175,7 @@ export function EditEmergencyContactDialog({
               />
               {errors.relationship && (
                 <p className="text-xs text-brand-danger">
-                  {errors.relationship.message}
+                  {contactErrorText(t, errors.relationship.message)}
                 </p>
               )}
             </div>
@@ -177,7 +186,7 @@ export function EditEmergencyContactDialog({
                   htmlFor="ec-edit-phone"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Phone <span className="text-brand-danger">*</span>
+                  {tCommon("phone")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   id="ec-edit-phone"
@@ -187,7 +196,7 @@ export function EditEmergencyContactDialog({
                 />
                 {errors.phone_primary && (
                   <p className="text-xs text-brand-danger">
-                    {errors.phone_primary.message}
+                    {contactErrorText(t, errors.phone_primary.message)}
                   </p>
                 )}
               </div>
@@ -197,7 +206,7 @@ export function EditEmergencyContactDialog({
                   htmlFor="ec-edit-phone2"
                   className="text-sm font-semibold text-content-primary"
                 >
-                  Secondary phone
+                  {t("secondaryPhone")}
                 </Label>
                 <Input
                   id="ec-edit-phone2"
@@ -207,7 +216,7 @@ export function EditEmergencyContactDialog({
                 />
                 {errors.phone_secondary && (
                   <p className="text-xs text-brand-danger">
-                    {errors.phone_secondary.message}
+                    {contactErrorText(t, errors.phone_secondary.message)}
                   </p>
                 )}
               </div>
@@ -218,7 +227,7 @@ export function EditEmergencyContactDialog({
                 htmlFor="ec-edit-email"
                 className="text-sm font-semibold text-content-primary"
               >
-                Email
+                {tCommon("email")}
               </Label>
               <Input
                 id="ec-edit-email"
@@ -228,7 +237,7 @@ export function EditEmergencyContactDialog({
               />
               {errors.email && (
                 <p className="text-xs text-brand-danger">
-                  {errors.email.message}
+                  {contactErrorText(t, errors.email.message)}
                 </p>
               )}
             </div>
@@ -238,7 +247,7 @@ export function EditEmergencyContactDialog({
                 htmlFor="ec-edit-address"
                 className="text-sm font-semibold text-content-primary"
               >
-                Address
+                {t("address")}
               </Label>
               <Input
                 id="ec-edit-address"
@@ -259,7 +268,7 @@ export function EditEmergencyContactDialog({
                 htmlFor="ec-edit-primary"
                 className="cursor-pointer text-sm font-semibold text-content-primary"
               >
-                Mark as primary contact
+                {t("markAsPrimary")}
               </Label>
             </div>
           </div>
@@ -272,7 +281,7 @@ export function EditEmergencyContactDialog({
               className="h-9 rounded-md px-4 text-sm font-semibold"
               onClick={handleClose}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -281,7 +290,7 @@ export function EditEmergencyContactDialog({
               disabled={updateContact.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {updateContact.isPending ? "Saving..." : "Save changes"}
+              {updateContact.isPending ? t("saving") : tCommon("saveChanges")}
             </Button>
           </div>
         </form>

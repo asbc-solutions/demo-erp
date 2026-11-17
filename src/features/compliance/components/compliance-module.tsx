@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Clock3, FileCheck2, Search, Shield, Users } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { useRegisterLayoutHeaderTab } from "@/src/shared/components/layout-header-context"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -18,27 +19,27 @@ type ComplianceMainTab = "overview" | "access" | "policies" | "audit" | "rules"
 
 const COMPLIANCE_MAIN_TABS: ReadonlyArray<{
   id: ComplianceMainTab
-  label: string
   icon: typeof Shield
   resource: (typeof COMPLIANCE_RESOURCES)[keyof typeof COMPLIANCE_RESOURCES]
 }> = [
-  { id: "overview", label: "Overview", icon: Shield, resource: COMPLIANCE_RESOURCES.overview },
-  { id: "access", label: "Access", icon: Users, resource: COMPLIANCE_RESOURCES.access },
-  { id: "policies", label: "Policies", icon: FileCheck2, resource: COMPLIANCE_RESOURCES.policies },
-  { id: "audit", label: "Audit", icon: Clock3, resource: COMPLIANCE_RESOURCES.audit },
-  { id: "rules", label: "Rules", icon: Search, resource: COMPLIANCE_RESOURCES.rules },
+  { id: "overview", icon: Shield, resource: COMPLIANCE_RESOURCES.overview },
+  { id: "access", icon: Users, resource: COMPLIANCE_RESOURCES.access },
+  { id: "policies", icon: FileCheck2, resource: COMPLIANCE_RESOURCES.policies },
+  { id: "audit", icon: Clock3, resource: COMPLIANCE_RESOURCES.audit },
+  { id: "rules", icon: Search, resource: COMPLIANCE_RESOURCES.rules },
 ]
 
 export function ComplianceModule() {
+  const t = useTranslations("Compliance")
   const [tab, setTab] = useState<ComplianceMainTab>("overview")
 
   const activeTab = COMPLIANCE_MAIN_TABS.find((item) => item.id === tab)
-  useRegisterLayoutHeaderTab(activeTab?.label ?? "")
+  useRegisterLayoutHeaderTab(activeTab ? t(`tabs.${activeTab.id}`) : "")
 
   return (
     <div className="bg-surface-page relative flex min-h-0 flex-1 flex-col gap-6 overflow-auto p-6">
       <div
-        className="pointer-events-none absolute top-0 right-0 left-0 h-px bg-linear-to-r from-transparent via-brand-primary/20 to-transparent"
+        className="pointer-events-none absolute top-0 inset-e-0 inset-s-0 h-px bg-linear-to-r from-transparent via-brand-primary/20 to-transparent"
         aria-hidden
       />
 
@@ -58,7 +59,7 @@ export function ComplianceModule() {
               )}
             >
               <Icon className="size-4" aria-hidden />
-              <span>{item.label}</span>
+              <span>{t(`tabs.${item.id}`)}</span>
             </button>
           )
         })}

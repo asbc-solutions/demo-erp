@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { useTranslations } from "next-intl"
 
 import { AccessDeniedCard } from "@/src/shared/components/ui/access-denied-card"
 import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
@@ -17,6 +18,7 @@ export function OperationsAccessGate({
   resource,
   children,
 }: Readonly<{ resource: OperationsResource; children: ReactNode }>) {
+  const t = useTranslations("OperationsModule")
   const { accessState, isLoading } = usePermissions()
 
   if (isLoading) {
@@ -25,7 +27,7 @@ export function OperationsAccessGate({
 
   if (accessState(resource) === "no_access") {
     return (
-      <AccessDeniedCard description="Ask an admin to grant your role access to this Operations section." />
+      <AccessDeniedCard description={t("accessDenied")} />
     )
   }
 

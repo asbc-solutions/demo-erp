@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ChartColumn, Table2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { cn } from "@/src/shared/lib/utils/utils"
 
@@ -18,6 +19,7 @@ type ChartTableToggleProps = Omit<React.ComponentProps<"div">, "children"> & {
  * who want exact numbers.
  */
 function ChartTableToggle({ className, description, chart, table, ...props }: ChartTableToggleProps) {
+  const t = useTranslations("FinanceShared")
   const [showTable, setShowTable] = React.useState(false)
   const Icon = showTable ? ChartColumn : Table2
   return (
@@ -32,7 +34,7 @@ function ChartTableToggle({ className, description, chart, table, ...props }: Ch
         className="text-brand-primary inline-flex w-fit items-center gap-1.5 text-[13px] leading-5 font-medium hover:underline"
       >
         <Icon aria-hidden className="size-3.5" />
-        {showTable ? "Show these figures as a chart" : "Show these figures as a table"}
+        {showTable ? t("showAsChart") : t("showAsTable")}
       </button>
       {showTable ? table : chart}
     </div>

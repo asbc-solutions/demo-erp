@@ -2,6 +2,7 @@
 
 import { CalendarClock, CheckCircle2, Scissors, UserRoundPlus } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -31,20 +32,11 @@ export type OverAllocatedResource = {
   peakPct: number | null
 }
 
-const LEVELLING_STEPS: readonly { icon: LucideIcon; text: string }[] = [
-  {
-    icon: CalendarClock,
-    text: "Push the lowest-priority tasks later until each week fits inside the person's capacity.",
-  },
-  {
-    icon: Scissors,
-    text: "Trim allocation percentages on bookings that overlap, starting with the ones that have slack.",
-  },
-  {
-    icon: UserRoundPlus,
-    text: "Surface whatever still does not fit so it can be reassigned to someone with free capacity.",
-  },
-]
+const LEVELLING_STEPS = [
+  { icon: CalendarClock, textKey: "levellingStepPush" },
+  { icon: Scissors, textKey: "levellingStepTrim" },
+  { icon: UserRoundPlus, textKey: "levellingStepSurface" },
+] as const satisfies readonly { icon: LucideIcon; textKey: string }[]
 
 type LevelResourcesDialogProps = Readonly<{
   open: boolean
@@ -60,44 +52,46 @@ export function LevelResourcesDialog({
   resources,
   onReassign,
 }: LevelResourcesDialogProps) {
+  const t = useTranslations("ProjectsResourcePlanner")
+  const tCommon = useTranslations("Common")
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl gap-0 p-0 sm:max-w-xl">
-        <DialogHeader className="pr-10">
-          <DialogTitle>Level Resources</DialogTitle>
+        <DialogHeader className="pe-10">
+          <DialogTitle>{t("levelResources")}</DialogTitle>
           <DialogDescription>
             {resources.length === 0
-              ? "Nothing is over capacity in the current period."
-              : `${resources.length} ${resources.length === 1 ? "person is" : "people are"} booked above 100% in the current period.`}
+              ? t("levelNothingOver")
+              : t("levelOverCount", { count: resources.length })}
           </DialogDescription>
         </DialogHeader>
 
         <DialogBody className="max-h-[60vh] overflow-y-auto">
           <div className="bg-surface-muted flex flex-col gap-2 rounded-lg px-3 py-2.5">
             <p className="text-content-secondary text-xs leading-5 font-semibold">
-              What levelling does
+              {t("levellingHeading")}
             </p>
-            {LEVELLING_STEPS.map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-start gap-2">
+            {LEVELLING_STEPS.map(({ icon: Icon, textKey }) => (
+              <div key={textKey} className="flex items-start gap-2">
                 <Icon
                   className="text-content-tertiary mt-0.5 size-3.5 shrink-0"
                   aria-hidden
                 />
-                <p className="text-content-tertiary text-xs leading-5">{text}</p>
+                <p className="text-content-tertiary text-xs leading-5">
+                  {t(textKey)}
+                </p>
               </div>
             ))}
             <p className="text-content-quaternary text-xs leading-5">
-              Automatic levelling is not connected in this build, so nothing is
-              rescheduled from here — use the assignments below to rebalance by
-              hand.
+              {t("levellingNotConnected")}
             </p>
           </div>
 
           {resources.length === 0 ? (
             <EmptyState
               icon={<CheckCircle2 aria-hidden />}
-              title="No over-allocated resources"
-              description="Everyone is at or below 100% for this period. There is nothing to level."
+              title={t("levelEmptyTitle")}
+              description={t("levelEmptyDescription")}
             />
           ) : (
             <ul className="flex flex-col gap-2">
@@ -115,7 +109,7 @@ export function LevelResourcesDialog({
                         {resource.name}
                       </span>
                       <Badge variant="danger" className="text-[11px]">
-                        +{resource.allocationPct - 100} pts over
+                        {t("pointsOver", { points: resource.allocationPct - 100 })}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2">
@@ -125,10 +119,12 @@ export function LevelResourcesDialog({
                         className="bg-surface-muted h-1.5 w-24"
                       />
                       <span className="text-content-tertiary text-xs tabular-nums">
-                        {resource.allocationPct}% average
                         {resource.peakPct == null
-                          ? ""
-                          : ` · ${resource.peakPct}% peak week`}
+                          ? t("averageAllocation", { pct: resource.allocationPct })
+                          : t("averageAndPeak", {
+                              pct: resource.allocationPct,
+                              peak: resource.peakPct,
+                            })}
                       </span>
                     </div>
                   </div>
@@ -138,7 +134,7 @@ export function LevelResourcesDialog({
                     className="h-8 px-3 text-[13px]"
                     onClick={() => onReassign(resource.id)}
                   >
-                    Rebalance
+                    {t("rebalance")}
                   </Button>
                 </li>
               ))}
@@ -154,7 +150,7 @@ export function LevelResourcesDialog({
             className="h-9 px-4 text-sm font-semibold"
             onClick={() => onOpenChange(false)}
           >
-            Close
+            {tCommon("close")}
           </Button>
         </DialogFooter>
       </DialogContent>

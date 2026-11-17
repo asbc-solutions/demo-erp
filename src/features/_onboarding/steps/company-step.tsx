@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { PhoneInput } from "@/src/shared/components/ui/phone-input";
 import { isValidE164 } from "@/src/shared/components/ui/countries";
@@ -22,6 +23,8 @@ export function CompanyStep({
   defaultPhone = "",
   onSubmit,
 }: CompanyStepProps) {
+  const t = useTranslations("OnboardingCompany");
+  const tOnboarding = useTranslations("Onboarding");
   const [name, setName] = React.useState(defaultValue);
   const [phone, setPhone] = React.useState(defaultPhone);
   const [phoneTouched, setPhoneTouched] = React.useState(false);
@@ -30,7 +33,7 @@ export function CompanyStep({
   const isValid = name.trim().length > 0 && isPhoneValid;
   // Only nag once they have moved on from the field or tried to submit.
   const phoneError =
-    phoneTouched && !isPhoneValid ? "Enter a valid phone number." : undefined;
+    phoneTouched && !isPhoneValid ? t("invalidPhone") : undefined;
 
   return (
     <form
@@ -47,21 +50,19 @@ export function CompanyStep({
 
       <div className="flex flex-col items-center pt-3">
         <h1 className="font-heading text-content-primary text-center text-[39px] leading-[42.9px] font-bold">
-          Your company&apos;s operating
-          <br />
-          system.
+          {tOnboarding.rich("heroTitle", { br: () => <br /> })}
         </h1>
         <p className="text-content-tertiary pt-3 pb-5 text-center text-xl leading-7 font-normal">
-          Built for founders who move fast.
+          {tOnboarding("heroSubtitle")}
         </p>
       </div>
 
       <div className="border-stroke-default bg-surface-white flex w-full flex-col gap-5 rounded-2xl border p-6 shadow-sm">
-        <OnboardingField id="onboarding-company" label="What's your company name?">
+        <OnboardingField id="onboarding-company" label={t("companyNameLabel")}>
           <input
             id="onboarding-company"
             autoComplete="organization"
-            placeholder="Enter your company name"
+            placeholder={t("companyNamePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -71,7 +72,7 @@ export function CompanyStep({
 
         <OnboardingField
           id="onboarding-phone"
-          label="What's your phone number?"
+          label={t("phoneLabel")}
           error={phoneError}
         >
           <PhoneInput
@@ -94,7 +95,7 @@ export function CompanyStep({
         disabled={!isValid}
         className="mt-2"
       >
-        Continue
+        {tOnboarding("continue")}
       </OnboardingButton>
     </form>
   );

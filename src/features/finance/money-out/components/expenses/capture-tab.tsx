@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Info } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -64,6 +65,8 @@ const ROW = "md:grid md:grid-cols-[10rem_minmax(0,24rem)] md:items-center md:gap
  * is sent for approval.
  */
 function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () => void }) {
+  const t = useTranslations("FinanceMoneyOut")
+  const tCommon = useTranslations("Common")
   const { data: treasuries = [] } = useFinanceTreasuries()
   const createExpense = useCreateExpense()
   const { control, register, handleSubmit, reset, setValue } = useForm<ExpenseFormValues>({
@@ -86,13 +89,17 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
   const vat = round2(amount - net)
 
   const blockers = [
-    merchant.trim() ? null : "Enter the merchant.",
-    description.trim() ? null : "Say what it was for.",
-    amount > 0 ? null : "Enter the amount paid.",
-    date ? (date > TODAY ? "The date is after today. Use the date on the receipt." : null) : "Choose the date.",
-    hasReceipt ? null : "Confirm you have the receipt. An expense without one cannot be approved.",
+    merchant.trim() ? null : t("errorMerchant"),
+    description.trim() ? null : t("errorDescription"),
+    amount > 0 ? null : t("errorAmountPaid"),
+    date ? (date > TODAY ? t("blockerFutureDate") : null) : t("blockerChooseDate"),
+    hasReceipt ? null : t("blockerReceipt"),
     treasury && amount > treasury.balance
-      ? `${treasury.name} holds ${formatAmount(treasury.balance)} ${treasury.currency}, less than this expense.`
+      ? t("blockerTreasuryShort", {
+          treasury: treasury.name,
+          amount: formatAmount(treasury.balance),
+          currency: treasury.currency,
+        })
       : null,
   ].filter((blocker): blocker is string => blocker !== null)
 
@@ -116,11 +123,11 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
       },
       {
         onSuccess: (expense) => {
-          toast.success(`${expense.number} was sent for approval.`)
+          toast.success(t("expenseSent", { number: expense.number }))
           reset(EMPTY)
           onSubmitted()
         },
-        onError: (error) => toast.error(errorMessage(error, "The expense could not be sent. Try again.")),
+        onError: (error) => toast.error(errorMessage(error, t("expenseSendFailed"))),
       },
     )
 
@@ -129,45 +136,42 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <Button type="button" variant="secondary" onClick={readReceipt}>
-            Read the receipt
+            {t("readReceipt")}
           </Button>
           <span className="text-content-tertiary flex items-center gap-1.5 text-[13px] leading-5">
             <Info className="size-3.5" aria-hidden />
-            Needs a service that is not connected.
+            {t("serviceNotConnected")}
           </span>
         </div>
-        <p className="text-content-tertiary max-w-xl text-[13px] leading-5">
-          Extraction is not connected in this build, so the fields below are filled with a worked example
-          rather than read from your image. Everything after that step is real.
-        </p>
+        <p className="text-content-tertiary max-w-xl text-[13px] leading-5">{t("extractionNote")}</p>
       </div>
 
       <div className="flex flex-col gap-3">
         <Field className={ROW}>
-          <FieldLabel htmlFor="expense-merchant">Merchant</FieldLabel>
+          <FieldLabel htmlFor="expense-merchant">{t("merchant")}</FieldLabel>
           <Input id="expense-merchant" autoComplete="off" {...register("merchant")} />
         </Field>
         <Field className={ROW}>
-          <FieldLabel htmlFor="expense-description">What was it for</FieldLabel>
+          <FieldLabel htmlFor="expense-description">{t("whatWasItFor")}</FieldLabel>
           <Input id="expense-description" autoComplete="off" {...register("description")} />
         </Field>
         <Field className={ROW}>
-          <FieldLabel htmlFor="expense-amount">Amount paid</FieldLabel>
+          <FieldLabel htmlFor="expense-amount">{t("amountPaid")}</FieldLabel>
           <Input id="expense-amount" inputMode="decimal" className="tabular-nums" {...register("amount")} />
         </Field>
         <Field className={ROW}>
-          <FieldLabel htmlFor="expense-date">Date</FieldLabel>
+          <FieldLabel htmlFor="expense-date">{tCommon("date")}</FieldLabel>
           <Input id="expense-date" type="date" max={TODAY} {...register("date")} />
         </Field>
         <Field className={ROW}>
-          <FieldLabel htmlFor="expense-treasury">Paid from</FieldLabel>
+          <FieldLabel htmlFor="expense-treasury">{t("paidFrom")}</FieldLabel>
           <Controller
             control={control}
             name="treasury_id"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger id="expense-treasury" className="h-9 w-full md:max-w-60">
-                  <SelectValue placeholder="Choose a treasury" />
+                  <SelectValue placeholder={t("chooseTreasury")} />
                 </SelectTrigger>
                 <SelectContent>
                   {treasuries
@@ -183,7 +187,7 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
           />
         </Field>
         <Field className={ROW}>
-          <FieldLabel htmlFor="expense-receipt">I have the receipt</FieldLabel>
+          <FieldLabel htmlFor="expense-receipt">{t("haveReceipt")}</FieldLabel>
           <Controller
             control={control}
             name="has_receipt"
@@ -201,26 +205,34 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
       {started ? (
         <>
           <section
-            aria-label="Suggested account"
+            aria-label={t("suggestedAccount")}
             className="border-stroke-default bg-surface-white flex flex-col gap-3 rounded-xl border p-4"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <h3 className="text-content-primary text-sm leading-5 font-semibold">
-                We suggest: {suggestion.name}
+                {t("weSuggest", { name: suggestion.name })}
               </h3>
-              <span className="text-content-secondary text-xs leading-4">How sure: {suggestion.confidence}%</span>
+              <span className="text-content-secondary text-xs leading-4">
+                {t("howSure", { confidence: suggestion.confidence })}
+              </span>
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-content-secondary text-xs leading-4">Because</span>
-              <p className="text-content-primary text-[13px] leading-5">{suggestion.reason}</p>
+              <span className="text-content-secondary text-xs leading-4">{t("because")}</span>
+              <p className="text-content-primary text-[13px] leading-5">
+                {suggestion.reason.key === "reasonNone"
+                  ? t("reasonNone")
+                  : suggestion.reason.key === "reasonBoth"
+                    ? t("reasonBoth", suggestion.reason.values)
+                    : t(suggestion.reason.key, suggestion.reason.values)}
+              </p>
             </div>
             {suggestion.confidence < CONFIDENT_ABOVE ? (
               <FinanceAlert tone="warning" className="text-status-warning-fg">
-                We are not confident about this one. Check the account before you submit.
+                {t("notConfident")}
               </FinanceAlert>
             ) : null}
             <Field className="max-w-60">
-              <FieldLabel htmlFor="expense-account">Use a different account</FieldLabel>
+              <FieldLabel htmlFor="expense-account">{t("useDifferentAccount")}</FieldLabel>
               <Controller
                 control={control}
                 name="account_code"
@@ -242,11 +254,11 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
             </Field>
           </section>
 
-          <FinanceSection title="Before this can be submitted">
+          <FinanceSection title={t("beforeSubmit")}>
             {blockers.length === 0 ? (
-              <p className="text-status-success-fg text-[13px] leading-5">Nothing is in the way.</p>
+              <p className="text-status-success-fg text-[13px] leading-5">{t("nothingInTheWay")}</p>
             ) : (
-              <ul className="text-content-primary flex list-disc flex-col gap-1 pl-5 text-[13px] leading-5">
+              <ul className="text-content-primary flex list-disc flex-col gap-1 ps-5 text-[13px] leading-5">
                 {blockers.map((blocker) => (
                   <li key={blocker}>{blocker}</li>
                 ))}
@@ -254,56 +266,56 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
             )}
           </FinanceSection>
 
-          <FinanceSection title="The entry this becomes">
+          <FinanceSection title={t("entryThisBecomes")}>
             <div className="border-stroke-default bg-surface-white overflow-hidden rounded-lg border">
               <Table density="compact">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Line</TableHead>
-                    <TableHead>Account</TableHead>
-                    <TableHead className="text-right">Debit</TableHead>
-                    <TableHead className="text-right">Credit</TableHead>
+                    <TableHead>{t("colLine")}</TableHead>
+                    <TableHead>{t("colAccount")}</TableHead>
+                    <TableHead className="text-end">{t("colDebit")}</TableHead>
+                    <TableHead className="text-end">{t("colCredit")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell>{description || "Expense"}</TableCell>
+                    <TableCell>{description || t("lineExpense")}</TableCell>
                     <TableCell>
                       <span className="font-mono">{accountCode}</span> {account?.name}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={net} />
                     </TableCell>
                     <TableCell />
                   </TableRow>
                   <TableRow>
-                    <TableCell>Input VAT {Math.round(list.vat_rate * 100)}%</TableCell>
+                    <TableCell>{t("inputVatRate", { rate: Math.round(list.vat_rate * 100) })}</TableCell>
                     <TableCell>
-                      <span className="font-mono">{list.vat_account}</span> Input VAT
+                      <span className="font-mono">{list.vat_account}</span> {t("inputVat")}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={vat} />
                     </TableCell>
                     <TableCell />
                   </TableRow>
                   <TableRow>
-                    <TableCell>{merchant || "Paid"}</TableCell>
+                    <TableCell>{merchant || t("linePaid")}</TableCell>
                     <TableCell>
                       <span className="font-mono">{treasury?.account_code ?? "—"}</span> {treasury?.name}
                     </TableCell>
                     <TableCell />
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={amount} />
                     </TableCell>
                   </TableRow>
                 </TableBody>
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={2}>Total</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell colSpan={2}>{tCommon("total")}</TableCell>
+                    <TableCell className="text-end">
                       <Amount value={round2(net + vat)} emphasis="strong" />
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={amount} emphasis="strong" />
                     </TableCell>
                   </TableRow>
@@ -316,7 +328,7 @@ function CaptureTab({ list, onSubmitted }: { list: ExpenseList; onSubmitted: () 
 
       <div>
         <Button type="submit" variant="primary" disabled={blockers.length > 0 || createExpense.isPending}>
-          Send for approval
+          {t("sendForApproval")}
         </Button>
       </div>
     </form>

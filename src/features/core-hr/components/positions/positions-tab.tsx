@@ -12,6 +12,7 @@ import {
   UserX,
   Eye,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -55,66 +56,42 @@ import { PositionDetailSheet } from "./position-detail-sheet"
 
 // ─── Status badges ────────────────────────────────────────────────────────────
 
-const POSITION_STATUS_BADGE: Record<
-  PositionStatus,
-  { label: string; className: string }
-> = {
-  open: {
-    label: "Open",
-    className: "border-brand-success/30 bg-brand-success/10 text-brand-success",
-  },
-  filled: {
-    label: "Filled",
-    className: "border-brand-primary/30 bg-brand-primary/10 text-brand-primary",
-  },
-  frozen: {
-    label: "Frozen",
-    className: "border-brand-warning/30 bg-brand-warning/10 text-brand-warning",
-  },
-  closed: {
-    label: "Closed",
-    className: "border-stroke-default bg-surface-hover text-content-tertiary",
-  },
-  on_hold: {
-    label: "On Hold",
-    className: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
-  },
+const POSITION_STATUS_BADGE: Record<PositionStatus, string> = {
+  open: "border-brand-success/30 bg-brand-success/10 text-brand-success",
+  filled: "border-brand-primary/30 bg-brand-primary/10 text-brand-primary",
+  frozen: "border-brand-warning/30 bg-brand-warning/10 text-brand-warning",
+  closed: "border-stroke-default bg-surface-hover text-content-tertiary",
+  on_hold: "border-brand-danger/30 bg-brand-danger/10 text-brand-danger",
 }
 
-const POSITION_STATUS_OPTIONS: readonly { value: PositionStatus; label: string }[] =
-  [
-    { value: "open", label: "Open" },
-    { value: "filled", label: "Filled" },
-    { value: "frozen", label: "Frozen" },
-    { value: "on_hold", label: "On Hold" },
-    { value: "closed", label: "Closed" },
-  ]
-
-const VACANCY_OPTIONS: readonly { value: VacancyStatus; label: string }[] = [
-  { value: "open", label: "Open" },
-  { value: "partial", label: "Partial" },
-  { value: "filled", label: "Filled" },
+const POSITION_STATUS_OPTIONS: readonly PositionStatus[] = [
+  "open",
+  "filled",
+  "frozen",
+  "on_hold",
+  "closed",
 ]
 
-const POSITION_FILTER_GROUPS: readonly HrFilterGroup[] = [
-  { id: "status", label: "Status", options: POSITION_STATUS_OPTIONS },
-  { id: "vacancy", label: "Vacancy", options: VACANCY_OPTIONS },
-]
+const VACANCY_OPTIONS: readonly VacancyStatus[] = ["open", "partial", "filled"]
 
 function PositionStatusBadge({ status }: { status: PositionStatus }) {
-  const { label, className } =
-    POSITION_STATUS_BADGE[status] ?? POSITION_STATUS_BADGE.closed
+  const t = useTranslations("HrShared")
+  const known = status in POSITION_STATUS_BADGE ? status : "closed"
   return (
     <Badge
       variant="outline"
-      className={`rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase ${className}`}
+      className={cn(
+        "rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase",
+        POSITION_STATUS_BADGE[known],
+      )}
     >
-      {label}
+      {t(`positionStatus.${known}`)}
     </Badge>
   )
 }
 
 function VacancyBadge({ status }: { status: VacancyStatus }) {
+  const t = useTranslations("HrShared")
   if (status === "filled") {
     return (
       <Badge
@@ -122,7 +99,7 @@ function VacancyBadge({ status }: { status: VacancyStatus }) {
         className="border-transparent bg-brand-success text-white inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-medium"
       >
         <UserCheck className="size-3" />
-        Filled
+        {t("vacancyStatus.filled")}
       </Badge>
     )
   }
@@ -133,7 +110,7 @@ function VacancyBadge({ status }: { status: VacancyStatus }) {
         className="border-transparent bg-brand-warning text-white inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-medium"
       >
         <UserMinus className="size-3" />
-        Partial
+        {t("vacancyStatus.partial")}
       </Badge>
     )
   }
@@ -143,7 +120,7 @@ function VacancyBadge({ status }: { status: VacancyStatus }) {
       className="border-transparent bg-brand-danger text-white inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-medium"
     >
       <UserX className="size-3" />
-      Open
+      {t("vacancyStatus.open")}
     </Badge>
   )
 }
@@ -166,7 +143,7 @@ function HeadcountCell({ filled, budget }: { filled: number; budget: number }) {
       <span className="bg-stroke-default relative block h-1 w-full overflow-hidden rounded-full">
         <span
           aria-hidden
-          className={cn("absolute inset-y-0 left-0 rounded-full", indicator)}
+          className={cn("absolute inset-y-0 inset-s-0 rounded-full", indicator)}
           style={{ width: `${Math.min(100, percent)}%` }}
         />
       </span>
@@ -179,7 +156,7 @@ function PositionsTableSkeleton() {
     <TableBody>
       {Array.from({ length: 6 }).map((_, i) => (
         <TableRow key={i} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <Skeleton className="h-4 w-44" />
           </TableCell>
           <TableCell>
@@ -197,8 +174,8 @@ function PositionsTableSkeleton() {
           <TableCell>
             <Skeleton className="h-6 w-16 rounded-md" />
           </TableCell>
-          <TableCell className="pr-6 text-right">
-            <Skeleton className="ml-auto h-7 w-7 rounded-md" />
+          <TableCell className="pe-6 text-end">
+            <Skeleton className="ms-auto h-7 w-7 rounded-md" />
           </TableCell>
         </TableRow>
       ))}
@@ -207,6 +184,9 @@ function PositionsTableSkeleton() {
 }
 
 export function PositionsTab() {
+  const t = useTranslations("HrPositions")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState<HrFilterValues>({})
   const [createOpen, setCreateOpen] = useState(false)
@@ -218,6 +198,25 @@ export function PositionsTab() {
   const { data, isLoading } = usePositions(search ? { search } : undefined)
   const positions = data?.data ?? []
   const closePosition = useClosePosition()
+
+  const filterGroups: readonly HrFilterGroup[] = [
+    {
+      id: "status",
+      label: tCommon("status"),
+      options: POSITION_STATUS_OPTIONS.map((value) => ({
+        value,
+        label: tShared(`positionStatus.${value}`),
+      })),
+    },
+    {
+      id: "vacancy",
+      label: t("vacancy"),
+      options: VACANCY_OPTIONS.map((value) => ({
+        value,
+        label: tShared(`vacancyStatus.${value}`),
+      })),
+    },
+  ]
 
   const statusFilter = filters.status ?? []
   const vacancyFilter = filters.vacancy ?? []
@@ -241,18 +240,21 @@ export function PositionsTab() {
     if (!archivePosition) return
     closePosition.mutate(archivePosition.id, {
       onSuccess: () => {
-        toast.success(`"${archivePosition.position_title}" archived`)
+        toast.success(t("archivedToast", { title: archivePosition.position_title }))
         setArchivePosition(null)
       },
       onError: (err) => {
         const apiErr = err as unknown as { code?: string; message?: string; details?: Record<string, unknown> }
         if (apiErr.code === "CONFLICT") {
-          const count = (apiErr.details?.assigned_employees as number) ?? "some"
-          toast.error("Cannot archive position", {
-            description: `Position has ${count} assigned employee(s). Reassign them first.`,
+          const count = apiErr.details?.assigned_employees as number | undefined
+          toast.error(t("cannotArchive"), {
+            description:
+              typeof count === "number"
+                ? t("hasAssignedEmployees", { count })
+                : t("hasSomeAssignedEmployees"),
           })
         } else {
-          toast.error("Failed to archive position", {
+          toast.error(t("archiveFailed"), {
             description: apiErr.message,
           })
         }
@@ -271,12 +273,12 @@ export function PositionsTab() {
             onClick={() => setCreateOpen(true)}
           >
             <Plus />
-            Create Position
+            {t("createPosition")}
           </Button>
         }
         searchValue={search}
         onSearchChange={setSearch}
-        filterGroups={POSITION_FILTER_GROUPS}
+        filterGroups={filterGroups}
         filterValues={filters}
         onFilterChange={setFilters}
       />
@@ -285,12 +287,12 @@ export function PositionsTab() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Title</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead>Headcount</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Vacancy</TableHead>
-              <TableHead className="pr-6 text-right">Actions</TableHead>
+              <TableHead className="ps-6">{t("colTitle")}</TableHead>
+              <TableHead>{t("colCode")}</TableHead>
+              <TableHead>{t("colHeadcount")}</TableHead>
+              <TableHead>{tCommon("status")}</TableHead>
+              <TableHead>{t("vacancy")}</TableHead>
+              <TableHead className="pe-6 text-end">{tCommon("actions")}</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -304,13 +306,13 @@ export function PositionsTab() {
                     colSpan={6}
                     className="text-content-tertiary py-12 text-center text-sm"
                   >
-                    No positions found.
+                    {t("empty")}
                   </TableCell>
                 </TableRow>
               )}
               {filtered.map((pos) => (
                 <TableRow key={pos.id}>
-                  <TableCell className="pl-6">
+                  <TableCell className="ps-6">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-content-primary text-sm font-medium">
                         {pos.position_title}
@@ -318,7 +320,7 @@ export function PositionsTab() {
                       {!pos.is_budgeted && (
                         <span className="text-content-quaternary inline-flex items-center gap-1 text-[11px]">
                           <Lock className="size-3" strokeWidth={2} />
-                          Unbudgeted
+                          {t("unbudgeted")}
                         </span>
                       )}
                     </div>
@@ -338,13 +340,13 @@ export function PositionsTab() {
                   <TableCell>
                     <VacancyBadge status={pos.vacancy_status} />
                   </TableCell>
-                  <TableCell className="pr-6 text-right">
+                  <TableCell className="pe-6 text-end">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label={`Actions for ${pos.position_title}`}
+                          aria-label={t("actionsFor", { title: pos.position_title })}
                           className="text-content-tertiary hover:text-content-primary mx-auto"
                         >
                           <MoreHorizontal />
@@ -356,7 +358,7 @@ export function PositionsTab() {
                           className="gap-2"
                         >
                           <Eye className="size-4" strokeWidth={1.75} />
-                          View Details
+                          {t("viewDetails")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={() => setEditPosition(pos)}
@@ -364,7 +366,7 @@ export function PositionsTab() {
                           disabled={pos.position_status === "closed"}
                         >
                           <Pencil className="size-4" strokeWidth={1.75} />
-                          Edit Position
+                          {t("editPosition")}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -377,7 +379,7 @@ export function PositionsTab() {
                           }
                         >
                           <Trash2 className="size-4" strokeWidth={1.75} />
-                          Archive
+                          {t("archive")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -411,22 +413,23 @@ export function PositionsTab() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive this position?</AlertDialogTitle>
+            <AlertDialogTitle>{t("archiveTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <strong className="text-content-primary">
-                {archivePosition?.position_title}
-              </strong>{" "}
-              will be permanently closed and deactivated. This cannot be undone.
-              Positions with assigned employees cannot be archived.
+              {t.rich("archiveDescription", {
+                title: archivePosition?.position_title ?? "",
+                strong: (chunks) => (
+                  <strong className="text-content-primary">{chunks}</strong>
+                ),
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleArchiveConfirm}
               className="bg-brand-danger text-white hover:bg-brand-danger/90"
             >
-              Archive
+              {t("archive")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

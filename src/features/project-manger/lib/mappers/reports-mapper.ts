@@ -1,12 +1,14 @@
 import type { ProgressColor } from "../../all-project/data/all-projects-data"
 import type { ProjectListItem, ProjectType } from "../types"
-import { PROJECT_TYPE_LABEL } from "./project-mapper"
 
 /* ------------------------------------------------------------------ */
 /* Portfolio KPIs (counts derived from GET /projects)                  */
 /* ------------------------------------------------------------------ */
 
-export type ReportKpi = { id: string; label: string; value: string }
+export type ReportKpiId = "total" | "active" | "completed" | "external"
+
+/** Translate `id` at render (`ProjectsProjectDetail.reportKpi`). */
+export type ReportKpi = { id: ReportKpiId; value: string }
 
 export function buildReportKpis(projects: ProjectListItem[]): ReportKpi[] {
   const total = projects.length
@@ -17,10 +19,10 @@ export function buildReportKpis(projects: ProjectListItem[]): ReportKpi[] {
   const external = projects.filter((p) => p.project_type === "external").length
 
   return [
-    { id: "total", label: "Total Projects", value: String(total) },
-    { id: "active", label: "Active", value: String(active) },
-    { id: "completed", label: "Completed", value: String(completed) },
-    { id: "external", label: "External", value: String(external) },
+    { id: "total", value: String(total) },
+    { id: "active", value: String(active) },
+    { id: "completed", value: String(completed) },
+    { id: "external", value: String(external) },
   ]
 }
 
@@ -29,7 +31,8 @@ export function buildReportKpis(projects: ProjectListItem[]): ReportKpi[] {
 /* ------------------------------------------------------------------ */
 
 export type PortfolioTypeRow = {
-  type: string
+  /** Translate at render (`ProjectsShared.projectType`). */
+  type: ProjectType
   projects: number
   sharePct: number
   color: ProgressColor
@@ -53,7 +56,7 @@ export function buildPortfolioByType(
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([type, n]) => ({
-      type: PROJECT_TYPE_LABEL[type] ?? type,
+      type,
       projects: n,
       sharePct: Math.round((n / total) * 100),
       color: TYPE_COLOR[type] ?? "indigo",

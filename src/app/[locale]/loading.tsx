@@ -1,0 +1,10 @@
+
+import { Spinner } from "@/src/shared/components/ui/spinner";
+
+export default function Loading() {
+  return (
+    <div className="flex items-center justify-center h-screen">
+          <Spinner className="size-8" />
+    </div>
+  );
+}

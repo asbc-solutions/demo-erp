@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Link, useRouter } from "@/src/i18n/navigation"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { KpiCard } from "@/src/shared/components/ui/kpi-card"
@@ -15,42 +15,48 @@ import { FinanceErrorState, FinanceTilesSkeleton } from "../../../components/sha
 import { FinanceTable, type FinanceColumn } from "../../../components/shared/finance-table"
 import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount } from "../../../lib/utils/money"
 import { useAssetRegister } from "../../lib/queries/assets"
-import type { Asset } from "../../lib/types/assets"
+import type { Asset, AssetsTranslator } from "../../lib/types/assets"
 
-const COLUMNS: FinanceColumn<Asset>[] = [
-  { id: "tag", header: "Tag", cell: (row) => <DocNumber>{row.number}</DocNumber> },
-  { id: "asset", header: "Asset", cell: (row) => <span className="text-content-primary font-medium">{row.name}</span> },
-  { id: "category", header: "Category", cell: (row) => <span className="text-content-secondary">{row.category_name}</span> },
-  { id: "acquired", header: "Acquired", cell: (row) => formatDate(row.in_service) },
-  { id: "cost", header: "Cost (EGP)", align: "end", cell: (row) => <Amount value={row.cost} /> },
-  { id: "accumulated", header: "Accum. deprec. (EGP)", align: "end", cell: (row) => <Amount value={-row.accumulated} signed /> },
-  {
-    id: "nbv",
-    header: "Net book (EGP)",
-    align: "end",
-    cell: (row) => <Amount value={row.nbv} emphasis={row.status === "in_service" ? "default" : "muted"} />,
-  },
-  { id: "status", header: "Status", cell: (row) => <StatusPill status={row.status} /> },
-]
+function buildColumns(t: AssetsTranslator, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<Asset>[] {
+  return [
+    { id: "tag", header: t("tag"), cell: (row) => <DocNumber>{row.number}</DocNumber> },
+    { id: "asset", header: t("asset"), cell: (row) => <span className="text-content-primary font-medium">{row.name}</span> },
+    { id: "category", header: t("category"), cell: (row) => <span className="text-content-secondary">{row.category_name}</span> },
+    { id: "acquired", header: t("acquired"), cell: (row) => formatDate(row.in_service) },
+    { id: "cost", header: t("costEgp"), align: "end", cell: (row) => <Amount value={row.cost} /> },
+    { id: "accumulated", header: t("accumDeprecEgp"), align: "end", cell: (row) => <Amount value={-row.accumulated} signed /> },
+    {
+      id: "nbv",
+      header: t("netBookEgp"),
+      align: "end",
+      cell: (row) => <Amount value={row.nbv} emphasis={row.status === "in_service" ? "default" : "muted"} />,
+    },
+    { id: "status", header: t("status"), cell: (row) => <StatusPill status={row.status} /> },
+  ]
+}
 
 /** 08.01 · Asset register — every fixed asset with its cost, depreciation to date and book value. */
 function AssetRegisterPage() {
+  const t = useTranslations("FinanceAssets")
+  const { formatDate } = useFinanceDateFormat()
+  const columns = React.useMemo(() => buildColumns(t, formatDate), [t, formatDate])
   const router = useRouter()
   const { data, isError, refetch } = useAssetRegister()
   const [category, setCategory] = React.useState("all")
   const rows = data?.items.filter((row) => category === "all" || row.category_id === category) ?? []
-  const filters = [{ id: "all", name: "All" }, ...(data?.categories ?? [])]
+  const filters = [{ id: "all", name: t("all") }, ...(data?.categories ?? [])]
 
   return (
     <>
       <FinancePageHeader
-        title="Asset register"
+        title={t("assetRegister")}
         figure={
           data ? (
-            <HeaderFigure label="Net book value (EGP)" size="lg">
+            <HeaderFigure label={t("netBookValueEgp")} size="lg">
               {formatAmount(data.nbv)}
             </HeaderFigure>
           ) : null
@@ -58,12 +64,12 @@ function AssetRegisterPage() {
         actions={
           <>
             <Button variant="secondary" asChild>
-              <Link href="/finance/assets/depreciation">Depreciation run</Link>
+              <Link href="/finance/assets/depreciation">{t("depreciationRun")}</Link>
             </Button>
             <Button variant="primary" asChild>
               <Link href="/finance/assets/new">
                 <Plus aria-hidden />
-                Add asset
+                {t("addAsset")}
               </Link>
             </Button>
           </>
@@ -80,21 +86,21 @@ function AssetRegisterPage() {
               <KpiCard
                 layout="bar"
                 accent="indigo"
-                label="Gross cost (EGP)"
+                label={t("grossCostEgp")}
                 value={formatAmount(data.cost)}
-                caption={`${data.in_service + data.retired} assets · ${data.in_service} in service`}
+                caption={t("assetsInService", { count: data.in_service + data.retired, inService: data.in_service })}
               />
-              <KpiCard layout="bar" accent="teal" label="Accumulated depreciation (EGP)" value={formatAmount(data.accumulated)} />
+              <KpiCard layout="bar" accent="teal" label={t("accumulatedDepreciationEgp")} value={formatAmount(data.accumulated)} />
               <KpiCard
                 layout="bar"
                 accent="amber"
-                label="Net book value (EGP)"
+                label={t("netBookValueEgp")}
                 value={formatAmount(data.nbv)}
-                caption={`${data.cost ? Math.round((data.nbv / data.cost) * 100) : 0}% of cost`}
+                caption={t("percentOfCost", { percent: data.cost ? Math.round((data.nbv / data.cost) * 100) : 0 })}
               />
             </div>
 
-            <div role="group" aria-label="Filter by category" className="flex flex-wrap gap-1.5">
+            <div role="group" aria-label={t("filterByCategory")} className="flex flex-wrap gap-1.5">
               {filters.map((option) => (
                 <button
                   key={option.id}
@@ -112,12 +118,12 @@ function AssetRegisterPage() {
             </div>
 
             <FinanceTable
-              caption="Fixed assets"
-              columns={COLUMNS}
+              caption={t("fixedAssets")}
+              columns={columns}
               rows={rows}
               getRowId={(row) => row.id}
               onRowClick={(row) => router.push(`/finance/assets/${row.id}`)}
-              empty={<p className="text-content-tertiary py-8 text-center text-sm">No assets in this category yet.</p>}
+              empty={<p className="text-content-tertiary py-8 text-center text-sm">{t("noAssetsInCategory")}</p>}
             />
           </>
         )}

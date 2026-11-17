@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/src/shared/lib/utils/utils";
 
@@ -19,6 +20,7 @@ export function ConnectToolsStep({
   onBack,
   onSubmit,
 }: ConnectToolsStepProps) {
+  const t = useTranslations("OnboardingTools");
   const [selected, setSelected] = React.useState<Set<ToolId>>(
     () => new Set(defaultValue),
   );
@@ -47,10 +49,10 @@ export function ConnectToolsStep({
 
       <div className="flex flex-col gap-2">
         <h2 className="font-heading text-content-primary text-[31px] leading-[37.2px] font-bold">
-          Connect your tools.
+          {t("title")}
         </h2>
         <p className="text-content-tertiary text-base leading-6 font-normal">
-          You can always add more later.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -64,7 +66,7 @@ export function ConnectToolsStep({
               aria-pressed={isSelected}
               onClick={() => toggle(tool.id)}
               className={cn(
-                "bg-surface-white flex flex-col items-start gap-1 rounded-2xl border p-4 text-left transition-all",
+                "bg-surface-white flex flex-col items-start gap-1 rounded-2xl border p-4 text-start transition-all",
                 "hover:border-brand-primary/40 hover:bg-brand-primary/5",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary",
                 isSelected
@@ -79,14 +81,14 @@ export function ConnectToolsStep({
                 {tool.name}
               </span>
               <span className="text-content-tertiary text-xs leading-4 font-normal">
-                {tool.description}
+                {t(`descriptions.${tool.id}`)}
               </span>
             </button>
           );
         })}
       </div>
 
-      <OnboardingButton type="submit">Launch Nucleus</OnboardingButton>
+      <OnboardingButton type="submit">{t("launch")}</OnboardingButton>
     </form>
   );
 }

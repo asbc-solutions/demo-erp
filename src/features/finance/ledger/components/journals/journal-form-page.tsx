@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -28,7 +29,7 @@ import { formatAmount, round2 } from "../../../lib/utils/money"
 import { useCreateJournal } from "../../lib/mutations/ledger"
 import { useJournalTemplates } from "../../lib/queries/ledger"
 import { journalSchema, type JournalFormValues } from "../../lib/schema/ledger"
-import type { JournalTemplate, NewJournalPayload } from "../../lib/types/ledger"
+import type { JournalTemplate, LedgerMessageKey, NewJournalPayload } from "../../lib/types/ledger"
 
 const TODAY = "2026-03-31"
 const EMPTY_LINE = { account_code: "", description: "", debit: "", credit: "" }
@@ -52,6 +53,7 @@ function fromTemplate(template: JournalTemplate): JournalFormValues {
 
 /** New journal entry — balanced lines, saved as a draft, sent for approval, or posted. */
 function JournalFormPage({ templateId }: { templateId?: string }) {
+  const t = useTranslations("FinanceLedger")
   const router = useRouter()
   const { data: templates } = useJournalTemplates()
   const create = useCreateJournal()
@@ -86,9 +88,9 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
     debit === 0 && credit === 0
       ? null
       : debit !== credit
-        ? `This entry doesn't balance. Debits total ${formatAmount(debit)} and credits ${formatAmount(credit)}. Adjust a line so both sides match, then post.`
+        ? t("entryUnbalanced", { debit: formatAmount(debit), credit: formatAmount(credit) })
         : complete.length !== lines.length
-          ? "Every line needs an account and either a debit or a credit — not both."
+          ? t("entryLineIncomplete")
           : null
 
   const save = (status: NewJournalPayload["status"]) =>
@@ -106,14 +108,14 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
           onSuccess: (journal) => {
             toast.success(
               status === "posted"
-                ? `${journal.number} is posted.`
+                ? t("toastPosted", { number: journal.number })
                 : status === "pending"
-                  ? `${journal.number} is waiting for approval.`
-                  : `${journal.number} was saved as a draft.`,
+                  ? t("toastAwaitingApproval", { number: journal.number })
+                  : t("toastSavedDraft", { number: journal.number }),
             )
             router.push(`/finance/journals/${journal.number}`)
           },
-          onError: (error) => toast.error(errorMessage(error, "The entry could not be saved. Try again.")),
+          onError: (error) => toast.error(errorMessage(error, t("errorSaveEntry"))),
         },
       ),
     )()
@@ -121,17 +123,17 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
   return (
     <>
       <FinancePageHeader
-        title={template ? `New entry from ${template.code}` : "New journal entry"}
+        title={template ? t("newEntryFromTemplate", { code: template.code }) : t("newJournalEntry")}
         actions={
           <>
             <Button variant="secondary" disabled={create.isPending} onClick={() => save("draft")}>
-              Save draft
+              {t("saveDraft")}
             </Button>
             <Button variant="secondary" disabled={!balanced || create.isPending} onClick={() => save("pending")}>
-              Submit for approval
+              {t("submitForApproval")}
             </Button>
             <Button variant="primary" disabled={!balanced || create.isPending} onClick={() => save("posted")}>
-              Post
+              {t("post")}
             </Button>
           </>
         }
@@ -140,27 +142,27 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
         <form onSubmit={(event) => event.preventDefault()} noValidate className="flex flex-col gap-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[12rem_minmax(0,1fr)]">
             <Field>
-              <FieldLabel htmlFor="journal-date">Date</FieldLabel>
+              <FieldLabel htmlFor="journal-date">{t("date")}</FieldLabel>
               <Input id="journal-date" type="date" {...register("date")} />
             </Field>
             <Field>
-              <FieldLabel htmlFor="journal-description">Description</FieldLabel>
+              <FieldLabel htmlFor="journal-description">{t("description")}</FieldLabel>
               <Input id="journal-description" aria-invalid={Boolean(errors.description)} {...register("description")} />
-              {errors.description ? <FieldError>{errors.description.message}</FieldError> : null}
+              {errors.description ? <FieldError>{t(errors.description.message as LedgerMessageKey)}</FieldError> : null}
             </Field>
           </div>
 
           <div className="border-stroke-default bg-surface-white overflow-x-auto rounded-lg border">
             <Table>
-              <caption className="sr-only">Entry lines</caption>
+              <caption className="sr-only">{t("entryLines")}</caption>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-80">Account</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-40 text-right">Debit (EGP)</TableHead>
-                  <TableHead className="w-40 text-right">Credit (EGP)</TableHead>
+                  <TableHead className="w-80">{t("account")}</TableHead>
+                  <TableHead>{t("description")}</TableHead>
+                  <TableHead className="w-40 text-end">{t("debitEgp")}</TableHead>
+                  <TableHead className="w-40 text-end">{t("creditEgp")}</TableHead>
                   <TableHead className="w-12">
-                    <span className="sr-only">Remove</span>
+                    <span className="sr-only">{t("remove")}</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -172,25 +174,25 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
                         control={control}
                         name={`lines.${index}.account_code`}
                         render={({ field: account }) => (
-                          <AccountSelect aria-label={`Account for line ${index + 1}`} value={account.value} onValueChange={account.onChange} />
+                          <AccountSelect aria-label={t("lineAccount", { line: index + 1 })} value={account.value} onValueChange={account.onChange} />
                         )}
                       />
                     </TableCell>
                     <TableCell>
-                      <Input aria-label={`Description for line ${index + 1}`} className="h-9" {...register(`lines.${index}.description`)} />
+                      <Input aria-label={t("lineDescription", { line: index + 1 })} className="h-9" {...register(`lines.${index}.description`)} />
                     </TableCell>
                     <TableCell>
-                      <Input aria-label={`Debit for line ${index + 1}`} inputMode="decimal" placeholder="0.00" className="h-9 text-right tabular-nums" {...register(`lines.${index}.debit`)} />
+                      <Input aria-label={t("lineDebit", { line: index + 1 })} inputMode="decimal" placeholder="0.00" className="h-9 text-end tabular-nums" {...register(`lines.${index}.debit`)} />
                     </TableCell>
                     <TableCell>
-                      <Input aria-label={`Credit for line ${index + 1}`} inputMode="decimal" placeholder="0.00" className="h-9 text-right tabular-nums" {...register(`lines.${index}.credit`)} />
+                      <Input aria-label={t("lineCredit", { line: index + 1 })} inputMode="decimal" placeholder="0.00" className="h-9 text-end tabular-nums" {...register(`lines.${index}.credit`)} />
                     </TableCell>
                     <TableCell>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        aria-label={`Remove line ${index + 1}`}
+                        aria-label={t("lineRemove", { line: index + 1 })}
                         disabled={fields.length <= 2}
                         onClick={() => remove(index)}
                       >
@@ -205,11 +207,11 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
                   <TableCell colSpan={2}>
                     <Button type="button" variant="ghost" size="sm" onClick={() => append(EMPTY_LINE)}>
                       <Plus aria-hidden />
-                      Add line
+                      {t("addLine")}
                     </Button>
                   </TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">{formatAmount(debit)}</TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">{formatAmount(credit)}</TableCell>
+                  <TableCell className="text-end font-semibold tabular-nums">{formatAmount(debit)}</TableCell>
+                  <TableCell className="text-end font-semibold tabular-nums">{formatAmount(credit)}</TableCell>
                   <TableCell />
                 </TableRow>
               </TableFooter>
@@ -219,7 +221,7 @@ function JournalFormPage({ templateId }: { templateId?: string }) {
           {problem ? <FinanceAlert tone="danger">{problem}</FinanceAlert> : null}
           {balanced ? (
             <FinanceAlert tone="success" className="text-status-success-fg">
-              The entry balances. Posting writes it to the ledger; lines on a cash or bank account move that treasury too.
+              {t("entryBalances")}
             </FinanceAlert>
           ) : null}
         </form>

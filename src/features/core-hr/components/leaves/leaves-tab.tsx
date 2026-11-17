@@ -1,6 +1,7 @@
 "use client"
 
 import { BookOpen, CalendarDays, Users } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import {
   Tabs,
@@ -19,20 +20,22 @@ import { PoliciesTab } from "./policies-tab"
 import { TeamOverviewTab } from "./team-overview-tab"
 
 function AdminLeaveView() {
+  const t = useTranslations("HrLeaves")
+
   return (
     <Tabs defaultValue="calendar" variant="pill" className="gap-6">
       <TabsList>
         <TabsTrigger value="calendar">
           <CalendarDays className="size-4" strokeWidth={1.75} />
-          Calendar
+          {t("tabCalendar")}
         </TabsTrigger>
         <TabsTrigger value="team-overview">
           <Users className="size-4" strokeWidth={1.75} />
-          Team Overview
+          {t("tabTeamOverview")}
         </TabsTrigger>
         <TabsTrigger value="policies">
           <BookOpen className="size-4" strokeWidth={1.75} />
-          Policies
+          {t("tabPolicies")}
         </TabsTrigger>
       </TabsList>
 

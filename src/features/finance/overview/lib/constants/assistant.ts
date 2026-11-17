@@ -1,69 +1,79 @@
 import type { AssistantAnswer } from "../types/assistant"
 
-/** The six starter questions on an empty conversation, from the design. */
+/**
+ * The six starter questions on an empty conversation, from the design. The
+ * card shows the translated question; `question` is the canonical English
+ * text sent to the demo API, whose topic matching reads English keywords.
+ */
 export const ASSISTANT_SUGGESTIONS = [
   {
     id: "watchlist",
-    title: "Reconciliation watchlist",
+    titleKey: "suggestionWatchlistTitle",
+    questionKey: "suggestionWatchlistQuestion",
     question: "Which treasuries are blocking the March close, and how many unmatched lines each?",
   },
   {
     id: "rule",
-    title: "Rule explanation",
+    titleKey: "suggestionRuleTitle",
+    questionKey: "suggestionRuleQuestion",
     question: "How does the posting map route a credit sale, and where does the tax go?",
   },
   {
     id: "approvers",
-    title: "Approver gaps",
+    titleKey: "suggestionApproversTitle",
+    questionKey: "suggestionApproversQuestion",
     question: "Which bills are at or above the second-approval threshold?",
   },
   {
     id: "filing",
-    title: "Filing readiness",
+    titleKey: "suggestionFilingTitle",
+    questionKey: "suggestionFilingQuestion",
     question: "Can the March VAT return be filed, or are pre-filing checks still open?",
   },
   {
     id: "aging",
-    title: "Aging exposure",
+    titleKey: "suggestionAgingTitle",
+    questionKey: "suggestionAgingQuestion",
     question: "Overdue receivables in EGP by customer, top 5.",
   },
   {
     id: "group",
-    title: "Group position",
+    titleKey: "suggestionGroupTitle",
+    questionKey: "suggestionGroupQuestion",
     question: "What is the consolidated group position this month?",
   },
 ] as const
 
 export const ASSISTANT_ROLES = [
-  { value: "finance-admin", label: "Finance · Admin" },
-  { value: "finance-treasury", label: "Finance · Treasury" },
-  { value: "finance-tax", label: "Finance · Tax" },
-  { value: "finance-viewer", label: "Finance · Viewer" },
+  { value: "finance-admin", labelKey: "roleAdmin" },
+  { value: "finance-treasury", labelKey: "roleTreasury" },
+  { value: "finance-tax", labelKey: "roleTax" },
+  { value: "finance-viewer", labelKey: "roleViewer" },
 ] as const
 
 export const DRAFT_STATUS_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "opened_in_screen", label: "Opened in screen" },
-  { value: "actioned", label: "Actioned" },
-  { value: "dismissed", label: "Dismissed" },
-  { value: "expired", label: "Expired" },
+  { value: "all", labelKey: "draftStatusAll" },
+  { value: "opened_in_screen", labelKey: "draftStatusOpenedInScreen" },
+  { value: "actioned", labelKey: "draftStatusActioned" },
+  { value: "dismissed", labelKey: "draftStatusDismissed" },
+  { value: "expired", labelKey: "draftStatusExpired" },
 ] as const
 
 export const RETENTION_OPTIONS = [30, 90, 180, 365] as const
 
-/** What the assistant will never do, whatever the settings say. */
+/** What the assistant will never do, whatever the settings say (`FinanceAssistant` keys). */
 export const ASSISTANT_NEVER = [
-  "Post, reverse or edit any journal entry",
-  "Approve, reject or route an approval",
-  "File or settle a tax return",
-  "Publish the posting map",
-  "Close or reopen a period",
-  "Issue a payment run",
-  "Answer outside the Role & Authority Matrix scope",
+  "neverPostEntries",
+  "neverApprove",
+  "neverFileTax",
+  "neverPublishPostingMap",
+  "neverClosePeriod",
+  "neverIssuePaymentRun",
+  "neverOutsideScope",
 ] as const
 
 /** Time the design's last grounded answer was read, shown while the assistant is offline. */
-export const LAST_GROUNDED = { time: "14:31", source: "Cash & banking / Treasuries" } as const
+export const LAST_GROUNDED = { time: "14:31" } as const
 
 export type AssistantTurn = {
   id: string

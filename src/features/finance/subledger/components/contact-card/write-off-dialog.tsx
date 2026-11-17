@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -19,9 +20,8 @@ import { Textarea } from "@/src/shared/components/ui/textarea"
 
 import { FinanceAlert } from "../../../components/shared/finance-alert"
 import { formatAmount } from "../../../lib/utils/money"
-import { SUBLEDGER_SIDES } from "../../lib/constants/sides"
 import { useWriteOffBalance } from "../../lib/mutations/subledger"
-import { writeOffSchema, type WriteOffFormValues } from "../../lib/schema/subledger"
+import { writeOffSchema, type SubledgerErrorKey, type WriteOffFormValues } from "../../lib/schema/subledger"
 import type { Side } from "../../lib/types/subledger"
 
 type WriteOffDialogProps = {
@@ -34,7 +34,8 @@ type WriteOffDialogProps = {
 
 /** Write off this balance? — clears the contact's open documents, with a reason on record. */
 function WriteOffDialog({ side, open, onOpenChange, contactId, contactName }: WriteOffDialogProps) {
-  const copy = SUBLEDGER_SIDES[side].writeOff
+  const t = useTranslations("FinanceSubledger")
+  const tCommon = useTranslations("Common")
   const writeOff = useWriteOffBalance(side)
   const {
     register,
@@ -56,10 +57,12 @@ function WriteOffDialog({ side, open, onOpenChange, contactId, contactName }: Wr
       { id: contactId, reason },
       {
         onSuccess: (result) => {
-          toast.success(copy.done(contactName, formatAmount(result.written_off_base)))
+          toast.success(
+            t(`writeOffDone.${side}`, { name: contactName, amount: formatAmount(result.written_off_base) }),
+          )
           onOpenChange(false)
         },
-        onError: () => toast.error("The balance could not be written off. Try again."),
+        onError: () => toast.error(t("writeOffFailed")),
       },
     )
 
@@ -68,24 +71,26 @@ function WriteOffDialog({ side, open, onOpenChange, contactId, contactName }: Wr
       <DialogContent className="max-w-md" showCloseButton={false}>
         <form onSubmit={handleSubmit(submit)} noValidate>
           <DialogHeader>
-            <DialogTitle>Write off this balance?</DialogTitle>
+            <DialogTitle>{t("writeOffTitle")}</DialogTitle>
           </DialogHeader>
           <DialogBody>
             <FinanceAlert tone="warning" className="text-status-warning-fg">
-              {copy.explainer}
+              {t(`writeOffExplainer.${side}`)}
             </FinanceAlert>
             <Field>
-              <FieldLabel htmlFor="write-off-reason">Reason</FieldLabel>
+              <FieldLabel htmlFor="write-off-reason">{t("reason")}</FieldLabel>
               <Textarea id="write-off-reason" rows={3} aria-invalid={Boolean(errors.reason)} {...register("reason")} />
-              {errors.reason ? <FieldError>{errors.reason.message}</FieldError> : null}
+              {errors.reason?.message ? (
+                <FieldError>{t(errors.reason.message as SubledgerErrorKey)}</FieldError>
+              ) : null}
             </Field>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="danger" disabled={!isValid || writeOff.isPending}>
-              Write off
+              {t("writeOff")}
             </Button>
           </DialogFooter>
         </form>

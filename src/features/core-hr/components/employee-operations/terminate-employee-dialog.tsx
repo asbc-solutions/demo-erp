@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowLeft, TriangleAlert, UserMinus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Alert, AlertDescription } from "@/src/shared/components/ui/alert"
@@ -45,21 +46,27 @@ type TerminateEmployeeDialogProps = Readonly<{
   onViewProfile?: (employeeId: string) => void
 }>
 
-const STEPS = ["Termination Details", "Review & Confirm", "Result"]
+const STEP_KEYS = [
+  "stepTerminationDetails",
+  "stepReviewConfirm",
+  "stepResult",
+] as const
 
-const TERMINATION_TYPES: { value: TerminationType; label: string }[] = [
-  { value: "resignation", label: "Voluntary Resignation" },
-  { value: "termination", label: "Involuntary" },
-  { value: "contract_end", label: "End of Contract" },
-  { value: "retirement", label: "Retirement" },
-  { value: "redundancy", label: "Redundancy" },
-  { value: "death", label: "Death" },
+// Labels live in `HrEmployeeOperations.terminationType.<value>`.
+const TERMINATION_TYPES: readonly TerminationType[] = [
+  "resignation",
+  "termination",
+  "contract_end",
+  "retirement",
+  "redundancy",
+  "death",
 ]
 
 function YesNo({
   value,
   onChange,
 }: Readonly<{ value: boolean | null; onChange: (v: boolean) => void }>) {
+  const tCommon = useTranslations("Common")
   const cls = (active: boolean) =>
     cn(
       "rounded-md border px-5 py-1.5 text-sm font-medium transition-colors",
@@ -70,10 +77,10 @@ function YesNo({
   return (
     <div className="flex gap-2">
       <button type="button" className={cls(value === true)} onClick={() => onChange(true)}>
-        Yes
+        {tCommon("yes")}
       </button>
       <button type="button" className={cls(value === false)} onClick={() => onChange(false)}>
-        No
+        {tCommon("no")}
       </button>
     </div>
   )
@@ -85,6 +92,9 @@ export function TerminateEmployeeDialog({
   onOpenChange,
   onViewProfile,
 }: TerminateEmployeeDialogProps) {
+  const t = useTranslations("HrEmployeeOperations")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
   const [step, setStep] = useState(0)
   const [terminationType, setTerminationType] = useState<TerminationType | "">("")
   const [lastWorkingDay, setLastWorkingDay] = useState("")
@@ -99,7 +109,9 @@ export function TerminateEmployeeDialog({
   const terminateEmployee = useTerminateEmployee()
   const undoOperation = useUndoOperation()
 
-  const typeLabel = TERMINATION_TYPES.find((t) => t.value === terminationType)?.label
+  const typeLabel = terminationType
+    ? t(`terminationType.${terminationType}`)
+    : ""
 
   const canContinue =
     Boolean(terminationType) && Boolean(lastWorkingDay) && Boolean(reason.trim())
@@ -133,7 +145,7 @@ export function TerminateEmployeeDialog({
 
   const goReview = () => {
     if (!employee || !canContinue) {
-      toast.error("Complete the termination details first")
+      toast.error(t("terminateIncomplete"))
       return
     }
     previewTermination.mutate(
@@ -156,7 +168,7 @@ export function TerminateEmployeeDialog({
       {
         onSuccess: () => setStep(2),
         onError: (err) =>
-          toast.error("Termination failed", {
+          toast.error(t("terminateFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
@@ -169,9 +181,9 @@ export function TerminateEmployeeDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl gap-0 p-0">
         <div className="flex flex-col gap-5 p-6">
-          <div className="flex flex-col gap-3 pr-8">
+          <div className="flex flex-col gap-3 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
-              Terminate Employee
+              {t("terminateTitle")}
             </DialogTitle>
             <EmployeeChip
               initials={employee.avatar_initials}
@@ -180,25 +192,29 @@ export function TerminateEmployeeDialog({
             />
           </div>
 
-          <OperationStepper steps={STEPS} current={step} accent="danger" />
+          <OperationStepper
+            steps={STEP_KEYS.map((key) => t(key))}
+            current={step}
+            accent="danger"
+          />
 
           {step === 0 && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  Termination Type
+                  {t("terminationTypeLabel")}
                 </Label>
                 <Select
                   value={terminationType}
                   onValueChange={(v) => setTerminationType(v as TerminationType)}
                 >
                   <SelectTrigger className="h-10 rounded-md text-sm">
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder={t("selectType")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {TERMINATION_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
+                    {TERMINATION_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {t(`terminationType.${type}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -207,7 +223,7 @@ export function TerminateEmployeeDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  Last Working Day
+                  {t("lastWorkingDay")}
                 </Label>
                 <Input
                   type="date"
@@ -219,12 +235,12 @@ export function TerminateEmployeeDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                  Reason
+                  {t("reason")}
                 </Label>
                 <Textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="Provide termination reason…"
+                  placeholder={t("terminateReasonPlaceholder")}
                   rows={3}
                   className="resize-none rounded-md text-sm"
                 />
@@ -233,13 +249,13 @@ export function TerminateEmployeeDialog({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                    Notice Period Served?
+                    {t("noticeServed")}
                   </Label>
                   <YesNo value={noticeServed} onChange={setNoticeServed} />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-content-tertiary text-[11px] tracking-[0.4px] uppercase">
-                    Eligible for Rehire?
+                    {t("eligibleRehire")}
                   </Label>
                   <YesNo value={eligibleRehire} onChange={setEligibleRehire} />
                 </div>
@@ -248,8 +264,7 @@ export function TerminateEmployeeDialog({
               <Alert variant="warning">
                 <TriangleAlert />
                 <AlertDescription>
-                  This action will deactivate the employee&apos;s account and revoke
-                  system access on the last working day.
+                  {t("terminateWarning")}
                 </AlertDescription>
               </Alert>
             </div>
@@ -257,36 +272,44 @@ export function TerminateEmployeeDialog({
 
           {step === 1 && (
             <div className="flex flex-col gap-4">
-              <div className="border-brand-danger bg-brand-danger/5 flex flex-col gap-3 rounded-[12px] border-l-4 p-4">
+              <div className="border-brand-danger bg-brand-danger/5 flex flex-col gap-3 rounded-[12px] border-s-4 p-4">
                 <div className="flex items-start gap-3">
                   <span className="bg-brand-danger/10 text-brand-danger flex size-9 shrink-0 items-center justify-center rounded-full">
                     <UserMinus className="size-5" />
                   </span>
                   <div className="flex flex-col">
                     <p className="text-brand-danger text-sm font-semibold">
-                      You are about to terminate {employee.full_name} (
-                      {employee.employee_number})
+                      {t("aboutToTerminate", {
+                        name: employee.full_name,
+                        number: employee.employee_number,
+                      })}
                     </p>
                     <p className="text-content-tertiary text-xs">
-                      {typeLabel} — Last working day: {lastWorkingDay}
+                      {t("typeAndLastDay", { type: typeLabel, date: lastWorkingDay })}
                     </p>
                   </div>
                 </div>
-                <ul className="text-content-secondary flex flex-col gap-1.5 pl-1 text-sm">
+                <ul className="text-content-secondary flex flex-col gap-1.5 ps-1 text-sm">
                   <li>
-                    System access: <strong>Will be revoked on {lastWorkingDay}</strong>
+                    {t.rich("systemAccessRevoked", {
+                      date: lastWorkingDay,
+                      strong: (chunks) => <strong>{chunks}</strong>,
+                    })}
                   </li>
                   <li>
-                    Benefits: <strong>Deactivated on {lastWorkingDay}</strong>
+                    {t.rich("benefitsDeactivated", {
+                      date: lastWorkingDay,
+                      strong: (chunks) => <strong>{chunks}</strong>,
+                    })}
                   </li>
                   <li>
-                    Rehire eligibility:{" "}
+                    {t("rehireEligibility")}{" "}
                     <strong>
                       {eligibleRehire === null
-                        ? "Not set"
+                        ? t("notSet")
                         : eligibleRehire
-                          ? "Eligible"
-                          : "Not eligible"}
+                          ? t("eligible")
+                          : t("notEligible")}
                     </strong>
                   </li>
                   {(preview?.warnings ?? []).map((w) => (
@@ -301,14 +324,14 @@ export function TerminateEmployeeDialog({
                     checked={sendLetter}
                     onCheckedChange={(v) => setSendLetter(v === true)}
                   />
-                  Send termination letter
+                  {t("sendTerminationLetter")}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={notifyHr}
                     onCheckedChange={(v) => setNotifyHr(v === true)}
                   />
-                  Notify HR admin
+                  {t("notifyHrAdmin")}
                 </label>
               </div>
             </div>
@@ -316,7 +339,7 @@ export function TerminateEmployeeDialog({
 
           {step === 2 && (
             <OperationResult
-              title="Termination confirmed"
+              title={t("terminateConfirmed")}
               onViewProfile={
                 onViewProfile ? () => onViewProfile(employee.id) : undefined
               }
@@ -327,17 +350,16 @@ export function TerminateEmployeeDialog({
                   { operationId, employeeId: employee.id },
                   {
                     onSuccess: () => {
-                      toast.success("Termination undone", {
-                        description:
-                          "The employee's status and access have been restored.",
+                      toast.success(t("terminateUndone"), {
+                        description: t("terminateUndoneDescription"),
                       })
                       handleOpenChange(false)
                     },
                     onError: (err) => {
                       const apiErr = err as Partial<ApiError>
-                      toast.error("Unable to undo termination", {
+                      toast.error(t("terminateUndoFailed"), {
                         description:
-                          apiErr.message ?? "Please try again.",
+                          apiErr.message ?? tShared("pleaseTryAgain"),
                       })
                     },
                   },
@@ -351,21 +373,23 @@ export function TerminateEmployeeDialog({
                     variant="outline"
                     className="border-brand-danger/30 bg-brand-danger/10 text-brand-danger rounded-full px-2.5 py-0.5 text-[11px]"
                   >
-                    Inactive
+                    {tShared("employmentStatus.inactive")}
                   </Badge>
                   <Badge
                     variant="outline"
                     className="border-brand-success/30 bg-brand-success/10 text-brand-success rounded-full px-2.5 py-0.5 text-[11px]"
                   >
-                    Archived
+                    {t("archived")}
                   </Badge>
                 </div>
               }
             >
-              <strong>{employee.full_name}</strong> has been marked as terminated
-              ({typeLabel}). Their last working day is{" "}
-              <strong>{lastWorkingDay}</strong>. System access and benefits will be
-              deactivated accordingly.
+              {t.rich("terminateResult", {
+                name: employee.full_name,
+                type: typeLabel,
+                date: lastWorkingDay,
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </OperationResult>
           )}
 
@@ -377,7 +401,7 @@ export function TerminateEmployeeDialog({
                   className="rounded-[10px]"
                   onClick={() => handleOpenChange(false)}
                 >
-                  Cancel
+                  {tCommon("cancel")}
                 </Button>
               ) : (
                 <Button
@@ -385,8 +409,8 @@ export function TerminateEmployeeDialog({
                   className="rounded-[10px]"
                   onClick={() => setStep(0)}
                 >
-                  <ArrowLeft />
-                  Back
+                  <ArrowLeft className="rtl:rotate-180" />
+                  {tCommon("back")}
                 </Button>
               )}
 
@@ -397,7 +421,7 @@ export function TerminateEmployeeDialog({
                   disabled={!canContinue || previewTermination.isPending}
                   onClick={goReview}
                 >
-                  {previewTermination.isPending ? "Checking…" : "Next"}
+                  {previewTermination.isPending ? t("checking") : tCommon("next")}
                 </Button>
               ) : (
                 <Button
@@ -407,7 +431,7 @@ export function TerminateEmployeeDialog({
                   onClick={submit}
                 >
                   <UserMinus />
-                  {terminateEmployee.isPending ? "Terminating…" : "Terminate Employee"}
+                  {terminateEmployee.isPending ? t("terminating") : t("terminateTitle")}
                 </Button>
               )}
             </div>

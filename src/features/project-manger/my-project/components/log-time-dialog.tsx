@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -53,12 +54,18 @@ function FieldLabel({
   )
 }
 
+type TimeType = "billable" | "nonBillable"
+
+const TIME_TYPES: TimeType[] = ["billable", "nonBillable"]
+
 export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
+  const t = useTranslations("ProjectsMyProjects")
+  const tCommon = useTranslations("Common")
   const [date, setDate] = useState(todayIso)
   const [employeeId, setEmployeeId] = useState("")
   const [taskId, setTaskId] = useState("")
   const [hours, setHours] = useState("4")
-  const [type, setType] = useState<"Billable" | "Non-billable">("Billable")
+  const [type, setType] = useState<TimeType>("billable")
   const [description, setDescription] = useState("")
 
   const resourcesQ = useResources({ per_page: 100 }, { enabled: open })
@@ -67,7 +74,7 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
 
   const employees = resourcesQ.data ?? []
   const tasks = useMemo(
-    () => (tasksQ.data ?? []).filter((t) => t.status !== "done"),
+    () => (tasksQ.data ?? []).filter((task) => task.status !== "done"),
     [tasksQ.data],
   )
 
@@ -76,7 +83,7 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
     setEmployeeId("")
     setTaskId("")
     setHours("4")
-    setType("Billable")
+    setType("billable")
     setDescription("")
   }
 
@@ -92,14 +99,14 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
 
   const handleSubmit = () => {
     if (!taskId || !employeeId) {
-      toast.error("Missing required fields", {
-        description: "Pick the employee and the task you worked on.",
+      toast.error(t("missingFields"), {
+        description: t("logTimeMissingDescription"),
       })
       return
     }
     const parsedHours = Number(hours)
     if (!parsedHours || parsedHours <= 0) {
-      toast.error("Enter the hours worked")
+      toast.error(t("logTimeEnterHours"))
       return
     }
     logTime.mutate(
@@ -108,18 +115,21 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
         employee_id: employeeId,
         hours: parsedHours,
         log_date: date,
-        billable: type === "Billable",
+        billable: type === "billable",
         note: description.trim() || undefined,
       },
       {
         onSuccess: () => {
-          toast.success("Time logged", {
-            description: `${parsedHours}h (${type.toLowerCase()}) recorded.`,
+          toast.success(t("timeLogged"), {
+            description: t("timeLoggedDescription", {
+              hours: parsedHours,
+              type: t(`timeType.${type}`),
+            }),
           })
           close()
         },
         onError: (err) =>
-          toast.error("Couldn't log time", {
+          toast.error(t("logTimeFailed"), {
             description: (err as unknown as ApiError).message,
           }),
       },
@@ -131,22 +141,24 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
       <DialogContent className="max-w-[640px] gap-0 p-0">
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="text-lg leading-7 font-semibold">
-            Log Time
+            {t("logTimeTitle")}
           </DialogTitle>
           <DialogDescription className="text-content-tertiary text-[13px] leading-5">
-            Record hours against a task or project
+            {t("logTimeDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <DialogBody className="gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <FieldLabel required>Employee</FieldLabel>
+              <FieldLabel required>{t("fieldEmployee")}</FieldLabel>
               <Select value={employeeId} onValueChange={setEmployeeId}>
                 <SelectTrigger className="h-10 text-[13px]">
                   <SelectValue
                     placeholder={
-                      resourcesQ.isLoading ? "Loading…" : "Select an employee"
+                      resourcesQ.isLoading
+                        ? tCommon("loading")
+                        : t("selectEmployee")
                     }
                   />
                 </SelectTrigger>
@@ -160,7 +172,7 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <FieldLabel>Date</FieldLabel>
+              <FieldLabel>{tCommon("date")}</FieldLabel>
               <Input
                 type="date"
                 value={date}
@@ -171,17 +183,19 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <FieldLabel required>Task</FieldLabel>
+            <FieldLabel required>{t("fieldTask")}</FieldLabel>
             <Select value={taskId} onValueChange={setTaskId}>
               <SelectTrigger className="h-10 text-[13px]">
                 <SelectValue
-                  placeholder={tasksQ.isLoading ? "Loading…" : "Select a task"}
+                  placeholder={
+                    tasksQ.isLoading ? tCommon("loading") : t("selectTask")
+                  }
                 />
               </SelectTrigger>
               <SelectContent>
-                {tasks.map((t) => (
-                  <SelectItem key={t.task_id} value={t.task_id}>
-                    {t.title}
+                {tasks.map((task) => (
+                  <SelectItem key={task.task_id} value={task.task_id}>
+                    {task.title}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -190,7 +204,7 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <FieldLabel required>Hours</FieldLabel>
+              <FieldLabel required>{t("fieldHours")}</FieldLabel>
               <Input
                 type="number"
                 inputMode="decimal"
@@ -202,9 +216,9 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <FieldLabel>Type</FieldLabel>
+              <FieldLabel>{tCommon("type")}</FieldLabel>
               <div className="flex gap-2">
-                {(["Billable", "Non-billable"] as const).map((option) => {
+                {TIME_TYPES.map((option) => {
                   const active = type === option
                   return (
                     <button
@@ -218,7 +232,7 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
                           : "border-stroke-default text-content-tertiary hover:text-content-primary",
                       )}
                     >
-                      {option}
+                      {t(`timeType.${option}`)}
                     </button>
                   )
                 })}
@@ -227,9 +241,9 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <FieldLabel>Description</FieldLabel>
+            <FieldLabel>{tCommon("description")}</FieldLabel>
             <Textarea
-              placeholder="What did you work on?"
+              placeholder={t("logTimeNotePlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[88px] text-[13px]"
@@ -239,7 +253,7 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
 
         <DialogFooter>
           <Button variant="ghost" onClick={close} className="text-[13px]">
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             variant="primary"
@@ -247,7 +261,9 @@ export function LogTimeDialog({ open, onOpenChange }: LogTimeDialogProps) {
             disabled={logTime.isPending}
             className="text-[13px]"
           >
-            {logTime.isPending ? "Logging…" : `Log ${hours || 0}h`}
+            {logTime.isPending
+              ? t("logging")
+              : t("logHours", { hours: hours || 0 })}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -9,7 +9,9 @@ import {
   Send,
   UserPlus,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { cn } from "@/src/shared/lib/utils/utils"
 import { useSalesDashboard } from "../../lib/queries/dashboard"
 import { formatCurrency } from "../../lib/utils/currency"
@@ -28,14 +30,45 @@ type KpiFormat = "currency" | "percent" | "number"
 // Only 2 of the documented 8 kpis[].key values are confirmed by the Bruno
 // docs (docs/sales.md §4.1) — everything else falls back to a humanized
 // label/rail so unknown keys still render sensibly instead of being dropped.
-const KPI_META: Record<string, { label: string; format: KpiFormat; rail: string }> = {
-  total_sales: { label: "Total Sales", format: "currency", rail: "bg-brand-primary" },
+const KPI_META: Record<string, { format: KpiFormat; rail: string }> = {
+  total_sales: { format: "currency", rail: "bg-brand-primary" },
   quotation_conversion_rate: {
-    label: "Quotation Conversion Rate",
     format: "percent",
     rail: "bg-teal-500",
   },
 }
+
+/** Translated labels for the kpi keys we know of; anything else is humanized from the key. */
+const KPI_LABEL_KEY: Partial<Record<string, `kpi.${KpiLabel}`>> = {
+  total_sales: "kpi.totalSales",
+  quotation_conversion_rate: "kpi.quotationConversionRate",
+  total_billed: "kpi.totalBilled",
+  total_collected: "kpi.totalCollected",
+  open_pipeline: "kpi.openPipeline",
+  active_customers: "kpi.activeCustomers",
+  quotations_sent: "kpi.quotationsSent",
+  orders_confirmed: "kpi.ordersConfirmed",
+}
+
+type KpiLabel =
+  | "totalSales"
+  | "quotationConversionRate"
+  | "totalBilled"
+  | "totalCollected"
+  | "openPipeline"
+  | "activeCustomers"
+  | "quotationsSent"
+  | "ordersConfirmed"
+
+/** Translated labels for the activity types we know of; anything else is humanized. */
+const ACTIVITY_LABEL_KEY: Partial<Record<string, `activity.${ActivityLabel}`>> = {
+  quotation: "activity.quotation",
+  order: "activity.order",
+  invoice: "activity.invoice",
+  payment_recorded: "activity.paymentRecorded",
+}
+
+type ActivityLabel = "quotation" | "order" | "invoice" | "paymentRecorded"
 const FALLBACK_RAILS = [
   "bg-amber-500",
   "bg-blue-500",
@@ -45,21 +78,21 @@ const FALLBACK_RAILS = [
   "bg-pink-500",
 ]
 
-const STAGE_META: Record<PipelineStageStatus, { label: string; tone: string }> = {
-  draft: { label: "Draft", tone: "bg-indigo-600" },
-  sent: { label: "Sent", tone: "bg-indigo-500" },
-  accepted: { label: "Accepted", tone: "bg-teal-500" },
-  converted: { label: "Converted", tone: "bg-emerald-500" },
+const STAGE_META: Record<PipelineStageStatus, { tone: string }> = {
+  draft: { tone: "bg-indigo-600" },
+  sent: { tone: "bg-indigo-500" },
+  accepted: { tone: "bg-teal-500" },
+  converted: { tone: "bg-emerald-500" },
 }
 
 function humanize(key: string) {
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-function formatKpiValue(value: number, format: KpiFormat) {
+function formatKpiValue(value: number, format: KpiFormat, locale: string) {
   if (format === "currency") return formatCurrency(value)
   if (format === "percent") return `${value}%`
-  return value.toLocaleString()
+  return value.toLocaleString(locale)
 }
 
 function activityVisual(type: string) {
@@ -90,9 +123,12 @@ function withBarWidths<T extends { total_amount: number }>(items: T[]) {
 }
 
 function MetricCard({ kpi, rail }: { kpi: DashboardKpi; rail: string }) {
+  const t = useTranslations("SalesDashboard")
+  const intlLocale = useIntlLocale()
   const meta = KPI_META[kpi.key]
   const format = meta?.format ?? "number"
-  const label = meta?.label ?? humanize(kpi.key)
+  const labelKey = KPI_LABEL_KEY[kpi.key]
+  const label = labelKey ? t(labelKey) : humanize(kpi.key)
   const isUp = (kpi.delta_pct ?? 0) >= 0
 
   return (
@@ -119,9 +155,9 @@ function MetricCard({ kpi, rail }: { kpi: DashboardKpi; rail: string }) {
         ) : null}
       </div>
       <p className="mt-2 text-2xl font-bold tracking-tight text-content-primary">
-        {formatKpiValue(kpi.value, format)}
+        {formatKpiValue(kpi.value, format, intlLocale)}
       </p>
-      <p className="mt-1 text-[11px] text-content-quaternary">vs prior period</p>
+      <p className="mt-1 text-[11px] text-content-quaternary">{t("vsPriorPeriod")}</p>
     </article>
   )
 }
@@ -135,12 +171,14 @@ function RankingCard({
   href: string
   children: React.ReactNode
 }>) {
+  const t = useTranslations("SalesDashboard")
+
   return (
     <section className="overflow-hidden rounded-2xl border border-stroke-default bg-surface-white shadow-xs">
       <header className="flex items-center justify-between border-b border-stroke-light px-5 py-4">
         <h2 className="text-sm font-semibold text-content-primary">{title}</h2>
         <Link href={href} className="text-xs font-medium text-brand-primary hover:opacity-80">
-          View all →
+          {t("viewAll")}
         </Link>
       </header>
       <div className="divide-y divide-stroke-light px-5">{children}</div>
@@ -149,10 +187,13 @@ function RankingCard({
 }
 
 function PipelineFunnel({ stages }: Readonly<{ stages: PipelineStage[] }>) {
+  const t = useTranslations("SalesDashboard")
+  const tShared = useTranslations("SalesShared")
+
   return (
     <div className="overflow-hidden rounded-2xl border border-stroke-default bg-surface-white shadow-xs">
       <header className="flex items-center justify-between border-b border-stroke-light px-5 py-4">
-        <h2 className="text-sm font-semibold text-content-primary">Pipeline Funnel</h2>
+        <h2 className="text-sm font-semibold text-content-primary">{t("pipelineFunnel")}</h2>
       </header>
       <div className="space-y-4 px-5 py-5">
         {stages.map((stage) => {
@@ -163,7 +204,7 @@ function PipelineFunnel({ stages }: Readonly<{ stages: PipelineStage[] }>) {
               className="grid grid-cols-[72px_minmax(0,1fr)_48px] items-center gap-4"
             >
               <span className="text-xs font-medium text-content-secondary">
-                {meta?.label ?? humanize(stage.status)}
+                {meta ? tShared(`quotationStatus.${stage.status}`) : humanize(stage.status)}
               </span>
               <div
                 className={cn(
@@ -171,18 +212,18 @@ function PipelineFunnel({ stages }: Readonly<{ stages: PipelineStage[] }>) {
                   meta?.tone ?? "bg-content-quaternary",
                 )}
               >
-                <span className="ml-auto text-xs font-semibold text-white">
+                <span className="ms-auto text-xs font-semibold text-white">
                   {stage.count}
                 </span>
               </div>
-              <span className="text-right text-[11px] text-content-quaternary">
-                {stage.advance_pct != null ? `${stage.advance_pct}% →` : "—"}
+              <span className="text-end text-[11px] text-content-quaternary">
+                {stage.advance_pct != null ? t("advancePct", { pct: stage.advance_pct }) : "—"}
               </span>
             </div>
           )
         })}
         <p className="pt-1 text-[11px] text-content-quaternary">
-          Conversion % shows the share advancing to the next stage.
+          {t("conversionHint")}
         </p>
       </div>
     </div>
@@ -190,19 +231,23 @@ function PipelineFunnel({ stages }: Readonly<{ stages: PipelineStage[] }>) {
 }
 
 function RecentActivityCard({ activities }: Readonly<{ activities: RecentActivity[] }>) {
+  const t = useTranslations("SalesDashboard")
+  const intlLocale = useIntlLocale()
+
   return (
     <section className="overflow-hidden rounded-2xl border border-stroke-default bg-surface-white shadow-xs">
       <header className="border-b border-stroke-light px-5 py-4">
-        <h2 className="text-sm font-semibold text-content-primary">Recent Activity</h2>
+        <h2 className="text-sm font-semibold text-content-primary">{t("recentActivity")}</h2>
       </header>
       <div className="max-h-[330px] divide-y divide-stroke-light overflow-y-auto">
         {activities.length === 0 ? (
           <p className="px-5 py-6 text-center text-xs text-content-tertiary">
-            No recent activity.
+            {t("noRecentActivity")}
           </p>
         ) : (
           activities.map((activity, index) => {
             const { icon: Icon, tone } = activityVisual(activity.type)
+            const activityLabelKey = ACTIVITY_LABEL_KEY[activity.type]
             return (
               <article
                 key={`${activity.ref_id}-${index}`}
@@ -219,14 +264,17 @@ function RecentActivityCard({ activities }: Readonly<{ activities: RecentActivit
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-xs font-medium leading-5 text-content-primary">
-                      {humanize(activity.type)}
+                      {activityLabelKey ? t(activityLabelKey) : humanize(activity.type)}
                     </p>
                     <span className="shrink-0 text-[10px] text-content-quaternary">
-                      {formatRelativeTime(activity.occurred_at)}
+                      {formatRelativeTime(activity.occurred_at, {
+                        locale: intlLocale,
+                        justNow: t("justNow"),
+                      })}
                     </span>
                   </div>
                   <p className="mt-0.5 text-[11px] leading-4 text-content-tertiary">
-                    Ref: {activity.ref_number}
+                    {t("ref", { number: activity.ref_number })}
                   </p>
                 </div>
               </article>
@@ -239,12 +287,13 @@ function RecentActivityCard({ activities }: Readonly<{ activities: RecentActivit
 }
 
 export function SalesDashboard() {
+  const t = useTranslations("SalesDashboard")
   const { data, isLoading, isError, refetch } = useSalesDashboard()
 
   if (isLoading) return <SalesPageSpinner />
 
   if (isError || !data) {
-    return <SalesErrorState message="Failed to load the sales dashboard." onRetry={() => void refetch()} />
+    return <SalesErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
   }
 
   const topCustomers = withBarWidths(data.top_customers)
@@ -270,9 +319,9 @@ export function SalesDashboard() {
       </section>
 
       <section className="grid min-w-0 gap-5 xl:grid-cols-2">
-        <RankingCard title="Top Customers" href="/sales/customers">
+        <RankingCard title={t("topCustomers")} href="/sales/customers">
           {topCustomers.length === 0 ? (
-            <p className="py-6 text-center text-xs text-content-tertiary">No data yet.</p>
+            <p className="py-6 text-center text-xs text-content-tertiary">{t("noData")}</p>
           ) : (
             topCustomers.map((customer, index) => (
               <div
@@ -301,9 +350,9 @@ export function SalesDashboard() {
           )}
         </RankingCard>
 
-        <RankingCard title="Top Products" href="/sales/sales-orders">
+        <RankingCard title={t("topProducts")} href="/sales/sales-orders">
           {topProducts.length === 0 ? (
-            <p className="py-6 text-center text-xs text-content-tertiary">No data yet.</p>
+            <p className="py-6 text-center text-xs text-content-tertiary">{t("noData")}</p>
           ) : (
             topProducts.map((product, index) => (
               <div

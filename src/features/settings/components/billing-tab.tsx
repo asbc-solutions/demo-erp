@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { CreditCard, Download } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -44,34 +45,37 @@ const INVOICE_STATUS_VARIANT: Record<BillingInvoiceStatus, "success" | "warning"
 }
 
 function InvoiceHistory() {
+  const t = useTranslations("SettingsBilling")
+  const tShared = useTranslations("SettingsShared")
+  const tCommon = useTranslations("Common")
   const { data: invoices, isLoading, isError, refetch } = useBillingInvoices()
   const downloadInvoice = useDownloadInvoice()
 
   const handleDownload = (invoiceId: string) => {
     downloadInvoice.mutate(invoiceId, {
       onSuccess: (url) => window.open(url, "_blank"),
-      onError: (err) => toastMutationError(err, "Failed to download invoice"),
+      onError: (err) => toastMutationError(err, t("downloadFailed"), tShared),
     })
   }
 
   if (isLoading) return <SettingsSectionSpinner />
   if (isError) {
     return (
-      <SettingsErrorState message="Failed to load invoice history." onRetry={() => void refetch()} />
+      <SettingsErrorState message={t("invoicesLoadError")} onRetry={() => void refetch()} />
     )
   }
   if (!invoices || invoices.length === 0) {
-    return <p className="text-content-tertiary py-6 text-center text-sm">No invoices yet.</p>
+    return <p className="text-content-tertiary py-6 text-center text-sm">{t("noInvoices")}</p>
   }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Invoice</TableHead>
-          <TableHead>Period</TableHead>
-          <TableHead>Amount</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead>{t("colInvoice")}</TableHead>
+          <TableHead>{t("colPeriod")}</TableHead>
+          <TableHead>{tCommon("amount")}</TableHead>
+          <TableHead>{tCommon("status")}</TableHead>
           <TableHead className="w-12" />
         </TableRow>
       </TableHeader>
@@ -88,7 +92,9 @@ function InvoiceHistory() {
               {invoice.amount} {invoice.currency_code}
             </TableCell>
             <TableCell>
-              <Badge variant={INVOICE_STATUS_VARIANT[invoice.status]}>{invoice.status}</Badge>
+              <Badge variant={INVOICE_STATUS_VARIANT[invoice.status]}>
+                {t(`invoiceStatus.${invoice.status}`)}
+              </Badge>
             </TableCell>
             <TableCell>
               <Button
@@ -96,8 +102,8 @@ function InvoiceHistory() {
                 variant="ghost"
                 size="icon-sm"
                 disabled={!invoice.has_document || downloadInvoice.isPending}
-                title={invoice.has_document ? "Download invoice" : "No document available"}
-                aria-label={`Download invoice ${invoice.invoice_number}`}
+                title={invoice.has_document ? t("downloadInvoice") : t("noDocument")}
+                aria-label={t("downloadInvoiceNamed", { number: invoice.invoice_number })}
                 onClick={() => handleDownload(invoice.id)}
               >
                 <Download className="size-4" aria-hidden />
@@ -111,6 +117,7 @@ function InvoiceHistory() {
 }
 
 function BillingTabContent() {
+  const t = useTranslations("SettingsBilling")
   const { data: overview, isLoading, isError, refetch } = useBillingOverview()
   const { can } = usePermissions()
   const canWrite = can.write(SETTINGS_RESOURCES.billing)
@@ -122,7 +129,7 @@ function BillingTabContent() {
 
   if (isError || !overview) {
     return (
-      <SettingsErrorState message="Failed to load billing information." onRetry={() => void refetch()} />
+      <SettingsErrorState message={t("loadError")} onRetry={() => void refetch()} />
     )
   }
 
@@ -149,20 +156,23 @@ function BillingTabContent() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <StatTile label="Next billing date" value={subscription.next_billing_date} />
+              <StatTile label={t("nextBillingDate")} value={subscription.next_billing_date} />
               <StatTile
-                label="Seats used"
+                label={t("seatsUsed")}
                 value={`${subscription.usage.seats_used} / ${subscription.usage.seat_limit}`}
               />
               <StatTile
-                label="Storage"
-                value={`${subscription.usage.storage_used_gb} GB / ${subscription.usage.storage_limit_gb} GB`}
+                label={t("storage")}
+                value={t("storageValue", {
+                  used: subscription.usage.storage_used_gb,
+                  limit: subscription.usage.storage_limit_gb,
+                })}
               />
             </div>
           </>
         ) : (
           <p className="text-content-tertiary text-sm">
-            No active subscription. Choose a plan to get started.
+            {t("noSubscription")}
           </p>
         )}
 
@@ -174,7 +184,7 @@ function BillingTabContent() {
               className="h-9 px-4 text-[12px]"
               onClick={() => setChangePlanOpen(true)}
             >
-              {subscription ? "Change Plan" : "Choose a Plan"}
+              {subscription ? t("changePlan") : t("choosePlan")}
             </Button>
           </div>
         ) : null}
@@ -182,7 +192,7 @@ function BillingTabContent() {
 
       <Card variant="elevated" className="gap-6 p-6">
         <h3 className="text-content-primary text-[14px] leading-[22.4px] font-semibold">
-          Payment Method
+          {t("paymentMethod")}
         </h3>
 
         {paymentMethod ? (
@@ -193,10 +203,13 @@ function BillingTabContent() {
               </div>
               <div className="flex flex-col">
                 <span className="text-content-primary text-[12px] leading-[18px] capitalize">
-                  {paymentMethod.brand} ending in {paymentMethod.last4}
+                  {t("cardEnding", { brand: paymentMethod.brand, last4: paymentMethod.last4 })}
                 </span>
                 <span className="text-content-tertiary text-[11px] leading-[15.4px]">
-                  Expires {String(paymentMethod.exp_month).padStart(2, "0")}/{paymentMethod.exp_year}
+                  {t("cardExpires", {
+                    month: String(paymentMethod.exp_month).padStart(2, "0"),
+                    year: paymentMethod.exp_year,
+                  })}
                 </span>
               </div>
             </div>
@@ -205,26 +218,25 @@ function BillingTabContent() {
                 type="button"
                 variant="secondary"
                 className="h-8 px-3 text-[12px]"
-                title="Requires client-side card tokenization via a payment provider SDK — not wired up yet"
+                title={t("updatePaymentHint")}
                 onClick={() =>
-                  toast.info("Payment method updates aren't wired up yet", {
-                    description:
-                      "This endpoint only accepts a provider token (Stripe/Paymob/Fawry) — it never accepts a raw card number. Client-side tokenization is out of scope for this change.",
+                  toast.info(t("updatePaymentToast"), {
+                    description: t("updatePaymentToastDescription"),
                   })
                 }
               >
-                Update
+                {t("updatePayment")}
               </Button>
             ) : null}
           </div>
         ) : (
-          <p className="text-content-tertiary text-sm">No payment method on file.</p>
+          <p className="text-content-tertiary text-sm">{t("noPaymentMethod")}</p>
         )}
       </Card>
 
       <Card variant="elevated" className="gap-4 p-6">
         <h3 className="text-content-primary text-[14px] leading-[22.4px] font-semibold">
-          Invoice History
+          {t("invoiceHistory")}
         </h3>
         <InvoiceHistory />
       </Card>

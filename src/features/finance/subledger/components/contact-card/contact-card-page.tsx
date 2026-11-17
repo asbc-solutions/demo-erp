@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { UserX } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { EmptyState } from "@/src/shared/components/ui/empty-state"
@@ -21,7 +22,8 @@ import {
   MetaChips,
 } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount, formatPercent, formatRate } from "../../../lib/utils/money"
 import { SUBLEDGER_SIDES } from "../../lib/constants/sides"
 import { useContactCard } from "../../lib/queries/subledger"
@@ -33,34 +35,36 @@ function fxLine(card: ContactCard, base: number) {
   return card.currency === "EGP" ? undefined : { value: base, currency: "EGP", rate: card.rate }
 }
 
-function itemColumns(card: ContactCard): FinanceColumn<SubledgerDocument>[] {
+type SubledgerT = ReturnType<typeof useTranslations<"FinanceSubledger">>
+
+function itemColumns(card: ContactCard, t: SubledgerT, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<SubledgerDocument>[] {
   const amount = (value: number) => <Amount value={value} currency={card.currency} />
   return [
     {
       id: "document",
-      header: "Document",
+      header: t("colDocument"),
       cell: (row) => (
         <span className="flex flex-col">
           <DocNumber>{row.number}</DocNumber>
           {!row.in_balance ? (
-            <span className="text-content-tertiary text-xs leading-4" title="Held on its own account">
-              Advance · {card.advances_account}
+            <span className="text-content-tertiary text-xs leading-4" title={t("heldOnOwnAccount")}>
+              {t("advanceAccount", { account: card.advances_account })}
             </span>
           ) : null}
         </span>
       ),
     },
-    { id: "date", header: "Date", cell: (row) => formatDate(row.date) },
+    { id: "date", header: t("colDate"), cell: (row) => formatDate(row.date) },
     {
       id: "due",
-      header: "Due",
+      header: t("colDue"),
       cell: (row) => (row.due_date ? <DueCell date={formatDate(row.due_date)} daysLate={row.days_late} /> : "—"),
     },
-    { id: "gross", header: "Gross", align: "end", cell: (row) => amount(row.gross) },
-    { id: "allocated", header: "Allocated", align: "end", cell: (row) => <Amount value={row.allocated} /> },
+    { id: "gross", header: t("colGross"), align: "end", cell: (row) => amount(row.gross) },
+    { id: "allocated", header: t("colAllocated"), align: "end", cell: (row) => <Amount value={row.allocated} /> },
     {
       id: "outstanding",
-      header: "Outstanding",
+      header: t("colOutstanding"),
       align: "end",
       cell: (row) => (
         <Amount
@@ -71,7 +75,7 @@ function itemColumns(card: ContactCard): FinanceColumn<SubledgerDocument>[] {
         />
       ),
     },
-    { id: "status", header: "Status", cell: (row) => <StatusPill status={row.status} /> },
+    { id: "status", header: t("colStatus"), cell: (row) => <StatusPill status={row.status} /> },
   ]
 }
 
@@ -80,6 +84,8 @@ function itemColumns(card: ContactCard): FinanceColumn<SubledgerDocument>[] {
  * terms and open items.
  */
 function ContactCardPage({ side, contactId }: { side: Side; contactId: string }) {
+  const t = useTranslations("FinanceSubledger")
+  const { formatDate } = useFinanceDateFormat()
   const config = SUBLEDGER_SIDES[side]
   const { data: card, isError, isPending, refetch } = useContactCard(side, contactId)
   const [writeOffOpen, setWriteOffOpen] = React.useState(false)
@@ -87,7 +93,7 @@ function ContactCardPage({ side, contactId }: { side: Side; contactId: string })
   if (isError) {
     return (
       <>
-        <FinancePageHeader title={config.contact.singular} />
+        <FinancePageHeader title={t(`contactSingular.${side}`)} />
         <FinancePageBody>
           <FinanceErrorState onRetry={() => refetch()} />
         </FinancePageBody>
@@ -98,16 +104,16 @@ function ContactCardPage({ side, contactId }: { side: Side; contactId: string })
   if (!isPending && !card) {
     return (
       <>
-        <FinancePageHeader title={`${config.contact.singular} not found`} />
+        <FinancePageHeader title={t(`contactNotFound.${side}`)} />
         <FinancePageBody>
           <EmptyState
             variant="card"
             icon={<UserX />}
-            title={`There is no ${config.contact.lower} with this code.`}
-            description={`It may have been merged or the link is out of date. Pick the ${config.contact.lower} from ${config.overview.title}.`}
+            title={t(`noContactWithCode.${side}`)}
+            description={t(`contactNotFoundDescription.${side}`)}
             actions={
               <Button variant="secondary" size="sm" asChild>
-                <Link href={config.href.overview}>Open {config.overview.title}</Link>
+                <Link href={config.href.overview}>{t(`openOverview.${side}`)}</Link>
               </Button>
             }
           />
@@ -117,31 +123,31 @@ function ContactCardPage({ side, contactId }: { side: Side; contactId: string })
   }
 
   const hasOverdue = (card?.overdue ?? 0) > 0
-  const action = card ? config.card.action(card.id) : null
+  const actionHref = card ? config.href.cardAction(card.id) : null
   const limitUsed = card && card.credit_limit > 0 ? (card.balance_base / card.credit_limit) * 100 : 0
 
   return (
     <>
       <FinancePageHeader
-        title={card?.name ?? config.contact.singular}
+        title={card?.name ?? t(`contactSingular.${side}`)}
         figure={
           card ? (
-            <HeaderFigure label={config.card.figure}>
+            <HeaderFigure label={t(`cardFigure.${side}`)}>
               <Amount value={card.balance} currency={card.currency} align="start" base={fxLine(card, card.balance_base)} />
             </HeaderFigure>
           ) : null
         }
         actions={
-          card && action ? (
+          card && actionHref ? (
             <>
               <Button variant="primary" asChild>
-                <Link href={action.href}>{action.label}</Link>
+                <Link href={actionHref}>{t(`cardAction.${side}`)}</Link>
               </Button>
               <Button variant="ghost" disabled={!hasOverdue} onClick={() => setWriteOffOpen(true)}>
-                Write off balance
+                {t("writeOffBalance")}
               </Button>
               <Button variant="secondary" asChild>
-                <Link href={`/finance/ledger?contact=${card.id}`}>Ledger</Link>
+                <Link href={`/finance/ledger?contact=${card.id}`}>{t("ledger")}</Link>
               </Button>
             </>
           ) : null
@@ -149,27 +155,27 @@ function ContactCardPage({ side, contactId }: { side: Side; contactId: string })
       />
       <FinancePageBody>
         {!card ? (
-          <div aria-busy aria-label={`Loading ${config.contact.lower}`} className="flex flex-col gap-6">
+          <div aria-busy aria-label={t(`loadingContact.${side}`)} className="flex flex-col gap-6">
             <FinanceTilesSkeleton count={4} className="md:grid-cols-4" />
             <Skeleton className="h-96 rounded-lg" />
           </div>
         ) : (
           <>
             <MetaChips>
-              <StatusPill status="prepared" label={config.contact.singular} />
-              <span className="text-content-primary font-mono text-xs" title={config.card.controlTitle}>
+              <StatusPill status="prepared" label={t(`contactSingular.${side}`)} />
+              <span className="text-content-primary font-mono text-xs" title={t(`controlTitle.${side}`)}>
                 {card.control_account}
               </span>
-              {card.tax_reg_no ? <span>Tax reg. {card.tax_reg_no}</span> : null}
+              {card.tax_reg_no ? <span>{t("taxReg", { number: card.tax_reg_no })}</span> : null}
               <StatusPill status="prepared" label={card.currency} />
-              <span>{card.terms_days}-day terms</span>
+              <span>{t("termsLabel", { days: card.terms_days })}</span>
             </MetaChips>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-5">
               <KpiCard
                 layout="bar"
                 accent="indigo"
-                label="Balance"
+                label={t("colBalance")}
                 value={`${formatAmount(card.balance)} ${card.currency}`}
                 caption={
                   card.currency === "EGP"
@@ -180,37 +186,37 @@ function ContactCardPage({ side, contactId }: { side: Side; contactId: string })
               <KpiCard
                 layout="bar"
                 accent="teal"
-                label="Overdue"
+                label={t("colOverdue")}
                 value={`${formatAmount(card.overdue)} ${card.currency}`}
-                caption={`${card.open_items} open items`}
+                caption={t("openItemsCount", { count: card.open_items })}
               />
               {side === "receivable" ? (
                 <KpiCard
                   layout="bar"
                   accent="amber"
-                  label="Credit limit (EGP)"
+                  label={t("creditLimit")}
                   value={formatAmount(card.credit_limit)}
-                  caption={`${formatPercent(Math.max(0, limitUsed))} used`}
+                  caption={t("percentUsed", { percent: formatPercent(Math.max(0, limitUsed)) })}
                 />
               ) : (
                 <KpiCard
                   layout="bar"
                   accent="amber"
-                  label="Avg. days to pay"
+                  label={t("avgDaysToPay")}
                   value={card.terms_days}
-                  caption="Contractual"
+                  caption={t("contractual")}
                 />
               )}
-              <KpiCard layout="bar" accent="blue" label="Currency" value={card.currency} caption="Transacting" />
+              <KpiCard layout="bar" accent="blue" label={t("colCurrency")} value={card.currency} caption={t("transacting")} />
             </div>
 
-            <FinanceSection title="Open items">
+            <FinanceSection title={t("openItems")}>
               <FinanceTable
-                caption={`Open items for ${card.name}`}
-                columns={itemColumns(card)}
+                caption={t("openItemsFor", { name: card.name })}
+                columns={itemColumns(card, t, formatDate)}
                 rows={card.items}
                 getRowId={(row) => row.id}
-                empty={<p className="text-content-tertiary py-8 text-center text-sm">{config.card.empty}</p>}
+                empty={<p className="text-content-tertiary py-8 text-center text-sm">{t(`cardEmpty.${side}`)}</p>}
               />
             </FinanceSection>
 

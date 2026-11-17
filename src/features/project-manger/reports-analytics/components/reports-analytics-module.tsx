@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { useTranslations } from "next-intl"
 import {
   CartesianGrid,
   Line,
@@ -29,12 +30,12 @@ import type { ProgressColor } from "../../all-project/data/all-projects-data"
 import { formatMoney } from "../../lib/mappers/cost-budget-mapper"
 import { usePortfolioDashboard } from "../../lib/queries/reporting"
 
-const KPI_LABELS: { key: keyof KpiPcts; label: string }[] = [
-  { key: "on_time_delivery_pct", label: "On-Time Delivery" },
-  { key: "budget_compliance_pct", label: "Budget Compliance" },
-  { key: "resource_utilization_pct", label: "Resource Utilization" },
-  { key: "scope_stability_pct", label: "Scope Stability" },
-]
+const KPI_LABELS = [
+  { key: "on_time_delivery_pct", labelKey: "kpiOnTimeDelivery" },
+  { key: "budget_compliance_pct", labelKey: "kpiBudgetCompliance" },
+  { key: "resource_utilization_pct", labelKey: "kpiResourceUtilization" },
+  { key: "scope_stability_pct", labelKey: "kpiScopeStability" },
+] as const satisfies readonly { key: keyof KpiPcts; labelKey: string }[]
 
 type KpiPcts = {
   on_time_delivery_pct: number
@@ -56,41 +57,66 @@ const STATUS_COLOR: Record<string, ProgressColor> = {
   closed: "emerald",
 }
 
-const trendConfig: ChartConfig = {
-  active_count: { label: "Active", color: "var(--brand-primary)" },
-  created_count: { label: "Created", color: "var(--brand-info)" },
-  completed_count: { label: "Completed", color: "var(--brand-success)" },
+const PROJECT_STATUSES = [
+  "created",
+  "released",
+  "technically_complete",
+  "closed",
+] as const
+type ProjectStatusKey = (typeof PROJECT_STATUSES)[number]
+
+function isProjectStatus(value: string): value is ProjectStatusKey {
+  return PROJECT_STATUSES.includes(value as ProjectStatusKey)
 }
 
 export function ReportsAnalyticsModule() {
+  const t = useTranslations("ProjectsReportsAnalytics")
+  const tCommon = useTranslations("Common")
   const { data, isLoading, isError } = usePortfolioDashboard()
+
+  const trendConfig = useMemo<ChartConfig>(
+    () => ({
+      active_count: { label: t("trendActive"), color: "var(--brand-primary)" },
+      created_count: { label: t("trendCreated"), color: "var(--brand-info)" },
+      completed_count: {
+        label: t("trendCompleted"),
+        color: "var(--brand-success)",
+      },
+    }),
+    [t],
+  )
 
   const financials = useMemo(() => {
     const f = data?.financials
     return [
-      { id: "budget", label: "Total Budget", value: formatMoney(f?.total_budget) },
+      {
+        id: "budget",
+        label: t("totalBudget"),
+        value: formatMoney(f?.total_budget),
+      },
       {
         id: "actual",
-        label: "Actual Cost",
+        label: t("actualCost"),
         value: formatMoney(f?.total_actual_cost),
       },
       {
         id: "invoiced",
-        label: "Total Invoiced",
+        label: t("totalInvoiced"),
         value: formatMoney(f?.total_invoiced),
       },
     ]
-  }, [data])
+  }, [data, t])
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-content-primary text-2xl leading-8 font-bold tracking-tight">
-          Reports &amp; Analytics
+          {t("title")}
         </h1>
         <p className="text-content-tertiary text-sm">
-          Portfolio-wide delivery, financial, and utilization insights
-          {data ? ` · ${data.total_projects} projects` : ""}
+          {data
+            ? t("subtitleWithCount", { count: data.total_projects })
+            : t("subtitle")}
         </p>
       </header>
 
@@ -99,19 +125,19 @@ export function ReportsAnalyticsModule() {
       ) : isError || !data ? (
         <Card className="flex h-48 items-center justify-center p-6">
           <p className="text-content-tertiary text-sm">
-            Couldn&apos;t load portfolio analytics.
+            {t("loadError")}
           </p>
         </Card>
       ) : (
         <>
           {/* KPI performance cards */}
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {KPI_LABELS.map(({ key, label }) => {
+            {KPI_LABELS.map(({ key, labelKey }) => {
               const value = Math.round(data.kpis[key])
               return (
                 <Card key={key} className="gap-2 p-4">
                   <span className="text-content-tertiary text-[10px] font-semibold tracking-wide uppercase">
-                    {label}
+                    {t(labelKey)}
                   </span>
                   <span className="text-content-primary text-2xl leading-7 font-bold">
                     {value}%
@@ -131,15 +157,15 @@ export function ReportsAnalyticsModule() {
             <Card className="gap-4 p-5 lg:col-span-2">
               <div className="flex flex-col gap-0.5">
                 <h3 className="text-content-primary text-sm font-semibold">
-                  Project Trends
+                  {t("trendsTitle")}
                 </h3>
                 <p className="text-content-tertiary text-xs">
-                  Created, active, and completed by month
+                  {t("trendsSubtitle")}
                 </p>
               </div>
               {data.trends.length === 0 ? (
                 <p className="text-content-tertiary py-8 text-center text-sm">
-                  Not enough history yet.
+                  {t("trendsEmpty")}
                 </p>
               ) : (
                 <ChartContainer
@@ -194,10 +220,10 @@ export function ReportsAnalyticsModule() {
             <Card className="gap-4 p-5">
               <div className="flex flex-col gap-0.5">
                 <h3 className="text-content-primary text-sm font-semibold">
-                  By Status
+                  {t("byStatus")}
                 </h3>
                 <p className="text-content-tertiary text-xs">
-                  Share of the portfolio
+                  {t("byStatusSubtitle")}
                 </p>
               </div>
               <div className="flex flex-col gap-3">
@@ -226,7 +252,7 @@ export function ReportsAnalyticsModule() {
           <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card className="gap-4 p-5">
               <h3 className="text-content-primary text-sm font-semibold">
-                Financials
+                {t("financials")}
               </h3>
               <div className="grid grid-cols-3 gap-3">
                 {financials.map((f) => (
@@ -247,15 +273,15 @@ export function ReportsAnalyticsModule() {
 
             <Card className="gap-4 p-5">
               <h3 className="text-content-primary text-sm font-semibold">
-                By Type
+                {t("byType")}
               </h3>
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead>Type</TableHead>
-                    <TableHead>Projects</TableHead>
-                    <TableHead>Share</TableHead>
-                    <TableHead className="text-right">Budget</TableHead>
+                    <TableHead>{tCommon("type")}</TableHead>
+                    <TableHead>{t("colProjects")}</TableHead>
+                    <TableHead>{t("colShare")}</TableHead>
+                    <TableHead className="text-end">{t("colBudget")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -270,7 +296,7 @@ export function ReportsAnalyticsModule() {
                       <TableCell className="text-content-secondary text-[13px] tabular-nums">
                         {Math.round(row.share_pct)}%
                       </TableCell>
-                      <TableCell className="text-content-primary text-right text-[13px] font-semibold tabular-nums">
+                      <TableCell className="text-content-primary text-end text-[13px] font-semibold tabular-nums">
                         {formatMoney(row.total_budget)}
                       </TableCell>
                     </TableRow>
@@ -284,20 +310,20 @@ export function ReportsAnalyticsModule() {
           <Card className="overflow-hidden p-0">
             <div className="flex flex-col gap-0.5 px-5 pt-5 pb-3">
               <h3 className="text-content-primary text-sm font-semibold">
-                Projects
+                {t("colProjects")}
               </h3>
               <p className="text-content-tertiary text-xs">
-                Budget, cost, and invoicing by project
+                {t("projectsSubtitle")}
               </p>
             </div>
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead>Project</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Budget</TableHead>
-                  <TableHead className="text-right">Actual Cost</TableHead>
-                  <TableHead className="text-right">Invoiced</TableHead>
+                  <TableHead>{t("colProject")}</TableHead>
+                  <TableHead>{tCommon("status")}</TableHead>
+                  <TableHead className="text-end">{t("colBudget")}</TableHead>
+                  <TableHead className="text-end">{t("actualCost")}</TableHead>
+                  <TableHead className="text-end">{t("colInvoiced")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -307,7 +333,7 @@ export function ReportsAnalyticsModule() {
                       colSpan={5}
                       className="text-content-tertiary py-10 text-center text-sm"
                     >
-                      No projects yet.
+                      {t("noProjects")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -335,15 +361,17 @@ export function ReportsAnalyticsModule() {
                                     : "bg-content-tertiary",
                               )}
                             />
-                            {p.status}
+                            {isProjectStatus(p.status)
+                              ? t(`projectStatus.${p.status}`)
+                              : p.status}
                           </span>
                         </TableCell>
-                        <TableCell className="text-content-secondary text-right text-[13px] tabular-nums">
+                        <TableCell className="text-content-secondary text-end text-[13px] tabular-nums">
                           {formatMoney(p.budget_amount)}
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "text-right text-[13px] font-semibold tabular-nums",
+                            "text-end text-[13px] font-semibold tabular-nums",
                             overBudget
                               ? "text-brand-danger"
                               : "text-content-primary",
@@ -351,7 +379,7 @@ export function ReportsAnalyticsModule() {
                         >
                           {formatMoney(p.actual_cost)}
                         </TableCell>
-                        <TableCell className="text-content-secondary text-right text-[13px] tabular-nums">
+                        <TableCell className="text-content-secondary text-end text-[13px] tabular-nums">
                           {formatMoney(p.total_invoiced)}
                         </TableCell>
                       </TableRow>

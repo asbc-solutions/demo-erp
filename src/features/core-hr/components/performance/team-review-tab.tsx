@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Star } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -34,40 +35,40 @@ import { ReviewCycleKpis } from "./performance-stats"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<
+const STATUS_VARIANT: Record<
   AppraisalStatus,
-  { label: string; variant: "success" | "warning" | "info" | "neutral" }
+  "success" | "warning" | "info" | "neutral"
 > = {
-  pending: { label: "Pending", variant: "neutral" },
-  self_in_progress: { label: "Self In Progress", variant: "warning" },
-  self_submitted: { label: "Self Submitted", variant: "warning" },
-  manager_in_progress: { label: "Manager In Progress", variant: "info" },
-  manager_submitted: { label: "Manager Submitted", variant: "info" },
-  calibrated: { label: "Calibrated", variant: "info" },
-  finalised: { label: "Finalised", variant: "success" },
-  acknowledged: { label: "Acknowledged", variant: "success" },
-  self_done: { label: "Self Done", variant: "warning" },
-  manager_done: { label: "Manager Done", variant: "info" },
+  pending: "neutral",
+  self_in_progress: "warning",
+  self_submitted: "warning",
+  manager_in_progress: "info",
+  manager_submitted: "info",
+  calibrated: "info",
+  finalised: "success",
+  acknowledged: "success",
+  self_done: "warning",
+  manager_done: "info",
 }
 
-const STATUS_FILTERS: { id: AppraisalStatus | "all"; label: string }[] = [
-  { id: "all", label: "Filter by status" },
-  { id: "pending", label: "Pending" },
-  { id: "self_in_progress", label: "Self In Progress" },
-  { id: "self_submitted", label: "Self Submitted" },
-  { id: "manager_in_progress", label: "Manager In Progress" },
-  { id: "manager_submitted", label: "Manager Submitted" },
-  { id: "calibrated", label: "Calibrated" },
-  { id: "finalised", label: "Finalised" },
-  { id: "acknowledged", label: "Acknowledged" },
+const STATUS_FILTERS: (AppraisalStatus | "all")[] = [
+  "all",
+  "pending",
+  "self_in_progress",
+  "self_submitted",
+  "manager_in_progress",
+  "manager_submitted",
+  "calibrated",
+  "finalised",
+  "acknowledged",
 ]
 
 const HEAD_CLASS =
   "h-11 text-xs font-medium normal-case tracking-normal text-content-secondary"
 
 /** Prefer an embedded employee name; fall back to the cycle so my-appraisals still reads well. */
-function subjectLabel(a: Appraisal) {
-  return a.employee?.full_name ?? a.cycle?.cycle_name ?? "Appraisal"
+function subjectLabel(a: Appraisal, fallback: string) {
+  return a.employee?.full_name ?? a.cycle?.cycle_name ?? fallback
 }
 
 // ─── Sub-components ─────────────────────────────────────────────────────────────
@@ -94,12 +95,15 @@ function StarRating({ score }: Readonly<{ score: number | null }>) {
 }
 
 function FinalRating({ score }: Readonly<{ score: number | null }>) {
+  const t = useTranslations("HrPerformance")
   if (score === null || score === undefined)
     return <span className="text-sm text-content-quaternary">—</span>
   return (
     <span className="text-content-primary">
       <span className="text-base font-bold">{score}</span>
-      <span className="ml-0.5 text-xs text-content-tertiary">/5</span>
+      <span className="ms-0.5 text-xs text-content-tertiary">
+        {t("outOfFive")}
+      </span>
     </span>
   )
 }
@@ -107,6 +111,8 @@ function FinalRating({ score }: Readonly<{ score: number | null }>) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function TeamReviewTab() {
+  const t = useTranslations("HrPerformance")
+  const tCommon = useTranslations("Common")
   const [statusFilt, setStatusFilt] = useState<AppraisalStatus | "all">("all")
 
   const {
@@ -146,10 +152,10 @@ export function TeamReviewTab() {
         <div className="flex flex-wrap items-start justify-between gap-4 p-6">
           <div className="flex flex-col gap-1">
             <h3 className="text-lg leading-7 font-semibold text-content-primary">
-              Team Performance Reviews
+              {t("teamReviewsTitle")}
             </h3>
             <p className="text-sm leading-5 text-content-tertiary">
-              Appraisal overview and ratings across cycles.
+              {t("teamReviewsSubtitle")}
             </p>
           </div>
 
@@ -158,12 +164,12 @@ export function TeamReviewTab() {
             onValueChange={(v) => setStatusFilt(v as AppraisalStatus | "all")}
           >
             <SelectTrigger className="w-[190px]">
-              <SelectValue placeholder="Filter by status" />
+              <SelectValue placeholder={t("filterByStatus")} />
             </SelectTrigger>
             <SelectContent>
               {STATUS_FILTERS.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.label}
+                <SelectItem key={s} value={s}>
+                  {s === "all" ? t("filterByStatus") : t(`appraisalStatus.${s}`)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -175,13 +181,13 @@ export function TeamReviewTab() {
           <Table>
             <TableHeader className="bg-transparent">
               <TableRow className="hover:bg-transparent">
-                <TableHead className={HEAD_CLASS}>Employee</TableHead>
-                <TableHead className={HEAD_CLASS}>Self Rating</TableHead>
-                <TableHead className={HEAD_CLASS}>Manager Rating</TableHead>
-                <TableHead className={HEAD_CLASS}>Final Rating</TableHead>
-                <TableHead className={HEAD_CLASS}>Status</TableHead>
-                <TableHead className={cn(HEAD_CLASS, "text-right")}>
-                  Actions
+                <TableHead className={HEAD_CLASS}>{t("colEmployee")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colSelfRating")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colManagerRating")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colFinalRating")}</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colStatus")}</TableHead>
+                <TableHead className={cn(HEAD_CLASS, "text-end")}>
+                  {tCommon("actions")}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -203,10 +209,10 @@ export function TeamReviewTab() {
                     className="h-24 text-center text-sm text-content-tertiary"
                   >
                     {!activeCycle
-                      ? "No review cycle is available yet."
+                      ? t("noReviewCycle")
                       : isError
-                        ? "Couldn't load reviews. Please try again."
-                        : "No appraisals match the current filter."}
+                        ? t("reviewsLoadError")
+                        : t("appraisalsEmpty")}
                   </TableCell>
                 </TableRow>
               )}
@@ -214,18 +220,20 @@ export function TeamReviewTab() {
               {!isLoading &&
                 !isError &&
                 filtered.map((row) => {
-                  const st = STATUS_CONFIG[row.status] ?? STATUS_CONFIG.pending
+                  const status: AppraisalStatus =
+                    row.status in STATUS_VARIANT ? row.status : "pending"
+                  const subject = subjectLabel(row, t("appraisalFallback"))
                   return (
                     <TableRow key={row.appraisal_id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar
                             size="default"
-                            alt={subjectLabel(row)}
+                            alt={subject}
                             color="neutral"
                           />
                           <span className="text-sm font-medium text-content-primary">
-                            {subjectLabel(row)}
+                            {subject}
                           </span>
                         </div>
                       </TableCell>
@@ -239,11 +247,13 @@ export function TeamReviewTab() {
                         <FinalRating score={row.final_score} />
                       </TableCell>
                       <TableCell>
-                        <Badge variant={st.variant}>{st.label}</Badge>
+                        <Badge variant={STATUS_VARIANT[status]}>
+                          {t(`appraisalStatus.${status}`)}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-end">
                         <Button variant="ghost-primary" size="sm">
-                          View
+                          {tCommon("view")}
                         </Button>
                       </TableCell>
                     </TableRow>

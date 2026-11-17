@@ -28,9 +28,9 @@ const ICON_MAP: Record<MyProjectStat["icon"], LucideIcon> = {
 }
 
 const ACCENT_BORDER: Record<MyProjectStatAccent, string> = {
-  indigo: "border-l-brand-primary",
-  emerald: "border-l-brand-success",
-  blue: "border-l-brand-info",
+  indigo: "border-s-brand-primary",
+  emerald: "border-s-brand-success",
+  blue: "border-s-brand-info",
 }
 
 const ACCENT_TILE: Record<MyProjectStatAccent, string> = {
@@ -45,7 +45,7 @@ export function MyProjectStatCard({ stat }: { stat: MyProjectStat }) {
     <Card
       variant="elevated"
       className={cn(
-        "flex-row items-center gap-3 border-l-4 p-4",
+        "flex-row items-center gap-3 border-s-4 p-4",
         ACCENT_BORDER[stat.accent],
       )}
     >

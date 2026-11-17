@@ -76,9 +76,9 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "text-content-tertiary h-11 px-4 text-left align-middle text-xs font-semibold tracking-[0.6px] uppercase whitespace-nowrap",
+        "text-content-tertiary h-11 px-4 text-start align-middle text-xs font-semibold tracking-[0.6px] uppercase whitespace-nowrap",
         "group-data-[density=compact]/table:h-9 group-data-[density=compact]/table:px-3 group-data-[density=compact]/table:text-[11px] group-data-[density=compact]/table:tracking-[0.5px]",
-        "[&:has([role=checkbox])]:pr-0 [&:has([role=checkbox])]:pl-6 *:[[role=checkbox]]:translate-y-px",
+        "[&:has([role=checkbox])]:pe-0 [&:has([role=checkbox])]:ps-6 *:[[role=checkbox]]:translate-y-px",
         className,
       )}
       {...props}
@@ -93,7 +93,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
       className={cn(
         "text-content-secondary px-4 py-4 align-middle text-sm whitespace-nowrap",
         "group-data-[density=compact]/table:px-3 group-data-[density=compact]/table:py-2.5 group-data-[density=compact]/table:text-[13px] group-data-[density=compact]/table:leading-5",
-        "[&:has([role=checkbox])]:pr-0 [&:has([role=checkbox])]:pl-6 *:[[role=checkbox]]:translate-y-px",
+        "[&:has([role=checkbox])]:pe-0 [&:has([role=checkbox])]:ps-6 *:[[role=checkbox]]:translate-y-px",
         className,
       )}
       {...props}

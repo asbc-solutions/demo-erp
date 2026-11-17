@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -35,7 +36,8 @@ import { FinancePageBody, FinancePageHeader } from "../../../components/shared/p
 import { useFinanceTreasuries } from "../../../lib/queries/master-data"
 import type { FinanceTreasury } from "../../../lib/types/common"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatAmount, round2 } from "../../../lib/utils/money"
 import { useCreateTransfer } from "../../lib/mutations/banking"
 import { useTransfers } from "../../lib/queries/banking"
@@ -44,23 +46,32 @@ import type { Transfer } from "../../lib/types/banking"
 
 const TODAY = "2026-03-31"
 
-const HISTORY_COLUMNS: FinanceColumn<Transfer>[] = [
-  { id: "number", header: "Transfer", cell: (row) => <DocNumber>{row.number}</DocNumber> },
-  { id: "date", header: "Date", cell: (row) => formatDate(row.date) },
-  {
-    id: "route",
-    header: "From → to",
-    cell: (row) => (
-      <span className="flex items-center gap-1.5">
-        {row.from_name}
-        <ArrowRight className="text-content-tertiary size-3.5" aria-label="to" />
-        {row.to_name}
-      </span>
-    ),
-  },
-  { id: "note", header: "Note", cell: (row) => row.note || "—" },
-  { id: "amount", header: "Amount", align: "end", cell: (row) => <Amount value={row.amount} currency={row.currency} /> },
-]
+type BankingT = ReturnType<typeof useTranslations<"FinanceBanking">>
+
+function historyColumns(t: BankingT, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<Transfer>[] {
+  return [
+    { id: "number", header: t("colTransfer"), cell: (row) => <DocNumber>{row.number}</DocNumber> },
+    { id: "date", header: t("colDate"), cell: (row) => formatDate(row.date) },
+    {
+      id: "route",
+      header: t("colRoute"),
+      cell: (row) => (
+        <span className="flex items-center gap-1.5">
+          {row.from_name}
+          <ArrowRight className="text-content-tertiary size-3.5 rtl:rotate-180" aria-label={t("to")} />
+          {row.to_name}
+        </span>
+      ),
+    },
+    { id: "note", header: t("colNote"), cell: (row) => row.note || "—" },
+    {
+      id: "amount",
+      header: t("colAmount"),
+      align: "end",
+      cell: (row) => <Amount value={row.amount} currency={row.currency} />,
+    },
+  ]
+}
 
 /** Amount in `from`'s currency restated in `to`'s, at the rates the treasuries carry. */
 function received(amount: number, from?: FinanceTreasury, to?: FinanceTreasury) {
@@ -81,13 +92,14 @@ function TreasuryField({
   onChange: (value: string) => void
   treasuries: FinanceTreasury[]
 }) {
+  const t = useTranslations("FinanceBanking")
   const treasury = treasuries.find((row) => row.id === value)
   return (
     <Field className="flex-1">
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger id={id} className="h-9">
-          <SelectValue placeholder="Choose a treasury" />
+          <SelectValue placeholder={t("chooseTreasury")} />
         </SelectTrigger>
         <SelectContent>
           {treasuries.map((row) => (
@@ -99,7 +111,7 @@ function TreasuryField({
       </Select>
       {treasury ? (
         <FieldDescription>
-          Balance <Amount value={treasury.balance} currency={treasury.currency} align="start" signed className="inline-flex" />
+          {t("balance")} <Amount value={treasury.balance} currency={treasury.currency} align="start" signed className="inline-flex" />
         </FieldDescription>
       ) : null}
     </Field>
@@ -108,6 +120,9 @@ function TreasuryField({
 
 /** 04.09 · Transfers — move money between two treasuries as one balanced entry. */
 function TransfersPage({ fromTreasuryId }: { fromTreasuryId?: string }) {
+  const t = useTranslations("FinanceBanking")
+  const tCommon = useTranslations("Common")
+  const { formatDate } = useFinanceDateFormat()
   const { data: treasuries = [] } = useFinanceTreasuries()
   const { data: history } = useTransfers()
   const createTransfer = useCreateTransfer()
@@ -134,11 +149,11 @@ function TransfersPage({ fromTreasuryId }: { fromTreasuryId?: string }) {
 
   const problem =
     fromId && fromId === toId
-      ? "Money has to move between two different treasuries. Pick another account on one side."
+      ? t("transferSameTreasury")
       : amount <= 0
-        ? "Enter a transfer amount. The amount must be greater than zero. Type how much is moving before posting."
+        ? t("transferEnterAmount")
         : from && amount > from.balance
-          ? `${from.name} holds ${formatAmount(from.balance)} ${from.currency}, less than this transfer. Move less, or top it up first.`
+          ? t("transferShort", { name: from.name, amount: formatAmount(from.balance), currency: from.currency })
           : null
 
   const submit = (values: TransferFormValues) =>
@@ -153,18 +168,24 @@ function TransfersPage({ fromTreasuryId }: { fromTreasuryId?: string }) {
       {
         onSuccess: (transfer) => {
           toast.success(
-            `${transfer.number} moved ${formatAmount(transfer.amount)} ${transfer.currency} from ${transfer.from_name} to ${transfer.to_name}.`,
+            t("transferPosted", {
+              number: transfer.number,
+              amount: formatAmount(transfer.amount),
+              currency: transfer.currency,
+              from: transfer.from_name,
+              to: transfer.to_name,
+            }),
           )
           reset({ ...values, amount: "", note: "" })
         },
-        onError: (error) => toast.error(errorMessage(error, "The transfer could not be posted. Try again.")),
+        onError: (error) => toast.error(errorMessage(error, t("transferPostFailed"))),
       },
     )
 
   return (
     <>
       <FinancePageHeader
-        title="New transfer"
+        title={t("newTransfer")}
         actions={
           <Button
             type="submit"
@@ -172,7 +193,7 @@ function TransfersPage({ fromTreasuryId }: { fromTreasuryId?: string }) {
             variant="primary"
             disabled={Boolean(problem) || createTransfer.isPending}
           >
-            Post transfer
+            {t("postTransfer")}
           </Button>
         }
       />
@@ -184,21 +205,21 @@ function TransfersPage({ fromTreasuryId }: { fromTreasuryId?: string }) {
                 control={control}
                 name="from_treasury_id"
                 render={({ field }) => (
-                  <TreasuryField id="transfer-from" label="From treasury" value={field.value} onChange={field.onChange} treasuries={treasuries} />
+                  <TreasuryField id="transfer-from" label={t("fromTreasury")} value={field.value} onChange={field.onChange} treasuries={treasuries} />
                 )}
               />
-              <ArrowRight className="text-content-tertiary mt-8 hidden size-4 shrink-0 md:block" aria-hidden />
+              <ArrowRight className="text-content-tertiary mt-8 hidden size-4 shrink-0 md:block rtl:rotate-180" aria-hidden />
               <Controller
                 control={control}
                 name="to_treasury_id"
                 render={({ field }) => (
-                  <TreasuryField id="transfer-to" label="To treasury" value={field.value} onChange={field.onChange} treasuries={treasuries} />
+                  <TreasuryField id="transfer-to" label={t("toTreasury")} value={field.value} onChange={field.onChange} treasuries={treasuries} />
                 )}
               />
             </div>
             <div className="flex flex-col gap-4 md:flex-row">
               <Field className="flex-1">
-                <FieldLabel htmlFor="transfer-amount">Amount ({from?.currency ?? "EGP"})</FieldLabel>
+                <FieldLabel htmlFor="transfer-amount">{t("amountIn", { currency: from?.currency ?? "EGP" })}</FieldLabel>
                 <Input
                   id="transfer-amount"
                   inputMode="decimal"
@@ -209,29 +230,29 @@ function TransfersPage({ fromTreasuryId }: { fromTreasuryId?: string }) {
                 />
                 {from && to && from.currency !== to.currency && amount > 0 ? (
                   <FieldDescription>
-                    ≈ {formatAmount(arriving)} {to.currency} arrives in {to.name}
+                    {t("arrivesIn", { amount: formatAmount(arriving), currency: to.currency, name: to.name })}
                   </FieldDescription>
                 ) : null}
               </Field>
               <Field className="flex-1">
-                <FieldLabel htmlFor="transfer-date">Date</FieldLabel>
+                <FieldLabel htmlFor="transfer-date">{tCommon("date")}</FieldLabel>
                 <Input id="transfer-date" type="date" max={TODAY} {...register("date")} />
               </Field>
             </div>
             <Field>
-              <FieldLabel htmlFor="transfer-note">Note</FieldLabel>
-              <Input id="transfer-note" placeholder="Optional reference" {...register("note")} />
+              <FieldLabel htmlFor="transfer-note">{t("colNote")}</FieldLabel>
+              <Input id="transfer-note" placeholder={t("optionalReference")} {...register("note")} />
             </Field>
             {problem ? <FinanceAlert tone="danger">{problem}</FinanceAlert> : null}
           </form>
 
-          <FinanceSection title="Posting preview">
+          <FinanceSection title={t("postingPreview")}>
             <div className="border-stroke-default bg-surface-white overflow-hidden rounded-lg border">
               <Table density="compact">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Debit</TableHead>
-                    <TableHead>Credit</TableHead>
+                    <TableHead>{t("colDebit")}</TableHead>
+                    <TableHead>{t("colCredit")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 {amount > 0 && from && to ? (
@@ -254,31 +275,28 @@ function TransfersPage({ fromTreasuryId }: { fromTreasuryId?: string }) {
                 ) : null}
                 <TableFooter>
                   <TableRow>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={round2(arriving * (to?.rate ?? 1))} emphasis="strong" />
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <Amount value={round2(amount * (from?.rate ?? 1))} emphasis="strong" />
                     </TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>
             </div>
-            <p className="text-content-tertiary text-xs leading-4">
-              A transfer is one balanced entry: it debits the receiving treasury and credits the sending one. Both
-              totals match, so the ledger stays in balance. Amounts are shown in EGP.
-            </p>
+            <p className="text-content-tertiary text-xs leading-4">{t("transferPreviewNote")}</p>
           </FinanceSection>
         </div>
 
-        <FinanceSection title="Recent transfers">
+        <FinanceSection title={t("recentTransfers")}>
           <FinanceTable
-            caption="Recent transfers between treasuries"
-            columns={HISTORY_COLUMNS}
+            caption={t("recentTransfersCaption")}
+            columns={historyColumns(t, formatDate)}
             rows={history ?? []}
             loading={!history}
             getRowId={(row) => row.id}
-            empty={<p className="text-content-tertiary py-8 text-center text-sm">No transfers yet.</p>}
+            empty={<p className="text-content-tertiary py-8 text-center text-sm">{t("noTransfers")}</p>}
           />
         </FinanceSection>
       </FinancePageBody>

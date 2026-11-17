@@ -17,10 +17,6 @@ export type GanttModel = {
 
 const DAY = 86_400_000
 const WEEK = 7 * DAY
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-]
 const UNKNOWN_OWNER = { initials: "?", color: "neutral" as AvatarColor }
 
 function parse(date: string | null | undefined): number | null {
@@ -67,8 +63,14 @@ export function toGanttModel(
   timelines: Timeline[],
   milestones: Milestone[] = [],
   criticalPath?: CriticalPath,
+  /** `Intl` locale for the month band labels (`useIntlLocale()`). */
+  locale = "en-US",
   today: Date = new Date(),
 ): GanttModel {
+  const monthFormat = new Intl.DateTimeFormat(locale, {
+    month: "short",
+    year: "numeric",
+  })
   const critical = new Set(
     (criticalPath?.tasks ?? []).filter((t) => t.is_critical).map((t) => t.task_id),
   )
@@ -164,7 +166,7 @@ export function toGanttModel(
   const months: { label: string; weeks: number }[] = []
   for (let i = 0; i < totalWeeks; i++) {
     const d = new Date(origin + i * WEEK)
-    const label = `${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+    const label = monthFormat.format(d)
     const last = months[months.length - 1]
     if (last && last.label === label) last.weeks += 1
     else months.push({ label, weeks: 1 })

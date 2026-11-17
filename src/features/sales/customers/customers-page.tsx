@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Download, ListFilter, Loader2, Plus, Search } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -17,7 +18,7 @@ import { Input } from "@/src/shared/components/ui/input"
 import { cn } from "@/src/shared/lib/utils/utils"
 import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
 
-import { SalesErrorState, toastMutationError } from "../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../components/shared/sales-error-state"
 import { SalesPageSpinner } from "../components/shared/sales-loading"
 import { SalesTablePagination } from "../components/shared/sales-table-pagination"
 import { SALES_RESOURCES } from "../lib/constants/permissions"
@@ -34,17 +35,20 @@ import { UnblockCustomerDialog } from "./components/unblock-customer-dialog"
 import { useCustomerView } from "./hooks/use-customer-view"
 import { useDebouncedValue } from "./hooks/use-debounced-value"
 
-const CUSTOMER_TABS: { value: CustomerTab; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-  { value: "blocked", label: "Blocked" },
-]
+const CUSTOMER_TABS = [
+  { value: "all", labelKey: "tabAll" },
+  { value: "active", labelKey: "tabActive" },
+  { value: "inactive", labelKey: "tabInactive" },
+  { value: "blocked", labelKey: "tabBlocked" },
+] as const satisfies readonly { value: CustomerTab; labelKey: string }[]
 
 const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 300
 
 export function CustomersPage() {
+  const t = useTranslations("SalesCustomers")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
   const [activeTab, setActiveTab] = React.useState<CustomerTab>("all")
@@ -130,7 +134,7 @@ export function CustomersPage() {
       },
       {
         onSuccess: (url) => window.open(url, "_blank"),
-        onError: (err) => toastMutationError(err, "Failed to export customers"),
+        onError: (err) => toastMutationError(err, t("exportFailed")),
       }
     )
   }
@@ -140,16 +144,16 @@ export function CustomersPage() {
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
         <div className="relative min-w-0 flex-1">
           <Search
-            className="pointer-events-none absolute top-1/2 left-3.5 size-4.5 -translate-y-1/2 text-content-quaternary"
+            className="pointer-events-none absolute top-1/2 inset-s-3.5 size-4.5 -translate-y-1/2 text-content-quaternary"
             strokeWidth={1.75}
             aria-hidden
           />
           <Input
             value={search}
             onChange={(event) => handleSearchChange(event.target.value)}
-            placeholder="Search by name, phone, or email…"
-            aria-label="Search customers"
-            className="h-10 rounded-[10px] pl-10 shadow-none"
+            placeholder={t("searchPlaceholder")}
+            aria-label={t("searchLabel")}
+            className="h-10 rounded-[10px] ps-10 shadow-none"
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -157,18 +161,18 @@ export function CustomersPage() {
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" className="h-10 rounded-[10px] px-4">
                 <ListFilter strokeWidth={1.75} aria-hidden />
-                Filter
+                {tCommon("filter")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>Salesperson</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("salesperson")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuRadioGroup
                 value={salespersonFilter}
                 onValueChange={handleSalespersonChange}
               >
                 <DropdownMenuRadioItem value="all">
-                  All salespeople
+                  {t("allSalespeople")}
                 </DropdownMenuRadioItem>
                 {salespeople.map((person) => (
                   <DropdownMenuRadioItem key={person.id} value={person.id}>
@@ -191,7 +195,7 @@ export function CustomersPage() {
               ) : (
                 <Download strokeWidth={1.75} aria-hidden />
               )}
-              Export
+              {tCommon("export")}
             </Button>
           ) : null}
           {canManageCustomers ? (
@@ -202,14 +206,14 @@ export function CustomersPage() {
               onClick={() => setNewCustomerOpen(true)}
             >
               <Plus strokeWidth={1.75} aria-hidden />
-              New Customer
+              {t("newCustomer")}
             </Button>
           ) : null}
         </div>
       </div>
 
       <nav
-        aria-label="Customer status"
+        aria-label={t("statusTabsLabel")}
         className="flex w-full shrink-0 items-center overflow-x-auto border-b border-stroke-default"
       >
         {CUSTOMER_TABS.map((tab) => {
@@ -226,7 +230,7 @@ export function CustomersPage() {
                 selected && "text-brand-primary after:bg-brand-primary"
               )}
             >
-              {tab.label}
+              {t(tab.labelKey)}
               <span
                 className={cn(
                   "flex min-w-6 items-center justify-center rounded-full bg-surface-hover px-1.5 py-0.5 text-xs font-semibold text-content-tertiary",
@@ -243,7 +247,7 @@ export function CustomersPage() {
       {isLoading ? (
         <SalesPageSpinner />
       ) : isError ? (
-        <SalesErrorState message="Failed to load customers." onRetry={() => void refetch()} />
+        <SalesErrorState message={t("loadListFailed")} onRetry={() => void refetch()} />
       ) : (
         <>
           <CustomersTable

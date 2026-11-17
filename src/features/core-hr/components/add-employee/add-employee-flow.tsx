@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 
@@ -11,6 +12,7 @@ import {
 } from "../../lib/schema/compensation-info"
 import { employmentInfoSchema } from "../../lib/schema/employment-info"
 import { dateOfBirthSchema, phoneSchema } from "../../lib/schema/personal-info"
+import { vk, type HrValidationKey } from "../../lib/schema/validation-key"
 import {
   EMPTY_NEW_EMPLOYEE,
   type NewEmployeeDraft,
@@ -46,23 +48,24 @@ type AddEmployeeFlowProps = Readonly<{
   onSubmit: (draft: NewEmployeeDraft) => void
 }>
 
+// Errors hold `HrValidation` keys; the step components translate them.
 const REQUIRED_PERSONAL_FIELDS: ReadonlyArray<{
   key: PersonalInfoField
-  label: string
+  message: HrValidationKey
 }> = [
-  { key: "firstName", label: "First name" },
-  { key: "lastName", label: "Last name" },
-  { key: "email", label: "Email" },
-  { key: "phone", label: "Phone" },
-  { key: "password", label: "Password" },
-  { key: "dateOfBirth", label: "Date of birth" },
-  { key: "gender", label: "Gender" },
-  { key: "nationality", label: "Nationality" },
-  { key: "nationalId", label: "National ID" },
-  { key: "address", label: "Address" },
-  { key: "city", label: "City" },
-  { key: "country", label: "Country" },
-  { key: "postalCode", label: "Postal code" },
+  { key: "firstName", message: vk("firstNameRequiredField") },
+  { key: "lastName", message: vk("lastNameRequiredField") },
+  { key: "email", message: vk("emailRequiredField") },
+  { key: "phone", message: vk("phoneRequiredField") },
+  { key: "password", message: vk("passwordRequiredField") },
+  { key: "dateOfBirth", message: vk("dobRequiredField") },
+  { key: "gender", message: vk("genderRequiredField") },
+  { key: "nationality", message: vk("nationalityRequiredField") },
+  { key: "nationalId", message: vk("nationalIdRequiredField") },
+  { key: "address", message: vk("addressRequiredField") },
+  { key: "city", message: vk("cityRequiredField") },
+  { key: "country", message: vk("countryRequiredField") },
+  { key: "postalCode", message: vk("postalCodeRequiredField") },
 ]
 
 // Fields not shown in edit mode (password is never changed here; street
@@ -88,7 +91,7 @@ function validatePersonalInfo(
   const errors = required.reduce<PersonalInfoErrors>((errors, field) => {
     const value = personal[field.key]
     if (typeof value !== "string" || value.trim().length === 0) {
-      errors[field.key] = `${field.label} is required.`
+      errors[field.key] = field.message
     }
     return errors
   }, {})
@@ -104,7 +107,7 @@ function validatePersonalInfo(
     const result = phoneSchema.safeParse(personal.phone)
     if (!result.success) {
       errors.phone =
-        result.error.issues[0]?.message ?? "Enter a valid phone number."
+        result.error.issues[0]?.message ?? vk("phoneDigits")
     }
   }
 
@@ -117,7 +120,7 @@ function validatePersonalInfo(
     const result = dateOfBirthSchema.safeParse(personal.dateOfBirth)
     if (!result.success) {
       errors.dateOfBirth =
-        result.error.issues[0]?.message ?? "Enter a valid date of birth."
+        result.error.issues[0]?.message ?? vk("dobInvalid")
     }
   }
 
@@ -173,6 +176,9 @@ export function AddEmployeeFlow({
   onCancel,
   onSubmit,
 }: AddEmployeeFlowProps) {
+  const t = useTranslations("HrAddEmployee")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
   const isEdit = mode === "edit"
   // Compensation is handled by the salary module, not the employee-update API,
   // so it is not part of the edit flow.
@@ -268,18 +274,16 @@ export function AddEmployeeFlow({
         onClick={onCancel}
         className="text-content-tertiary hover:text-content-primary inline-flex h-8 w-fit items-center gap-2 rounded-lg px-2 text-sm font-medium transition-colors"
       >
-        <ArrowLeft className="size-4" strokeWidth={1.75} />
-        Back to Employees
+        <ArrowLeft className="size-4 rtl:rotate-180" strokeWidth={1.75} />
+        {t("backToEmployees")}
       </button>
 
       <header className="flex flex-col gap-1">
         <h1 className="font-heading text-content-primary text-2xl leading-8 font-semibold">
-          {isEdit ? "Edit Employee" : "New Employee"}
+          {isEdit ? t("editTitle") : t("newTitle")}
         </h1>
         <p className="text-content-tertiary text-sm leading-5">
-          {isEdit
-            ? "Update the employee's details and save your changes"
-            : "Fill in the details to onboard a new team member"}
+          {isEdit ? t("editSubtitle") : t("newSubtitle")}
         </p>
       </header>
 
@@ -319,8 +323,8 @@ export function AddEmployeeFlow({
           onClick={handleBack}
           disabled={isFirstStep}
         >
-          <ArrowLeft />
-          Back
+          <ArrowLeft className="rtl:rotate-180" />
+          {tCommon("back")}
         </Button>
 
         <div className="flex items-center gap-2">
@@ -330,7 +334,7 @@ export function AddEmployeeFlow({
             onClick={onCancel}
             disabled={submitting}
           >
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             variant="primary"
@@ -340,12 +344,12 @@ export function AddEmployeeFlow({
           >
             {isLastStep
               ? submitting
-                ? "Saving..."
+                ? tShared("saving")
                 : isEdit
-                  ? "Save Changes"
-                  : "Create Employee"
-              : "Next"}
-            {!isLastStep && <ArrowRight />}
+                  ? tCommon("saveChanges")
+                  : t("createEmployee")
+              : tCommon("next")}
+            {!isLastStep && <ArrowRight className="rtl:rotate-180" />}
           </Button>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { AlertTriangle, CheckCircle2, Clock3 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import {
@@ -21,14 +22,7 @@ import { ComplianceTablePagination } from "./shared/compliance-table-pagination"
 
 const PAGE_SIZE = 20
 
-const MODULE_FILTERS: ReadonlyArray<{ label: string; value: string }> = [
-  { label: "All modules", value: "all" },
-  { label: "HR", value: "hr" },
-  { label: "Finance", value: "finance" },
-  { label: "Compliance", value: "compliance" },
-  { label: "Sales", value: "sales" },
-  { label: "Settings", value: "settings" },
-]
+const MODULE_FILTERS = ["all", "hr", "finance", "compliance", "sales", "settings"] as const
 
 const STATUS_ICON: Record<AuditStatus, typeof CheckCircle2> = {
   success: CheckCircle2,
@@ -43,6 +37,7 @@ const STATUS_CLASS: Record<AuditStatus, string> = {
 }
 
 export function AuditTab() {
+  const t = useTranslations("ComplianceAudit")
   const [moduleFilter, setModuleFilter] = useState("all")
   const [page, setPage] = useState(1)
 
@@ -69,9 +64,9 @@ export function AuditTab() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {MODULE_FILTERS.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
+            {MODULE_FILTERS.map((value) => (
+              <SelectItem key={value} value={value}>
+                {t(`modules.${value}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -81,13 +76,13 @@ export function AuditTab() {
       {isLoading ? (
         <CompliancePageSpinner />
       ) : isError ? (
-        <ComplianceErrorState message="Failed to load the audit log." onRetry={() => void refetch()} />
+        <ComplianceErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
       ) : (
         <>
           <div className="space-y-2">
             {events.length === 0 ? (
               <Card className="p-6 text-center">
-                <p className="text-content-tertiary text-sm">No audit events for this filter.</p>
+                <p className="text-content-tertiary text-sm">{t("empty")}</p>
               </Card>
             ) : (
               events.map((event) => {
@@ -126,7 +121,7 @@ export function AuditTab() {
               total={meta.total}
               pageSize={PAGE_SIZE}
               onPageChange={setPage}
-              itemLabel="events"
+              itemKind="events"
             />
           ) : null}
         </>

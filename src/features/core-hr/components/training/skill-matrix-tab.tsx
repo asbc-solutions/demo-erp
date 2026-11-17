@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -44,26 +45,25 @@ const SKILLS = [
   "Security",
 ] as const
 
+type Skill = (typeof SKILLS)[number]
+
+const SKILL_LABEL_KEY = {
+  "Cloud Architecture": "cloudArchitecture",
+  Python: "python",
+  Leadership: "leadership",
+  Communication: "communication",
+  "Project Management": "projectManagement",
+  Security: "security",
+} as const satisfies Record<Skill, string>
+
 /** Ordered strongest → weakest, for the summary cards. */
 const LEVEL_ORDER: Level[] = ["expert", "advanced", "intermediate", "beginner"]
 
-const LEVEL_CFG: Record<Level, { label: string; className: string }> = {
-  beginner: {
-    label: "Beginner",
-    className: "bg-surface-hover text-content-tertiary",
-  },
-  intermediate: {
-    label: "Intermediate",
-    className: "bg-brand-info/10 text-brand-info",
-  },
-  advanced: {
-    label: "Advanced",
-    className: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
-  },
-  expert: {
-    label: "Expert",
-    className: "bg-brand-success/10 text-brand-success",
-  },
+const LEVEL_CLASS: Record<Level, string> = {
+  beginner: "bg-surface-hover text-content-tertiary",
+  intermediate: "bg-brand-info/10 text-brand-info",
+  advanced: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
+  expert: "bg-brand-success/10 text-brand-success",
 }
 
 const EMPLOYEES: Employee[] = [
@@ -84,7 +84,8 @@ const HEAD_CLASS =
 
 // ─── Skill summary card ─────────────────────────────────────────────────────────
 
-function SkillSummaryCard({ skill }: Readonly<{ skill: string }>) {
+function SkillSummaryCard({ skill }: Readonly<{ skill: Skill }>) {
+  const t = useTranslations("HrTraining")
   const counts = LEVEL_ORDER.reduce(
     (acc, level) => {
       acc[level] = EMPLOYEES.filter((e) => e.skills[skill] === level).length
@@ -96,13 +97,13 @@ function SkillSummaryCard({ skill }: Readonly<{ skill: string }>) {
   return (
     <Card variant="elevated" className="gap-3 p-5">
       <h4 className="text-sm leading-5 font-medium text-content-primary">
-        {skill}
+        {t(`skill.${SKILL_LABEL_KEY[skill]}`)}
       </h4>
       <dl className="flex flex-col gap-2">
         {LEVEL_ORDER.map((level) => (
           <div key={level} className="flex items-center justify-between gap-2">
             <dt className="text-sm text-content-tertiary">
-              {LEVEL_CFG[level].label}
+              {t(`level.${level}`)}
             </dt>
             <dd className="text-sm font-semibold tabular-nums text-content-primary">
               {counts[level]}
@@ -117,6 +118,7 @@ function SkillSummaryCard({ skill }: Readonly<{ skill: string }>) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export function SkillMatrixTab() {
+  const t = useTranslations("HrTraining")
   const [dept, setDept] = useState<string>("all")
 
   const rows = EMPLOYEES.filter((e) => dept === "all" || e.department === dept)
@@ -126,13 +128,13 @@ export function SkillMatrixTab() {
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium text-content-secondary">
-          Proficiency Levels:
+          {t("proficiencyLevels")}
         </span>
         {LEVEL_ORDER.slice()
           .reverse()
           .map((level) => (
-            <Badge key={level} className={LEVEL_CFG[level].className}>
-              {LEVEL_CFG[level].label}
+            <Badge key={level} className={LEVEL_CLASS[level]}>
+              {t(`level.${level}`)}
             </Badge>
           ))}
       </div>
@@ -149,18 +151,18 @@ export function SkillMatrixTab() {
         <div className="flex flex-wrap items-start justify-between gap-4 p-6">
           <div className="flex flex-col gap-1">
             <h3 className="text-lg leading-7 font-semibold text-content-primary">
-              Skills Matrix
+              {t("tabSkills")}
             </h3>
             <p className="text-sm leading-5 text-content-tertiary">
-              Employee proficiency levels across key competencies.
+              {t("skillsMatrixSubtitle")}
             </p>
           </div>
           <Select value={dept} onValueChange={setDept}>
             <SelectTrigger className="w-[190px]">
-              <SelectValue placeholder="All Departments" />
+              <SelectValue placeholder={t("allDepartments")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
+              <SelectItem value="all">{t("allDepartments")}</SelectItem>
               {DEPARTMENTS.map((d) => (
                 <SelectItem key={d} value={d}>
                   {d}
@@ -174,10 +176,10 @@ export function SkillMatrixTab() {
           <Table>
             <TableHeader className="bg-transparent">
               <TableRow className="hover:bg-transparent">
-                <TableHead className={HEAD_CLASS}>Employee</TableHead>
+                <TableHead className={HEAD_CLASS}>{t("colEmployee")}</TableHead>
                 {SKILLS.map((skill) => (
                   <TableHead key={skill} className={cn(HEAD_CLASS, "text-center")}>
-                    {skill}
+                    {t(`skill.${SKILL_LABEL_KEY[skill]}`)}
                   </TableHead>
                 ))}
               </TableRow>
@@ -189,7 +191,7 @@ export function SkillMatrixTab() {
                     colSpan={SKILLS.length + 1}
                     className="h-24 text-center text-sm text-content-tertiary"
                   >
-                    No employees in this department.
+                    {t("noEmployeesInDepartment")}
                   </TableCell>
                 </TableRow>
               )}
@@ -213,8 +215,8 @@ export function SkillMatrixTab() {
                     return (
                       <TableCell key={skill} className="text-center">
                         {level ? (
-                          <Badge className={LEVEL_CFG[level].className}>
-                            {LEVEL_CFG[level].label}
+                          <Badge className={LEVEL_CLASS[level]}>
+                            {t(`level.${level}`)}
                           </Badge>
                         ) : (
                           <span className="text-content-quaternary">—</span>

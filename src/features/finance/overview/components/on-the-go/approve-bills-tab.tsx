@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { CircleCheck } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -10,12 +11,14 @@ import { Skeleton } from "@/src/shared/components/ui/skeleton"
 
 import { Amount } from "../../../components/shared/amount"
 import { FinanceErrorState } from "../../../components/shared/finance-states"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { useApproveBill, useSendBackBill } from "../../../money-out/lib/mutations/payables"
 import { useBillApprovals } from "../../../money-out/lib/queries/payables"
 import type { SubledgerDocument } from "../../../subledger/lib/types/subledger"
 
 function BillCard({ bill }: { bill: SubledgerDocument }) {
+  const t = useTranslations("FinanceOverview")
+  const { formatDate } = useFinanceDateFormat()
   const approve = useApproveBill()
   const sendBack = useSendBackBill()
   const busy = approve.isPending || sendBack.isPending
@@ -30,7 +33,7 @@ function BillCard({ bill }: { bill: SubledgerDocument }) {
         <Amount value={bill.outstanding} className="text-sm leading-5" />
       </div>
       <p className="text-content-secondary text-[13px] leading-5">
-        {bill.number} · Due: {bill.due_date ? formatDate(bill.due_date) : "—"}
+        {t("billDue", { number: bill.number, date: bill.due_date ? formatDate(bill.due_date) : "—" })}
       </p>
       <div className="flex flex-wrap gap-2 pt-1">
         <Button
@@ -39,12 +42,12 @@ function BillCard({ bill }: { bill: SubledgerDocument }) {
           disabled={busy}
           onClick={() =>
             approve.mutate(bill.id, {
-              onSuccess: () => toast.success(`${bill.number} is approved for payment.`),
-              onError: () => toast.error(`${bill.number} could not be approved. Try again.`),
+              onSuccess: () => toast.success(t("billApproved", { number: bill.number })),
+              onError: () => toast.error(t("billApproveFailed", { number: bill.number })),
             })
           }
         >
-          Approve for payment
+          {t("approveForPayment")}
         </Button>
         <Button
           variant="secondary"
@@ -54,13 +57,13 @@ function BillCard({ bill }: { bill: SubledgerDocument }) {
             sendBack.mutate(
               { id: bill.id, reason: "Sent back from On the go." },
               {
-                onSuccess: () => toast.success(`${bill.number} was sent back to the preparer.`),
-                onError: () => toast.error(`${bill.number} could not be sent back. Try again.`),
+                onSuccess: () => toast.success(t("billSentBack", { number: bill.number })),
+                onError: () => toast.error(t("billSendBackFailed", { number: bill.number })),
               },
             )
           }
         >
-          Send back
+          {t("sendBack")}
         </Button>
       </div>
     </article>
@@ -69,18 +72,17 @@ function BillCard({ bill }: { bill: SubledgerDocument }) {
 
 /** Approve a bill — the queue a manager can clear from a phone. */
 function ApproveBillsTab() {
+  const t = useTranslations("FinanceOverview")
   const { data, isError, refetch } = useBillApprovals()
   const bills = data?.items
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-content-tertiary text-[13px] leading-5">
-        Approving here sends the bill for payment. The entry is created when the payment run posts.
-      </p>
+      <p className="text-content-tertiary text-[13px] leading-5">{t("approveBillsIntro")}</p>
       {isError ? (
         <FinanceErrorState onRetry={() => refetch()} />
       ) : !bills ? (
-        <div aria-busy aria-label="Loading bills" className="flex flex-col gap-3">
+        <div aria-busy aria-label={t("loadingBills")} className="flex flex-col gap-3">
           {Array.from({ length: 3 }, (_, index) => (
             <Skeleton key={index} className="h-28 rounded-xl" />
           ))}
@@ -89,8 +91,8 @@ function ApproveBillsTab() {
         <EmptyState
           variant="card"
           icon={<CircleCheck />}
-          title="Nothing is waiting for your approval."
-          description="New bills appear here as soon as they are submitted for approval."
+          title={t("approvalsEmptyTitle")}
+          description={t("approvalsEmptyDescription")}
         />
       ) : (
         <div className="flex flex-col gap-3">

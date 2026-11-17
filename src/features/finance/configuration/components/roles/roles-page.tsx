@@ -3,6 +3,7 @@
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Minus, Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -37,31 +38,39 @@ import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../compo
 import { errorMessage } from "../../../lib/utils/api"
 import { useCreateRole, useSetPersona } from "../../lib/mutations/configuration"
 import { useRoles } from "../../lib/queries/configuration"
-import type { FinanceRole, Permission } from "../../lib/types/configuration"
+import type { ConfigMessageKey, FinanceRole, Permission } from "../../lib/types/configuration"
 
-const SESSION_NOTE =
-  "Saved records live in this session only. The seeded data is never modified, so a reload returns the prototype to its known state."
-
-const PERMISSION_LABELS: Record<Permission, string> = {
-  view: "View",
-  post: "Post",
-  approve: "Approve",
-  reverse: "Reverse",
-  close: "Close period",
-  settings: "Settings",
+const PERMISSION_LABEL_KEY: Record<Permission, ConfigMessageKey> = {
+  view: "permView",
+  post: "permPost",
+  approve: "permApprove",
+  reverse: "permReverse",
+  close: "permClose",
+  settings: "permSettings",
 }
 
-const CAPABILITIES: Record<Permission, string> = {
-  view: "read balances, documents and reports",
-  post: "post journal entries and vouchers",
-  approve: "approve bills and payment runs",
-  reverse: "reverse posted entries",
-  close: "close, reopen and lock periods",
-  settings: "change the posting map and other settings",
+const CAPABILITY_KEY: Record<Permission, ConfigMessageKey> = {
+  view: "capView",
+  post: "capPost",
+  approve: "capApprove",
+  reverse: "capReverse",
+  close: "capClose",
+  settings: "capSettings",
 }
+
+const SCOPES = ["Entity", "Cost center", "Treasury"] as const
+const SCOPE_LABEL_KEY: Record<(typeof SCOPES)[number], ConfigMessageKey> = {
+  Entity: "scopeEntity",
+  "Cost center": "scopeCostCenter",
+  Treasury: "scopeTreasury",
+}
+const scopeKey = (scope: string): ConfigMessageKey | undefined => SCOPE_LABEL_KEY[scope as (typeof SCOPES)[number]]
+
+/** Messages are `FinanceConfiguration` keys, translated where the error is rendered. */
+const msg = (key: ConfigMessageKey) => key
 
 const roleSchema = z.object({
-  name: z.string().trim().min(1, "Name the role."),
+  name: z.string().trim().min(1, msg("errRoleName")),
   scope: z.enum(["Entity", "Cost center", "Treasury"]),
   may_post: z.boolean(),
   may_approve: z.boolean(),
@@ -71,13 +80,14 @@ type RoleValues = z.infer<typeof roleSchema>
 
 const EMPTY: RoleValues = { name: "", scope: "Cost center", may_post: false, may_approve: false, may_see_balances: true }
 
-const SWITCHES: { name: "may_post" | "may_approve" | "may_see_balances"; label: string; hint: string }[] = [
-  { name: "may_post", label: "May post", hint: "Can post journal entries to the ledger" },
-  { name: "may_approve", label: "May approve", hint: "Can approve bills and payment runs" },
-  { name: "may_see_balances", label: "May see balances", hint: "Can read treasury and bank balances" },
+const SWITCHES: { name: "may_post" | "may_approve" | "may_see_balances"; labelKey: ConfigMessageKey; hintKey: ConfigMessageKey }[] = [
+  { name: "may_post", labelKey: "mayPost", hintKey: "mayPostHint" },
+  { name: "may_approve", labelKey: "mayApprove", hintKey: "mayApproveHint" },
+  { name: "may_see_balances", labelKey: "maySeeBalances", hintKey: "maySeeBalancesHint" },
 ]
 
 function NewRoleDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations("FinanceConfiguration")
   const create = useCreateRole()
   const {
     control,
@@ -98,26 +108,26 @@ function NewRoleDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
           onSubmit={handleSubmit((values) =>
             create.mutate(values, {
               onSuccess: (role) => {
-                toast.success(`${role.name} is added to the matrix.`)
+                toast.success(t("toastRoleAdded", { name: role.name }))
                 onOpenChange(false)
               },
-              onError: (error) => toast.error(errorMessage(error, "The role could not be saved. Try again.")),
+              onError: (error) => toast.error(errorMessage(error, t("errorSaveRole"))),
             }),
           )}
         >
           <DialogHeader>
-            <DialogTitle>New role</DialogTitle>
-            <DialogDescription>A role is a set of permissions in the Role &amp; Authority Matrix. Saving adds it; no user is assigned to it here.</DialogDescription>
+            <DialogTitle>{t("newRole")}</DialogTitle>
+            <DialogDescription>{t("newRoleDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <div className="grid grid-cols-[minmax(0,1fr)_160px] gap-4">
               <Field>
-                <FieldLabel htmlFor="role-name">Name *</FieldLabel>
+                <FieldLabel htmlFor="role-name">{t("nameRequired")}</FieldLabel>
                 <Input id="role-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-                {errors.name ? <FieldError>{errors.name.message}</FieldError> : null}
+                {errors.name ? <FieldError>{t(errors.name.message as ConfigMessageKey)}</FieldError> : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="role-scope">Scope *</FieldLabel>
+                <FieldLabel htmlFor="role-scope">{t("scopeRequired")}</FieldLabel>
                 <Controller
                   control={control}
                   name="scope"
@@ -127,9 +137,9 @@ function NewRoleDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {["Entity", "Cost center", "Treasury"].map((scope) => (
+                        {SCOPES.map((scope) => (
                           <SelectItem key={scope} value={scope}>
-                            {scope}
+                            {t(SCOPE_LABEL_KEY[scope])}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -148,22 +158,22 @@ function NewRoleDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
                     <div className="flex items-start gap-2.5">
                       <Switch id={`role-${item.name}`} checked={field.value} onCheckedChange={field.onChange} className="mt-0.5" />
                       <Label htmlFor={`role-${item.name}`} className="flex flex-col items-start gap-0.5 font-normal">
-                        <span className="text-content-primary text-[13px] font-medium">{item.label}</span>
-                        <span className="text-content-tertiary text-xs">{item.hint}</span>
+                        <span className="text-content-primary text-[13px] font-medium">{t(item.labelKey)}</span>
+                        <span className="text-content-tertiary text-xs">{t(item.hintKey)}</span>
                       </Label>
                     </div>
                   )}
                 />
               ))}
             </div>
-            <p className="text-content-tertiary text-[13px] leading-5">{SESSION_NOTE}</p>
+            <p className="text-content-tertiary text-[13px] leading-5">{t("sessionNote")}</p>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={create.isPending}>
-              Save
+              {t("save")}
             </Button>
           </DialogFooter>
         </form>
@@ -174,20 +184,25 @@ function NewRoleDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
 
 /** 11.10 · Roles & permissions — the authority matrix, and a preview of what each persona can do. */
 function RolesPage() {
+  const t = useTranslations("FinanceConfiguration")
   const { data, isError, refetch } = useRoles()
   const persona = useSetPersona()
   const [dialogOpen, setDialogOpen] = React.useState(false)
 
   const permissions = data?.permissions ?? []
+  const scopeLabel = (scope: string) => {
+    const key = scopeKey(scope)
+    return key ? t(key) : scope
+  }
   const columns: FinanceColumn<FinanceRole>[] = [
     {
       id: "role",
-      header: "Role",
+      header: t("role"),
       cell: (row) => (
         <span className="flex flex-col">
           <span className={cn("text-content-primary font-medium", data?.persona_role?.id === row.id && "text-brand-primary")}>{row.name}</span>
           <span className="text-content-tertiary text-xs">
-            {row.members} {row.members === 1 ? "member" : "members"} · {row.scope}
+            {t("membersCount", { count: row.members })} · {scopeLabel(row.scope)}
           </span>
         </span>
       ),
@@ -195,13 +210,13 @@ function RolesPage() {
     ...permissions.map(
       (permission): FinanceColumn<FinanceRole> => ({
         id: permission,
-        header: PERMISSION_LABELS[permission],
+        header: t(PERMISSION_LABEL_KEY[permission]),
         align: "center",
         cell: (row) =>
           row.permissions[permission] ? (
-            <span className="bg-status-success-fg mx-auto block size-2.5 rounded-full" role="img" aria-label="Allowed" />
+            <span className="bg-status-success-fg mx-auto block size-2.5 rounded-full" role="img" aria-label={t("allowed")} />
           ) : (
-            <Minus className="text-content-quaternary mx-auto size-3.5" role="img" aria-label="Not allowed" />
+            <Minus className="text-content-quaternary mx-auto size-3.5" role="img" aria-label={t("notAllowed")} />
           ),
       }),
     ),
@@ -212,12 +227,12 @@ function RolesPage() {
   return (
     <>
       <FinancePageHeader
-        title="Roles & permissions"
-        figure={data ? <HeaderFigure label="Roles">{data.items.length}</HeaderFigure> : null}
+        title={t("rolesAndPermissions")}
+        figure={data ? <HeaderFigure label={t("roles")}>{data.items.length}</HeaderFigure> : null}
         actions={
           <Button variant="primary" onClick={() => setDialogOpen(true)}>
             <Plus aria-hidden />
-            New role
+            {t("newRole")}
           </Button>
         }
       />
@@ -228,15 +243,15 @@ function RolesPage() {
           <FinanceTilesSkeleton />
         ) : (
           <>
-            <FinanceSection title="Role">
-              <div role="group" aria-label="Preview as" className="bg-surface-hover border-stroke-default flex w-fit rounded-lg border p-1">
+            <FinanceSection title={t("role")}>
+              <div role="group" aria-label={t("previewAs")} className="bg-surface-hover border-stroke-default flex w-fit rounded-lg border p-1">
                 {data.personas.map((option) => (
                   <button
                     key={option.id}
                     type="button"
                     aria-pressed={data.persona === option.id}
                     disabled={persona.isPending}
-                    onClick={() => persona.mutate(option.id, { onError: (error) => toast.error(errorMessage(error, "The role could not be switched. Try again.")) })}
+                    onClick={() => persona.mutate(option.id, { onError: (error) => toast.error(errorMessage(error, t("errorSwitchRole"))) })}
                     className={cn(
                       "text-content-secondary rounded-md px-3 py-1 text-[13px] leading-5 outline-none focus-visible:ring-2",
                       data.persona === option.id && "bg-surface-white text-content-primary font-medium shadow-xs",
@@ -247,21 +262,25 @@ function RolesPage() {
                 ))}
               </div>
               <p className="text-content-secondary max-w-2xl text-[13px] leading-5">
-                The role governs what you can do, not only what the assistant will answer. Switching it here is a demonstration
-                affordance; a real build takes the role from the session.
+                {t("roleGovernsInfo")}
               </p>
               {data.persona_role ? (
                 <p className="text-content-primary text-[13px] leading-5">
-                  Previewing as <span className="font-medium">{data.personas.find((option) => option.id === data.persona)?.name}</span>, who
-                  holds the {data.persona_role.name} row: you can {granted.map((permission) => CAPABILITIES[permission]).join(", ")}.
+                  {t.rich("previewingAs", {
+                    persona: data.personas.find((option) => option.id === data.persona)?.name ?? "",
+                    role: data.persona_role.name,
+                    capabilities: granted.map((permission) => t(CAPABILITY_KEY[permission])).join(t("listSeparator")),
+                    strong: (chunks) => <span className="font-medium">{chunks}</span>,
+                  })}
                 </p>
               ) : null}
               <p className="text-content-secondary max-w-2xl text-[13px] leading-5">
-                <strong className="text-content-primary font-semibold">Segregation of duties.</strong> An accountant can post and close
-                but cannot reopen or lock a period, so the person who closes a period is not the person who can unlock it.
+                {t.rich("segregationOfDuties", {
+                  strong: (chunks) => <strong className="text-content-primary font-semibold">{chunks}</strong>,
+                })}
               </p>
             </FinanceSection>
-            <FinanceTable caption="Role and authority matrix" columns={columns} rows={data.items} getRowId={(row) => row.id} />
+            <FinanceTable caption={t("roleMatrixCaption")} columns={columns} rows={data.items} getRowId={(row) => row.id} />
             <NewRoleDialog open={dialogOpen} onOpenChange={setDialogOpen} />
           </>
         )}

@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-import type { NavChild, NavItem } from '@/src/shared/lib/types'
+import type { NavChild, NavItem, NavLabelKey } from '@/src/shared/lib/types'
 import { FINANCE_NAV_GROUPS } from './finance-nav'
 import { HR_NAV } from './hr-nav'
 
@@ -41,70 +41,70 @@ import { HR_NAV } from './hr-nav'
  */
 
 export const NAV_ITEMS: NavItem[] = [
-  { id: 'command-center', label: 'Command Center', icon: LayoutGrid },
+  { id: 'command-center', labelKey: 'commandCenter', icon: LayoutGrid },
   {
     id: 'finance',
-    label: 'Finance',
+    labelKey: 'finance',
     icon: DollarSign,
     groups: FINANCE_NAV_GROUPS,
     collapsibleGroups: true,
   },
   {
     id: 'hr',
-    label: 'HR & People',
+    labelKey: 'hr',
     icon: Users,
     children: [...HR_NAV],
   },
   {
     id: 'sales',
-    label: 'Sales',
+    labelKey: 'sales',
     icon: ShoppingCart,
     children: [
       {
         id: 'sales-dashboard',
-        label: 'Dashboard',
+        labelKey: 'salesDashboard',
         icon: LayoutDashboard,
         href: '/sales',
       },
       {
         id: 'sales-customers',
-        label: 'Customers',
+        labelKey: 'salesCustomers',
         icon: UsersRound,
         href: '/sales/customers',
       },
       {
         id: 'sales-products',
-        label: 'Products',
+        labelKey: 'salesProducts',
         icon: Package,
         href: '/sales/products',
       },
       {
         id: 'sales-quotations',
-        label: 'Quotations',
+        labelKey: 'salesQuotations',
         icon: FileText,
         href: '/sales/quotations',
       },
       {
         id: 'sales-orders',
-        label: 'Sales Orders',
+        labelKey: 'salesOrders',
         icon: ShoppingCart,
         href: '/sales/sales-orders',
       },
       {
         id: 'sales-invoices',
-        label: 'Invoices',
+        labelKey: 'salesInvoices',
         icon: ReceiptText,
         href: '/sales/invoices',
       },
       {
         id: 'sales-reports',
-        label: 'Reports',
+        labelKey: 'salesReports',
         icon: BarChart3,
         href: '/sales/reports',
       },
       {
         id: 'sales-settings',
-        label: 'Settings',
+        labelKey: 'salesSettings',
         icon: Settings,
         href: '/sales/settings',
       },
@@ -112,65 +112,65 @@ export const NAV_ITEMS: NavItem[] = [
   },
    {
     id: 'project-manager',
-    label: 'Project Manger',
+    labelKey: 'projectManager',
     icon: FolderKanban,
     groups: [
       {
         id: 'pm',
-        label: 'PM — Project Management',
+        labelKey: 'pmGroupPm',
         items: [
-          { id: 'overview', label: 'Overview', icon: LayoutDashboard, href: '/over-view' },
-          { id: 'my-projects', label: 'My Projects', icon: FolderKanban, href: '/my-project' },
-          { id: 'all-projects', label: 'All Projects', icon: Folders , href: '/all-project' },
+          { id: 'overview', labelKey: 'pmOverview', icon: LayoutDashboard, href: '/over-view' },
+          { id: 'my-projects', labelKey: 'pmMyProjects', icon: FolderKanban, href: '/my-project' },
+          { id: 'all-projects', labelKey: 'pmAllProjects', icon: Folders , href: '/all-project' },
         ],
       },
       {
         id: 'planning',
-        label: 'Planning',
+        labelKey: 'pmGroupPlanning',
         items: [
-          { id: 'wbs', label: 'Work Breakdown (WBS)', icon: Network, href: '/WBS' },
-          { id: 'scheduling', label: 'Scheduling & Gantt', icon: CalendarRange, href: '/schedule' },
-          { id: 'resource-planner', label: 'Resource Planner', icon: UsersRound, href: '/resource-planner' },
+          { id: 'wbs', labelKey: 'pmWbs', icon: Network, href: '/WBS' },
+          { id: 'scheduling', labelKey: 'pmScheduling', icon: CalendarRange, href: '/schedule' },
+          { id: 'resource-planner', labelKey: 'pmResourcePlanner', icon: UsersRound, href: '/resource-planner' },
         ],
       },
       {
         id: 'financials',
-        label: 'Financials',
+        labelKey: 'pmGroupFinancials',
         items: [
-          { id: 'budget-costs', label: 'Budget & Costs', icon: Wallet, href: '/budget-costs' },
-          { id: 'billing-revenue', label: 'Billing & Revenue', icon: BadgeDollarSign, href: '/billing-revenue' },
+          { id: 'budget-costs', labelKey: 'pmBudgetCosts', icon: Wallet, href: '/budget-costs' },
+          { id: 'billing-revenue', labelKey: 'pmBillingRevenue', icon: BadgeDollarSign, href: '/billing-revenue' },
         ],
       },
       {
         id: 'execution',
-        label: 'Execution',
+        labelKey: 'pmGroupExecution',
         items: [
-          { id: 'tasks-assignments', label: 'Tasks & Assignments', icon: ListChecks, href: '/tasks-assignments' },
-          { id: 'time-expense', label: 'Time & Expense', icon: Clock, href: '/time-expense' },
+          { id: 'tasks-assignments', labelKey: 'pmTasksAssignments', icon: ListChecks, href: '/tasks-assignments' },
+          { id: 'time-expense', labelKey: 'pmTimeExpense', icon: Clock, href: '/time-expense' },
         ],
       },
       {
         id: 'collaboration',
-        label: 'Collaboration',
+        labelKey: 'pmGroupCollaboration',
         items: [
-          { id: 'documents', label: 'Documents', icon: FileText, href: '/documents' },
-          { id: 'team-chat', label: 'Team Chat', icon: MessageSquare, href: '/team-chat' },
+          { id: 'documents', labelKey: 'pmDocuments', icon: FileText, href: '/documents' },
+          { id: 'team-chat', labelKey: 'pmTeamChat', icon: MessageSquare, href: '/team-chat' },
         ],
       },
       {
         id: 'control',
-        label: 'Control',
+        labelKey: 'pmGroupControl',
         items: [
-          { id: 'phase-gate', label: 'Phase & Gate Control', icon: Flag, href: '/phase-gate' },
-          { id: 'inventory-materials', label: 'Inventory & Materials', icon: Package, href: '/inventory-materials' },
-          { id: 'reports-analytics', label: 'Reports & Analytics', icon: BarChart3, href: '/reports-analytics' },
+          { id: 'phase-gate', labelKey: 'pmPhaseGate', icon: Flag, href: '/phase-gate' },
+          { id: 'inventory-materials', labelKey: 'pmInventoryMaterials', icon: Package, href: '/inventory-materials' },
+          { id: 'reports-analytics', labelKey: 'pmReportsAnalytics', icon: BarChart3, href: '/reports-analytics' },
         ],
       },
     ],
   },
-  { id: 'operations', label: 'Operations', icon: Package },
-  { id: 'compliance', label: 'Compliance', icon: FileText },
-  { id: 'integrations', label: 'Integrations', icon: Link2 },
+  { id: 'operations', labelKey: 'operations', icon: Package },
+  { id: 'compliance', labelKey: 'compliance', icon: FileText },
+  { id: 'integrations', labelKey: 'integrations', icon: Link2 },
  
 ]
 
@@ -236,7 +236,10 @@ export type ModuleId =
 
 export type TrackedModule = {
   id: ModuleId
+  /** English name, kept for the tracking API payload (server-side, locale-less). */
   label: string
+  /** `Nav` message key the dashboard renders: `useTranslations("Nav")(module.labelKey)`. */
+  labelKey: NavLabelKey
   icon: LucideIcon
   /** Token suffix used for charts and accents: `var(--brand-<accent>)`. */
   accent: 'primary' | 'success' | 'warning' | 'danger' | 'info'
@@ -247,15 +250,15 @@ export type TrackedModule = {
  * even though it is not in `NAV_ITEMS` — it is reached from the sidebar footer.
  */
 export const TRACKED_MODULES: readonly TrackedModule[] = [
-  { id: 'command-center', label: 'Command Center', icon: LayoutGrid, accent: 'primary' },
-  { id: 'finance', label: 'Finance', icon: DollarSign, accent: 'success' },
-  { id: 'hr', label: 'HR & People', icon: Users, accent: 'info' },
-  { id: 'sales', label: 'Sales', icon: ShoppingCart, accent: 'warning' },
-  { id: 'project-manager', label: 'Project Manager', icon: FolderKanban, accent: 'primary' },
-  { id: 'operations', label: 'Operations', icon: Package, accent: 'danger' },
-  { id: 'compliance', label: 'Compliance', icon: FileText, accent: 'info' },
-  { id: 'integrations', label: 'Integrations', icon: Link2, accent: 'success' },
-  { id: 'settings', label: 'Settings', icon: Settings, accent: 'warning' },
+  { id: 'command-center', label: 'Command Center', labelKey: 'commandCenter', icon: LayoutGrid, accent: 'primary' },
+  { id: 'finance', label: 'Finance', labelKey: 'finance', icon: DollarSign, accent: 'success' },
+  { id: 'hr', label: 'HR & People', labelKey: 'hr', icon: Users, accent: 'info' },
+  { id: 'sales', label: 'Sales', labelKey: 'sales', icon: ShoppingCart, accent: 'warning' },
+  { id: 'project-manager', label: 'Project Manager', labelKey: 'projectManager', icon: FolderKanban, accent: 'primary' },
+  { id: 'operations', label: 'Operations', labelKey: 'operations', icon: Package, accent: 'danger' },
+  { id: 'compliance', label: 'Compliance', labelKey: 'compliance', icon: FileText, accent: 'info' },
+  { id: 'integrations', label: 'Integrations', labelKey: 'integrations', icon: Link2, accent: 'success' },
+  { id: 'settings', label: 'Settings', labelKey: 'settings', icon: Settings, accent: 'warning' },
 ]
 
 export const MODULE_IDS: readonly ModuleId[] = TRACKED_MODULES.map((m) => m.id)
@@ -266,6 +269,15 @@ const MODULE_LABEL_BY_ID = new Map<ModuleId, string>(
 
 export function getModuleLabel(id: ModuleId): string {
   return MODULE_LABEL_BY_ID.get(id) ?? id
+}
+
+const MODULE_LABEL_KEY_BY_ID = new Map<ModuleId, NavLabelKey>(
+  TRACKED_MODULES.map((m) => [m.id, m.labelKey]),
+)
+
+/** `Nav` message key for a module, for translating module ids from the tracking API. */
+export function getModuleLabelKey(id: ModuleId): NavLabelKey {
+  return MODULE_LABEL_KEY_BY_ID.get(id) ?? 'commandCenter'
 }
 
 /** Routes that belong to a module but are not reachable from `NAV_ITEMS`. */

@@ -1,7 +1,8 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { KpiCard } from "@/src/shared/components/ui/kpi-card"
@@ -11,7 +12,7 @@ import { AttentionList } from "../../../components/shared/attention-list"
 import { FinanceSection } from "../../../components/shared/finance-section"
 import { FinanceErrorState, FinanceTilesSkeleton } from "../../../components/shared/finance-states"
 import { FinancePageBody, FinancePageHeader } from "../../../components/shared/page-header"
-import { formatDateTime } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount } from "../../../lib/utils/money"
 import { useFinanceHome } from "../../lib/queries/overview"
 import type { FinanceHome } from "../../lib/types/overview"
@@ -19,36 +20,41 @@ import { CashWeeksChart } from "./cash-weeks-chart"
 import { CloseProgress } from "./close-progress"
 
 function HomeFigures({ data }: { data: FinanceHome }) {
+  const t = useTranslations("FinanceOverview")
+  const { formatDateTime } = useFinanceDateFormat()
   return (
     <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
       <div className="flex flex-col gap-0.5">
-        <span className="text-content-secondary text-sm leading-5">Cash on hand</span>
+        <span className="text-content-secondary text-sm leading-5">{t("cashOnHand")}</span>
         <span className="text-content-primary text-2xl leading-8 font-bold tabular-nums">
           {data.cash.currency} {formatAmount(data.cash.total)}
         </span>
         <span className="text-content-tertiary text-[13px] leading-5">
-          across {data.cash.accounts} accounts · updated {formatDateTime(data.cash.updated_at, " ")}
+          {t("cashAcross", {
+            count: data.cash.accounts,
+            updated: formatDateTime(data.cash.updated_at, " "),
+          })}
         </span>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <KpiCard
           layout="bar"
           accent="indigo"
-          label="Receivables outstanding (EGP)"
+          label={t("receivablesOutstanding")}
           value={formatAmount(data.receivables.outstanding)}
-          caption={`${formatAmount(data.receivables.overdue)} overdue`}
+          caption={t("amountOverdue", { amount: formatAmount(data.receivables.overdue) })}
         />
         <KpiCard
           layout="bar"
           accent="teal"
-          label="Payables outstanding (EGP)"
+          label={t("payablesOutstanding")}
           value={formatAmount(data.payables.outstanding)}
-          caption={`${formatAmount(data.payables.due_this_week)} due this week`}
+          caption={t("amountDueThisWeek", { amount: formatAmount(data.payables.due_this_week) })}
         />
         <KpiCard
           layout="bar"
           accent="amber"
-          label={`Net result — ${data.net_result.period_label}`}
+          label={t("netResult", { period: data.net_result.period_label })}
           value={formatAmount(data.net_result.amount)}
         />
       </div>
@@ -57,8 +63,9 @@ function HomeFigures({ data }: { data: FinanceHome }) {
 }
 
 function HomeSkeleton() {
+  const t = useTranslations("FinanceOverview")
   return (
-    <div aria-busy aria-label="Loading finance home" className="flex flex-col gap-6">
+    <div aria-busy aria-label={t("loadingHome")} className="flex flex-col gap-6">
       <FinanceTilesSkeleton />
       <Skeleton className="h-64 rounded-[14px]" />
       <Skeleton className="h-64 rounded-[14px]" />
@@ -68,17 +75,19 @@ function HomeSkeleton() {
 
 /** 01.01 · Finance home — cash, open balances, what needs attention, the close. */
 function FinanceHomePage() {
+  const t = useTranslations("FinanceOverview")
+  const { formatDateTime } = useFinanceDateFormat()
   const { data, isError, refetch } = useFinanceHome()
 
   return (
     <>
       <FinancePageHeader
-        title="Finance home"
+        title={t("homeTitle")}
         actions={
           <Button variant="primary" asChild>
             <Link href="/finance/journals/new">
               <Plus aria-hidden />
-              New entry
+              {t("newEntry")}
             </Link>
           </Button>
         }
@@ -92,22 +101,22 @@ function FinanceHomePage() {
           <>
             <HomeFigures data={data} />
 
-            <FinanceSection title="Needs your attention">
+            <FinanceSection title={t("needsAttention")}>
               <AttentionList items={data.attention} />
             </FinanceSection>
 
-            <FinanceSection title="Cash over 13 weeks">
+            <FinanceSection title={t("cashOver13Weeks")}>
               <CashWeeksChart weeks={data.cash_weeks} />
             </FinanceSection>
 
             <FinanceSection
-              title="Period close progress"
+              title={t("closeProgressTitle")}
               action={
                 <Link
                   href="/finance/close"
                   className="text-brand-primary text-[13px] leading-5 font-medium hover:underline"
                 >
-                  Open close workspace
+                  {t("openCloseWorkspace")}
                 </Link>
               }
             >
@@ -119,10 +128,10 @@ function FinanceHomePage() {
             </FinanceSection>
 
             <FinanceSection
-              title="Recent activity"
+              title={t("recentActivity")}
               action={
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/finance/audit">Open audit log</Link>
+                  <Link href="/finance/audit">{t("openAuditLog")}</Link>
                 </Button>
               }
             >

@@ -1,0 +1,106 @@
+{
+  "Onboarding": {
+    "back": "رجوع",
+    "continue": "متابعة",
+    "heroSubtitle": "مصمَّم للمؤسسين الذين يتحركون بسرعة.",
+    "heroTitle": "نظام التشغيل<br></br>لشركتك.",
+    "passwordLabel": "كلمة المرور",
+    "emailLabel": "البريد الإلكتروني",
+    "poweredBy": "بدعم من <brand>Nucleus</brand>",
+    "settingUpWorkspace": "جارٍ تجهيز مساحة عملك…",
+    "stepProgress": "الخطوة {current} من {total}"
+  },
+  "OnboardingCompany": {
+    "companyNameLabel": "ما اسم شركتك؟",
+    "companyNamePlaceholder": "أدخل اسم شركتك",
+    "invalidPhone": "أدخل رقم هاتف صالحًا.",
+    "phoneLabel": "ما رقم هاتفك؟"
+  },
+  "OnboardingIndustry": {
+    "industries": {
+      "ai_ml": "الذكاء الاصطناعي",
+      "e_commerce": "التجارة الإلكترونية",
+      "edtech": "تقنيات التعليم",
+      "fintech": "التقنية المالية",
+      "healthtech": "التقنية الصحية",
+      "marketplace": "منصات السوق",
+      "other": "أخرى",
+      "saas": "البرمجيات كخدمة"
+    },
+    "industryLegend": "القطاع",
+    "stageDescriptions": {
+      "established": "شركة ناضجة",
+      "growth": "في توسّع",
+      "idea": "في البداية",
+      "pre_seed": "مرحلة مبكرة",
+      "seed": "تم تأمين التمويل",
+      "series_a": "نمو سريع",
+      "series_b": "توسّع في النطاق"
+    },
+    "stageLegend": "المرحلة الحالية",
+    "stages": {
+      "established": "شركة راسخة",
+      "growth": "النمو",
+      "idea": "فكرة",
+      "pre_seed": "ما قبل التأسيس",
+      "seed": "التأسيس",
+      "series_a": "الجولة A",
+      "series_b": "الجولة B"
+    },
+    "subtitle": "سنخصّص تجربتك وفقًا لذلك.",
+    "title": "أخبرنا عن شركتك."
+  },
+  "OnboardingTeamSize": {
+    "sizes": {
+      "established": "فريق راسخ",
+      "growing": "فريق في نمو",
+      "scaling": "في توسّع",
+      "small": "فريق صغير",
+      "solo": "مؤسس منفرد"
+    },
+    "subtitle": "سنهيّئ وحدة الموظفين بما يناسب حجم فريقك.",
+    "title": "ما حجم فريقك؟"
+  },
+  "OnboardingTools": {
+    "descriptions": {
+      "github": "مزامنة المستودعات",
+      "gusto": "الرواتب والموارد البشرية",
+      "notion": "التوثيق",
+      "quickbooks": "المحاسبة",
+      "slack": "إشعارات الفريق",
+      "stripe": "معالجة المدفوعات"
+    },
+    "launch": "تشغيل Nucleus",
+    "subtitle": "يمكنك دائمًا إضافة المزيد لاحقًا.",
+    "title": "اربط أدواتك."
+  },
+  "OnboardingSignup": {
+    "accountReady": "حسابك جاهز — يُرجى تسجيل الدخول للمتابعة.",
+    "alreadyHaveAccount": "لديك حساب بالفعل؟ <signIn>تسجيل الدخول</signIn>",
+    "confirmPasswordLabel": "تأكيد كلمة المرور",
+    "createAccount": "إنشاء حساب",
+    "creatingAccount": "جارٍ إنشاء حسابك…",
+    "createFailed": "تعذّر إنشاء حسابك.",
+    "fullNameLabel": "الاسم الكامل",
+    "namePlaceholder": "إسلام وليد",
+    "passwordHint": "12 حرفًا على الأقل، أحرف كبيرة وصغيرة، ورمز",
+    "serverUnreachable": "تعذّر الاتصال بالخادم. يُرجى المحاولة مرة أخرى.",
+    "subtitle": "خطوة أخيرة قبل أن تصبح مساحة عملك جاهزة.",
+    "title": "أنشئ حسابك.",
+    "validation": {
+      "confirmPassword": "يُرجى تأكيد كلمة المرور",
+      "invalidEmail": "عنوان البريد الإلكتروني غير صالح",
+      "nameRequired": "الاسم مطلوب",
+      "passwordLowercase": "يجب أن تحتوي كلمة المرور على حرف صغير",
+      "passwordMinLength": "يجب ألا تقل كلمة المرور عن 12 حرفًا",
+      "passwordSymbol": "يجب أن تحتوي كلمة المرور على رمز",
+      "passwordUppercase": "يجب أن تحتوي كلمة المرور على حرف كبير",
+      "passwordsMismatch": "كلمتا المرور غير متطابقتين"
+    }
+  },
+  "OnboardingLogin": {
+    "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة. يُرجى المحاولة مرة أخرى.",
+    "signingIn": "جارٍ تسجيل الدخول…",
+    "signInUnavailable": "تعذّر تسجيل الدخول حاليًا. يُرجى المحاولة مرة أخرى."
+  }
+}

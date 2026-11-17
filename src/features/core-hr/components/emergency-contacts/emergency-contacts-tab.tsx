@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Pencil, Plus, Star, Trash2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -30,8 +31,8 @@ const EMPTY_CONTACTS: EmergencyContact[] = []
 const EMPTY_EMPLOYEES: EmployeeListItem[] = []
 
 const PRIMARY_OPTIONS = [
-  { value: "primary", label: "Primary" },
-  { value: "secondary", label: "Not primary" },
+  { value: "primary", labelKey: "primary" },
+  { value: "secondary", labelKey: "notPrimary" },
 ] as const
 
 function ContactTableSkeleton() {
@@ -39,7 +40,7 @@ function ContactTableSkeleton() {
     <TableBody>
       {Array.from({ length: 5 }).map((_, index) => (
         <TableRow key={index} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <Skeleton className="h-4 w-36" />
           </TableCell>
           <TableCell>
@@ -57,8 +58,8 @@ function ContactTableSkeleton() {
           <TableCell>
             <Skeleton className="h-4 w-6" />
           </TableCell>
-          <TableCell className="pr-6 text-right">
-            <Skeleton className="ml-auto h-7 w-16 rounded-md" />
+          <TableCell className="pe-6 text-end">
+            <Skeleton className="ms-auto h-7 w-16 rounded-md" />
           </TableCell>
         </TableRow>
       ))}
@@ -67,6 +68,8 @@ function ContactTableSkeleton() {
 }
 
 export function EmergencyContactsTab() {
+  const t = useTranslations("HrEmergencyContacts")
+  const tCommon = useTranslations("Common")
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState<HrFilterValues>({})
   const [addOpen, setAddOpen] = useState(false)
@@ -94,8 +97,15 @@ export function EmergencyContactsTab() {
   }, [contacts])
 
   const filterGroups: HrFilterGroup[] = [
-    { id: "relationship", label: "Relationship", options: relationshipOptions },
-    { id: "primary", label: "Primary Contact", options: PRIMARY_OPTIONS },
+    { id: "relationship", label: t("relationship"), options: relationshipOptions },
+    {
+      id: "primary",
+      label: t("primaryContact"),
+      options: PRIMARY_OPTIONS.map((option) => ({
+        value: option.value,
+        label: t(option.labelKey),
+      })),
+    },
   ]
 
   const filtered = useMemo(() => {
@@ -123,18 +133,17 @@ export function EmergencyContactsTab() {
       { employeeId: contact.employee_id, id: contact.id },
       {
         onSuccess: () =>
-          toast.success("Contact deleted", { description: contact.full_name }),
+          toast.success(t("contactDeleted"), { description: contact.full_name }),
         onError: (err) => {
           const apiErr = err as unknown as ApiError
           if (apiErr.code === "CONFLICT") {
-            toast.warning("Cannot delete contact", {
-              description:
-                "This is the employee's only emergency contact. Add another contact first.",
+            toast.warning(t("cannotDelete"), {
+              description: t("cannotDeleteOnlyContact"),
             })
             return
           }
-          toast.error("Delete failed", {
-            description: apiErr.message ?? "Could not delete contact.",
+          toast.error(t("deleteFailed"), {
+            description: apiErr.message ?? t("deleteFailedDescription"),
           })
         },
       }
@@ -151,7 +160,7 @@ export function EmergencyContactsTab() {
             onClick={() => setAddOpen(true)}
           >
             <Plus />
-            Add Contact
+            {t("addContact")}
           </Button>
         }
         searchValue={search}
@@ -165,13 +174,13 @@ export function EmergencyContactsTab() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Contact</TableHead>
-              <TableHead>Employee</TableHead>
-              <TableHead>Relationship</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Primary</TableHead>
-              <TableHead className="pr-6 text-right">Actions</TableHead>
+              <TableHead className="ps-6">{t("colContact")}</TableHead>
+              <TableHead>{t("colEmployee")}</TableHead>
+              <TableHead>{t("relationship")}</TableHead>
+              <TableHead>{tCommon("phone")}</TableHead>
+              <TableHead>{tCommon("email")}</TableHead>
+              <TableHead>{t("primary")}</TableHead>
+              <TableHead className="pe-6 text-end">{tCommon("actions")}</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -185,7 +194,7 @@ export function EmergencyContactsTab() {
                     colSpan={7}
                     className="text-content-tertiary py-12 text-center text-sm"
                   >
-                    Failed to load emergency contacts.
+                    {t("loadError")}
                   </TableCell>
                 </TableRow>
               )}
@@ -196,7 +205,7 @@ export function EmergencyContactsTab() {
                     colSpan={7}
                     className="text-content-tertiary py-12 text-center text-sm"
                   >
-                    No emergency contacts found.
+                    {t("empty")}
                   </TableCell>
                 </TableRow>
               )}
@@ -206,11 +215,11 @@ export function EmergencyContactsTab() {
                   const employee = employeesById.get(contact.employee_id)
                   const employeeName =
                     employee?.full_name ??
-                    `Employee ${contact.employee_id.slice(0, 8)}`
+                    t("employeeRef", { id: contact.employee_id.slice(0, 8) })
 
                   return (
                     <TableRow key={contact.id}>
-                      <TableCell className="text-content-primary pl-6 text-sm font-semibold">
+                      <TableCell className="text-content-primary ps-6 text-sm font-semibold">
                         {contact.full_name}
                       </TableCell>
                       <TableCell className="text-content-tertiary text-sm">
@@ -234,7 +243,7 @@ export function EmergencyContactsTab() {
                         {contact.is_primary ? (
                           <Star
                             className="text-brand-warning size-4 fill-current"
-                            aria-label="Primary contact"
+                            aria-label={t("primaryContact")}
                           />
                         ) : (
                           <span aria-hidden className="text-content-quaternary">
@@ -242,12 +251,12 @@ export function EmergencyContactsTab() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="pr-6 text-right">
+                      <TableCell className="pe-6 text-end">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            aria-label={`Edit ${contact.full_name}`}
+                            aria-label={t("editContactLabel", { name: contact.full_name })}
                             className="text-content-tertiary hover:text-content-primary"
                             onClick={() => setEditContact(contact)}
                           >
@@ -256,7 +265,7 @@ export function EmergencyContactsTab() {
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            aria-label={`Delete ${contact.full_name}`}
+                            aria-label={t("deleteContactLabel", { name: contact.full_name })}
                             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
                             disabled={deleteContact.isPending}
                             onClick={() => handleDelete(contact)}

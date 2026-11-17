@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowLeft, Search, ShieldCheck, UserCog } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Button } from "@/src/shared/components/ui/button"
@@ -18,20 +19,11 @@ import { ComplianceTablePagination } from "./shared/compliance-table-pagination"
 
 type AccessSubTab = "team" | "roles"
 
-const ACCESS_SUB_TABS: ReadonlyArray<{ id: AccessSubTab; label: string }> = [
-  { id: "team", label: "Team Members" },
-  { id: "roles", label: "Roles" },
-]
+const ACCESS_SUB_TABS: readonly AccessSubTab[] = ["team", "roles"]
 
 const PAGE_SIZE = 15
 const SEARCH_DEBOUNCE_MS = 300
 
-const MATRIX_LEVEL_LABEL: Record<PermissionMatrixLevel, string> = {
-  none: "None",
-  read: "Read",
-  write: "Write",
-  approval_required: "Approval",
-}
 
 const MATRIX_LEVEL_CLASS: Record<PermissionMatrixLevel, string> = {
   none: "bg-surface-page text-content-quaternary",
@@ -41,24 +33,25 @@ const MATRIX_LEVEL_CLASS: Record<PermissionMatrixLevel, string> = {
 }
 
 export function AccessTab() {
+  const t = useTranslations("ComplianceAccess")
   const [subTab, setSubTab] = useState<AccessSubTab>("team")
 
   return (
     <div className="flex flex-col gap-4">
       <div className="bg-surface-hover grid w-full max-w-[450px] grid-cols-2 gap-1 rounded-xl p-1">
         {ACCESS_SUB_TABS.map((tab) => {
-          const isActive = tab.id === subTab
+          const isActive = tab === subTab
           return (
             <button
-              key={tab.id}
+              key={tab}
               type="button"
-              onClick={() => setSubTab(tab.id)}
+              onClick={() => setSubTab(tab)}
               className={cn(
                 "text-content-secondary inline-flex h-8 items-center justify-center rounded-lg text-sm font-medium",
                 isActive && "bg-surface-white text-content-primary shadow-sm",
               )}
             >
-              {tab.label}
+              {t(`subTabs.${tab}`)}
             </button>
           )
         })}
@@ -70,6 +63,7 @@ export function AccessTab() {
 }
 
 function TeamMembersPanel() {
+  const t = useTranslations("ComplianceAccess")
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
@@ -89,7 +83,7 @@ function TeamMembersPanel() {
     <div className="flex flex-col gap-4">
       <div className="relative max-w-sm">
         <Search
-          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-content-quaternary"
+          className="pointer-events-none absolute top-1/2 inset-s-3 size-4 -translate-y-1/2 text-content-quaternary"
           aria-hidden
         />
         <Input
@@ -98,26 +92,28 @@ function TeamMembersPanel() {
             setSearch(event.target.value)
             setPage(1)
           }}
-          placeholder="Search by name or email…"
-          aria-label="Search team members"
-          className="h-9 pl-9"
+          placeholder={t("searchPlaceholder")}
+          aria-label={t("searchLabel")}
+          className="h-9 ps-9"
         />
       </div>
 
       {isLoading ? (
         <ComplianceSectionSpinner />
       ) : isError ? (
-        <ComplianceErrorState message="Failed to load team members." onRetry={() => void refetch()} />
+        <ComplianceErrorState message={t("membersLoadFailed")} onRetry={() => void refetch()} />
       ) : (
         <>
           <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
             <Card variant="elevated" className="p-3">
               <p className="text-content-tertiary px-2 py-1 text-sm">
-                Team Members {meta ? `(${meta.total})` : null}
+                {meta
+                  ? t("teamMembersCount", { total: String(meta.total) })
+                  : t("teamMembers")}
               </p>
               <div className="flex flex-col gap-1">
                 {members.length === 0 ? (
-                  <p className="text-content-tertiary px-2 py-4 text-sm">No members found.</p>
+                  <p className="text-content-tertiary px-2 py-4 text-sm">{t("noMembers")}</p>
                 ) : (
                   members.map((member) => {
                     const isSelected = member.id === selectedMemberId
@@ -127,7 +123,7 @@ function TeamMembersPanel() {
                         type="button"
                         onClick={() => setSelectedMemberId(member.id)}
                         className={cn(
-                          "hover:bg-surface-hover flex items-center justify-between rounded-xl px-3 py-2 text-left",
+                          "hover:bg-surface-hover flex items-center justify-between rounded-xl px-3 py-2 text-start",
                           isSelected && "bg-brand-primary/10",
                         )}
                       >
@@ -149,7 +145,7 @@ function TeamMembersPanel() {
                             "size-2 shrink-0 rounded-full",
                             member.is_active ? "bg-brand-success" : "bg-brand-warning",
                           )}
-                          aria-label={member.is_active ? "Active" : "Inactive"}
+                          aria-label={member.is_active ? t("active") : t("inactive")}
                         />
                       </button>
                     )
@@ -171,15 +167,15 @@ function TeamMembersPanel() {
                       </p>
                       <p className="text-content-tertiary text-sm">{selectedMember.email}</p>
                     </div>
-                    <Badge variant={selectedMember.is_active ? "success" : "warning"} className="ml-auto">
-                      {selectedMember.is_active ? "Active" : "Inactive"}
+                    <Badge variant={selectedMember.is_active ? "success" : "warning"} className="ms-auto">
+                      {selectedMember.is_active ? t("active") : t("inactive")}
                     </Badge>
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-content-primary text-sm font-medium">Assigned Roles</p>
+                    <p className="text-content-primary text-sm font-medium">{t("assignedRoles")}</p>
                     {selectedMember.roles.length === 0 ? (
-                      <p className="text-content-tertiary text-sm">No roles assigned.</p>
+                      <p className="text-content-tertiary text-sm">{t("noRolesAssigned")}</p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {selectedMember.roles.map((role) => (
@@ -192,14 +188,14 @@ function TeamMembersPanel() {
                   </div>
 
                   <p className="text-content-tertiary text-sm">
-                    This is a read-only view. Role permissions are managed centrally in RBAC.
+                    {t("readOnlyNote")}
                   </p>
                 </div>
               ) : (
                 <div className="text-content-tertiary flex min-h-[240px] flex-col items-center justify-center gap-2 text-sm">
                   <UserCog className="size-8" />
-                  <p>No user selected</p>
-                  <p>Select a team member from the list to view their roles.</p>
+                  <p>{t("noUserSelected")}</p>
+                  <p>{t("selectMemberHint")}</p>
                 </div>
               )}
             </Card>
@@ -212,7 +208,7 @@ function TeamMembersPanel() {
               total={meta.total}
               pageSize={PAGE_SIZE}
               onPageChange={setPage}
-              itemLabel="members"
+              itemKind="members"
             />
           ) : null}
         </>
@@ -222,6 +218,7 @@ function TeamMembersPanel() {
 }
 
 function RolesPanel() {
+  const t = useTranslations("ComplianceAccess")
   const [showMatrix, setShowMatrix] = useState(false)
   const { data: roles, isLoading, isError, refetch } = useAccessRoles()
 
@@ -234,41 +231,39 @@ function RolesPanel() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-content-primary text-[32px] leading-10 font-semibold">
-            Roles
+            {t("roles")}
           </p>
-          <p className="text-content-tertiary text-sm">
-            RBAC roles available to this organization (read-only)
-          </p>
+          <p className="text-content-tertiary text-sm">{t("rolesSubtitle")}</p>
         </div>
         <Button variant="secondary" size="sm" onClick={() => setShowMatrix(true)}>
           <ShieldCheck className="size-4" />
-          View Permission Matrix
+          {t("viewMatrix")}
         </Button>
       </div>
 
       {isLoading ? (
         <ComplianceSectionSpinner />
       ) : isError ? (
-        <ComplianceErrorState message="Failed to load roles." onRetry={() => void refetch()} />
+        <ComplianceErrorState message={t("rolesLoadFailed")} onRetry={() => void refetch()} />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {(roles ?? []).map((role) => (
             <Card key={role.id} variant="elevated" className="gap-2 p-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-content-primary text-base font-semibold">{role.name}</p>
-                {role.is_system ? <Badge variant="neutral">Predefined</Badge> : null}
+                {role.is_system ? <Badge variant="neutral">{t("predefined")}</Badge> : null}
               </div>
               <p className="text-content-tertiary text-sm">{role.description}</p>
               <div className="flex items-center gap-4 pt-1">
                 <div>
                   <p className="text-content-primary text-lg font-semibold">{role.member_count}</p>
-                  <p className="text-content-tertiary text-xs">Members</p>
+                  <p className="text-content-tertiary text-xs">{t("members")}</p>
                 </div>
                 <div>
                   <p className="text-content-primary text-lg font-semibold">
                     {role.granted_resource_count}
                   </p>
-                  <p className="text-content-tertiary text-xs">Resources Granted</p>
+                  <p className="text-content-tertiary text-xs">{t("resourcesGranted")}</p>
                 </div>
               </div>
             </Card>
@@ -280,19 +275,18 @@ function RolesPanel() {
 }
 
 function PermissionMatrixView({ onBack }: Readonly<{ onBack: () => void }>) {
+  const t = useTranslations("ComplianceAccess")
   const { data, isLoading, isError, refetch } = usePermissionMatrix()
 
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <Button variant="secondary" size="icon" onClick={onBack} aria-label="Back to roles">
-          <ArrowLeft className="size-4" />
+        <Button variant="secondary" size="icon" onClick={onBack} aria-label={t("backToRoles")}>
+          <ArrowLeft className="size-4 rtl:rotate-180" />
         </Button>
         <div>
-          <p className="text-content-primary text-2xl font-semibold">Permission Matrix</p>
-          <p className="text-content-tertiary text-sm">
-            Resource access level by role (read-only)
-          </p>
+          <p className="text-content-primary text-2xl font-semibold">{t("matrixTitle")}</p>
+          <p className="text-content-tertiary text-sm">{t("matrixSubtitle")}</p>
         </div>
       </div>
 
@@ -300,7 +294,7 @@ function PermissionMatrixView({ onBack }: Readonly<{ onBack: () => void }>) {
         <ComplianceSectionSpinner />
       ) : isError || !data ? (
         <ComplianceErrorState
-          message="Failed to load the permission matrix."
+          message={t("matrixLoadFailed")}
           onRetry={() => void refetch()}
         />
       ) : (
@@ -309,8 +303,8 @@ function PermissionMatrixView({ onBack }: Readonly<{ onBack: () => void }>) {
             <table className="w-full min-w-[900px] border-collapse">
               <thead className="border-stroke-default bg-surface-hover/90 border-b backdrop-blur-[4px]">
                 <tr>
-                  <th className="sticky left-0 z-10 min-w-[220px] bg-surface-hover/90 px-4 py-3 text-left text-xs font-medium tracking-[0.6px] text-content-quaternary uppercase backdrop-blur-[4px]">
-                    Resource
+                  <th className="sticky inset-s-0 z-10 min-w-[220px] bg-surface-hover/90 px-4 py-3 text-start text-xs font-medium tracking-[0.6px] text-content-quaternary uppercase backdrop-blur-[4px]">
+                    {t("resource")}
                   </th>
                   {data.roles.map((role) => (
                     <th key={role.id} className="px-3 py-3 text-center">
@@ -324,7 +318,7 @@ function PermissionMatrixView({ onBack }: Readonly<{ onBack: () => void }>) {
               <tbody>
                 {data.resources.map((resource) => (
                   <tr key={resource.resource} className="border-stroke-default border-b">
-                    <td className="sticky left-0 z-[1] bg-surface-white px-4 py-3 text-sm leading-5 font-medium text-content-primary">
+                    <td className="sticky inset-s-0 z-[1] bg-surface-white px-4 py-3 text-sm leading-5 font-medium text-content-primary">
                       {resource.resource}
                       <p className="text-content-tertiary text-xs font-normal">
                         {resource.description}
@@ -340,7 +334,7 @@ function PermissionMatrixView({ onBack }: Readonly<{ onBack: () => void }>) {
                               MATRIX_LEVEL_CLASS[level],
                             )}
                           >
-                            {MATRIX_LEVEL_LABEL[level]}
+                            {t(`matrixLevel.${level}`)}
                           </span>
                         </td>
                       )

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 
 import { useCommandCenterSummary } from "../lib/queries/summary"
 import { ActivityFeedSection } from "./activity-feed-section"
@@ -24,12 +25,13 @@ function SectionLabel({ children }: Readonly<{ children: React.ReactNode }>) {
 }
 
 export function CommandCenterView() {
+  const t = useTranslations("CommandCenter")
   const { data: summary, isLoading, isError, refetch } = useCommandCenterSummary()
 
   return (
-    <div className="bg-surface-page relative flex min-h-0 flex-1 flex-col gap-8 overflow-auto p-6 pl-7">
+    <div className="bg-surface-page relative flex min-h-0 flex-1 flex-col gap-8 overflow-auto p-6 ps-7">
       <div
-        className="pointer-events-none absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-brand-primary/20 to-transparent"
+        className="pointer-events-none absolute top-0 inset-e-0 inset-s-0 h-px bg-gradient-to-r from-transparent via-brand-primary/20 to-transparent"
         aria-hidden
       />
 
@@ -37,7 +39,7 @@ export function CommandCenterView() {
         <CommandCenterPageSpinner />
       ) : isError || !summary ? (
         <CommandCenterErrorState
-          message="Failed to load the command center summary."
+          message={t("summaryLoadFailed")}
           onRetry={() => void refetch()}
         />
       ) : (
@@ -45,7 +47,7 @@ export function CommandCenterView() {
           <SummaryStripSection strip={summary.strip} currencyCode={summary.currency_code} />
 
           <div className="flex flex-col gap-6">
-            <SectionLabel>Key Metrics</SectionLabel>
+            <SectionLabel>{t("sectionKeyMetrics")}</SectionLabel>
             <KeyMetricsSection
               metrics={summary.key_metrics}
               currencyCode={summary.currency_code}
@@ -57,7 +59,7 @@ export function CommandCenterView() {
       <QuickActionsCard orgLabel={ORG_LABEL} />
 
       <div className="flex flex-col gap-6">
-        <SectionLabel>Revenue Trend & Recent Activity</SectionLabel>
+        <SectionLabel>{t("sectionRevenueActivity")}</SectionLabel>
         <div className="flex flex-col gap-4 xl:flex-row xl:items-stretch">
           <RevenueTrendSection />
           <ActivityFeedSection />

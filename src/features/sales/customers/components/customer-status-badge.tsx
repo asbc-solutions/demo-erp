@@ -1,11 +1,15 @@
+import { useTranslations } from "next-intl"
+
 import { Badge } from "@/src/shared/components/ui/badge"
 
 import type { CustomerListItem } from "../../lib/types"
 
 export function CustomerStatusBadge({
   status,
-  label,
-}: Readonly<{ status: CustomerListItem["status"]; label: string }>) {
+}: Readonly<{ status: CustomerListItem["status"] }>) {
+  const t = useTranslations("SalesShared")
+  const label = t(`customerStatus.${status}`)
+
   if (status === "active") {
     return (
       <Badge

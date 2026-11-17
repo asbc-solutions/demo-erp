@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import {
@@ -19,6 +20,7 @@ import type { BranchListItem } from "../../lib/types"
 import { useUpdateBranch } from "../../lib/mutations/branches"
 import { useBranch } from "../../lib/queries/branches"
 import { branchSchema, type BranchFormValues } from "../../lib/schema/branch"
+import { useFieldError } from "../../lib/hooks/use-field-error"
 
 type EditBranchDialogProps = Readonly<{
   branch: BranchListItem | null
@@ -31,6 +33,10 @@ export function EditBranchDialog({
   open,
   onOpenChange,
 }: EditBranchDialogProps) {
+  const t = useTranslations("HrOrganization")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
+  const fieldError = useFieldError()
   const updateBranch = useUpdateBranch()
   // Address/city/country only live on the full branch record, not the list item.
   const { data: detail } = useBranch(open && branch ? branch.id : "")
@@ -107,7 +113,7 @@ export function EditBranchDialog({
       { id: branch.id, payload: values },
       {
         onSuccess: (updated) => {
-          toast.success(`Branch "${updated.branch_name}" updated`)
+          toast.success(t("branchUpdated", { name: updated.branch_name }))
           handleOpenChange(false)
         },
         onError: (err) => {
@@ -117,12 +123,12 @@ export function EditBranchDialog({
           const description =
             apiErr.message ??
             (isCodeConflict
-              ? `Code "${values.branch_code}" is already in use. Please enter a unique code.`
-              : "Please check your details and try again.")
+              ? t("codeInUse", { code: values.branch_code })
+              : t("checkDetails"))
           if (isCodeConflict) {
             setError("branch_code", { type: "server", message: description })
           }
-          toast.error("Failed to update branch", { description })
+          toast.error(t("updateBranchFailed"), { description })
         },
       },
     )
@@ -138,35 +144,35 @@ export function EditBranchDialog({
           className="flex flex-col gap-4 p-6"
           noValidate
         >
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pe-8">
             <DialogTitle className="text-content-primary text-lg font-semibold">
-              Edit Branch
+              {t("editBranch")}
             </DialogTitle>
             <p className="text-content-quaternary text-sm leading-5">
-              Edit a branch location
+              {t("editBranchSubtitle")}
             </p>
           </div>
 
           <div className="flex flex-col gap-4 pt-1">
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Name <span className="text-brand-danger">*</span>
+                {t("fieldName")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("branch_name")}
-                placeholder="Branch name"
+                placeholder={t("phBranchName")}
                 className="placeholder:text-content-quaternary h-9 rounded-md border-stroke-default bg-surface-white text-sm"
               />
               {errors.branch_name && (
                 <p className="text-brand-danger text-xs">
-                  {errors.branch_name.message}
+                  {fieldError(errors.branch_name.message)}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Code <span className="text-brand-danger">*</span>
+                {t("fieldCode")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("branch_code")}
@@ -179,23 +185,23 @@ export function EditBranchDialog({
               />
               {errors.branch_code && (
                 <p className="text-brand-danger text-xs">
-                  {errors.branch_code.message}
+                  {fieldError(errors.branch_code.message)}
                 </p>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-content-primary text-sm font-semibold">
-                Address <span className="text-brand-danger">*</span>
+                {t("fieldAddress")} <span className="text-brand-danger">*</span>
               </Label>
               <Input
                 {...register("address_line1")}
-                placeholder="Street address"
+                placeholder={t("phStreetAddress")}
                 className="placeholder:text-content-quaternary h-9 rounded-md border-stroke-default bg-surface-white text-sm"
               />
               {errors.address_line1 && (
                 <p className="text-brand-danger text-xs">
-                  {errors.address_line1.message}
+                  {fieldError(errors.address_line1.message)}
                 </p>
               )}
             </div>
@@ -203,16 +209,16 @@ export function EditBranchDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-content-primary text-sm font-semibold">
-                  City <span className="text-brand-danger">*</span>
+                  {t("fieldCity")} <span className="text-brand-danger">*</span>
                 </Label>
                 <Input
                   {...register("city")}
-                  placeholder="City"
+                  placeholder={t("phCity")}
                   className="placeholder:text-content-quaternary h-9 rounded-md border-stroke-default bg-surface-white text-sm"
                 />
                 {errors.city && (
                   <p className="text-brand-danger text-xs">
-                    {errors.city.message}
+                    {fieldError(errors.city.message)}
                   </p>
                 )}
               </div>
@@ -234,7 +240,7 @@ export function EditBranchDialog({
                 />
                 {errors.country_code && (
                   <p className="text-brand-danger text-xs">
-                    {errors.country_code.message}
+                    {fieldError(errors.country_code.message)}
                   </p>
                 )}
               </div>
@@ -249,7 +255,7 @@ export function EditBranchDialog({
               className="text-content-primary h-9 rounded-md border-stroke-default bg-surface-white px-4 text-sm font-semibold"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="submit"
@@ -258,7 +264,7 @@ export function EditBranchDialog({
               disabled={updateBranch.isPending}
               className="h-9 rounded-md px-4 text-sm font-semibold disabled:opacity-50"
             >
-              {updateBranch.isPending ? "Saving…" : "Save"}
+              {updateBranch.isPending ? tShared("saving") : tCommon("save")}
             </Button>
           </div>
         </form>

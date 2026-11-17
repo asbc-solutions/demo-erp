@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Printer, SearchX, Undo2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -45,16 +46,17 @@ import {
 } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate, formatDateTime } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount } from "../../../lib/utils/money"
 import { useJournalAction, useReverseJournal } from "../../lib/mutations/ledger"
 import { useJournal } from "../../lib/queries/ledger"
 import { reverseSchema, type ReverseFormValues } from "../../lib/schema/ledger"
-import type { JournalDetail, JournalLine } from "../../lib/types/ledger"
+import type { JournalDetail, JournalLine, LedgerMessageKey } from "../../lib/types/ledger"
 
 const TODAY = "2026-03-31"
 
 function LinesTable({ lines, currency, caption }: { lines: JournalLine[]; currency: string; caption: string }) {
+  const t = useTranslations("FinanceLedger")
   const debit = lines.reduce((sum, row) => sum + row.debit, 0)
   const credit = lines.reduce((sum, row) => sum + row.credit, 0)
   return (
@@ -63,10 +65,10 @@ function LinesTable({ lines, currency, caption }: { lines: JournalLine[]; curren
         <caption className="sr-only">{caption}</caption>
         <TableHeader>
           <TableRow>
-            <TableHead>Account</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead className="text-right">Debit ({currency})</TableHead>
-            <TableHead className="text-right">Credit ({currency})</TableHead>
+            <TableHead>{t("account")}</TableHead>
+            <TableHead>{t("description")}</TableHead>
+            <TableHead className="text-end">{t("debitIn", { currency })}</TableHead>
+            <TableHead className="text-end">{t("creditIn", { currency })}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -79,10 +81,10 @@ function LinesTable({ lines, currency, caption }: { lines: JournalLine[]; curren
                 </Link>
               </TableCell>
               <TableCell className="text-content-secondary">{row.description || "—"}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <Amount value={row.debit} />
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <Amount value={row.credit} />
               </TableCell>
             </TableRow>
@@ -90,11 +92,11 @@ function LinesTable({ lines, currency, caption }: { lines: JournalLine[]; curren
         </TableBody>
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={2}>Total</TableCell>
-            <TableCell className="text-right">
+            <TableCell colSpan={2}>{t("total")}</TableCell>
+            <TableCell className="text-end">
               <Amount value={debit} emphasis="strong" />
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-end">
               <Amount value={credit} emphasis="strong" />
             </TableCell>
           </TableRow>
@@ -105,6 +107,7 @@ function LinesTable({ lines, currency, caption }: { lines: JournalLine[]; curren
 }
 
 function ReverseDialog({ journal, open, onOpenChange }: { journal: JournalDetail; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations("FinanceLedger")
   const reverse = useReverseJournal(journal.number)
   const {
     register,
@@ -122,10 +125,10 @@ function ReverseDialog({ journal, open, onOpenChange }: { journal: JournalDetail
   const submit = (values: ReverseFormValues) =>
     reverse.mutate(values, {
       onSuccess: (reversal) => {
-        toast.success(`${reversal.number} reverses ${journal.number}. The original stays in the ledger, marked reversed.`)
+        toast.success(t("toastReversed", { reversal: reversal.number, original: journal.number }))
         onOpenChange(false)
       },
-      onError: (error) => toast.error(errorMessage(error, "The entry could not be reversed. Try again.")),
+      onError: (error) => toast.error(errorMessage(error, t("errorReverseEntry"))),
     })
 
   return (
@@ -133,36 +136,33 @@ function ReverseDialog({ journal, open, onOpenChange }: { journal: JournalDetail
       <DialogContent className="max-w-2xl">
         <form onSubmit={handleSubmit(submit)} noValidate>
           <DialogHeader>
-            <DialogTitle>Reverse this entry?</DialogTitle>
-            <DialogDescription>
-              A reversal creates a mirror entry dated today; the original stays in the ledger marked reversed.
-              Reports for the original period do not change. Give a reason so the audit trail explains why.
-            </DialogDescription>
+            <DialogTitle>{t("reverseTitle")}</DialogTitle>
+            <DialogDescription>{t("reverseDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <FinanceAlert tone="info">
-              Reversing creates a new dated contra entry linked to {journal.number}. The original is never deleted.
+              {t("reverseInfo", { number: journal.number })}
             </FinanceAlert>
             <Field className="max-w-48">
-              <FieldLabel htmlFor="reversal-date">Reversal date</FieldLabel>
+              <FieldLabel htmlFor="reversal-date">{t("reversalDate")}</FieldLabel>
               <Input id="reversal-date" type="date" {...register("date")} />
             </Field>
             <div className="flex flex-col gap-2">
-              <span className="text-content-secondary text-[13px] leading-5">Contra entry preview</span>
-              <LinesTable lines={contra} currency="EGP" caption="Contra entry preview" />
+              <span className="text-content-secondary text-[13px] leading-5">{t("contraPreview")}</span>
+              <LinesTable lines={contra} currency="EGP" caption={t("contraPreview")} />
             </div>
             <Field>
-              <FieldLabel htmlFor="reversal-reason">Reason</FieldLabel>
+              <FieldLabel htmlFor="reversal-reason">{t("reason")}</FieldLabel>
               <Textarea id="reversal-reason" rows={3} aria-invalid={Boolean(errors.reason)} {...register("reason")} />
-              {errors.reason ? <FieldError>{errors.reason.message}</FieldError> : null}
+              {errors.reason ? <FieldError>{t(errors.reason.message as LedgerMessageKey)}</FieldError> : null}
             </Field>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="danger" disabled={reverse.isPending}>
-              Create reversal
+              {t("createReversal")}
             </Button>
           </DialogFooter>
         </form>
@@ -172,37 +172,38 @@ function ReverseDialog({ journal, open, onOpenChange }: { journal: JournalDetail
 }
 
 function PrintDialog({ journal, open, onOpenChange }: { journal: JournalDetail; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const t = useTranslations("FinanceLedger")
+  const { formatDate } = useFinanceDateFormat()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Print journal entry</DialogTitle>
-          <DialogDescription>A print view of the entry as it stands on the ledger.</DialogDescription>
+          <DialogTitle>{t("printTitle")}</DialogTitle>
+          <DialogDescription>{t("printDescription")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
           <KeyValueList
             items={[
-              { term: "Entry no.", value: <span className="font-mono">{journal.number}</span> },
-              { term: "Date", value: formatDate(journal.date) },
-              { term: "Description", value: journal.description },
-              { term: "Status", value: <StatusPill status={journal.status} /> },
-              { term: "Debit", value: formatAmount(journal.debit) },
-              { term: "Credit", value: formatAmount(journal.credit) },
+              { term: t("entryNo"), value: <span className="font-mono">{journal.number}</span> },
+              { term: t("date"), value: formatDate(journal.date) },
+              { term: t("description"), value: journal.description },
+              { term: t("status"), value: <StatusPill status={journal.status} /> },
+              { term: t("debit"), value: formatAmount(journal.debit) },
+              { term: t("credit"), value: formatAmount(journal.credit) },
             ]}
           />
-          <LinesTable lines={journal.lines} currency={journal.currency} caption={`Lines of ${journal.number}`} />
+          <LinesTable lines={journal.lines} currency={journal.currency} caption={t("linesOf", { number: journal.number })} />
           <p className="text-content-tertiary text-[13px] leading-5">
-            This is a print preview. The browser print dialog renders whatever is on screen — the prototype does not
-            generate a stamped PDF.
+            {t("printNote")}
           </p>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            Close
+            {t("close")}
           </Button>
           <Button variant="primary" onClick={() => window.print()}>
             <Printer aria-hidden />
-            Print
+            {t("print")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -212,6 +213,8 @@ function PrintDialog({ journal, open, onOpenChange }: { journal: JournalDetail; 
 
 /** 05.04 · Journal entry — lines, source, audit trail; reverse, print, or move a draft along. */
 function JournalDetailPage({ journalId }: { journalId: string }) {
+  const t = useTranslations("FinanceLedger")
+  const { formatDate, formatDateTime } = useFinanceDateFormat()
   const { data: journal, isError, isPending, refetch } = useJournal(journalId)
   const action = useJournalAction(journalId)
   const [reversing, setReversing] = React.useState(false)
@@ -220,7 +223,7 @@ function JournalDetailPage({ journalId }: { journalId: string }) {
   if (isError) {
     return (
       <>
-        <FinancePageHeader title="Journal entry" />
+        <FinancePageHeader title={t("journalEntry")} />
         <FinancePageBody>
           <FinanceErrorState onRetry={() => refetch()} />
         </FinancePageBody>
@@ -231,16 +234,16 @@ function JournalDetailPage({ journalId }: { journalId: string }) {
   if (!isPending && !journal) {
     return (
       <>
-        <FinancePageHeader title="Entry not found" />
+        <FinancePageHeader title={t("entryNotFound")} />
         <FinancePageBody>
           <EmptyState
             variant="card"
             icon={<SearchX />}
-            title="There is no journal entry with this number."
-            description="Check the number, or find the entry from the journal list."
+            title={t("entryNotFoundTitle")}
+            description={t("entryNotFoundDescription")}
             actions={
               <Button variant="secondary" size="sm" asChild>
-                <Link href="/finance/journals">Open journal entries</Link>
+                <Link href="/finance/journals">{t("openJournalEntries")}</Link>
               </Button>
             }
           />
@@ -251,20 +254,20 @@ function JournalDetailPage({ journalId }: { journalId: string }) {
 
   const run = (kind: "submit" | "post" | "send-back", done: string) =>
     action.mutate(
-      { action: kind, reason: kind === "send-back" ? "Returned for correction" : undefined },
+      { action: kind, reason: kind === "send-back" ? t("returnedForCorrection") : undefined },
       {
         onSuccess: () => toast.success(done),
-        onError: (error) => toast.error(errorMessage(error, "The entry could not be updated. Try again.")),
+        onError: (error) => toast.error(errorMessage(error, t("errorUpdateEntry"))),
       },
     )
 
   return (
     <>
       <FinancePageHeader
-        title={journal?.number ?? "Journal entry"}
+        title={journal?.number ?? t("journalEntry")}
         figure={
           journal ? (
-            <HeaderFigure label="Entry total">
+            <HeaderFigure label={t("entryTotal")}>
               {journal.currency} {formatAmount(journal.debit)}
             </HeaderFigure>
           ) : null
@@ -274,33 +277,33 @@ function JournalDetailPage({ journalId }: { journalId: string }) {
             <>
               {journal.status === "draft" && !journal.derived ? (
                 <>
-                  <Button variant="secondary" disabled={action.isPending} onClick={() => run("submit", `${journal.number} is waiting for approval.`)}>
-                    Submit for approval
+                  <Button variant="secondary" disabled={action.isPending} onClick={() => run("submit", t("toastAwaitingApproval", { number: journal.number }))}>
+                    {t("submitForApproval")}
                   </Button>
-                  <Button variant="primary" disabled={action.isPending} onClick={() => run("post", `${journal.number} is posted.`)}>
-                    Post
+                  <Button variant="primary" disabled={action.isPending} onClick={() => run("post", t("toastPosted", { number: journal.number }))}>
+                    {t("post")}
                   </Button>
                 </>
               ) : null}
               {journal.status === "pending" ? (
                 <>
-                  <Button variant="secondary" disabled={action.isPending} onClick={() => run("send-back", `${journal.number} went back to draft.`)}>
-                    Send back
+                  <Button variant="secondary" disabled={action.isPending} onClick={() => run("send-back", t("toastSentBack", { number: journal.number }))}>
+                    {t("sendBack")}
                   </Button>
-                  <Button variant="primary" disabled={action.isPending} onClick={() => run("post", `${journal.number} is approved and posted.`)}>
-                    Approve and post
+                  <Button variant="primary" disabled={action.isPending} onClick={() => run("post", t("toastApprovedPosted", { number: journal.number }))}>
+                    {t("approveAndPost")}
                   </Button>
                 </>
               ) : null}
               {journal.status === "posted" || journal.status === "reversed" ? (
                 <Button variant="secondary" disabled={!journal.can_reverse} onClick={() => setReversing(true)}>
                   <Undo2 aria-hidden />
-                  {journal.status === "reversed" ? "Reversed" : "Reverse"}
+                  {journal.status === "reversed" ? t("reversed") : t("reverse")}
                 </Button>
               ) : null}
               <Button variant="ghost" onClick={() => setPrinting(true)}>
                 <Printer aria-hidden />
-                Print
+                {t("print")}
               </Button>
             </>
           ) : null
@@ -308,40 +311,47 @@ function JournalDetailPage({ journalId }: { journalId: string }) {
       />
       <FinancePageBody>
         {!journal ? (
-          <Skeleton aria-busy aria-label="Loading entry" className="h-96 rounded-xl" />
+          <Skeleton aria-busy aria-label={t("loadingEntry")} className="h-96 rounded-xl" />
         ) : (
           <>
             <MetaChips>
               <StatusPill status={journal.status} />
-              {journal.origin === "auto" ? <StatusPill status="origin-auto" label="Auto" tone="info" /> : null}
+              {journal.origin === "auto" ? <StatusPill status="origin-auto" label={t("auto")} tone="info" /> : null}
               <span>{formatDate(journal.date)}</span>
               <span>{journal.description}</span>
             </MetaChips>
 
             {journal.reversed_by ? (
               <FinanceAlert tone="warning" className="text-status-warning-fg">
-                Reversed by{" "}
-                <Link href={`/finance/journals/${journal.reversed_by}`} className="font-mono underline">
-                  {journal.reversed_by}
-                </Link>
-                . The original stays in the ledger so the audit trail is complete.
+                {t.rich("reversedByNotice", {
+                  number: journal.reversed_by,
+                  link: (chunks) => (
+                    <Link href={`/finance/journals/${journal.reversed_by}`} className="font-mono underline">
+                      {chunks}
+                    </Link>
+                  ),
+                })}
               </FinanceAlert>
             ) : null}
             {journal.reversal_of ? (
               <FinanceAlert tone="info">
-                This entry reverses{" "}
-                <Link href={`/finance/journals/${journal.reversal_of}`} className="font-mono underline">
-                  {journal.reversal_of}
-                </Link>
-                {journal.reason ? ` — ${journal.reason}` : ""}.
+                {t.rich(journal.reason ? "reversesNoticeWithReason" : "reversesNotice", {
+                  number: journal.reversal_of,
+                  reason: journal.reason ?? "",
+                  link: (chunks) => (
+                    <Link href={`/finance/journals/${journal.reversal_of}`} className="font-mono underline">
+                      {chunks}
+                    </Link>
+                  ),
+                })}
               </FinanceAlert>
             ) : null}
 
-            <FinanceSection title="Lines">
-              <LinesTable lines={journal.lines} currency={journal.currency} caption={`Lines of ${journal.number}`} />
+            <FinanceSection title={t("lines")}>
+              <LinesTable lines={journal.lines} currency={journal.currency} caption={t("linesOf", { number: journal.number })} />
               {journal.currency !== "EGP" ? (
                 <p className="text-content-tertiary text-xs leading-4">
-                  ≈ {formatAmount(journal.debit_base)} EGP @ {journal.rate}
+                  {t("baseEquivalent", { amount: formatAmount(journal.debit_base), rate: journal.rate })}
                 </p>
               ) : null}
             </FinanceSection>
@@ -352,22 +362,21 @@ function JournalDetailPage({ journalId }: { journalId: string }) {
                 action={
                   journal.source_href ? (
                     <Button variant="secondary" size="sm" asChild>
-                      <Link href={journal.source_href}>Open {journal.source}</Link>
+                      <Link href={journal.source_href}>{t("openSource", { source: journal.source })}</Link>
                     </Button>
                   ) : null
                 }
               >
-                This entry was created by {journal.source}. Change the source document to change this entry — its
-                lines can&apos;t be edited here.
+                {t("autoEntryNotice", { source: journal.source })}
               </FinanceAlert>
             ) : null}
 
             <KeyValueList
               items={[
-                { term: "Source", value: journal.source || "Manual" },
-                { term: "Created by", value: journal.created_by },
+                { term: t("source"), value: journal.source || t("manual") },
+                { term: t("createdBy"), value: journal.created_by },
                 {
-                  term: journal.status === "pending" ? "Submitted" : "Posted by",
+                  term: journal.status === "pending" ? t("submitted") : t("postedBy"),
                   value:
                     journal.status === "pending"
                       ? journal.submitted_at
@@ -375,7 +384,7 @@ function JournalDetailPage({ journalId }: { journalId: string }) {
                         : "—"
                       : journal.posted_by
                         ? `${journal.posted_by}${journal.posted_at ? ` · ${formatDate(journal.posted_at.slice(0, 10))}` : ""}`
-                        : "Not posted",
+                        : t("notPosted"),
                 },
               ]}
             />

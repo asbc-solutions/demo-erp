@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
 import {
@@ -12,21 +13,21 @@ import {
   SelectValue,
 } from "@/src/shared/components/ui/select"
 import { cn } from "@/src/shared/lib/utils/utils"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { usePendingLeaveRequests, useLeaveTypes } from "../../lib/queries/leave"
-import type { LeaveType } from "../../lib/types"
+import type { LeaveType, LeaveTypeCategory } from "../../lib/types"
 import {
   getLeaveCategoryStyle,
   LEAVE_CATEGORY_LABELS,
 } from "../../lib/utils/leave-style"
 
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-]
+// Week starts on Monday to match the design (5 Jan 2026 is a Monday).
+const WEEK_DATES = Array.from({ length: 7 }, (_, i) => new Date(2026, 0, 5 + i))
 
-// Week starts on Monday to match the design.
-const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+function isLeaveCategory(value: string): value is LeaveTypeCategory {
+  return value in LEAVE_CATEGORY_LABELS
+}
 
 type CalendarEvent = {
   id: string
@@ -44,6 +45,8 @@ function toDateOnly(iso: string): Date {
 }
 
 export function CalendarTab() {
+  const t = useTranslations("HrLeaves")
+  const intlLocale = useIntlLocale()
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -66,7 +69,7 @@ export function CalendarTab() {
         req.leave_type ?? typeMap.get(req.leave_type_id)
       return {
         id: req.id,
-        name: req.employee?.full_name ?? "Employee",
+        name: req.employee?.full_name ?? t("employeeFallback"),
         category: type?.category,
         colorHex: type?.color_hex,
         department: req.employee?.department_name,
@@ -74,7 +77,7 @@ export function CalendarTab() {
         end: toDateOnly(req.end_date),
       }
     })
-  }, [pendingData, typeMap])
+  }, [pendingData, typeMap, t])
 
   const departments = useMemo(() => {
     const set = new Set<string>()
@@ -92,6 +95,14 @@ export function CalendarTab() {
     deptFilter === "all"
       ? events
       : events.filter((e) => e.department === deptFilter)
+
+  const monthLabel = new Intl.DateTimeFormat(intlLocale, {
+    month: "long",
+    year: "numeric",
+  }).format(new Date(year, month, 1))
+  const dayNames = WEEK_DATES.map((date) =>
+    new Intl.DateTimeFormat(intlLocale, { weekday: "short" }).format(date),
+  )
 
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   // Monday-based leading blank count.
@@ -137,35 +148,35 @@ export function CalendarTab() {
               type="button"
               onClick={prevMonth}
               className="flex size-8 items-center justify-center rounded-[8px] text-content-tertiary transition-colors hover:bg-surface-hover hover:text-content-primary"
-              aria-label="Previous month"
+              aria-label={t("previousMonth")}
             >
-              <ChevronLeft className="size-4" strokeWidth={1.75} />
+              <ChevronLeft className="size-4 rtl:rotate-180" strokeWidth={1.75} />
             </button>
             <button
               type="button"
               onClick={nextMonth}
               className="flex size-8 items-center justify-center rounded-[8px] text-content-tertiary transition-colors hover:bg-surface-hover hover:text-content-primary"
-              aria-label="Next month"
+              aria-label={t("nextMonth")}
             >
-              <ChevronRight className="size-4" strokeWidth={1.75} />
+              <ChevronRight className="size-4 rtl:rotate-180" strokeWidth={1.75} />
             </button>
           </div>
           <div className="flex flex-col">
             <h2 className="text-lg font-bold leading-7 text-content-primary">
-              {MONTH_NAMES[month]} {year}
+              {monthLabel}
             </h2>
             <p className="text-sm text-content-tertiary">
-              Team leave calendar view
+              {t("calendarSubtitle")}
             </p>
           </div>
         </div>
 
         <Select value={deptFilter} onValueChange={setDeptFilter}>
           <SelectTrigger className="h-9 w-[180px] rounded-[10px]">
-            <SelectValue placeholder="All Departments" />
+            <SelectValue placeholder={t("allDepartments")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
+            <SelectItem value="all">{t("allDepartments")}</SelectItem>
             {departments.map((d) => (
               <SelectItem key={d} value={d}>
                 {d}
@@ -189,9 +200,7 @@ export function CalendarTab() {
                   getLeaveCategoryStyle(cat).dotClass,
                 )}
               />
-              {LEAVE_CATEGORY_LABELS[
-                cat as keyof typeof LEAVE_CATEGORY_LABELS
-              ] ?? cat}
+              {isLeaveCategory(cat) ? t(`leaveCategory.${cat}`) : cat}
             </span>
           ))}
         </div>
@@ -203,7 +212,7 @@ export function CalendarTab() {
       ) : (
         <div className="overflow-hidden rounded-[14px] border border-stroke-default bg-surface-white">
           <div className="grid grid-cols-7 border-b border-stroke-default bg-surface-page">
-            {DAY_NAMES.map((day) => (
+            {dayNames.map((day) => (
               <div
                 key={day}
                 className="py-3 text-center text-xs font-medium text-content-tertiary"
@@ -221,8 +230,8 @@ export function CalendarTab() {
                 <div
                   key={idx}
                   className={cn(
-                    "min-h-[110px] border-b border-r border-stroke-default p-2 last:border-r-0",
-                    idx % 7 === 6 && "border-r-0",
+                    "min-h-[110px] border-b border-e border-stroke-default p-2 last:border-e-0",
+                    idx % 7 === 6 && "border-e-0",
                     !day && "bg-surface-page",
                   )}
                 >
@@ -259,7 +268,7 @@ export function CalendarTab() {
                         ))}
                         {dayEvents.length > showMax && (
                           <span className="px-1 text-[10px] text-content-quaternary">
-                            +{dayEvents.length - showMax} more
+                            {t("moreCount", { count: dayEvents.length - showMax })}
                           </span>
                         )}
                       </div>
@@ -273,8 +282,7 @@ export function CalendarTab() {
       )}
 
       <p className="px-1 text-xs text-content-quaternary">
-        Showing pending team leave requests. Approved team-wide leave will appear
-        here once a team calendar endpoint is available.
+        {t("calendarFootnote")}
       </p>
     </div>
   )

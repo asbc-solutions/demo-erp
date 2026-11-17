@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Loader2, ShieldCheck, Users } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -38,14 +39,17 @@ import { cn } from "@/src/shared/lib/utils/utils"
 import { useUpdateRolePermissions } from "../lib/mutations/roles"
 import { useRolePermissions, useRoles } from "../lib/queries/roles"
 
-const LEVEL_OPTIONS: { value: PermissionLevel; label: string }[] = [
-  { value: "none", label: "No Access" },
-  { value: "read", label: "Read Only" },
-  { value: "approval_required", label: "Approval Required" },
-  { value: "write", label: "Full Access" },
+/** Rendered with `t(\`level.${value}\`)` in the `SettingsRoles` namespace. */
+const LEVEL_OPTIONS: readonly PermissionLevel[] = [
+  "none",
+  "read",
+  "approval_required",
+  "write",
 ]
 
 function RolePermissionMatrix({ roleId }: Readonly<{ roleId: string }>) {
+  const t = useTranslations("SettingsRoles")
+  const tCommon = useTranslations("Common")
   const { can } = usePermissions()
   const { data: matrix, isLoading } = useRolePermissions(roleId)
   const updatePermissions = useUpdateRolePermissions(roleId)
@@ -83,13 +87,13 @@ function RolePermissionMatrix({ roleId }: Readonly<{ roleId: string }>) {
       { permissions: payload },
       {
         onSuccess: () => {
-          toast.success("Role permissions updated")
+          toast.success(t("updated"))
           setEdits({})
         },
         onError: (err: unknown) => {
           const apiErr = err as ApiError
-          toast.error("Failed to update permissions", {
-            description: apiErr.message ?? "Please try again.",
+          toast.error(t("updateFailed"), {
+            description: apiErr.message ?? t("tryAgain"),
           })
         },
       },
@@ -112,7 +116,9 @@ function RolePermissionMatrix({ roleId }: Readonly<{ roleId: string }>) {
           {updatePermissions.isPending ? (
             <Loader2 className="size-4 animate-spin" aria-hidden />
           ) : null}
-          Save{changedCount > 0 ? ` (${changedCount})` : ""}
+          {changedCount > 0
+            ? t("saveWithCount", { count: changedCount })
+            : tCommon("save")}
         </Button>
       </div>
 
@@ -128,7 +134,9 @@ function RolePermissionMatrix({ roleId }: Readonly<{ roleId: string }>) {
                   </span>
                   <Badge variant="neutral">{rows.length}</Badge>
                   {changedInGroup > 0 ? (
-                    <Badge variant="primary">{changedInGroup} changed</Badge>
+                    <Badge variant="primary">
+                      {t("changedCount", { count: changedInGroup })}
+                    </Badge>
                   ) : null}
                 </span>
               </AccordionTrigger>
@@ -136,9 +144,9 @@ function RolePermissionMatrix({ roleId }: Readonly<{ roleId: string }>) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Resource</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="w-48">Level</TableHead>
+                      <TableHead>{t("colResource")}</TableHead>
+                      <TableHead>{tCommon("description")}</TableHead>
+                      <TableHead className="w-48">{t("colLevel")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -163,19 +171,15 @@ function RolePermissionMatrix({ roleId }: Readonly<{ roleId: string }>) {
                               </SelectTrigger>
                               <SelectContent>
                                 {LEVEL_OPTIONS.map((option) => {
-                                  const disabled = !can.access(row.resource, option.value)
+                                  const disabled = !can.access(row.resource, option)
                                   return (
                                     <SelectItem
-                                      key={option.value}
-                                      value={option.value}
+                                      key={option}
+                                      value={option}
                                       disabled={disabled}
-                                      title={
-                                        disabled
-                                          ? "You can't grant a level higher than you have"
-                                          : undefined
-                                      }
+                                      title={disabled ? t("levelTooHigh") : undefined}
                                     >
-                                      {option.label}
+                                      {t(`level.${option}`)}
                                     </SelectItem>
                                   )
                                 })}
@@ -197,6 +201,7 @@ function RolePermissionMatrix({ roleId }: Readonly<{ roleId: string }>) {
 }
 
 export function RolesTab() {
+  const t = useTranslations("SettingsRoles")
   const { can, isLoading: permissionsLoading } = usePermissions()
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
   const { data: roles, isLoading: rolesLoading } = useRoles()
@@ -207,7 +212,7 @@ export function RolesTab() {
 
   if (!can.write("roles")) {
     return (
-      <AccessDeniedCard description="Only an HR Admin (or a role with roles = write) can view or edit role permissions." />
+      <AccessDeniedCard description={t("accessDenied")} />
     )
   }
 
@@ -217,7 +222,7 @@ export function RolesTab() {
         <div className="flex items-center gap-2 px-2 pt-1">
           <Users className="text-content-secondary size-4" aria-hidden />
           <h3 className="text-content-primary text-[13px] leading-[18px] font-semibold">
-            Roles
+            {t("title")}
           </h3>
         </div>
         {rolesLoading ? (
@@ -234,7 +239,7 @@ export function RolesTab() {
                 type="button"
                 onClick={() => setSelectedRoleId(role.id)}
                 className={cn(
-                  "flex flex-col gap-0.5 rounded-lg px-3 py-2 text-left transition-colors",
+                  "flex flex-col gap-0.5 rounded-lg px-3 py-2 text-start transition-colors",
                   role.id === selectedRoleId
                     ? "bg-brand-primary/8 text-brand-primary"
                     : "hover:bg-surface-hover text-content-primary",
@@ -245,12 +250,12 @@ export function RolesTab() {
                   {role.is_system ? (
                     <Badge variant="neutral" className="gap-1">
                       <ShieldCheck aria-hidden />
-                      System
+                      {t("system")}
                     </Badge>
                   ) : null}
                 </span>
                 <span className="text-content-tertiary text-[11px] leading-[15.4px]">
-                  {role.user_count} {role.user_count === 1 ? "user" : "users"}
+                  {t("userCount", { count: role.user_count })}
                 </span>
               </button>
             ))}
@@ -266,7 +271,7 @@ export function RolesTab() {
           className="flex-1 items-center justify-center p-6 text-center"
         >
           <span className="text-content-tertiary text-sm">
-            Select a role to view and edit its permission matrix.
+            {t("selectRole")}
           </span>
         </Card>
       )}

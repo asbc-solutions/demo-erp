@@ -1,3 +1,13 @@
+import type { Messages, useTranslations } from "next-intl"
+
+export type ConfigTranslator = ReturnType<typeof useTranslations<"FinanceConfiguration">>
+
+type ConfigMessages = Messages["FinanceConfiguration"]
+/** A flat (non-enum-map) key of the `FinanceConfiguration` namespace. */
+export type ConfigMessageKey = {
+  [K in keyof ConfigMessages]: ConfigMessages[K] extends string ? K : never
+}[keyof ConfigMessages]
+
 export type SetupDecision = { setting: string; value: string; because: string; href: string }
 
 export type SetupSummary = {

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { RefreshCw } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import { toast } from "sonner"
 
@@ -15,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/shared/components/ui/alert-dialog"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button, buttonVariants } from "@/src/shared/components/ui/button"
 import {
   ChartContainer,
@@ -31,57 +33,71 @@ import { FinanceTable, type FinanceColumn } from "../../../components/shared/fin
 import { FinancePageBody, FinancePageHeader, HeaderFigure } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate, formatDateTime } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
+import type { FinanceDateFormat } from "../../../lib/utils/date"
 import { formatRate } from "../../../lib/utils/money"
 import { useRefreshRates } from "../../lib/mutations/ledger"
 import { useCurrencies } from "../../lib/queries/ledger"
-import type { CurrencyList, CurrencyRow } from "../../lib/types/ledger"
+import type { CurrencyList, CurrencyRow, LedgerTranslator } from "../../lib/types/ledger"
 
-const CURRENCY_COLUMNS: FinanceColumn<CurrencyRow>[] = [
-  { id: "code", header: "Code", cell: (row) => <span className="font-mono text-xs">{row.code}</span> },
-  {
-    id: "name",
-    header: "Currency",
-    cell: (row) => (
-      <span className="flex items-center gap-2">
-        {row.name}
-        {row.is_base ? <StatusPill status="prepared" label="Base" /> : null}
-      </span>
-    ),
-  },
-  { id: "symbol", header: "Symbol", cell: (row) => row.symbol },
-  { id: "rate", header: "Rate to EGP", align: "end", cell: (row) => <span className="tabular-nums">{formatRate(row.rate_to_base)}</span> },
-  { id: "decimals", header: "Decimals", align: "end", cell: (row) => row.decimals },
-]
+function buildCurrencyColumns(t: LedgerTranslator): FinanceColumn<CurrencyRow>[] {
+  return [
+    { id: "code", header: t("code"), cell: (row) => <span className="font-mono text-xs">{row.code}</span> },
+    {
+      id: "name",
+      header: t("currency"),
+      cell: (row) => (
+        <span className="flex items-center gap-2">
+          {row.name}
+          {row.is_base ? <StatusPill status="prepared" label={t("base")} /> : null}
+        </span>
+      ),
+    },
+    { id: "symbol", header: t("symbol"), cell: (row) => row.symbol },
+    { id: "rate", header: t("rateToEgp"), align: "end", cell: (row) => <span className="tabular-nums">{formatRate(row.rate_to_base)}</span> },
+    { id: "decimals", header: t("decimals"), align: "end", cell: (row) => row.decimals },
+  ]
+}
 
 type Fixing = CurrencyList["fixings"][number]
 
-const FIXING_COLUMNS: FinanceColumn<Fixing>[] = [
-  { id: "date", header: "Date", cell: (row) => formatDate(row.date) },
-  { id: "rate", header: "USD / EGP", align: "end", cell: (row) => <span className="tabular-nums">{formatRate(row.rate)}</span> },
-]
+function buildFixingColumns(t: LedgerTranslator, formatDate: FinanceDateFormat["formatDate"]): FinanceColumn<Fixing>[] {
+  return [
+    { id: "date", header: t("date"), cell: (row) => formatDate(row.date) },
+    { id: "rate", header: "USD / EGP", align: "end", cell: (row) => <span className="tabular-nums">{formatRate(row.rate)}</span> },
+  ]
+}
 
 const chartConfig = { rate: { label: "USD / EGP", color: "var(--series-1)" } } satisfies ChartConfig
 
-const dayMonth = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" })
+const dayMonth = (iso: string, locale: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString(locale, { day: "2-digit", month: "short", timeZone: "UTC" })
 
 /** A single series over eight fixings: thin line, crosshair tooltip, table view. */
 function FixingsChart({ fixings }: { fixings: Fixing[] }) {
+  const t = useTranslations("FinanceLedger")
+  const { formatDate } = useFinanceDateFormat()
+  const locale = useIntlLocale()
+  const fixingColumns = React.useMemo(() => buildFixingColumns(t, formatDate), [t, formatDate])
   const first = fixings[0]
   const last = fixings[fixings.length - 1]
   return (
     <ChartTableToggle
       description={
         first && last
-          ? `USD / EGP moved from ${formatRate(first.rate)} on ${formatDate(first.date)} to ${formatRate(last.rate)} on ${formatDate(last.date)}.`
+          ? t("fixingsSummary", {
+              from: formatRate(first.rate),
+              fromDate: formatDate(first.date),
+              to: formatRate(last.rate),
+              toDate: formatDate(last.date),
+            })
           : undefined
       }
       chart={
         <ChartContainer config={chartConfig} className="aspect-auto h-56 w-full">
           <LineChart data={fixings} margin={{ top: 12, right: 12, bottom: 0, left: 8 }}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={dayMonth} />
+            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value: string) => dayMonth(value, locale)} />
             <YAxis
               tickLine={false}
               axisLine={false}
@@ -114,13 +130,16 @@ function FixingsChart({ fixings }: { fixings: Fixing[] }) {
           </LineChart>
         </ChartContainer>
       }
-      table={<FinanceTable caption="USD / EGP recent fixings" columns={FIXING_COLUMNS} rows={fixings} getRowId={(row) => row.date} />}
+      table={<FinanceTable caption={t("recentFixingsCaption")} columns={fixingColumns} rows={fixings} getRowId={(row) => row.date} />}
     />
   )
 }
 
 /** 05.12 · Currencies — the rates every foreign amount is restated at. */
 function CurrenciesPage() {
+  const t = useTranslations("FinanceLedger")
+  const { formatDateTime } = useFinanceDateFormat()
+  const currencyColumns = React.useMemo(() => buildCurrencyColumns(t), [t])
   const { data, isError, refetch } = useCurrencies()
   const refresh = useRefreshRates()
   const [confirming, setConfirming] = React.useState(false)
@@ -128,28 +147,27 @@ function CurrenciesPage() {
   return (
     <>
       <FinancePageHeader
-        title="Currencies & FX"
-        figure={data ? <HeaderFigure label="Active currencies">{data.items.length}</HeaderFigure> : null}
+        title={t("currenciesAndFx")}
+        figure={data ? <HeaderFigure label={t("activeCurrencies")}>{data.items.length}</HeaderFigure> : null}
         actions={
           <Button variant="secondary" disabled={refresh.isPending} onClick={() => setConfirming(true)}>
             <RefreshCw aria-hidden />
-            Refresh rates
+            {t("refreshRates")}
           </Button>
         }
       />
       <FinancePageBody>
         <FinanceAlert tone="info">
-          Rates are quoted against the Egyptian Pound and sourced from the central bank feed. Foreign-currency balances
-          revalue at period end; the gain or loss books to the FX revaluation account.
-          {data ? ` Last read ${formatDateTime(data.refreshed_at, " · ")}.` : null}
+          {t("currenciesInfo")}
+          {data ? ` ${t("lastRead", { date: formatDateTime(data.refreshed_at, " · ") })}` : null}
         </FinanceAlert>
         {isError ? (
           <FinanceErrorState onRetry={() => refetch()} />
         ) : (
           <>
-            <FinanceTable caption="Currencies" columns={CURRENCY_COLUMNS} rows={data?.items ?? []} loading={!data} getRowId={(row) => row.code} />
+            <FinanceTable caption={t("currencies")} columns={currencyColumns} rows={data?.items ?? []} loading={!data} getRowId={(row) => row.code} />
             {data ? (
-              <FinanceSection title="USD / EGP · recent fixings">
+              <FinanceSection title={t("recentFixingsTitle")}>
                 <FixingsChart fixings={data.fixings} />
               </FinanceSection>
             ) : null}
@@ -160,24 +178,21 @@ function CurrenciesPage() {
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Refresh FX rates?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Rates are re-read from the central bank feed for the reporting date. Balances are revalued only when you
-              post a revaluation — refreshing the rates on its own changes no posted figure.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("refreshRatesTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("refreshRatesDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className={buttonVariants({ variant: "primary" })}
               onClick={() =>
                 refresh.mutate(undefined, {
-                  onSuccess: () => toast.success("Rates re-read from the feed. They match the rates already in use."),
-                  onError: (error) => toast.error(errorMessage(error, "The rates could not be refreshed. Try again.")),
+                  onSuccess: () => toast.success(t("toastRatesRefreshed")),
+                  onError: (error) => toast.error(errorMessage(error, t("errorRefreshRates"))),
                 })
               }
             >
-              Refresh rates
+              {t("refreshRates")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

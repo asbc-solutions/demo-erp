@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { ArrowLeft, Building2, Mail, MapPin, Pencil, Phone, UserRound } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/src/shared/components/ui/badge"
 import { Button } from "@/src/shared/components/ui/button"
@@ -47,20 +48,24 @@ function DetailField({
 }
 
 function AddressesCard({ addresses }: Readonly<{ addresses: CustomerAddress[] }>) {
+  const t = useTranslations("SalesCustomers")
+  const tShared = useTranslations("SalesShared")
+  const tCommon = useTranslations("Common")
+
   return (
     <Card variant="elevated" className="overflow-hidden rounded-[14px]">
       <div className="flex items-center gap-2 px-6 py-4">
         <MapPin className="size-4 text-content-tertiary" strokeWidth={1.75} aria-hidden />
-        <h2 className="text-base leading-6 font-semibold text-content-primary">Addresses</h2>
+        <h2 className="text-base leading-6 font-semibold text-content-primary">{t("addresses")}</h2>
       </div>
       <Table className="min-w-[720px] table-fixed">
         <TableHeader className="bg-surface-white">
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-32 px-6">Type</TableHead>
-            <TableHead>Address</TableHead>
-            <TableHead className="w-40">City</TableHead>
-            <TableHead className="w-44">Governorate</TableHead>
-            <TableHead className="w-28 px-6 text-right">Country</TableHead>
+            <TableHead className="w-32 px-6">{tCommon("type")}</TableHead>
+            <TableHead>{t("address")}</TableHead>
+            <TableHead className="w-40">{t("city")}</TableHead>
+            <TableHead className="w-44">{t("governorate")}</TableHead>
+            <TableHead className="w-28 px-6 text-end">{t("country")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -70,11 +75,11 @@ function AddressesCard({ addresses }: Readonly<{ addresses: CustomerAddress[] }>
                 <TableCell className="px-6 py-3">
                   <span className="flex items-center gap-2">
                     <span className="text-sm leading-5 text-content-secondary capitalize">
-                      {address.address_type}
+                      {tShared(`addressType.${address.address_type}`)}
                     </span>
                     {address.is_default ? (
                       <Badge variant="neutral" className="rounded-full px-2 text-xs font-normal">
-                        Default
+                        {t("defaultAddress")}
                       </Badge>
                     ) : null}
                   </span>
@@ -86,7 +91,7 @@ function AddressesCard({ addresses }: Readonly<{ addresses: CustomerAddress[] }>
                 <TableCell className="py-3 text-content-secondary">
                   {address.governorate}
                 </TableCell>
-                <TableCell className="px-6 py-3 text-right text-content-secondary">
+                <TableCell className="px-6 py-3 text-end text-content-secondary">
                   {address.country_code ?? "—"}
                 </TableCell>
               </TableRow>
@@ -94,7 +99,7 @@ function AddressesCard({ addresses }: Readonly<{ addresses: CustomerAddress[] }>
           ) : (
             <TableRow className="hover:bg-transparent">
               <TableCell colSpan={5} className="h-24 text-center text-content-tertiary">
-                No addresses recorded for this customer.
+                {t("noAddresses")}
               </TableCell>
             </TableRow>
           )}
@@ -109,12 +114,15 @@ export function CustomerDetailView({
   canManage,
   onBack,
 }: Readonly<{ customerId: string; canManage: boolean; onBack: () => void }>) {
+  const t = useTranslations("SalesCustomers")
+  const tShared = useTranslations("SalesShared")
+  const tCommon = useTranslations("Common")
   const { data: customer, isLoading, isError, refetch } = useCustomer(customerId)
   const [editOpen, setEditOpen] = React.useState(false)
 
   if (isLoading) return <SalesPageSpinner />
   if (isError || !customer) {
-    return <SalesErrorState message="Failed to load customer." onRetry={() => void refetch()} />
+    return <SalesErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
   }
 
   const TypeIcon = customer.customer_type === "company" ? Building2 : UserRound
@@ -124,18 +132,18 @@ export function CustomerDetailView({
     <div className="relative flex min-h-0 flex-1 flex-col gap-[22px] overflow-auto bg-surface-page p-4 sm:p-6">
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" variant="ghost" onClick={onBack}>
-          <ArrowLeft aria-hidden />
-          Back to customers
+          <ArrowLeft className="rtl:rotate-180" aria-hidden />
+          {t("backToCustomers")}
         </Button>
         {canManage ? (
           <Button
             type="button"
             variant="secondary"
-            className="ml-auto"
+            className="ms-auto"
             onClick={() => setEditOpen(true)}
           >
             <Pencil aria-hidden />
-            Edit
+            {tCommon("edit")}
           </Button>
         ) : null}
       </div>
@@ -153,30 +161,30 @@ export function CustomerDetailView({
               <h1 className="truncate text-lg leading-7 font-semibold text-content-primary">
                 {customer.name}
               </h1>
-              <CustomerStatusBadge status={customer.status} label={customer.status_label} />
+              <CustomerStatusBadge status={customer.status} />
             </div>
             <span className="flex items-center gap-2 text-sm leading-5 text-content-secondary">
               <TypeIcon className="size-4" strokeWidth={1.75} aria-hidden />
-              {customer.customer_type_label}
+              {tShared(`customerType.${customer.customer_type}`)}
             </span>
           </div>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <DetailField label="Assigned salesperson" value={customer.assigned_salesperson_name} />
-          <DetailField label="Tax number" value={customer.tax_number} />
-          <DetailField label="Source" value={customer.source} className="capitalize" />
-          <DetailField label="Customer ID" value={customer.id} className="font-mono" />
+          <DetailField label={t("assignedSalesperson")} value={customer.assigned_salesperson_name} />
+          <DetailField label={t("taxNumber")} value={customer.tax_number} />
+          <DetailField label={t("source")} value={customer.source} className="capitalize" />
+          <DetailField label={t("customerId")} value={customer.id} className="font-mono" />
         </div>
       </Card>
 
       <Card variant="elevated" className="rounded-[14px] p-6">
-        <h2 className="text-base leading-6 font-semibold text-content-primary">Contact</h2>
+        <h2 className="text-base leading-6 font-semibold text-content-primary">{t("contact")}</h2>
         <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div className="flex items-start gap-3">
             <Mail className="mt-0.5 size-4 shrink-0 text-content-tertiary" strokeWidth={1.75} aria-hidden />
             <DetailField
-              label="Email"
+              label={t("email")}
               value={
                 customer.email ? (
                   <a href={`mailto:${customer.email}`} className="break-all hover:underline">
@@ -189,7 +197,7 @@ export function CustomerDetailView({
           <div className="flex items-start gap-3">
             <Phone className="mt-0.5 size-4 shrink-0 text-content-tertiary" strokeWidth={1.75} aria-hidden />
             <DetailField
-              label="Phone"
+              label={t("phone")}
               value={
                 customer.phone ? (
                   <a href={`tel:${customer.phone.replace(/\s+/g, "")}`} className="hover:underline">

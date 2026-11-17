@@ -1,3 +1,6 @@
+import { useTranslations } from "next-intl"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import {
   Table,
   TableBody,
@@ -10,7 +13,7 @@ import { cn } from "@/src/shared/lib/utils/utils"
 
 import { SALES_DEALS, STAGE_BADGE } from "../data/sales-mock"
 
-const formatAmount = (value: number) => `$${value.toLocaleString("en-US")}`
+const formatAmount = (value: number, locale: string) => `$${value.toLocaleString(locale)}`
 
 const ownerBg: Record<string, string> = {
   sc: "bg-brand-primary",
@@ -18,17 +21,20 @@ const ownerBg: Record<string, string> = {
 }
 
 export function SalesTable() {
+  const t = useTranslations("SalesShared")
+  const intlLocale = useIntlLocale()
+
   return (
     <div className="bg-surface-white border-stroke-default overflow-hidden rounded-2xl border">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead>Deal</TableHead>
-            <TableHead>Company</TableHead>
-            <TableHead>Stage</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead>Close Date</TableHead>
-            <TableHead>Owner</TableHead>
+            <TableHead>{t("deal")}</TableHead>
+            <TableHead>{t("company")}</TableHead>
+            <TableHead>{t("stage")}</TableHead>
+            <TableHead className="text-end">{t("amount")}</TableHead>
+            <TableHead>{t("closeDate")}</TableHead>
+            <TableHead>{t("owner")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -47,11 +53,11 @@ export function SalesTable() {
                     STAGE_BADGE[deal.stage],
                   )}
                 >
-                  {deal.stage}
+                  {t(`stageName.${deal.stage}`)}
                 </span>
               </TableCell>
-              <TableCell className="text-content-primary text-right font-mono text-[12px] leading-[18px]">
-                {formatAmount(deal.amount)}
+              <TableCell className="text-content-primary text-end font-mono text-[12px] leading-[18px]">
+                {formatAmount(deal.amount, intlLocale)}
               </TableCell>
               <TableCell className="text-content-secondary text-[12px] leading-[18px]">
                 {deal.closeDateLong}

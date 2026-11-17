@@ -1,0 +1,140 @@
+{
+  "Compliance": {
+    "accessDeniedDescription": "Ask an admin to grant your role access to this Compliance section.",
+    "accessDeniedTitle": "You don't have access",
+    "checkDetails": "Please check the details and try again.",
+    "loadFailed": "Failed to load.",
+    "overdue": "Overdue",
+    "ownerDue": "{owner} · Due {date}",
+    "ruleStatus": {
+      "compliant": "Compliant",
+      "in_progress": "In Progress",
+      "non_compliant": "Non-compliant"
+    },
+    "showingEvents": "Showing <b>{from}</b>–<b>{to}</b> of <b>{total}</b> events",
+    "showingMembers": "Showing <b>{from}</b>–<b>{to}</b> of <b>{total}</b> members",
+    "showingPolicies": "Showing <b>{from}</b>–<b>{to}</b> of <b>{total}</b> policies",
+    "tabs": {
+      "access": "Access",
+      "audit": "Audit",
+      "overview": "Overview",
+      "policies": "Policies",
+      "rules": "Rules"
+    },
+    "unassigned": "Unassigned",
+    "validationFailed": "Validation failed"
+  },
+  "ComplianceOverview": {
+    "basedOnRules": "Based on {count, plural, one {{value} applicable rule} other {{value} applicable rules}}",
+    "criticalAlerts": "Critical Alerts ({count})",
+    "loadFailed": "Failed to load compliance overview.",
+    "noAlerts": "No critical alerts right now.",
+    "scoreStatus": {
+      "adequate": "Adequate",
+      "at_risk": "At Risk",
+      "critical": "Critical",
+      "not_assessed": "Not Assessed",
+      "strong": "Strong"
+    },
+    "title": "Compliance Score"
+  },
+  "ComplianceAccess": {
+    "active": "Active",
+    "assignedRoles": "Assigned Roles",
+    "backToRoles": "Back to roles",
+    "inactive": "Inactive",
+    "matrixLevel": {
+      "approval_required": "Approval",
+      "none": "None",
+      "read": "Read",
+      "write": "Write"
+    },
+    "matrixLoadFailed": "Failed to load the permission matrix.",
+    "matrixSubtitle": "Resource access level by role (read-only)",
+    "matrixTitle": "Permission Matrix",
+    "members": "Members",
+    "membersLoadFailed": "Failed to load team members.",
+    "noMembers": "No members found.",
+    "noRolesAssigned": "No roles assigned.",
+    "noUserSelected": "No user selected",
+    "predefined": "Predefined",
+    "readOnlyNote": "This is a read-only view. Role permissions are managed centrally in RBAC.",
+    "resource": "Resource",
+    "resourcesGranted": "Resources Granted",
+    "roles": "Roles",
+    "rolesLoadFailed": "Failed to load roles.",
+    "rolesSubtitle": "RBAC roles available to this organization (read-only)",
+    "searchLabel": "Search team members",
+    "searchPlaceholder": "Search by name or email…",
+    "selectMemberHint": "Select a team member from the list to view their roles.",
+    "subTabs": {
+      "roles": "Roles",
+      "team": "Team Members"
+    },
+    "teamMembers": "Team Members",
+    "teamMembersCount": "Team Members ({total})",
+    "viewMatrix": "View Permission Matrix"
+  },
+  "CompliancePolicies": {
+    "acknowledge": "Acknowledge",
+    "acknowledgeFailed": "Failed to acknowledge policy",
+    "acknowledged": "Acknowledged",
+    "acknowledgedToast": "Policy acknowledged.",
+    "acknowledgements": "Acknowledgements {ratio}",
+    "addPolicy": "Add Policy",
+    "allAcknowledged": "All team members acknowledged",
+    "category": "Category",
+    "categoryPlaceholder": "e.g., Security",
+    "createFailed": "Failed to create policy",
+    "createdToast": "Policy created.",
+    "dialogDescription": "Add a compliance policy with its title, category, and review details.",
+    "dialogTitle": "New Policy",
+    "empty": "No policies match this filter.",
+    "loadFailed": "Failed to load policies.",
+    "newPolicy": "New Policy",
+    "outstanding": "{count, plural, one {{value} team member hasn't acknowledged} other {{value} team members haven't acknowledged}}",
+    "ownerReview": "{owner} · Review {date}",
+    "policyTitle": "Policy Title",
+    "policyTitlePlaceholder": "e.g., Data Classification Policy",
+    "requiredAcknowledgements": "Required Acknowledgements",
+    "reviewDate": "Review Date",
+    "reviewOverdue": "Review overdue",
+    "status": {
+      "active": "Active",
+      "archived": "Archived",
+      "draft": "Draft",
+      "under_review": "Under Review"
+    },
+    "summary": "Summary",
+    "summaryPlaceholder": "Describe the policy purpose and scope...",
+    "version": "Version"
+  },
+  "ComplianceAudit": {
+    "empty": "No audit events for this filter.",
+    "loadFailed": "Failed to load the audit log.",
+    "modules": {
+      "all": "All modules",
+      "compliance": "Compliance",
+      "finance": "Finance",
+      "hr": "HR",
+      "sales": "Sales",
+      "settings": "Settings"
+    }
+  },
+  "ComplianceRules": {
+    "allFrameworks": "All Frameworks",
+    "allStatuses": "All Statuses",
+    "empty": "No rules match this filter.",
+    "evidence": "Evidence",
+    "evidencePlaceholder": "Describe the evidence supporting this status...",
+    "loadFailed": "Failed to load compliance rules.",
+    "statusCount": {
+      "compliant": "{count} Compliant",
+      "in_progress": "{count} In Progress",
+      "non_compliant": "{count} Non-compliant"
+    },
+    "updateFailed": "Failed to update rule",
+    "updateTitle": "Update {code}",
+    "updatedToast": "Rule updated."
+  }
+}

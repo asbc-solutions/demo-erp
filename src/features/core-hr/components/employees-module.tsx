@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import type { ApiError } from "@/src/shared/lib/types/api"
@@ -69,12 +70,14 @@ const PAGE_SIZE = 10
 // field on each list row so filtering happens client-side against the fetched
 // page (matching the HR Core "Filters" design).
 const EMPLOYEE_STATUS_OPTIONS = [
-  { value: "active", label: "Active" },
-  { value: "on_leave", label: "On Leave" },
-  { value: "suspended", label: "Suspended" },
-  { value: "inactive", label: "Inactive" },
-  { value: "terminated", label: "Terminated" },
+  "active",
+  "on_leave",
+  "suspended",
+  "inactive",
+  "terminated",
 ] as const
+
+type EmployeesTranslator = ReturnType<typeof useTranslations<"HrEmployees">>
 
 function toCreatePayload(draft: NewEmployeeDraft): CreateEmployeePayload {
   return {
@@ -151,17 +154,21 @@ function toEditDraft(employee: Employee): NewEmployeeDraft {
   }
 }
 
-function toastMutationError(err: unknown, fallbackTitle: string) {
+function toastMutationError(
+  err: unknown,
+  fallbackTitle: string,
+  t: EmployeesTranslator,
+) {
   const apiErr = err as ApiError
   const fields = apiErr.details?.fields as Record<string, string[]> | undefined
   if (fields) {
     const description = Object.entries(fields)
       .map(([f, msgs]) => `${f.replace(/_/g, " ")}: ${msgs[0]}`)
       .join(" · ")
-    toast.error("Validation failed", { description })
+    toast.error(t("validationFailed"), { description })
   } else {
     toast.error(fallbackTitle, {
-      description: apiErr.message ?? "Please check the details and try again.",
+      description: apiErr.message ?? t("checkDetailsAndRetry"),
     })
   }
 }
@@ -175,6 +182,7 @@ function EmployeeDetailLoader({
   onBack: () => void
   initialTab: EmployeeDetailTabId
 }) {
+  const t = useTranslations("HrEmployees")
   const { data: employee, isLoading, isError } = useEmployee(employeeId)
 
   if (isLoading) return <HrPageSpinner />
@@ -182,13 +190,13 @@ function EmployeeDetailLoader({
   if (isError || !employee) {
     return (
       <div className="text-content-tertiary py-12 text-center text-sm">
-        Failed to load employee.{" "}
+        {t("loadFailed")}{" "}
         <button
           type="button"
           onClick={onBack}
-          className="text-brand-primary ml-1 underline"
+          className="text-brand-primary ms-1 underline"
         >
-          Back to list
+          {t("backToList")}
         </button>
       </div>
     )
@@ -211,6 +219,7 @@ function EmployeeEditLoader({
   onBack: () => void
 }) {
   const { data: employee, isLoading, isError } = useEmployee(employeeId)
+  const t = useTranslations("HrEmployees")
   const updateEmployee = useUpdateEmployee()
 
   if (isLoading) return <HrPageSpinner />
@@ -218,13 +227,13 @@ function EmployeeEditLoader({
   if (isError || !employee) {
     return (
       <div className="text-content-tertiary py-12 text-center text-sm">
-        Failed to load employee.{" "}
+        {t("loadFailed")}{" "}
         <button
           type="button"
           onClick={onBack}
-          className="text-brand-primary ml-1 underline"
+          className="text-brand-primary ms-1 underline"
         >
-          Back to list
+          {t("backToList")}
         </button>
       </div>
     )
@@ -241,12 +250,13 @@ function EmployeeEditLoader({
           { id: employee.id, payload: toCreatePayload(draft) },
           {
             onSuccess: (updated) => {
-              toast.success(`${updated.full_name} updated`, {
-                description: "Employee details were saved successfully.",
+              toast.success(t("updatedToast", { name: updated.full_name }), {
+                description: t("updatedToastDescription"),
               })
               onBack()
             },
-            onError: (err) => toastMutationError(err, "Failed to update employee"),
+            onError: (err) =>
+              toastMutationError(err, t("updateFailed"), t),
           },
         )
       }}
@@ -255,6 +265,9 @@ function EmployeeEditLoader({
 }
 
 export function EmployeesModule() {
+  const t = useTranslations("HrEmployees")
+  const tShared = useTranslations("HrShared")
+  const tCommon = useTranslations("Common")
   const { view, showList, showAdd, showEdit, showDetail } = useEmployeeView()
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState<HrFilterValues>({})
@@ -292,10 +305,17 @@ export function EmployeesModule() {
   const { data: departmentsData } = useActiveDepartmentOptions()
 
   const filterGroups: HrFilterGroup[] = [
-    { id: "status", label: "Status", options: EMPLOYEE_STATUS_OPTIONS },
+    {
+      id: "status",
+      label: tCommon("status"),
+      options: EMPLOYEE_STATUS_OPTIONS.map((status) => ({
+        value: status,
+        label: tShared(`employmentStatus.${status}`),
+      })),
+    },
     {
       id: "department",
-      label: "Department",
+      label: t("filterDepartment"),
       options: (departmentsData?.data ?? []).map((dept) => ({
         value: dept.id,
         label: dept.dept_name,
@@ -352,7 +372,7 @@ export function EmployeesModule() {
           createEmployee.mutate(payload, {
             onSuccess: (employee) => {
               if (!salaryPayload) {
-                toast.success(`${employee.full_name} added`)
+                toast.success(t("addedToast", { name: employee.full_name }))
                 setPage(1)
                 showList()
                 return
@@ -362,9 +382,8 @@ export function EmployeesModule() {
                 { employeeId: employee.id, payload: salaryPayload },
                 {
                   onSuccess: () => {
-                    toast.success(`${employee.full_name} added`, {
-                      description:
-                        "Employee and initial compensation were created successfully.",
+                    toast.success(t("addedToast", { name: employee.full_name }), {
+                      description: t("addedWithCompensationDescription"),
                     })
                     setPage(1)
                     showList()
@@ -372,7 +391,8 @@ export function EmployeesModule() {
                   onError: (err) => {
                     toastMutationError(
                       err,
-                      `${employee.full_name} was created, but initial compensation failed`
+                      t("compensationFailed", { name: employee.full_name }),
+                      t,
                     )
                     // The employee already exists, so leave the add flow to
                     // prevent a retry from creating a duplicate employee.
@@ -382,7 +402,8 @@ export function EmployeesModule() {
                 }
               )
             },
-            onError: (err) => toastMutationError(err, "Failed to create employee"),
+            onError: (err) =>
+              toastMutationError(err, t("createFailed"), t),
           })
         }}
       />

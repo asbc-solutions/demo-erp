@@ -7,6 +7,7 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import {
@@ -17,56 +18,60 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/shared/components/ui/table"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { cn } from "@/src/shared/lib/utils/utils"
 
 import { StatusPill } from "../../all-project/components/project-detail/status-pill"
 import { formatApiDate } from "../../lib/mappers/project-mapper"
 import { usePortfolioSchedule } from "../../lib/queries/scheduling"
 
-const SUMMARY_CARDS: {
-  id: "milestones_total" | "overdue" | "due_this_week" | "on_critical_path"
-  label: string
-  caption: string
-  icon: LucideIcon
-  accent: string
-  tile: string
-}[] = [
+const SUMMARY_CARDS = [
   {
     id: "milestones_total",
-    label: "Milestones",
-    caption: "Across active projects",
+    labelKey: "cardMilestones",
+    captionKey: "cardMilestonesCaption",
     icon: Diamond,
-    accent: "border-l-brand-primary",
+    accent: "border-s-brand-primary",
     tile: "bg-brand-primary/10 text-brand-primary",
   },
   {
     id: "overdue",
-    label: "Overdue",
-    caption: "Past their due date",
+    labelKey: "cardOverdue",
+    captionKey: "cardOverdueCaption",
     icon: TriangleAlert,
-    accent: "border-l-brand-danger",
+    accent: "border-s-brand-danger",
     tile: "bg-brand-danger/10 text-brand-danger",
   },
   {
     id: "due_this_week",
-    label: "Due This Week",
-    caption: "Need attention now",
+    labelKey: "cardDueThisWeek",
+    captionKey: "cardDueThisWeekCaption",
     icon: CalendarClock,
-    accent: "border-l-brand-warning",
+    accent: "border-s-brand-warning",
     tile: "bg-brand-warning/10 text-brand-warning",
   },
   {
     id: "on_critical_path",
-    label: "On Critical Path",
-    caption: "Zero float items",
+    labelKey: "cardCriticalPath",
+    captionKey: "cardCriticalPathCaption",
     icon: Flag,
-    accent: "border-l-brand-info",
+    accent: "border-s-brand-info",
     tile: "bg-brand-info/10 text-brand-info",
   },
-]
+] as const satisfies readonly {
+  id: "milestones_total" | "overdue" | "due_this_week" | "on_critical_path"
+  labelKey: string
+  captionKey: string
+  icon: LucideIcon
+  accent: string
+  tile: string
+}[]
 
 /** "All projects" scope of the Schedule page — cross-project milestones. */
 export function PortfolioScheduleView() {
+  const t = useTranslations("ProjectsSchedule")
+  const tCommon = useTranslations("Common")
+  const locale = useIntlLocale()
   const { data, isLoading, isError } = usePortfolioSchedule()
 
   if (isLoading)
@@ -76,7 +81,7 @@ export function PortfolioScheduleView() {
     return (
       <Card className="flex h-48 items-center justify-center p-6">
         <p className="text-content-tertiary text-sm">
-          Couldn&apos;t load the portfolio schedule.
+          {t("loadError")}
         </p>
       </Card>
     )
@@ -90,7 +95,7 @@ export function PortfolioScheduleView() {
             <Card
               key={card.id}
               variant="elevated"
-              className={cn("flex-row items-center gap-3 border-l-4 p-4", card.accent)}
+              className={cn("flex-row items-center gap-3 border-s-4 p-4", card.accent)}
             >
               <div
                 className={cn(
@@ -102,13 +107,13 @@ export function PortfolioScheduleView() {
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-content-tertiary text-[11px] font-medium tracking-wide uppercase">
-                  {card.label}
+                  {t(card.labelKey)}
                 </span>
                 <span className="text-content-primary text-xl leading-[25px] font-bold tabular-nums">
                   {data.summary[card.id]}
                 </span>
                 <span className="text-content-tertiary text-[12px]">
-                  {card.caption}
+                  {t(card.captionKey)}
                 </span>
               </div>
             </Card>
@@ -119,19 +124,19 @@ export function PortfolioScheduleView() {
       <Card className="overflow-hidden p-0">
         <div className="px-5 pt-5 pb-3">
           <h2 className="text-content-primary text-base leading-6 font-semibold">
-            Upcoming Milestones
+            {t("upcomingMilestones")}
           </h2>
           <p className="text-content-tertiary text-xs">
-            Every project&apos;s milestones, sorted by due date
+            {t("upcomingMilestonesSubtitle")}
           </p>
         </div>
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead>Milestone</TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{t("colMilestone")}</TableHead>
+              <TableHead>{t("colProject")}</TableHead>
+              <TableHead>{t("colDueDate")}</TableHead>
+              <TableHead>{tCommon("status")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -141,7 +146,7 @@ export function PortfolioScheduleView() {
                   colSpan={4}
                   className="text-content-tertiary py-10 text-center text-sm"
                 >
-                  No milestones scheduled.
+                  {t("empty")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -172,7 +177,7 @@ export function PortfolioScheduleView() {
                         : "text-content-secondary",
                     )}
                   >
-                    {formatApiDate(m.due_date)}
+                    {formatApiDate(m.due_date, locale)}
                   </TableCell>
                   <TableCell>
                     <StatusPill status={m.status} />

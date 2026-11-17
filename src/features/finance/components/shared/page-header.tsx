@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link, usePathname } from "@/src/i18n/navigation"
 import { cva, type VariantProps } from "class-variance-authority"
-import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 import {
   Breadcrumb,
@@ -25,13 +25,14 @@ export type FinanceCrumb = { label: string; href?: string }
  * header itself.
  */
 function useFinanceCrumbs(): FinanceCrumb[] {
+  const tNav = useTranslations("Nav")
   const pathname = usePathname()
   const match = matchFinanceNav(pathname)
   if (!match) return []
   const isItemRoute = pathname === match.item.href
   return [
-    { label: match.group.label },
-    { label: match.item.label, href: isItemRoute ? undefined : match.item.href },
+    { label: tNav(match.group.labelKey) },
+    { label: tNav(match.item.labelKey), href: isItemRoute ? undefined : match.item.href },
   ]
 }
 
@@ -101,7 +102,7 @@ function FinancePageHeader({
         <h1 className="text-content-primary text-xl leading-7 font-semibold">{title}</h1>
         {figure}
         {actions ? (
-          <div data-slot="finance-page-actions" className="ml-auto flex flex-wrap items-center gap-2">
+          <div data-slot="finance-page-actions" className="ms-auto flex flex-wrap items-center gap-2">
             {actions}
           </div>
         ) : null}

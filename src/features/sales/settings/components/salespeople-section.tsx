@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Loader2, Pencil, Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -18,7 +19,7 @@ import { Input } from "@/src/shared/components/ui/input"
 import { Switch } from "@/src/shared/components/ui/switch"
 import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
 
-import { SalesErrorState, toastMutationError } from "../../components/shared/sales-error-state"
+import { SalesErrorState, useToastMutationError } from "../../components/shared/sales-error-state"
 import { SalesSectionSpinner } from "../../components/shared/sales-loading"
 import { SALES_RESOURCES } from "../../lib/constants/permissions"
 import { useCreateSalesperson, useUpdateSalesperson } from "../../lib/mutations/salespeople"
@@ -35,6 +36,9 @@ function SalespersonDialog({
   onOpenChange: (open: boolean) => void
   salesperson: Salesperson | null
 }>) {
+  const t = useTranslations("SalesSettings")
+  const tCommon = useTranslations("Common")
+  const toastMutationError = useToastMutationError()
   const createSalesperson = useCreateSalesperson()
   const updateSalesperson = useUpdateSalesperson()
   const [isActive, setIsActive] = React.useState(salesperson?.is_active ?? true)
@@ -51,10 +55,10 @@ function SalespersonDialog({
 
     const onSettled = {
       onSuccess: () => {
-        toast.success(salesperson ? "Salesperson updated" : "Salesperson added")
+        toast.success(salesperson ? t("salespersonUpdated") : t("salespersonAdded"))
         onOpenChange(false)
       },
-      onError: (err: unknown) => toastMutationError(err, "Failed to save salesperson"),
+      onError: (err: unknown) => toastMutationError(err, t("saveSalespersonFailed")),
     }
 
     if (salesperson) {
@@ -69,39 +73,39 @@ function SalespersonDialog({
       <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{salesperson ? "Edit Salesperson" : "New Salesperson"}</DialogTitle>
+            <DialogTitle>{salesperson ? t("editSalesperson") : t("newSalesperson")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Name</span>
+              <span className="text-xs font-medium text-content-secondary">{tCommon("name")}</span>
               <Input name="name" defaultValue={salesperson?.name} required autoFocus />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Email</span>
+              <span className="text-xs font-medium text-content-secondary">{tCommon("email")}</span>
               <Input
                 name="email"
                 type="email"
-                placeholder="name@company.eg"
+                placeholder={t("emailPlaceholder")}
                 defaultValue={salesperson?.email ?? ""}
               />
             </label>
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-medium text-content-secondary">Status</span>
+              <span className="text-xs font-medium text-content-secondary">{tCommon("status")}</span>
               <div className="flex items-center gap-2">
                 <Switch checked={isActive} onCheckedChange={setIsActive} />
                 <span className="text-sm text-content-primary">
-                  {isActive ? "Active" : "Inactive"}
+                  {isActive ? t("active") : t("inactive")}
                 </span>
               </div>
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={isPending}>
               {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              {salesperson ? "Save changes" : "Add Salesperson"}
+              {salesperson ? tCommon("saveChanges") : t("addSalesperson")}
             </Button>
           </DialogFooter>
         </form>
@@ -111,6 +115,7 @@ function SalespersonDialog({
 }
 
 export function SalespeopleSection() {
+  const t = useTranslations("SalesSettings")
   const { data, isLoading, isError, refetch } = useSalespeople()
   const [dialogState, setDialogState] = React.useState<{
     open: boolean
@@ -122,12 +127,12 @@ export function SalespeopleSection() {
   const salespeople = data?.data ?? []
 
   return (
-    <SettingsSection title="Salespeople">
+    <SettingsSection title={t("salespeople")}>
       <div className="flex max-w-[1072px] flex-col gap-4">
         {isLoading ? (
           <SalesSectionSpinner />
         ) : isError ? (
-          <SalesErrorState message="Failed to load salespeople." onRetry={() => void refetch()} />
+          <SalesErrorState message={t("loadSalespeopleFailed")} onRetry={() => void refetch()} />
         ) : (
           <div className="flex flex-col divide-y divide-stroke-light rounded-lg border border-stroke-light">
             {salespeople.length > 0 ? (
@@ -140,7 +145,7 @@ export function SalespeopleSection() {
                       </span>
                       {!person.is_active ? (
                         <Badge variant="neutral" className="rounded-full font-normal opacity-70">
-                          Inactive
+                          {t("inactive")}
                         </Badge>
                       ) : null}
                     </div>
@@ -153,7 +158,7 @@ export function SalespeopleSection() {
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Edit ${person.name}`}
+                      aria-label={t("editNamed", { name: person.name })}
                       onClick={() => setDialogState({ open: true, salesperson: person })}
                     >
                       <Pencil aria-hidden />
@@ -163,7 +168,7 @@ export function SalespeopleSection() {
               ))
             ) : (
               <p className="px-4 py-6 text-center text-xs text-content-tertiary">
-                No salespeople yet.
+                {t("noSalespeople")}
               </p>
             )}
           </div>
@@ -177,7 +182,7 @@ export function SalespeopleSection() {
             onClick={() => setDialogState({ open: true, salesperson: null })}
           >
             <Plus aria-hidden />
-            Add Salesperson
+            {t("addSalesperson")}
           </Button>
         ) : null}
       </div>

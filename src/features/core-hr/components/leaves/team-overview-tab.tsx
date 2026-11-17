@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Skeleton } from "@/src/shared/components/ui/skeleton"
@@ -30,7 +31,7 @@ function TeamTableSkeleton() {
     <TableBody>
       {Array.from({ length: 6 }).map((_, i) => (
         <TableRow key={i} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <div className="flex items-center gap-2">
               <Skeleton className="size-7 rounded-full" />
               <Skeleton className="h-4 w-28" />
@@ -48,6 +49,7 @@ function TeamTableSkeleton() {
 }
 
 export function TeamOverviewTab() {
+  const t = useTranslations("HrLeaves")
   const { data: pendingData, isLoading } = usePendingLeaveRequests({
     per_page: 100,
   })
@@ -55,7 +57,7 @@ export function TeamOverviewTab() {
 
   const rows: TeamRow[] = useMemo(() => {
     const typeMap = new Map(
-      (typesData?.data ?? []).map((t) => [t.id, t] as const),
+      (typesData?.data ?? []).map((type) => [type.id, type] as const),
     )
     const requests = pendingData?.data ?? []
     const byEmployee = new Map<string, TeamRow>()
@@ -68,7 +70,7 @@ export function TeamOverviewTab() {
         byEmployee.get(key) ??
         ({
           id: key,
-          name: req.employee?.full_name ?? "Employee",
+          name: req.employee?.full_name ?? t("employeeFallback"),
           department: req.employee?.department_name,
           annualPending: 0,
           totalPending: 0,
@@ -84,29 +86,29 @@ export function TeamOverviewTab() {
     return Array.from(byEmployee.values()).sort((a, b) =>
       a.name.localeCompare(b.name),
     )
-  }, [pendingData, typesData])
+  }, [pendingData, typesData, t])
 
   return (
     <div className="flex flex-col gap-4">
       <div className="overflow-hidden rounded-[14px] border border-stroke-default bg-surface-white shadow-[0_1px_3px_0_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
         <div className="flex flex-col gap-1 border-b border-stroke-default px-6 py-4">
           <h2 className="text-lg font-semibold text-content-primary">
-            Team Leave Overview
+            {t("teamOverviewTitle")}
           </h2>
           <p className="text-sm text-content-tertiary">
-            Leave usage across all team members.
+            {t("teamOverviewSubtitle")}
           </p>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Employee</TableHead>
-              <TableHead>Annual Available</TableHead>
-              <TableHead>Annual Used</TableHead>
-              <TableHead>Annual Pending</TableHead>
-              <TableHead>Sick Used</TableHead>
-              <TableHead className="pr-6">Total Days</TableHead>
+              <TableHead className="ps-6">{t("colEmployee")}</TableHead>
+              <TableHead>{t("statAnnualAvailable")}</TableHead>
+              <TableHead>{t("colAnnualUsed")}</TableHead>
+              <TableHead>{t("colAnnualPending")}</TableHead>
+              <TableHead>{t("statSickUsed")}</TableHead>
+              <TableHead className="pe-6">{t("colTotalDays")}</TableHead>
             </TableRow>
           </TableHeader>
           {isLoading ? (
@@ -119,7 +121,7 @@ export function TeamOverviewTab() {
                     colSpan={6}
                     className="h-32 text-center text-sm text-content-tertiary"
                   >
-                    No pending team leave to display.
+                    {t("teamOverviewEmpty")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -128,7 +130,7 @@ export function TeamOverviewTab() {
                     key={row.id}
                     className="border-b border-stroke-default hover:bg-surface-hover/50"
                   >
-                    <TableCell className="pl-6">
+                    <TableCell className="ps-6">
                       <div className="flex items-center gap-2">
                         <Avatar
                           size="sm"
@@ -168,7 +170,7 @@ export function TeamOverviewTab() {
                     </TableCell>
                     <TableCell
                       className={cn(
-                        "pr-6 text-sm font-semibold tabular-nums",
+                        "pe-6 text-sm font-semibold tabular-nums",
                         row.totalPending > 0
                           ? "text-content-primary"
                           : "text-content-quaternary",
@@ -185,9 +187,7 @@ export function TeamOverviewTab() {
       </div>
 
       <p className="px-1 text-xs text-content-quaternary">
-        Pending figures are derived from the manager approval queue. Annual
-        available / used and sick used totals require a bulk team-balances
-        endpoint that isn&apos;t exposed by the API yet.
+        {t("teamOverviewFootnote")}
       </p>
     </div>
   )

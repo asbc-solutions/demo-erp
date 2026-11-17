@@ -1,4 +1,5 @@
 import { Briefcase, DollarSign, Target, TrendingUp } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -27,6 +28,7 @@ const iconMap = {
 } as const
 
 export function SalesKpiCard({ kpi }: { kpi: SalesKpi }) {
+  const t = useTranslations("SalesShared")
   const Icon = iconMap[kpi.icon]
   return (
     <Card
@@ -39,7 +41,7 @@ export function SalesKpiCard({ kpi }: { kpi: SalesKpi }) {
       <div className="flex items-center gap-2">
         <Icon className={cn("size-4", accentIcon[kpi.accent])} aria-hidden />
         <span className="text-[11px] leading-[15.4px] text-content-quaternary">
-          {kpi.label}
+          {t(kpi.labelKey)}
         </span>
       </div>
       <p className="text-content-primary text-[25px] leading-[32.5px] font-semibold">

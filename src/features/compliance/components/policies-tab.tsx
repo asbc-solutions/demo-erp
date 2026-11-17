@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Check, CheckCircle2, Loader2, Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -36,13 +37,9 @@ import { ComplianceTablePagination } from "./shared/compliance-table-pagination"
 
 const PAGE_SIZE = 15
 
-const STATUS_FILTERS: ReadonlyArray<{ label: string; value: PolicyStatus | "all" }> = [
-  { label: "All", value: "all" },
-  { label: "Draft", value: "draft" },
-  { label: "Under Review", value: "under_review" },
-  { label: "Active", value: "active" },
-  { label: "Archived", value: "archived" },
-]
+const POLICY_STATUSES: readonly PolicyStatus[] = ["draft", "under_review", "active", "archived"]
+
+const STATUS_FILTERS: readonly (PolicyStatus | "all")[] = ["all", ...POLICY_STATUSES]
 
 const STATUS_BADGE_VARIANT: Record<PolicyStatus, "success" | "warning" | "neutral"> = {
   active: "success",
@@ -52,6 +49,9 @@ const STATUS_BADGE_VARIANT: Record<PolicyStatus, "success" | "warning" | "neutra
 }
 
 export function PoliciesTab() {
+  const t = useTranslations("CompliancePolicies")
+  const tCompliance = useTranslations("Compliance")
+  const tCommon = useTranslations("Common")
   const [statusFilter, setStatusFilter] = useState<PolicyStatus | "all">("all")
   const [page, setPage] = useState(1)
   const [openNewPolicy, setOpenNewPolicy] = useState(false)
@@ -68,8 +68,8 @@ export function PoliciesTab() {
 
   const handleAcknowledge = (id: string) => {
     acknowledgePolicy.mutate(id, {
-      onSuccess: () => toast.success("Policy acknowledged."),
-      onError: (err) => toastMutationError(err, "Failed to acknowledge policy"),
+      onSuccess: () => toast.success(t("acknowledgedToast")),
+      onError: (err) => toastMutationError(err, t("acknowledgeFailed"), tCompliance),
     })
   }
 
@@ -77,41 +77,41 @@ export function PoliciesTab() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((item) => (
+          {STATUS_FILTERS.map((value) => (
             <button
-              key={item.value}
+              key={value}
               type="button"
               onClick={() => {
-                setStatusFilter(item.value)
+                setStatusFilter(value)
                 setPage(1)
               }}
               className={cn(
                 "rounded-lg px-3 py-1 text-xs",
-                statusFilter === item.value
+                statusFilter === value
                   ? "bg-brand-primary text-white"
                   : "bg-surface-hover text-content-tertiary",
               )}
             >
-              {item.label}
+              {value === "all" ? tCommon("all") : t(`status.${value}`)}
             </button>
           ))}
         </div>
         <Button variant="primary" size="sm" onClick={() => setOpenNewPolicy(true)}>
           <Plus className="size-4" />
-          New Policy
+          {t("newPolicy")}
         </Button>
       </div>
 
       {isLoading ? (
         <CompliancePageSpinner />
       ) : isError ? (
-        <ComplianceErrorState message="Failed to load policies." onRetry={() => void refetch()} />
+        <ComplianceErrorState message={t("loadFailed")} onRetry={() => void refetch()} />
       ) : (
         <>
           <div className="grid gap-4 lg:grid-cols-2">
             {policies.length === 0 ? (
               <Card className="p-6 text-center lg:col-span-2">
-                <p className="text-content-tertiary text-sm">No policies match this filter.</p>
+                <p className="text-content-tertiary text-sm">{t("empty")}</p>
               </Card>
             ) : (
               policies.map((policy) => (
@@ -123,7 +123,7 @@ export function PoliciesTab() {
                       {policy.status_label}
                     </Badge>
                     {policy.is_review_overdue ? (
-                      <Badge variant="danger">Review overdue</Badge>
+                      <Badge variant="danger">{t("reviewOverdue")}</Badge>
                     ) : null}
                   </div>
                   <div>
@@ -131,7 +131,10 @@ export function PoliciesTab() {
                     <p className="text-content-tertiary text-sm">{policy.summary}</p>
                   </div>
                   <p className="text-content-tertiary text-xs">
-                    {policy.owner?.name ?? "Unassigned"} · Review {policy.review_date ?? "—"}
+                    {t("ownerReview", {
+                      owner: policy.owner?.name ?? tCompliance("unassigned"),
+                      date: policy.review_date ?? "—",
+                    })}
                   </p>
                   <div className="space-y-1">
                     <div className="bg-stroke-default h-1.5 overflow-hidden rounded-full">
@@ -146,22 +149,24 @@ export function PoliciesTab() {
                       />
                     </div>
                     <p className="text-content-tertiary text-xs">
-                      Acknowledgements {policy.acknowledgements.ratio}
+                      {t("acknowledgements", { ratio: policy.acknowledgements.ratio })}
                     </p>
                   </div>
                   {policy.acknowledgements.outstanding > 0 ? (
                     <p className="text-brand-warning text-xs">
-                      {policy.acknowledgements.outstanding} team member
-                      {policy.acknowledgements.outstanding === 1 ? "" : "s"} haven&apos;t acknowledged
+                      {t("outstanding", {
+                        count: policy.acknowledgements.outstanding,
+                        value: String(policy.acknowledgements.outstanding),
+                      })}
                     </p>
                   ) : (
-                    <p className="text-brand-success text-xs">All team members acknowledged</p>
+                    <p className="text-brand-success text-xs">{t("allAcknowledged")}</p>
                   )}
                   <div className="flex items-center gap-2 pt-1">
                     {policy.acknowledgements.acknowledged_by_me ? (
                       <Badge variant="success">
                         <CheckCircle2 className="size-3" />
-                        Acknowledged
+                        {t("acknowledged")}
                       </Badge>
                     ) : (
                       <Button
@@ -175,7 +180,7 @@ export function PoliciesTab() {
                         ) : (
                           <CheckCircle2 className="size-4" />
                         )}
-                        Acknowledge
+                        {t("acknowledge")}
                       </Button>
                     )}
                   </div>
@@ -190,7 +195,7 @@ export function PoliciesTab() {
               total={meta.total}
               pageSize={PAGE_SIZE}
               onPageChange={setPage}
-              itemLabel="policies"
+              itemKind="policies"
             />
           ) : null}
         </>
@@ -205,6 +210,9 @@ function NewPolicyDialog({
   open,
   onOpenChange,
 }: Readonly<{ open: boolean; onOpenChange: (open: boolean) => void }>) {
+  const t = useTranslations("CompliancePolicies")
+  const tCompliance = useTranslations("Compliance")
+  const tCommon = useTranslations("Common")
   const createPolicy = useCreatePolicy()
   const [status, setStatus] = useState<PolicyStatus>("draft")
 
@@ -226,12 +234,12 @@ function NewPolicyDialog({
 
     createPolicy.mutate(payload, {
       onSuccess: () => {
-        toast.success("Policy created.")
+        toast.success(t("createdToast"))
         form.reset()
         setStatus("draft")
         onOpenChange(false)
       },
-      onError: (err) => toastMutationError(err, "Failed to create policy"),
+      onError: (err) => toastMutationError(err, t("createFailed"), tCompliance),
     })
   }
 
@@ -240,58 +248,59 @@ function NewPolicyDialog({
       <DialogContent className="max-w-[520px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New Policy</DialogTitle>
-            <DialogDescription>
-              Add a compliance policy with its title, category, and review details.
-            </DialogDescription>
+            <DialogTitle>{t("dialogTitle")}</DialogTitle>
+            <DialogDescription>{t("dialogDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody className="gap-4">
             <div className="space-y-2">
-              <p className="text-content-primary text-sm font-medium">Policy Title</p>
-              <Input name="title" placeholder="e.g., Data Classification Policy" required />
+              <p className="text-content-primary text-sm font-medium">{t("policyTitle")}</p>
+              <Input name="title" placeholder={t("policyTitlePlaceholder")} required />
             </div>
             <div className="space-y-2">
-              <p className="text-content-primary text-sm font-medium">Summary</p>
-              <Textarea name="summary" placeholder="Describe the policy purpose and scope..." />
+              <p className="text-content-primary text-sm font-medium">{t("summary")}</p>
+              <Textarea name="summary" placeholder={t("summaryPlaceholder")} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <p className="text-content-primary text-sm font-medium">Category</p>
-                <Input name="category" placeholder="e.g., Security" required />
+                <p className="text-content-primary text-sm font-medium">{t("category")}</p>
+                <Input name="category" placeholder={t("categoryPlaceholder")} required />
               </div>
               <div className="space-y-2">
-                <p className="text-content-primary text-sm font-medium">Version</p>
+                <p className="text-content-primary text-sm font-medium">{t("version")}</p>
                 <Input name="version" placeholder="1.0" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <p className="text-content-primary text-sm font-medium">Status</p>
+                <p className="text-content-primary text-sm font-medium">{tCommon("status")}</p>
                 <Select value={status} onValueChange={(value) => setStatus(value as PolicyStatus)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="under_review">Under Review</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    {POLICY_STATUSES.map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {t(`status.${value}`)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <p className="text-content-primary text-sm font-medium">Review Date</p>
+                <p className="text-content-primary text-sm font-medium">{t("reviewDate")}</p>
                 <Input name="review_date" type="date" />
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-content-primary text-sm font-medium">Required Acknowledgements</p>
+              <p className="text-content-primary text-sm font-medium">
+                {t("requiredAcknowledgements")}
+              </p>
               <Input name="required_acknowledgements" type="number" min={0} placeholder="0" />
             </div>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={createPolicy.isPending}>
               {createPolicy.isPending ? (
@@ -299,7 +308,7 @@ function NewPolicyDialog({
               ) : (
                 <Check aria-hidden />
               )}
-              Add Policy
+              {t("addPolicy")}
             </Button>
           </DialogFooter>
         </form>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Activity, FolderOpen, Plus, Store } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/src/shared/components/ui/button"
 import { usePermissions } from "@/src/shared/lib/hooks/use-permissions"
@@ -18,21 +19,21 @@ import { ProjectsTab } from "./projects-tab"
 import { TasksTab } from "./tasks-tab"
 import { VendorsTab } from "./vendors-tab"
 
-const TAB_CONFIG: ReadonlyArray<{
+const TAB_CONFIG = [
+  { id: "projects", labelKey: "tabProjects", icon: FolderOpen },
+  { id: "tasks", labelKey: "tabTasks", icon: Activity },
+  { id: "vendors", labelKey: "tabVendors", icon: Store },
+] as const satisfies ReadonlyArray<{
   id: OperationsTab
-  label: string
+  labelKey: string
   icon: React.ComponentType<{ className?: string }>
-}> = [
-  { id: "projects", label: "Projects", icon: FolderOpen },
-  { id: "tasks", label: "Tasks", icon: Activity },
-  { id: "vendors", label: "Vendors", icon: Store },
-]
+}>
 
-const TAB_ACTION: Record<OperationsTab, string> = {
-  projects: "New Project",
-  tasks: "New Task",
-  vendors: "New Vendor",
-}
+const TAB_ACTION = {
+  projects: "newProject",
+  tasks: "newTask",
+  vendors: "newVendor",
+} as const satisfies Record<OperationsTab, string>
 
 // Projects/Tasks/Vendors are gated by three independent permission resources — see
 // OperationsAccessGate.
@@ -43,6 +44,7 @@ const TAB_RESOURCE: Record<OperationsTab, OperationsResource> = {
 }
 
 export function OperationsModule() {
+  const t = useTranslations("OperationsModule")
   const [tab, setTab] = useState<OperationsTab>("projects")
   const [newProjectOpen, setNewProjectOpen] = useState(false)
   const [newTaskOpen, setNewTaskOpen] = useState(false)
@@ -61,16 +63,16 @@ export function OperationsModule() {
     <div className="flex flex-col gap-6 p-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-content-primary text-2xl leading-8 font-semibold tracking-tight">
-          Operations
+          {t("title")}
         </h1>
         <p className="text-content-tertiary text-sm leading-5">
-          Manage projects, tasks, and vendor relationships in one place.
+          {t("description")}
         </p>
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="bg-surface-white border-stroke-default flex h-9 items-center gap-0.5 rounded-xl border p-1">
-          {TAB_CONFIG.map(({ id, label, icon: Icon }) => {
+          {TAB_CONFIG.map(({ id, labelKey, icon: Icon }) => {
             const isActive = id === tab
             return (
               <button
@@ -85,7 +87,7 @@ export function OperationsModule() {
                 )}
               >
                 <Icon className="size-4" aria-hidden />
-                {label}
+                {t(labelKey)}
               </button>
             )
           })}
@@ -97,7 +99,7 @@ export function OperationsModule() {
             onClick={handleAction}
           >
             <Plus className="size-4" aria-hidden />
-            {TAB_ACTION[tab]}
+            {t(TAB_ACTION[tab])}
           </Button>
         ) : null}
       </div>

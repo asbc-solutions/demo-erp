@@ -1,7 +1,8 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/src/i18n/navigation"
 import { MoreHorizontal } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Avatar } from "@/src/shared/components/ui/avatar"
 import { Button } from "@/src/shared/components/ui/button"
@@ -24,21 +25,24 @@ import { TYPE_STYLE } from "../data/all-projects-data"
 import { ProjectStatusBadge } from "./project-status-badge"
 
 export function ProjectsTable({ projects }: { projects: ProjectRow[] }) {
+  const t = useTranslations("ProjectsAllProjects")
+  const tShared = useTranslations("ProjectsShared")
+  const tCommon = useTranslations("Common")
   const router = useRouter()
   return (
     <Card className="overflow-hidden p-0">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead>Project</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>PM</TableHead>
-            <TableHead>Start</TableHead>
-            <TableHead>End</TableHead>
-            <TableHead>Budget</TableHead>
-            <TableHead>Progress</TableHead>
-            <TableHead className="w-12" aria-label="Actions" />
+            <TableHead>{t("colProject")}</TableHead>
+            <TableHead>{tCommon("type")}</TableHead>
+            <TableHead>{tCommon("status")}</TableHead>
+            <TableHead>{t("colManager")}</TableHead>
+            <TableHead>{t("colStart")}</TableHead>
+            <TableHead>{t("colEnd")}</TableHead>
+            <TableHead>{t("colBudget")}</TableHead>
+            <TableHead>{t("colProgress")}</TableHead>
+            <TableHead className="w-12" aria-label={tCommon("actions")} />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -64,7 +68,7 @@ export function ProjectsTable({ projects }: { projects: ProjectRow[] }) {
                   TYPE_STYLE[project.typeLabel],
                 )}
               >
-                {project.typeLabel}
+                {tShared(`projectType.${project.type}`)}
               </TableCell>
               <TableCell>
                 <ProjectStatusBadge
@@ -114,7 +118,7 @@ export function ProjectsTable({ projects }: { projects: ProjectRow[] }) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={`Actions for ${project.name}`}
+                  aria-label={t("actionsFor", { name: project.name })}
                   onClick={(event) => event.stopPropagation()}
                 >
                   <MoreHorizontal className="size-4" aria-hidden />

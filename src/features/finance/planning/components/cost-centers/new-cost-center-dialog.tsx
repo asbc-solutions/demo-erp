@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -29,18 +30,20 @@ import {
 import { errorMessage } from "../../../lib/utils/api"
 import { COST_CENTER_TYPES } from "../../lib/constants/planning"
 import { useCreateCostCenter } from "../../lib/mutations/planning"
-import type { CostCenter } from "../../lib/types/planning"
-import { SESSION_NOTE } from "../budgets/budgets-page"
+import type { CostCenter, PlanningMessageKey } from "../../lib/types/planning"
 
 const NO_PARENT = "none"
+
+/** Messages are `FinancePlanning` keys, translated where the error is rendered. */
+const msg = (key: PlanningMessageKey) => key
 
 const centerSchema = z.object({
   code: z
     .string()
     .trim()
-    .regex(/^CC-\d{3}$/i, "Cost center codes look like CC-900."),
-  name: z.string().trim().min(1, "Enter the English name."),
-  name_ar: z.string().trim().min(1, "Enter the Arabic name."),
+    .regex(/^CC-\d{3}$/i, msg("errCenterCode")),
+  name: z.string().trim().min(1, msg("errEnglishName")),
+  name_ar: z.string().trim().min(1, msg("errArabicName")),
   type: z.enum(["department", "branch", "project"]),
   parent_id: z.string(),
 })
@@ -55,6 +58,7 @@ function NewCostCenterDialog({
   onOpenChange: (open: boolean) => void
   centers: CostCenter[]
 }) {
+  const t = useTranslations("FinancePlanning")
   const create = useCreateCostCenter()
   const empty = React.useMemo<CenterValues>(() => ({ code: "CC-900", name: "", name_ar: "", type: "department", parent_id: NO_PARENT }), [])
   const {
@@ -78,37 +82,37 @@ function NewCostCenterDialog({
               { ...values, code: values.code.toUpperCase(), parent_id: values.parent_id === NO_PARENT ? null : values.parent_id },
               {
                 onSuccess: (center) => {
-                  toast.success(`${center.code} · ${center.name} is added to the hierarchy.`)
+                  toast.success(t("toastCenterAdded", { code: center.code, name: center.name }))
                   onOpenChange(false)
                 },
-                onError: (error) => toast.error(errorMessage(error, "The cost center could not be saved. Try again.")),
+                onError: (error) => toast.error(errorMessage(error, t("errorSaveCenter"))),
               },
             ),
           )}
         >
           <DialogHeader>
-            <DialogTitle>New cost center</DialogTitle>
-            <DialogDescription>A cost center groups actuals and budgets. Saving adds it to the hierarchy; no posted line is reclassified.</DialogDescription>
+            <DialogTitle>{t("newCostCenter")}</DialogTitle>
+            <DialogDescription>{t("newCostCenterDescription")}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <Field>
-              <FieldLabel htmlFor="center-code">Code *</FieldLabel>
+              <FieldLabel htmlFor="center-code">{t("codeRequired")}</FieldLabel>
               <Input id="center-code" className="w-40 font-mono uppercase" aria-invalid={Boolean(errors.code)} {...register("code")} />
-              {errors.code ? <FieldError>{errors.code.message}</FieldError> : null}
+              {errors.code ? <FieldError>{t(errors.code.message as PlanningMessageKey)}</FieldError> : null}
             </Field>
             <Field>
-              <FieldLabel htmlFor="center-name">Name (English) *</FieldLabel>
+              <FieldLabel htmlFor="center-name">{t("nameEnglishRequired")}</FieldLabel>
               <Input id="center-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-              {errors.name ? <FieldError>{errors.name.message}</FieldError> : null}
+              {errors.name ? <FieldError>{t(errors.name.message as PlanningMessageKey)}</FieldError> : null}
             </Field>
             <Field>
-              <FieldLabel htmlFor="center-name-ar">Name (Arabic) *</FieldLabel>
+              <FieldLabel htmlFor="center-name-ar">{t("nameArabicRequired")}</FieldLabel>
               <Input id="center-name-ar" dir="rtl" lang="ar" aria-invalid={Boolean(errors.name_ar)} {...register("name_ar")} />
-              {errors.name_ar ? <FieldError>{errors.name_ar.message}</FieldError> : <FieldDescription>Shown when the workspace is switched to Arabic.</FieldDescription>}
+              {errors.name_ar ? <FieldError>{t(errors.name_ar.message as PlanningMessageKey)}</FieldError> : <FieldDescription>{t("arabicNameHint")}</FieldDescription>}
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="center-type">Type *</FieldLabel>
+                <FieldLabel htmlFor="center-type">{t("typeRequired")}</FieldLabel>
                 <Controller
                   control={control}
                   name="type"
@@ -120,7 +124,7 @@ function NewCostCenterDialog({
                       <SelectContent>
                         {COST_CENTER_TYPES.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
-                            {type.label}
+                            {t(type.labelKey)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -129,7 +133,7 @@ function NewCostCenterDialog({
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="center-parent">Parent</FieldLabel>
+                <FieldLabel htmlFor="center-parent">{t("parent")}</FieldLabel>
                 <Controller
                   control={control}
                   name="parent_id"
@@ -139,7 +143,7 @@ function NewCostCenterDialog({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={NO_PARENT}>None — top level</SelectItem>
+                        <SelectItem value={NO_PARENT}>{t("noParent")}</SelectItem>
                         {centers.map((center) => (
                           <SelectItem key={center.id} value={center.id}>
                             {center.code} · {center.name}
@@ -151,14 +155,14 @@ function NewCostCenterDialog({
                 />
               </Field>
             </div>
-            <p className="text-content-tertiary text-[13px] leading-5">{SESSION_NOTE}</p>
+            <p className="text-content-tertiary text-[13px] leading-5">{t("sessionNote")}</p>
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={create.isPending}>
-              Save
+              {t("save")}
             </Button>
           </DialogFooter>
         </form>

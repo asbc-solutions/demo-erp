@@ -1,9 +1,11 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button } from "@/src/shared/components/ui/button"
 import { KpiCard } from "@/src/shared/components/ui/kpi-card"
 import {
@@ -23,29 +25,34 @@ import { FinancePageBody, FinancePageHeader } from "../../../components/shared/p
 import { errorMessage } from "../../../lib/utils/api"
 import { useCompleteSetup } from "../../lib/mutations/configuration"
 import { useSetup } from "../../lib/queries/configuration"
-import type { SetupDecision, SetupSummary } from "../../lib/types/configuration"
+import type { ConfigMessageKey, ConfigTranslator, SetupDecision, SetupSummary } from "../../lib/types/configuration"
+import { MONTH_NUMBERS, monthName } from "../../lib/utils/months"
 
-const STEPS = ["Industry", "Company", "Financial year", "What we set"]
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+const STEPS: ConfigMessageKey[] = ["stepIndustry", "stepCompany", "stepFinancialYear", "stepWhatWeSet"]
 
-const DECISION_COLUMNS: FinanceColumn<SetupDecision>[] = [
-  { id: "setting", header: "Setting", cell: (row) => <span className="text-content-primary font-medium">{row.setting}</span> },
-  { id: "value", header: "We set", cell: (row) => row.value },
-  { id: "because", header: "Because", cell: (row) => <span className="text-content-secondary block max-w-md whitespace-normal">{row.because}</span> },
-  {
-    id: "href",
-    header: "Change it at",
-    cell: (row) => (
-      <Link href={row.href} className="text-brand-primary font-mono text-xs hover:underline">
-        {row.href}
-      </Link>
-    ),
-  },
-]
+function buildDecisionColumns(t: ConfigTranslator): FinanceColumn<SetupDecision>[] {
+  return [
+    { id: "setting", header: t("setting"), cell: (row) => <span className="text-content-primary font-medium">{row.setting}</span> },
+    { id: "value", header: t("weSet"), cell: (row) => row.value },
+    { id: "because", header: t("because"), cell: (row) => <span className="text-content-secondary block max-w-md whitespace-normal">{row.because}</span> },
+    {
+      id: "href",
+      header: t("changeItAt"),
+      cell: (row) => (
+        <Link href={row.href} className="text-brand-primary font-mono text-xs hover:underline">
+          {row.href}
+        </Link>
+      ),
+    },
+  ]
+}
 
 type Choices = { industry: string; entity: string; month: string }
 
 function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
+  const t = useTranslations("FinanceConfiguration")
+  const locale = useIntlLocale()
+  const decisionColumns = React.useMemo(() => buildDecisionColumns(t), [t])
   const complete = useCompleteSetup()
   const [step, setStep] = React.useState(0)
   const [choices, setChoices] = React.useState<Choices>({
@@ -57,8 +64,13 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
   const entity = data.entities.find((row) => row.id === choices.entity)
   const decisions: SetupDecision[] = industry
     ? [
-        { setting: "Company", value: entity?.name ?? choices.entity, because: "Each company keeps its own ledger and its own reports.", href: "/finance" },
-        { setting: "Financial year starts", value: `1 ${MONTHS[Number(choices.month) - 1]}`, because: "Twelve monthly periods are created from this date, and you close them one at a time.", href: "/finance/settings/fiscal-calendar" },
+        { setting: t("stepCompany"), value: entity?.name ?? choices.entity, because: t("companyBecause"), href: "/finance" },
+        {
+          setting: t("financialYearStarts"),
+          value: t("firstOfMonth", { month: monthName(Number(choices.month), locale) }),
+          because: t("financialYearBecause"),
+          href: "/finance/settings/fiscal-calendar",
+        },
         ...industry.decisions,
       ]
     : []
@@ -66,10 +78,10 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
 
   return (
     <>
-      <nav aria-label="Setup steps" className="border-stroke-default border-b">
+      <nav aria-label={t("setupSteps")} className="border-stroke-default border-b">
         <ol className="flex gap-6">
-          {STEPS.map((label, index) => (
-            <li key={label}>
+          {STEPS.map((labelKey, index) => (
+            <li key={labelKey}>
               <button
                 type="button"
                 aria-current={index === step ? "step" : undefined}
@@ -80,7 +92,7 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
                   index === step && "border-brand-primary text-content-primary font-medium",
                 )}
               >
-                {label}
+                {t(labelKey)}
               </button>
             </li>
           ))}
@@ -88,16 +100,15 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
       </nav>
       <div className="flex flex-col gap-6">
         <p className="text-content-secondary max-w-2xl text-[13px] leading-5">
-          Four questions, then we configure the module and show you exactly what we decided. Every choice is reversible and we
-          say where to change each one.
+          {t("setupIntro")}
         </p>
 
         {step === 0 ? (
           <FinanceSection
-            title="What does the business do?"
-            description="This decides how revenue is recognised, which tax codes are registered, and what you analyse costs by. Nothing here is guessed — the next step lists every decision it makes."
+            title={t("industryTitle")}
+            description={t("industryDescription")}
           >
-            <div role="radiogroup" aria-label="Industry" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div role="radiogroup" aria-label={t("stepIndustry")} className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {data.industries.map((option) => {
                 const selected = choices.industry === option.id
                 return (
@@ -108,12 +119,12 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
                     aria-checked={selected}
                     onClick={() => setChoices((current) => ({ ...current, industry: option.id }))}
                     className={cn(
-                      "border-stroke-default bg-surface-white hover:border-stroke-input flex flex-col gap-1 rounded-xl border px-4 py-3.5 text-left outline-none focus-visible:ring-2",
+                      "border-stroke-default bg-surface-white hover:border-stroke-input flex flex-col gap-1 rounded-xl border px-4 py-3.5 text-start outline-none focus-visible:ring-2",
                       selected && "border-brand-primary ring-brand-primary/20 ring-2",
                     )}
                   >
                     <span className="text-content-primary text-sm leading-5 font-medium">{option.name}</span>
-                    <span className="text-content-secondary text-xs leading-4">Costs analysed by: {option.analysed_by}</span>
+                    <span className="text-content-secondary text-xs leading-4">{t("costsAnalysedByValue", { value: option.analysed_by })}</span>
                   </button>
                 )
               })}
@@ -122,9 +133,9 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
         ) : null}
 
         {step === 1 ? (
-          <FinanceSection title="Which company are you setting up?" description="You can add more companies later. Each keeps its own ledger and its own reports.">
+          <FinanceSection title={t("companyTitle")} description={t("companyDescription")}>
             <Select value={choices.entity} onValueChange={(value) => setChoices((current) => ({ ...current, entity: value }))}>
-              <SelectTrigger aria-label="Company" className="w-full max-w-md">
+              <SelectTrigger aria-label={t("stepCompany")} className="w-full max-w-md">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -139,15 +150,15 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
         ) : null}
 
         {step === 2 ? (
-          <FinanceSection title="When does the financial year start?" description="Twelve monthly periods are created from this date. You can close them one at a time.">
+          <FinanceSection title={t("yearStartTitle")} description={t("yearStartDescription")}>
             <Select value={choices.month} onValueChange={(value) => setChoices((current) => ({ ...current, month: value }))}>
-              <SelectTrigger aria-label="Financial year starts" className="w-full max-w-xs">
+              <SelectTrigger aria-label={t("financialYearStarts")} className="w-full max-w-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {MONTHS.map((month, index) => (
-                  <SelectItem key={month} value={String(index + 1)}>
-                    {month.slice(0, 3)} 2026
+                {MONTH_NUMBERS.map((month) => (
+                  <SelectItem key={month} value={String(month)}>
+                    {monthName(month, locale, "short")} 2026
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -156,25 +167,25 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
         ) : null}
 
         {step === 3 && industry ? (
-          <FinanceSection title="What we set, and where to change it" description={`${decisions.length} defaults will be applied. Each one says why, and links to where you change it. Nothing is hidden.`}>
+          <FinanceSection title={t("whatWeSetTitle")} description={t("defaultsWillApply", { count: decisions.length })}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Tax codes registered" value={industry.tax_codes.length} caption={industry.tax_codes.join(" · ")} />
-              <KpiCard layout="bar" accent="teal" label="Costs analysed by" value={industry.analysed_by} />
-              <KpiCard layout="bar" accent="amber" label="Settings" value={decisions.length} />
+              <KpiCard layout="bar" accent="indigo" label={t("taxCodesRegistered")} value={industry.tax_codes.length} caption={industry.tax_codes.join(" · ")} />
+              <KpiCard layout="bar" accent="teal" label={t("costsAnalysedBy")} value={industry.analysed_by} />
+              <KpiCard layout="bar" accent="amber" label={t("settings")} value={decisions.length} />
             </div>
-            <FinanceTable caption="Defaults the setup applies" columns={DECISION_COLUMNS} rows={decisions} getRowId={(row) => row.setting} />
+            <FinanceTable caption={t("defaultsApplies")} columns={decisionColumns} rows={decisions} getRowId={(row) => row.setting} />
           </FinanceSection>
         ) : null}
 
         <div className="flex gap-2">
           {step > 0 ? (
             <Button variant="secondary" onClick={() => setStep((current) => current - 1)}>
-              Back
+              {t("back")}
             </Button>
           ) : null}
           {step < STEPS.length - 1 ? (
             <Button variant="primary" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>
-              Continue
+              {t("continue")}
             </Button>
           ) : (
             <Button
@@ -185,15 +196,15 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
                   { industry: choices.industry, entity_id: choices.entity, year_start_month: Number(choices.month) },
                   {
                     onSuccess: () => {
-                      toast.success("Finance is set up.")
+                      toast.success(t("toastSetUp"))
                       onDone()
                     },
-                    onError: (error) => toast.error(errorMessage(error, "Setup could not finish. Try again.")),
+                    onError: (error) => toast.error(errorMessage(error, t("errorSetup"))),
                   },
                 )
               }
             >
-              Finish setup
+              {t("finishSetup")}
             </Button>
           )}
         </div>
@@ -204,6 +215,8 @@ function Wizard({ data, onDone }: { data: SetupSummary; onDone: () => void }) {
 
 /** 11.01 · Set up finance — four questions, then every default it applied and where to change it. */
 function SetupPage() {
+  const t = useTranslations("FinanceConfiguration")
+  const decisionColumns = React.useMemo(() => buildDecisionColumns(t), [t])
   const { data, isError, refetch } = useSetup()
   const [rerun, setRerun] = React.useState(false)
   const showSummary = data?.completed && !rerun
@@ -211,10 +224,10 @@ function SetupPage() {
   return (
     <>
       <FinancePageHeader
-        title="Set up finance"
+        title={t("setUpFinance")}
         actions={
           <Button variant="ghost" asChild>
-            <Link href="/finance">{showSummary ? "Back to finance" : "Skip setup"}</Link>
+            <Link href="/finance">{showSummary ? t("backToFinance") : t("skipSetup")}</Link>
           </Button>
         }
       />
@@ -230,25 +243,24 @@ function SetupPage() {
               action={
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" onClick={() => setRerun(true)}>
-                    Run setup again
+                    {t("runSetupAgain")}
                   </Button>
                   <Button variant="primary" size="sm" asChild>
-                    <Link href="/finance/import">Import data</Link>
+                    <Link href="/finance/import">{t("importData")}</Link>
                   </Button>
                 </div>
               }
             >
-              Setup complete. The module is configured for {data.industry.name.toLowerCase()}. Everything below is editable, and
-              this prototype applies the choices to this session only.
-              {data.dimension_created ? ` A ${data.industry.analysed_by} dimension was added to Dimensions.` : ""}
+              {t("setupComplete", { industry: data.industry.name })}
+              {data.dimension_created ? ` ${t("dimensionAdded", { dimension: data.industry.analysed_by })}` : ""}
             </FinanceAlert>
-            <FinanceSection title="What we set, and where to change it" description={`${data.decisions.length} defaults were applied. Each one says why, and links to where you change it. Nothing is hidden.`}>
+            <FinanceSection title={t("whatWeSetTitle")} description={t("defaultsWereApplied", { count: data.decisions.length })}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-                <KpiCard layout="bar" accent="indigo" label="Tax codes registered" value={data.industry.tax_codes.length} caption={data.industry.tax_codes.join(" · ")} />
-                <KpiCard layout="bar" accent="teal" label="Costs analysed by" value={data.industry.analysed_by} />
-                <KpiCard layout="bar" accent="amber" label="Settings" value={data.decisions.length} />
+                <KpiCard layout="bar" accent="indigo" label={t("taxCodesRegistered")} value={data.industry.tax_codes.length} caption={data.industry.tax_codes.join(" · ")} />
+                <KpiCard layout="bar" accent="teal" label={t("costsAnalysedBy")} value={data.industry.analysed_by} />
+                <KpiCard layout="bar" accent="amber" label={t("settings")} value={data.decisions.length} />
               </div>
-              <FinanceTable caption="Defaults the setup applied" columns={DECISION_COLUMNS} rows={data.decisions} getRowId={(row) => row.setting} />
+              <FinanceTable caption={t("defaultsApplied")} columns={decisionColumns} rows={data.decisions} getRowId={(row) => row.setting} />
             </FinanceSection>
           </>
         ) : (

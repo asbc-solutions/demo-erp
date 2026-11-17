@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Loader2, RotateCcw, TriangleAlert } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Button } from "@/src/shared/components/ui/button"
@@ -50,6 +51,9 @@ function FieldLabel({
  * on a background refetch.
  */
 function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
+  const t = useTranslations("SettingsProfile")
+  const tShared = useTranslations("SettingsShared")
+  const tCommon = useTranslations("Common")
   const updateProfile = useUpdateCompanyProfile()
   const { can } = usePermissions()
   const canWrite = can.write(SETTINGS_RESOURCES.companyProfile)
@@ -76,8 +80,8 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
         stage: stage || undefined,
       },
       {
-        onSuccess: () => toast.success("Company profile updated"),
-        onError: (err) => toastMutationError(err, "Failed to update company profile"),
+        onSuccess: () => toast.success(t("updated")),
+        onError: (err) => toastMutationError(err, t("updateFailed"), tShared),
       },
     )
   }
@@ -87,7 +91,7 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
       <Card variant="elevated" className="gap-6 p-6">
         <div className="grid grid-cols-1 gap-x-12 gap-y-6 lg:grid-cols-[minmax(0,1fr)_140px]">
           <div className="flex flex-col gap-1.5">
-            <FieldLabel htmlFor="sp-company-name">Company Name</FieldLabel>
+            <FieldLabel htmlFor="sp-company-name">{t("companyName")}</FieldLabel>
             <Input
               id="sp-company-name"
               value={companyName}
@@ -97,10 +101,10 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <FieldLabel>Industry</FieldLabel>
+            <FieldLabel>{t("industry")}</FieldLabel>
             <Select value={industry} onValueChange={setIndustry} disabled={!canWrite}>
               <SelectTrigger className="bg-surface-page h-9 text-[14px]">
-                <SelectValue placeholder="Select industry" />
+                <SelectValue placeholder={t("industryPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {profile.options.industries.map((value) => (
@@ -112,7 +116,7 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <FieldLabel htmlFor="sp-website">Website</FieldLabel>
+            <FieldLabel htmlFor="sp-website">{t("website")}</FieldLabel>
             <Input
               id="sp-website"
               value={website}
@@ -122,10 +126,10 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <FieldLabel>Current Stage</FieldLabel>
+            <FieldLabel>{t("stage")}</FieldLabel>
             <Select value={stage} onValueChange={setStage} disabled={!canWrite}>
               <SelectTrigger className="bg-surface-page h-9 text-[14px]">
-                <SelectValue placeholder="Select stage" />
+                <SelectValue placeholder={t("stagePlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {profile.options.stages.map((value) => (
@@ -150,7 +154,7 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
               {updateProfile.isPending ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : null}
-              Save Changes
+              {tCommon("saveChanges")}
             </Button>
             <Button
               type="button"
@@ -159,7 +163,7 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
               onClick={handleCancel}
               disabled={updateProfile.isPending}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
           </div>
         ) : null}
@@ -175,12 +179,10 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
           </div>
           <div className="flex flex-1 flex-col gap-1">
             <h3 className="text-content-primary text-[12px] leading-[18px] font-medium">
-              Reset to Demo Data
+              {t("resetTitle")}
             </h3>
             <p className="text-content-tertiary pb-2 text-[11px] leading-[15.4px]">
-              Clear all data across every workspace and restore the original demo defaults.
-              This includes invoices, employees, deals, and company information. This action
-              cannot be undone and will sign everyone out, including you.
+              {t("resetDescription")}
             </p>
             <div>
               <Button
@@ -190,7 +192,7 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
                 onClick={() => setResetDialogOpen(true)}
               >
                 <RotateCcw className="size-4" aria-hidden />
-                Reset Data
+                {t("resetButton")}
               </Button>
             </div>
           </div>
@@ -203,6 +205,7 @@ function ProfileTabForm({ profile }: Readonly<{ profile: CompanyProfile }>) {
 }
 
 function ProfileTabContent() {
+  const t = useTranslations("SettingsProfile")
   const { data: profile, isLoading, isError, refetch } = useCompanyProfile()
 
   if (isLoading) {
@@ -212,7 +215,7 @@ function ProfileTabContent() {
   if (isError || !profile) {
     return (
       <SettingsErrorState
-        message="Failed to load company profile."
+        message={t("loadError")}
         onRetry={() => void refetch()}
       />
     )

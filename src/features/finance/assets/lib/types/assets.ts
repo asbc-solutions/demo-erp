@@ -1,3 +1,13 @@
+import type { Messages, useTranslations } from "next-intl"
+
+export type AssetsTranslator = ReturnType<typeof useTranslations<"FinanceAssets">>
+
+type AssetsMessages = Messages["FinanceAssets"]
+/** A flat (non-enum-map) key of the `FinanceAssets` namespace. */
+export type AssetsMessageKey = {
+  [K in keyof AssetsMessages]: AssetsMessages[K] extends string ? K : never
+}[keyof AssetsMessages]
+
 export type AssetStatus = "in_service" | "disposed" | "written_off"
 export type DepreciationMethod = "straight_line" | "declining_balance"
 

@@ -1,8 +1,9 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/src/i18n/navigation"
 import { SearchX } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import {
@@ -15,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/shared/components/ui/alert-dialog"
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 import { Button, buttonVariants } from "@/src/shared/components/ui/button"
 import { EmptyState } from "@/src/shared/components/ui/empty-state"
 import { Input } from "@/src/shared/components/ui/input"
@@ -29,26 +31,29 @@ import { FinanceTable, type FinanceColumn } from "../../../components/shared/fin
 import { FinancePageBody, FinancePageHeader, HeaderFigure, MetaChips } from "../../../components/shared/page-header"
 import { StatusPill } from "../../../components/shared/status-pill"
 import { errorMessage } from "../../../lib/utils/api"
-import { formatDate } from "../../../lib/utils/date"
+import { useFinanceDateFormat } from "../../../lib/hooks/use-finance-date-format"
 import { formatAmount } from "../../../lib/utils/money"
 import { useApproveBudget, useLockBudget, useSaveBudgetLines } from "../../lib/mutations/planning"
 import { useBudget } from "../../lib/queries/planning"
 import type { Budget, BudgetLine } from "../../lib/types/planning"
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const shortMonth = (index: number, locale: string) =>
+  new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(Date.UTC(2026, index, 1))
 
 function UsedBar({ used }: { used: number | null }) {
+  const t = useTranslations("FinancePlanning")
   if (used === null) return <span className="text-content-tertiary">—</span>
   return (
     <span className="flex items-center justify-end gap-2">
-      <Progress value={Math.min(used, 100)} size="sm" color={used > 100 ? "red" : "indigo"} className="w-24" aria-label={`${used}% of budget used`} />
-      <span className="text-content-secondary w-10 text-right text-xs tabular-nums">{used}%</span>
+      <Progress value={Math.min(used, 100)} size="sm" color={used > 100 ? "red" : "indigo"} className="w-24" aria-label={t("budgetUsed", { used })} />
+      <span className="text-content-secondary w-10 text-end text-xs tabular-nums">{used}%</span>
     </span>
   )
 }
 
 /** Annual figures per cost center, editable while the budget is a draft. */
 function DraftLines({ budget }: { budget: Budget }) {
+  const t = useTranslations("FinancePlanning")
   const save = useSaveBudgetLines()
   const [values, setValues] = React.useState<Record<string, string>>(() =>
     Object.fromEntries(budget.lines.map((line) => [line.cost_center_id, String(line.annual)])),
@@ -60,25 +65,25 @@ function DraftLines({ budget }: { budget: Budget }) {
   const columns: FinanceColumn<BudgetLine>[] = [
     {
       id: "center",
-      header: "Cost center",
+      header: t("costCenter"),
       cell: (row) => (
         <span className="flex items-baseline gap-2">
           <DocNumber>{row.cost_center_id}</DocNumber>
           <span className="text-content-primary">{row.name}</span>
         </span>
       ),
-      footer: "Total",
+      footer: t("total"),
     },
     {
       id: "annual",
-      header: "Annual budget (EGP)",
+      header: t("annualBudgetEgp"),
       align: "end",
       width: "w-56",
       cell: (row) => (
         <Input
-          aria-label={`Annual budget for ${row.name}`}
+          aria-label={t("annualBudgetFor", { name: row.name })}
           inputMode="decimal"
-          className="ml-auto h-8 w-44 text-right tabular-nums"
+          className="ms-auto h-8 w-44 text-end tabular-nums"
           value={values[row.cost_center_id] ?? ""}
           aria-invalid={!(Number(values[row.cost_center_id]) >= 0) || values[row.cost_center_id]?.trim() === ""}
           onChange={(event) => setValues((current) => ({ ...current, [row.cost_center_id]: event.target.value }))}
@@ -86,12 +91,12 @@ function DraftLines({ budget }: { budget: Budget }) {
       ),
       footer: <Amount value={total} emphasis="strong" />,
     },
-    { id: "actual", header: "Actual to date (EGP)", align: "end", cell: (row) => <Amount value={row.actual} /> },
+    { id: "actual", header: t("actualToDateEgp"), align: "end", cell: (row) => <Amount value={row.actual} /> },
   ]
 
   return (
     <>
-      <FinanceTable caption={`${budget.name} by cost center`} columns={columns} rows={budget.lines} getRowId={(row) => row.id} />
+      <FinanceTable caption={t("budgetByCostCenter", { name: budget.name })} columns={columns} rows={budget.lines} getRowId={(row) => row.id} />
       <div className="flex justify-end gap-2">
         <Button
           variant="primary"
@@ -100,13 +105,13 @@ function DraftLines({ budget }: { budget: Budget }) {
             save.mutate(
               { id: budget.id, lines: budget.lines.map((line) => ({ cost_center_id: line.cost_center_id, annual: Number(values[line.cost_center_id]) })) },
               {
-                onSuccess: (saved) => toast.success(`${saved.code} saved. Annual total ${formatAmount(saved.total)} EGP.`),
-                onError: (error) => toast.error(errorMessage(error, "The budget could not be saved. Try again.")),
+                onSuccess: (saved) => toast.success(t("toastBudgetSaved", { code: saved.code, amount: formatAmount(saved.total) })),
+                onError: (error) => toast.error(errorMessage(error, t("errorSaveBudget"))),
               },
             )
           }
         >
-          Save changes
+          {t("saveChanges")}
         </Button>
       </div>
     </>
@@ -115,6 +120,9 @@ function DraftLines({ budget }: { budget: Budget }) {
 
 /** 09.02 · Budget vs actual — year-to-date budget against posted expense, by top-level cost center. */
 function BudgetDetailPage({ budgetId }: { budgetId: string }) {
+  const t = useTranslations("FinancePlanning")
+  const { formatDate } = useFinanceDateFormat()
+  const locale = useIntlLocale()
   const { data, isError, isPending, refetch } = useBudget(budgetId)
   const approve = useApproveBudget()
   const lock = useLockBudget()
@@ -123,7 +131,7 @@ function BudgetDetailPage({ budgetId }: { budgetId: string }) {
   if (isError) {
     return (
       <>
-        <FinancePageHeader title="Budget vs actual" />
+        <FinancePageHeader title={t("budgetVsActual")} />
         <FinancePageBody>
           <FinanceErrorState onRetry={() => refetch()} />
         </FinancePageBody>
@@ -134,16 +142,16 @@ function BudgetDetailPage({ budgetId }: { budgetId: string }) {
   if (!isPending && !data) {
     return (
       <>
-        <FinancePageHeader title="Budget not found" />
+        <FinancePageHeader title={t("budgetNotFound")} />
         <FinancePageBody>
           <EmptyState
             variant="card"
             icon={<SearchX />}
-            title="There is no budget with this code."
-            description="It may belong to another session or the link is out of date."
+            title={t("budgetNotFoundTitle")}
+            description={t("budgetNotFoundDescription")}
             actions={
               <Button variant="secondary" size="sm" asChild>
-                <Link href="/finance/budgets">All budgets</Link>
+                <Link href="/finance/budgets">{t("allBudgets")}</Link>
               </Button>
             }
           />
@@ -155,33 +163,36 @@ function BudgetDetailPage({ budgetId }: { budgetId: string }) {
   const columns: FinanceColumn<BudgetLine>[] = [
     {
       id: "center",
-      header: "Cost center",
+      header: t("costCenter"),
       cell: (row) => (
         <span className="flex items-baseline gap-2">
           <DocNumber href={`/finance/cost-centers/${row.cost_center_id}`}>{row.cost_center_id}</DocNumber>
           <span className="text-content-primary">{row.name}</span>
         </span>
       ),
-      footer: "Total",
+      footer: t("total"),
     },
-    { id: "budgeted", header: "Budgeted (EGP)", align: "end", cell: (row) => <Amount value={row.budgeted} />, footer: data ? <Amount value={data.budgeted} emphasis="strong" /> : null },
-    { id: "actual", header: "Actual (EGP)", align: "end", cell: (row) => <Amount value={row.actual} />, footer: data ? <Amount value={data.actual} emphasis="strong" /> : null },
-    { id: "variance", header: "Variance (EGP)", align: "end", cell: (row) => <Amount value={row.variance} signed />, footer: data ? <Amount value={data.variance} emphasis="strong" signed /> : null },
-    { id: "used", header: "Used", align: "end", width: "w-40", cell: (row) => <UsedBar used={row.used} /> },
+    { id: "budgeted", header: t("budgetedEgp"), align: "end", cell: (row) => <Amount value={row.budgeted} />, footer: data ? <Amount value={data.budgeted} emphasis="strong" /> : null },
+    { id: "actual", header: t("actualEgp"), align: "end", cell: (row) => <Amount value={row.actual} />, footer: data ? <Amount value={data.actual} emphasis="strong" /> : null },
+    { id: "variance", header: t("varianceEgp"), align: "end", cell: (row) => <Amount value={row.variance} signed />, footer: data ? <Amount value={data.variance} emphasis="strong" signed /> : null },
+    { id: "used", header: t("used"), align: "end", width: "w-40", cell: (row) => <UsedBar used={row.used} /> },
   ]
 
-  const toDate = data && data.months_elapsed > 0 ? `${MONTHS[0]}–${MONTHS[data.months_elapsed - 1]} ${data.year}` : null
+  const toDate =
+    data && data.months_elapsed > 0
+      ? t("monthRange", { from: shortMonth(0, locale), to: shortMonth(data.months_elapsed - 1, locale), year: data.year })
+      : null
 
   return (
     <>
       <FinancePageHeader
-        title="Budget vs actual"
-        figure={data ? <HeaderFigure label={`${data.name} · variance (EGP)`}>{formatAmount(data.variance)}</HeaderFigure> : null}
+        title={t("budgetVsActual")}
+        figure={data ? <HeaderFigure label={t("budgetVarianceLabel", { name: data.name })}>{formatAmount(data.variance)}</HeaderFigure> : null}
         actions={
           <>
             {data?.status === "approved" ? (
               <Button variant="secondary" onClick={() => setConfirmLock(true)}>
-                Lock budget
+                {t("lockBudget")}
               </Button>
             ) : null}
             {data?.status === "draft" ? (
@@ -190,16 +201,16 @@ function BudgetDetailPage({ budgetId }: { budgetId: string }) {
                 disabled={approve.isPending}
                 onClick={() =>
                   approve.mutate(data.id, {
-                    onSuccess: (budget) => toast.success(`${budget.code} is approved.`),
-                    onError: (error) => toast.error(errorMessage(error, "The budget could not be approved. Try again.")),
+                    onSuccess: (budget) => toast.success(t("toastBudgetApproved", { code: budget.code })),
+                    onError: (error) => toast.error(errorMessage(error, t("errorApproveBudget"))),
                   })
                 }
               >
-                Approve budget
+                {t("approveBudget")}
               </Button>
             ) : null}
             <Button variant="secondary" asChild>
-              <Link href="/finance/budgets">All budgets</Link>
+              <Link href="/finance/budgets">{t("allBudgets")}</Link>
             </Button>
           </>
         }
@@ -213,32 +224,35 @@ function BudgetDetailPage({ budgetId }: { budgetId: string }) {
               <DocNumber>{data.code}</DocNumber>
               <StatusPill status={data.status} />
               <span>{data.scope_label}</span>
-              <span>Annual {formatAmount(data.total)} EGP</span>
-              {data.locked_on ? <span>Locked by {data.locked_by} on {formatDate(data.locked_on)}</span> : data.approved_on ? <span>Approved by {data.approved_by} on {formatDate(data.approved_on)}</span> : null}
+              <span>{t("annualAmount", { amount: formatAmount(data.total) })}</span>
+              {data.locked_on ? (
+                <span>{t("lockedByOn", { name: data.locked_by ?? "", date: formatDate(data.locked_on) })}</span>
+              ) : data.approved_on ? (
+                <span>{t("approvedByOn", { name: data.approved_by ?? "", date: formatDate(data.approved_on) })}</span>
+              ) : null}
             </MetaChips>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-5">
-              <KpiCard layout="bar" accent="indigo" label="Budgeted (EGP)" value={formatAmount(data.budgeted)} caption={toDate ? `${toDate}, phased evenly` : "The year has not started"} />
-              <KpiCard layout="bar" accent="teal" label="Actual (EGP)" value={formatAmount(data.actual)} caption="Posted expense, rolled up" />
+              <KpiCard layout="bar" accent="indigo" label={t("budgetedEgp")} value={formatAmount(data.budgeted)} caption={toDate ? t("phasedEvenly", { range: toDate }) : t("yearNotStarted")} />
+              <KpiCard layout="bar" accent="teal" label={t("actualEgp")} value={formatAmount(data.actual)} caption={t("postedExpenseRolledUp")} />
               <KpiCard
                 layout="bar"
                 accent={data.variance < 0 ? "danger" : "amber"}
-                label="Variance (EGP)"
+                label={t("varianceEgp")}
                 value={formatAmount(data.variance)}
-                caption={data.variance < 0 ? "Over budget" : "Under budget"}
+                caption={data.variance < 0 ? t("overBudget") : t("underBudget")}
               />
             </div>
 
             {data.status === "draft" ? (
               <>
                 <FinanceAlert tone="info">
-                  This budget is a draft. Adjust the annual figure for each cost center, save, then approve it. Variance is
-                  measured once it is approved.
+                  {t("draftBudgetInfo")}
                 </FinanceAlert>
                 <DraftLines key={`${data.id}-${data.total}`} budget={data} />
               </>
             ) : (
-              <FinanceTable caption={`${data.name} against actuals`} columns={columns} rows={data.lines} getRowId={(row) => row.id} />
+              <FinanceTable caption={t("budgetAgainstActuals", { name: data.name })} columns={columns} rows={data.lines} getRowId={(row) => row.id} />
             )}
           </>
         )}
@@ -247,25 +261,22 @@ function BudgetDetailPage({ budgetId }: { budgetId: string }) {
       <AlertDialog open={confirmLock} onOpenChange={setConfirmLock}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Lock this budget?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Locking freezes every budget line for the year so variance reports stay comparable. Unlocking needs a
-              controller. Draft a revision instead if the plan itself has changed.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("lockBudgetTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("lockBudgetDescription")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className={buttonVariants({ variant: "primary" })}
               onClick={() =>
                 data &&
                 lock.mutate(data.id, {
-                  onSuccess: (budget) => toast.success(`${budget.code} is locked.`),
-                  onError: (error) => toast.error(errorMessage(error, "The budget could not be locked. Try again.")),
+                  onSuccess: (budget) => toast.success(t("toastBudgetLocked", { code: budget.code })),
+                  onError: (error) => toast.error(errorMessage(error, t("errorLockBudget"))),
                 })
               }
             >
-              Lock budget
+              {t("lockBudget")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

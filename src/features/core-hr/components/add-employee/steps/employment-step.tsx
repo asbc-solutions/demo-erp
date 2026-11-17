@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { Field, FieldError, FieldLabel } from "@/src/shared/components/ui/field"
 import { Input } from "@/src/shared/components/ui/input"
 import {
@@ -10,6 +12,7 @@ import {
   SelectValue,
 } from "@/src/shared/components/ui/select"
 
+import { useFieldError } from "../../../lib/hooks/use-field-error"
 import { useJobGrades } from "../../../lib/queries/job-grades"
 import {
   useActiveBranchOptions,
@@ -49,6 +52,9 @@ export function EmploymentStep({
   onChange,
   errors = {},
 }: EmploymentStepProps) {
+  const t = useTranslations("HrAddEmployee")
+  const tShared = useTranslations("HrShared")
+  const fieldError = useFieldError()
   const update =
     <K extends keyof NewEmployeeDraft["employment"]>(key: K) =>
     (next: NewEmployeeDraft["employment"][K]) =>
@@ -73,12 +79,12 @@ export function EmploymentStep({
 
   return (
     <StepShell
-      title="Step 2: Employment"
-      description="Assign department, position, and employment details"
+      title={t("employmentStepTitle")}
+      description={t("employmentStepDescription")}
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Field>
-          <FieldLabel htmlFor="branch">Branch</FieldLabel>
+          <FieldLabel htmlFor="branch">{t("branch")}</FieldLabel>
           <Select
             value={value.branch}
             onValueChange={(next) => {
@@ -87,7 +93,7 @@ export function EmploymentStep({
             }}
           >
             <SelectTrigger id="branch">
-              <SelectValue placeholder="Select branch..." />
+              <SelectValue placeholder={t("selectBranch")} />
             </SelectTrigger>
             <SelectContent>
               {branches.map((branch) => (
@@ -100,7 +106,7 @@ export function EmploymentStep({
         </Field>
         <Field>
           <FieldLabel htmlFor="department">
-            <RequiredLabel>Department</RequiredLabel>
+            <RequiredLabel>{t("department")}</RequiredLabel>
           </FieldLabel>
           <Select
             value={value.department}
@@ -117,15 +123,15 @@ export function EmploymentStep({
               <SelectValue
                 placeholder={
                   value.branch
-                    ? "Select department..."
-                    : "Select branch first"
+                    ? t("selectDepartment")
+                    : t("selectBranchFirst")
                 }
               />
             </SelectTrigger>
             <SelectContent>
               {branchDepartments.length === 0 ? (
                 <div className="text-content-tertiary px-2 py-1.5 text-sm">
-                  No departments available in this branch.
+                  {t("noDepartmentsInBranch")}
                 </div>
               ) : (
                 branchDepartments.map((department) => (
@@ -137,17 +143,17 @@ export function EmploymentStep({
             </SelectContent>
           </Select>
           {errors.department && (
-            <FieldError id="department-error">{errors.department}</FieldError>
+            <FieldError id="department-error">{fieldError(errors.department)}</FieldError>
           )}
         </Field>
         <Field>
-          <FieldLabel htmlFor="position">Position</FieldLabel>
+          <FieldLabel htmlFor="position">{t("position")}</FieldLabel>
           <Select
             value={value.position ?? undefined}
             onValueChange={(next) => update("position")(next)}
           >
             <SelectTrigger id="position">
-              <SelectValue placeholder="Select position..." />
+              <SelectValue placeholder={t("selectPosition")} />
             </SelectTrigger>
             <SelectContent>
               {positions.map((position) => (
@@ -159,18 +165,21 @@ export function EmploymentStep({
           </Select>
         </Field>
         <Field>
-          <FieldLabel htmlFor="grade">Grade</FieldLabel>
+          <FieldLabel htmlFor="grade">{t("grade")}</FieldLabel>
           <Select
             value={value.grade}
             onValueChange={(next) => update("grade")(next)}
           >
             <SelectTrigger id="grade">
-              <SelectValue placeholder="Select grade..." />
+              <SelectValue placeholder={t("selectGrade")} />
             </SelectTrigger>
             <SelectContent>
               {grades.map((grade) => (
                 <SelectItem key={grade.id} value={grade.id}>
-                  {grade.grade_name} (Level {grade.grade_level})
+                  {t("gradeWithLevel", {
+                    name: grade.grade_name,
+                    level: grade.grade_level,
+                  })}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -178,7 +187,7 @@ export function EmploymentStep({
         </Field>
         <Field>
           <FieldLabel htmlFor="hireDate">
-            <RequiredLabel>Hire Date</RequiredLabel>
+            <RequiredLabel>{t("hireDate")}</RequiredLabel>
           </FieldLabel>
           <Input
             id="hireDate"
@@ -189,12 +198,12 @@ export function EmploymentStep({
             onChange={(event) => update("hireDate")(event.target.value)}
           />
           {errors.hireDate && (
-            <FieldError id="hireDate-error">{errors.hireDate}</FieldError>
+            <FieldError id="hireDate-error">{fieldError(errors.hireDate)}</FieldError>
           )}
         </Field>
         <Field>
           <FieldLabel htmlFor="employmentType">
-            <RequiredLabel>Employment Type</RequiredLabel>
+            <RequiredLabel>{t("employmentType")}</RequiredLabel>
           </FieldLabel>
           <Select
             value={value.employmentType}
@@ -209,29 +218,37 @@ export function EmploymentStep({
                 errors.employmentType ? "employmentType-error" : undefined
               }
             >
-              <SelectValue placeholder="Select type..." />
+              <SelectValue placeholder={t("selectType")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="FULL_TIME">Full time</SelectItem>
-              <SelectItem value="PART_TIME">Part time</SelectItem>
-              <SelectItem value="CONTRACT">Contract</SelectItem>
-              <SelectItem value="INTERN">Intern</SelectItem>
-              <SelectItem value="TEMPORARY">Temporary</SelectItem>
+              <SelectItem value="FULL_TIME">
+                {tShared("employmentType.full_time")}
+              </SelectItem>
+              <SelectItem value="PART_TIME">
+                {tShared("employmentType.part_time")}
+              </SelectItem>
+              <SelectItem value="CONTRACT">
+                {tShared("employmentType.contract")}
+              </SelectItem>
+              <SelectItem value="INTERN">{t("intern")}</SelectItem>
+              <SelectItem value="TEMPORARY">
+                {tShared("employmentType.temporary")}
+              </SelectItem>
             </SelectContent>
           </Select>
           {errors.employmentType && (
             <FieldError id="employmentType-error">
-              {errors.employmentType}
+              {fieldError(errors.employmentType)}
             </FieldError>
           )}
         </Field>
       </div>
 
       <Field>
-        <FieldLabel htmlFor="reportsTo">Reports To</FieldLabel>
+        <FieldLabel htmlFor="reportsTo">{t("reportsTo")}</FieldLabel>
         <Input
           id="reportsTo"
-          placeholder="Manager name"
+          placeholder={t("managerNamePlaceholder")}
           value={value.reportsTo ?? ""}
           onChange={(event) => update("reportsTo")(event.target.value)}
         />

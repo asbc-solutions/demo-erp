@@ -1,3 +1,5 @@
+import type { Messages } from "next-intl"
+
 import type { ProjectKpis, ProjectStatus } from "../lib/types/projects"
 import type { TaskPriority, TaskStatus } from "../lib/types/tasks"
 import type { VendorKpis, VendorStatus } from "../lib/types/vendors"
@@ -6,7 +8,9 @@ import type { VendorKpis, VendorStatus } from "../lib/types/vendors"
  * Pure UI config for the Operations module — everything that used to live here as
  * hardcoded data (`PROJECTS`, `TASKS`, `VENDORS`, `PROJECT_OWNERS`, …) now comes from
  * `bruno/Operations` live endpoints via `lib/{api,queries,mutations}`. What remains
- * here is display-only styling/labels keyed by the real wire enums.
+ * here is display-only styling/labels keyed by the real wire enums. Labels are message
+ * keys (`OperationsProjects` / `OperationsTasks` / `OperationsVendors`); enum values render
+ * through the nested `status` / `priority` maps, e.g. `t(\`status.${value}\`)`.
  */
 
 export type OperationsTab = "projects" | "tasks" | "vendors"
@@ -22,17 +26,17 @@ export type ProjectKpiAccent = "indigo" | "amber" | "red"
 
 export type ProjectKpiTile = {
   key: keyof ProjectKpis
-  label: string
+  labelKey: Extract<keyof Messages["OperationsProjects"], `kpi${string}`>
   icon: "grid" | "dollar" | "wallet" | "alert"
   accent: ProjectKpiAccent
   format: "count" | "currency"
 }
 
 export const PROJECT_KPI_TILES: ProjectKpiTile[] = [
-  { key: "active_projects", label: "Active Projects", icon: "grid", accent: "indigo", format: "count" },
-  { key: "total_budget", label: "Total Budget", icon: "dollar", accent: "indigo", format: "currency" },
-  { key: "total_spent", label: "Total Spent", icon: "wallet", accent: "amber", format: "currency" },
-  { key: "overdue_tasks", label: "Overdue Tasks", icon: "alert", accent: "red", format: "count" },
+  { key: "active_projects", labelKey: "kpiActiveProjects", icon: "grid", accent: "indigo", format: "count" },
+  { key: "total_budget", labelKey: "kpiTotalBudget", icon: "dollar", accent: "indigo", format: "currency" },
+  { key: "total_spent", labelKey: "kpiTotalSpent", icon: "wallet", accent: "amber", format: "currency" },
+  { key: "overdue_tasks", labelKey: "kpiOverdueTasks", icon: "alert", accent: "red", format: "count" },
 ]
 
 export const TASK_STATUS_DOT: Record<TaskStatus, string> = {
@@ -50,24 +54,27 @@ export const TASK_PRIORITY_DOT: Record<TaskPriority, string> = {
   critical: "bg-brand-danger",
 }
 
-export const TASK_STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
-  { value: "to_do", label: "To Do" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "review", label: "Review" },
-  { value: "done", label: "Done" },
-  { value: "blocked", label: "Blocked" },
+/** Rendered with `t(\`status.${value}\`)` in the `OperationsTasks` namespace. */
+export const TASK_STATUS_OPTIONS: readonly TaskStatus[] = [
+  "to_do",
+  "in_progress",
+  "review",
+  "done",
+  "blocked",
 ]
 
-export const TASK_FILTER_OPTIONS: { value: TaskStatus | "all"; label: string }[] = [
-  { value: "all", label: "All" },
+/** `"all"` renders with `Common.all`, the rest like `TASK_STATUS_OPTIONS`. */
+export const TASK_FILTER_OPTIONS: readonly (TaskStatus | "all")[] = [
+  "all",
   ...TASK_STATUS_OPTIONS,
 ]
 
-export const TASK_PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "critical", label: "Critical" },
+/** Rendered with `t(\`priority.${value}\`)` in the `OperationsTasks` namespace. */
+export const TASK_PRIORITY_OPTIONS: readonly TaskPriority[] = [
+  "low",
+  "medium",
+  "high",
+  "critical",
 ]
 
 export const VENDOR_STATUS_STYLE: Record<VendorStatus, string> = {
@@ -80,21 +87,22 @@ export type VendorKpiAccent = "emerald" | "indigo" | "amber"
 
 export type VendorKpiTile = {
   key: keyof VendorKpis
-  label: string
+  labelKey: Extract<keyof Messages["OperationsVendors"], `kpi${string}`>
   icon: "vendors" | "dollar" | "clock"
   accent: VendorKpiAccent
   format: "count" | "currency"
 }
 
 export const VENDOR_KPI_TILES: VendorKpiTile[] = [
-  { key: "active_vendors", label: "Active Vendors", icon: "vendors", accent: "emerald", format: "count" },
-  { key: "monthly_vendor_spend", label: "Monthly Vendor Spend", icon: "dollar", accent: "indigo", format: "currency" },
-  { key: "contracts_expiring_soon", label: "Contracts Expiring Soon", icon: "clock", accent: "amber", format: "count" },
+  { key: "active_vendors", labelKey: "kpiActiveVendors", icon: "vendors", accent: "emerald", format: "count" },
+  { key: "monthly_vendor_spend", labelKey: "kpiMonthlySpend", icon: "dollar", accent: "indigo", format: "currency" },
+  { key: "contracts_expiring_soon", labelKey: "kpiExpiringSoon", icon: "clock", accent: "amber", format: "count" },
 ]
 
-export const VENDOR_FILTER_OPTIONS: { value: VendorStatus | "all"; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "active", label: "Active" },
-  { value: "pending", label: "Pending" },
-  { value: "inactive", label: "Inactive" },
+/** `"all"` renders with `Common.all`, the rest with `t(\`status.${value}\`)` (`OperationsVendors`). */
+export const VENDOR_FILTER_OPTIONS: readonly (VendorStatus | "all")[] = [
+  "all",
+  "active",
+  "pending",
+  "inactive",
 ]

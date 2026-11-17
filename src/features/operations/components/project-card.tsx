@@ -1,4 +1,7 @@
 import { DollarSign } from "lucide-react"
+import { useTranslations } from "next-intl"
+
+import { useIntlLocale } from "@/src/i18n/intl-locale"
 
 import { Card } from "@/src/shared/components/ui/card"
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -8,6 +11,8 @@ import type { ProjectListItem } from "../lib/types"
 import { formatCurrencyAmount, formatDate, getInitials } from "../lib/utils/format"
 
 export function ProjectCard({ project }: { project: ProjectListItem }) {
+  const t = useTranslations("OperationsProjects")
+  const locale = useIntlLocale()
   return (
     <Card
       variant="elevated"
@@ -23,18 +28,18 @@ export function ProjectCard({ project }: { project: ProjectListItem }) {
             PROJECT_STATUS_STYLE[project.status],
           )}
         >
-          {project.status_label}
+          {t(`status.${project.status}`)}
         </span>
       </div>
 
       <p className="text-content-tertiary text-[12px] leading-[18px]">
-        {project.description || "No description provided."}
+        {project.description || t("noDescription")}
       </p>
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <span className="text-[11px] leading-[15.4px] text-content-tertiary">
-            Progress
+            {t("progress")}
           </span>
           <span className="text-content-primary text-[11px] leading-[15.4px] font-medium">
             {project.progress_pct}%
@@ -52,8 +57,10 @@ export function ProjectCard({ project }: { project: ProjectListItem }) {
         <div className="flex items-center gap-1.5">
           <DollarSign className="size-3.5 text-content-tertiary" aria-hidden />
           <span className="text-[11px] leading-[15.4px] text-content-tertiary tabular-nums">
-            {formatCurrencyAmount(project.spent_amount, project.currency_code)} /{" "}
-            {formatCurrencyAmount(project.budget_amount, project.currency_code)}
+            {t("spentOfBudget", {
+              spent: formatCurrencyAmount(project.spent_amount, locale, project.currency_code),
+              budget: formatCurrencyAmount(project.budget_amount, locale, project.currency_code),
+            })}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -68,12 +75,12 @@ export function ProjectCard({ project }: { project: ProjectListItem }) {
             </div>
           ) : (
             <span className="text-[11px] leading-[15.4px] text-content-tertiary">
-              Unassigned
+              {t("unassigned")}
             </span>
           )}
           {project.end_date ? (
             <span className="text-[11px] leading-[15.4px] text-content-tertiary">
-              {formatDate(project.end_date)}
+              {formatDate(project.end_date, locale)}
             </span>
           ) : null}
         </div>

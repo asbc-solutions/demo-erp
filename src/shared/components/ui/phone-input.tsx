@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Check, ChevronDown } from "lucide-react"
 
 import { cn } from "@/src/shared/lib/utils/utils"
@@ -96,16 +97,17 @@ function PhoneInput({
   disabled,
   invalid,
   success,
-  placeholder = "Enter your phone number",
+  placeholder,
   onValueChange,
   onBlur,
   className,
   id,
   name,
   required,
-  countryLabel = "Select country",
+  countryLabel,
   ...props
 }: Readonly<PhoneInputProps>) {
+  const t = useTranslations("Ui")
   const initial = splitE164(value, countries)
   const initialCountry =
     initial.country ??
@@ -164,7 +166,7 @@ function PhoneInput({
         <DropdownMenuTrigger
           type="button"
           disabled={disabled}
-          aria-label={countryLabel}
+          aria-label={countryLabel ?? t("selectCountry")}
           data-slot="phone-input-country"
           className="text-content-primary focus-visible:ring-brand-primary/30 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-[6px] text-sm leading-5 font-medium outline-none focus-visible:ring-2 disabled:pointer-events-none"
         >
@@ -211,7 +213,7 @@ function PhoneInput({
         disabled={disabled}
         required={required}
         aria-invalid={invalid || undefined}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("phonePlaceholder")}
         value={national}
         onBlur={onBlur}
         onChange={(event) => {

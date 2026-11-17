@@ -12,6 +12,7 @@ import {
   X,
   XCircle,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Badge } from "@/src/shared/components/ui/badge"
@@ -43,22 +44,14 @@ import { UploadDocumentDialog } from "./upload-document-dialog"
 const EMPTY_DOCS: EmployeeDocument[] = []
 const EMPTY_EMPLOYEES: EmployeeListItem[] = []
 
-const DOCUMENT_STATUS_OPTIONS = [
-  { value: "VERIFIED", label: "Verified" },
-  { value: "PENDING", label: "Pending" },
-  { value: "REJECTED", label: "Rejected" },
-] as const
-
-const DOCUMENT_FILTER_GROUPS: readonly HrFilterGroup[] = [
-  { id: "status", label: "Status", options: DOCUMENT_STATUS_OPTIONS },
-]
+const DOCUMENT_STATUSES = ["VERIFIED", "PENDING", "REJECTED"] as const
 
 function DocumentTableSkeleton() {
   return (
     <TableBody>
       {Array.from({ length: 5 }).map((_, i) => (
         <TableRow key={i} className="hover:bg-transparent">
-          <TableCell className="pl-6">
+          <TableCell className="ps-6">
             <div className="flex flex-col gap-1">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-3 w-20" />
@@ -68,8 +61,8 @@ function DocumentTableSkeleton() {
           <TableCell><Skeleton className="h-4 w-36" /></TableCell>
           <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
           <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-          <TableCell className="pr-6 text-right">
-            <Skeleton className="ml-auto h-7 w-20 rounded-md" />
+          <TableCell className="pe-6 text-end">
+            <Skeleton className="ms-auto h-7 w-20 rounded-md" />
           </TableCell>
         </TableRow>
       ))}
@@ -80,6 +73,8 @@ function DocumentTableSkeleton() {
 function StatusBadge({
   status,
 }: Readonly<{ status: EmployeeDocument["status_label"] }>) {
+  const t = useTranslations("HrDocuments")
+
   if (status === "VERIFIED") {
     return (
       <Badge
@@ -87,7 +82,7 @@ function StatusBadge({
         className="border-brand-success/30 bg-brand-success/10 text-brand-success rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
       >
         <ShieldCheck className="size-3" />
-        Verified
+        {t("status.VERIFIED")}
       </Badge>
     )
   }
@@ -98,7 +93,7 @@ function StatusBadge({
         className="border-brand-warning/30 bg-brand-warning/10 text-brand-warning rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
       >
         <Clock className="size-3" />
-        Pending
+        {t("status.PENDING")}
       </Badge>
     )
   }
@@ -108,7 +103,7 @@ function StatusBadge({
       className="border-brand-danger/30 bg-brand-danger/10 text-brand-danger rounded-full px-2.5 py-0.5 text-[11px] tracking-[0.4px] uppercase"
     >
       <XCircle className="size-3" />
-      Rejected
+      {t("status.REJECTED")}
     </Badge>
   )
 }
@@ -128,13 +123,15 @@ function ActionButtons({
   onDownload: () => void
   isPending: boolean
 }>) {
+  const t = useTranslations("HrDocuments")
+
   return (
     <div className="flex items-center justify-end gap-1">
       {doc.has_file && (
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={`Download ${doc.document_title}`}
+          aria-label={t("downloadLabel", { title: doc.document_title })}
           className="text-content-tertiary hover:text-content-primary"
           onClick={onDownload}
         >
@@ -145,7 +142,7 @@ function ActionButtons({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={`Verify ${doc.document_title}`}
+          aria-label={t("verifyLabel", { title: doc.document_title })}
           className="text-brand-success hover:bg-brand-success/10"
           disabled={isPending}
           onClick={onVerify}
@@ -157,7 +154,7 @@ function ActionButtons({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={`Reject ${doc.document_title}`}
+          aria-label={t("rejectLabel", { title: doc.document_title })}
           className="text-brand-danger hover:bg-brand-danger/10"
           disabled={isPending}
           onClick={onReject}
@@ -168,7 +165,7 @@ function ActionButtons({
       <Button
         variant="ghost"
         size="icon-sm"
-        aria-label={`Delete ${doc.document_title}`}
+        aria-label={t("deleteLabel", { title: doc.document_title })}
         className="text-brand-danger hover:bg-brand-danger/10"
         disabled={isPending}
         onClick={onDelete}
@@ -180,6 +177,8 @@ function ActionButtons({
 }
 
 export function DocumentsTab() {
+  const t = useTranslations("HrDocuments")
+  const tCommon = useTranslations("Common")
   const [search, setSearch] = useState("")
   const [filters, setFilters] = useState<HrFilterValues>({})
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -226,6 +225,17 @@ export function DocumentsTab() {
     })
   }, [documents, employeesById, search, filters])
 
+  const filterGroups: HrFilterGroup[] = [
+    {
+      id: "status",
+      label: tCommon("status"),
+      options: DOCUMENT_STATUSES.map((status) => ({
+        value: status,
+        label: t(`status.${status}`),
+      })),
+    },
+  ]
+
   const isMutating =
     verifyDoc.isPending || rejectDoc.isPending || deleteDoc.isPending
 
@@ -234,13 +244,13 @@ export function DocumentsTab() {
       { employeeId: doc.employee_id, id: doc.id },
       {
         onSuccess: () =>
-          toast.success("Document verified", {
+          toast.success(t("verified"), {
             description: doc.document_title,
           }),
         onError: (err) => {
-          toast.error("Verify failed", {
+          toast.error(t("verifyFailed"), {
             description:
-              (err as unknown as ApiError).message ?? "Could not verify document.",
+              (err as unknown as ApiError).message ?? t("verifyFailedDescription"),
           })
         },
       }
@@ -252,13 +262,13 @@ export function DocumentsTab() {
       { employeeId: doc.employee_id, id: doc.id },
       {
         onSuccess: () =>
-          toast.success("Document rejected", {
+          toast.success(t("rejected"), {
             description: doc.document_title,
           }),
         onError: (err) => {
-          toast.error("Reject failed", {
+          toast.error(t("rejectFailed"), {
             description:
-              (err as unknown as ApiError).message ?? "Could not reject document.",
+              (err as unknown as ApiError).message ?? t("rejectFailedDescription"),
           })
         },
       }
@@ -270,13 +280,13 @@ export function DocumentsTab() {
       { employeeId: doc.employee_id, id: doc.id },
       {
         onSuccess: () =>
-          toast.success("Document deleted", {
+          toast.success(t("deleted"), {
             description: doc.document_title,
           }),
         onError: (err) => {
-          toast.error("Delete failed", {
+          toast.error(t("deleteFailed"), {
             description:
-              (err as unknown as ApiError).message ?? "Could not delete document.",
+              (err as unknown as ApiError).message ?? t("deleteFailedDescription"),
           })
         },
       }
@@ -288,8 +298,8 @@ export function DocumentsTab() {
       const res = await documentsApi.download(doc.employee_id, doc.id)
       window.open(res.data.data.download_url, "_blank", "noopener,noreferrer")
     } catch {
-      toast.error("Download failed", {
-        description: "Could not retrieve download link.",
+      toast.error(t("downloadFailed"), {
+        description: t("downloadFailedDescription"),
       })
     }
   }
@@ -304,12 +314,12 @@ export function DocumentsTab() {
             onClick={() => setUploadOpen(true)}
           >
             <Upload />
-            Upload Document
+            {t("uploadDocument")}
           </Button>
         }
         searchValue={search}
         onSearchChange={setSearch}
-        filterGroups={DOCUMENT_FILTER_GROUPS}
+        filterGroups={filterGroups}
         filterValues={filters}
         onFilterChange={setFilters}
       />
@@ -318,12 +328,12 @@ export function DocumentsTab() {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6">Employee</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Document</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Expiry</TableHead>
-              <TableHead className="pr-6 text-right">Actions</TableHead>
+              <TableHead className="ps-6">{t("colEmployee")}</TableHead>
+              <TableHead>{tCommon("type")}</TableHead>
+              <TableHead>{t("colDocument")}</TableHead>
+              <TableHead>{tCommon("status")}</TableHead>
+              <TableHead>{t("colExpiry")}</TableHead>
+              <TableHead className="pe-6 text-end">{tCommon("actions")}</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -337,7 +347,7 @@ export function DocumentsTab() {
                     colSpan={6}
                     className="text-content-tertiary py-12 text-center text-sm"
                   >
-                    Failed to load documents.
+                    {t("loadError")}
                   </TableCell>
                 </TableRow>
               )}
@@ -348,7 +358,7 @@ export function DocumentsTab() {
                     colSpan={6}
                     className="text-content-tertiary py-12 text-center text-sm"
                   >
-                    No documents found.
+                    {t("empty")}
                   </TableCell>
                 </TableRow>
               )}
@@ -358,12 +368,12 @@ export function DocumentsTab() {
                   const employee = employeesById.get(doc.employee_id)
                   const employeeName =
                     employee?.full_name ??
-                    `Employee ${doc.employee_id.slice(0, 8)}`
+                    t("employeeRef", { id: doc.employee_id.slice(0, 8) })
                   const employeeNumber = employee?.employee_number ?? ""
 
                   return (
                     <TableRow key={doc.id}>
-                      <TableCell className="pl-6">
+                      <TableCell className="ps-6">
                         <div className="flex flex-col">
                           <span className="text-content-primary text-sm font-semibold">
                             {employeeName}
@@ -398,7 +408,7 @@ export function DocumentsTab() {
                       <TableCell className="text-content-tertiary text-sm">
                         {doc.expiry_date ?? "—"}
                       </TableCell>
-                      <TableCell className="pr-6 text-right">
+                      <TableCell className="pe-6 text-end">
                         <ActionButtons
                           doc={doc}
                           isPending={isMutating}
