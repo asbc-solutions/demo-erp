@@ -1,4 +1,5 @@
-FROM node:20-alpine AS base
+# Keep in step with .nvmrc: package-lock.json is written by npm 11 (Node 24); npm 10 rejects it.
+FROM node:24-alpine AS base
 
 # Stage 1: Install dependencies
 FROM base AS deps

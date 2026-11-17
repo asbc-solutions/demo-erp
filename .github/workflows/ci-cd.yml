@@ -1,5 +1,5 @@
 name: CI/CD Pipeline
-# Deploys live in asbc-solutions/infra (release.yml builds the image; a v* tag deploys it).
+# Deploys live in release.yml: every push to main builds the image and dispatches the infra deploy.
 
 on:
   push:
@@ -16,12 +16,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
